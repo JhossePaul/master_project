@@ -163,8 +163,12 @@ class IngestionWatermarkState(_StrictModel):
     app_id: str = Field(..., min_length=1)
     max_review_timestamp: UtcDatetime | None = None
     min_review_timestamp: UtcDatetime | None = None
-    recent_review_ids: set[str] = Field(default_factory=set)
-    oldest_review_ids: set[str] = Field(default_factory=set)
+    recent_review_ids: set[str] = Field(
+        default_factory=set, max_length=WATERMARK_MAX_FRONTIER_IDS
+    )
+    oldest_review_ids: set[str] = Field(
+        default_factory=set, max_length=WATERMARK_MAX_FRONTIER_IDS
+    )
     oldest_page_token: str | None = None
     star_partition_tokens: dict[StarRating, str | None] = Field(
         default_factory=dict

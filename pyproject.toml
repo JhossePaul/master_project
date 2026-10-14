@@ -12,6 +12,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
     "pyrefly",
+    "pre-commit>=3.7.0,<5.0.0",
 ]
 
 [tool.uv.workspace]
@@ -56,10 +57,11 @@ ignore = []
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+exclude = ["**/*.md"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --cov --cov-report=term-missing"
+addopts = "-ra -q --cov=voc_common --cov-report=term-missing"
 testpaths = ["packages/*/tests", "services/*/tests"]
 
 [tool.bandit]

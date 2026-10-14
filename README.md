@@ -92,9 +92,27 @@ Validar que toda la base de código cumple con los estándares:
 
 ```bash
 uv run ruff check .
+uv run ruff format --check .
+uv run pyrefly check
 uv run bandit -c pyproject.toml -r .
-uv run pytest
+uv run pytest packages/voc-common/tests --cov=packages/voc-common/src --cov-fail-under=85
 ```
+
+El workflow `.github/workflows/ci.yaml` ejecuta estos gates en cada push y
+pull request con Python 3.11 y las versiones de `uv.lock`. La cobertura mínima
+de `voc-common` es del 85%. Los servicios e infraestructura vacíos se incorporan
+al workspace al implementar sus respectivas épicas.
+
+4. **Activar hooks locales:**
+
+```bash
+uv run pre-commit install
+uv run pre-commit run --all-files
+```
+
+Los hooks ejecutan Ruff (lint con correcciones y formato) y Bandit usando el
+mismo entorno de `uv` que CI. Los fallbacks de variables en CI son exclusivos
+de pruebas; la sal real de producción se configura por separado.
 
 ## 🔐 Gobierno de Datos
 

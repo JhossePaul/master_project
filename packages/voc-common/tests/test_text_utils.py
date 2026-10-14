@@ -14,7 +14,7 @@ from voc_common.text_utils import (
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 
 
-def test_limpiar_texto_bancario_notebook_case() -> None:
+def test_limpiar_texto_bancario_preserves_error_codes_and_emojis() -> None:
     raw = (
         "no me deja entrar me sale que restringieron mi cuenta por motivos "
         "de seguridad: ref: 3702:65c5:9xhchi. noooo sirveee 😡 "

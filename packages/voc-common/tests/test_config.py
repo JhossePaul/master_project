@@ -112,8 +112,13 @@ def test_blank_dlp_template_ids_become_none(
         ("SCRAPER_PAGE_SIZE", "0"),
         ("SCRAPER_TIMEOUT_SEC", "0"),
         ("SCRAPER_ROTATE_PROXY_EVERY_N_BATCHES", "0"),
+        ("SCRAPER_BASE_DELAY_SEC", "inf"),
+        ("SCRAPER_MAX_JITTER_SEC", "nan"),
+        ("SCRAPER_TIMEOUT_SEC", "inf"),
         ("HITL_ENTROPY_THRESHOLD", "1.5"),
         ("USER_HASH_SALT", "short"),
+        ("USER_HASH_SALT", " " * 16),
+        ("USER_HASH_SALT", "short" + " " * 16),
     ],
 )
 def test_invalid_values_rejected(
@@ -143,6 +148,35 @@ def test_reads_dotenv_file_in_cwd(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert Settings().gcp_region == "southamerica-east1"
+
+
+def test_environment_overrides_dotenv(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / ".env").write_text(
+        'SCRAPER_PROXY_POOL_URLS=["http://dotenv:8080"]\n'
+        "GCP_REGION=southamerica-east1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GCP_REGION", "us-central1")
+    monkeypatch.setenv("SCRAPER_PROXY_POOL_URLS", "http://env:8080")
+    settings = Settings()
+    assert settings.gcp_region == "us-central1"
+    assert settings.scraper_proxy_pool_urls == ["http://env:8080"]
+
+
+@pytest.mark.parametrize("raw", ['["unterminated"', "[1]", '[{"url":"x"}]'])
+def test_invalid_proxy_pool_rejected(
+    monkeypatch: pytest.MonkeyPatch, raw: str
+) -> None:
+    monkeypatch.setenv("SCRAPER_PROXY_POOL_URLS", raw)
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_padded_dev_salt_forbidden_in_production() -> None:
+    with pytest.raises(ValidationError, match="USER_HASH_SALT"):
+        Settings(environment="prod", user_hash_salt=f" {DEV_USER_HASH_SALT} ")
 
 
 def test_env_example_loads_and_covers_all_fields(tmp_path: Path) -> None:

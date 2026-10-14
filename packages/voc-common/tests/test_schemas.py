@@ -213,6 +213,20 @@ def test_watermark_json_roundtrip_and_star_tokens() -> None:
         )
 
 
+@pytest.mark.parametrize("frontier", ["recent_review_ids", "oldest_review_ids"])
+def test_watermark_rejects_oversized_checkpoint(frontier: str) -> None:
+    checkpoint = {
+        "bank_id": "BBVA",
+        "app_id": APP_ID,
+        frontier: [f"r{i}" for i in range(WATERMARK_MAX_FRONTIER_IDS)],
+    }
+    state = IngestionWatermarkState.model_validate_json(json.dumps(checkpoint))
+    assert len(getattr(state, frontier)) == WATERMARK_MAX_FRONTIER_IDS
+    checkpoint[frontier].append("overflow")
+    with pytest.raises(ValidationError):
+        IngestionWatermarkState.model_validate_json(json.dumps(checkpoint))
+
+
 # ---------------------------------------------------------------------------
 # Tarea 1.3.3
 # ---------------------------------------------------------------------------

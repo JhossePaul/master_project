@@ -23,6 +23,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        allow_inf_nan=False,
     )
 
     # Entorno y Proyecto GCP
@@ -97,9 +98,19 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.environment.strip().lower() in PRODUCTION_ENVIRONMENTS
 
+    @field_validator("user_hash_salt")
+    @classmethod
+    def _validate_salt(cls, value: str) -> str:
+        if len(value.strip()) < 16:
+            raise ValueError("USER_HASH_SALT requiere al menos 16 caracteres")
+        return value
+
     @model_validator(mode="after")
     def _forbid_dev_salt_in_production(self) -> Self:
-        if self.is_production and self.user_hash_salt == DEV_USER_HASH_SALT:
+        if (
+            self.is_production
+            and self.user_hash_salt.strip() == DEV_USER_HASH_SALT
+        ):
             raise ValueError(
                 "USER_HASH_SALT debe sobreescribirse en producción; "
                 "la sal de desarrollo no es válida."

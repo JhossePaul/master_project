@@ -1,0 +1,49 @@
+name: Quality gates
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ENVIRONMENT: test
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'bbva-voc-analyzer-test' }}
+      USER_HASH_SALT: ${{ secrets.USER_HASH_SALT || 'ci-only-salt-not-for-production' }}
+      SCRAPER_PROXY_POOL_URLS: ${{ secrets.SCRAPER_PROXY_POOL_URLS || '[]' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install workspace dependencies
+        run: uv sync --all-packages --locked
+
+      - name: Ruff lint
+        run: uv run --frozen ruff check .
+
+      - name: Ruff format
+        run: uv run --frozen ruff format --check .
+
+      - name: Pyrefly types
+        run: uv run --frozen pyrefly check
+
+      - name: Bandit security
+        run: uv run --frozen bandit -c pyproject.toml -r .
+
+      - name: Unit tests and coverage
+        run: >-
+          uv run --frozen pytest packages/voc-common/tests
+          --cov=packages/voc-common/src --cov-fail-under=85

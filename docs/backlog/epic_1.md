@@ -1,6 +1,6 @@
 # EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
 
-* **Estado:** Pendiente
+* **Estado:** IMPLEMENTADO — Features 1.1 a 1.5 completadas y verificadas localmente.
 * **Semanas Objetivo:** Semana 1
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/pyproject.toml`
@@ -369,6 +369,28 @@ Modela el registro limpio en la tabla `sanitized_reviews_tds`:
 
 ### FEATURE 1.4: Configuración Centralizada con Soporte Free Tier y Anti-Throttling (`config.py`)
 
+**Status: IMPLEMENTADO**
+
+> **Notas de implementación y revisión (2026-10-14):**
+> * `Settings` incluye todos los campos del contrato y `.env.example` cubre
+>   exactamente sus variables. `get_settings()` usa caché; se puede invalidar
+>   mediante `get_settings.cache_clear()`.
+> * El pool de proxies acepta JSON, CSV y valores vacíos. Las plantillas DLP
+>   vacías se normalizan a `None`. Las variables del proceso tienen prioridad
+>   sobre `.env`.
+> * Se validan límites del scraper, valores numéricos finitos, umbral HITL y
+>   sal de al menos 16 caracteres sin contar espacios en los extremos. La sal
+>   de desarrollo se rechaza en `prod` / `production`.
+> * Se exporta la API pública mediante `__all__`. Se requiere
+>   `pydantic-settings>=2.7.0` por el uso de `NoDecode`.
+> * Los nombres coinciden con la especificación de la Épica 2; la integración
+>   real con Pulumi sigue pendiente porque sus módulos aún están vacíos.
+> * La revisión de Features 1.1–1.3 añade validación del límite de 500 IDs al
+>   cargar checkpoints. La cobertura ahora mide solo código de `voc-common`.
+> * Validación local con Python 3.11.14 y 3.12.10: 89 pruebas pasan, cobertura del código
+>   fuente del 100%; Ruff (lint y formato), Pyrefly y Bandit sin errores.
+>   La Feature 1.5 configura la ejecución automatizada en Python 3.11.
+
 **Objetivo:** Implementar `packages/voc-common/src/voc_common/config.py` sincronizado al 100% con las variables de entorno inyectadas por Pulumi en la Épica 2.
 
 #### Tarea 1.4.1: Implementar `Settings(BaseSettings)` en `config.py`
@@ -444,6 +466,25 @@ Generar en la raíz del repositorio el archivo `.env.example` con comentarios ex
 
 ### FEATURE 1.5: Pipeline CI en GitHub Actions y Suite de Pruebas Unitarias (`test_schemas.py`)
 
+**Status: IMPLEMENTADO**
+
+> **Notas de implementación y verificación (2026-10-14):**
+> * GitHub Actions ejecuta los gates en `push` y `pull_request`, con Python 3.11,
+>   `astral-sh/setup-uv@v3`, permisos de lectura y límite de 15 minutos.
+> * `GCP_PROJECT_ID`, `USER_HASH_SALT` y `SCRAPER_PROXY_POOL_URLS` se obtienen
+>   de secrets con fallbacks de prueba; `ENVIRONMENT=test`. No se requieren
+>   credenciales GCP para las pruebas unitarias.
+> * La sincronización usa `--locked` y los comandos `uv run --frozen` para
+>   conservar las versiones de `uv.lock`. Los hooks locales `ruff`,
+>   `ruff-format` y `bandit` usan el mismo entorno; no se incluye `gitleaks`.
+> * La suite existente supera el mínimo de 10 pruebas y cubre todos los casos
+>   de aceptación, incluida la limpieza exacta del texto del notebook.
+> * Verificado en Python 3.11.14: 89 pruebas pasan, cobertura de código fuente
+>   del 100%, Ruff (lint/formato), Pyrefly y Bandit sin errores. Los tres hooks
+>   pasan con `pre-commit run --all-files`; configuración y YAML válidos.
+> * El workflow está implementado; su primera ejecución en GitHub Actions
+>   se producirá al hacer push o abrir un pull request.
+
 **Objetivo:** Configurar la validación automatizada en GitHub Actions y asegurar cobertura $\ge 85\%$ en `voc-common`.
 
 #### Tarea 1.5.1: Implementar `.pre-commit-config.yaml` y `.github/workflows/ci.yaml`
@@ -481,7 +522,7 @@ Escribir mínimo 10 pruebas unitarias que validen:
 
 ## ✅ Criterios de Aceptación de la Épica 1 (Checklist de Verificación)
 
-* [ ] `voc-common` no depende de `google-play-scraper` y modela los tokens de paginación como `str` Base64 compatibles con el RPC `oCPfdb` de `batchexecute`.
-* [ ] Existen los 3 modos en `IngestionMode` (`INCREMENTAL`, `BACKFILL`, `FULL_BACKFILL`) y `IngestionWatermarkState` gestiona fechas máxima/mínima y tokens por partición de estrellas.
-* [ ] `SanitizedReviewRecord` garantiza 0% de almacenamiento de `usuario` o `imagen_usuario` en texto plano y preserva códigos de error `ref: 3702`.
-* [ ] Los 4 Quality Gates (`ruff`, `pyrefly`, `bandit`, `pytest`) pasan sin errores con cobertura $\ge 85\%$.
+* [x] `voc-common` no depende de `google-play-scraper` y modela los tokens de paginación como `str` Base64 compatibles con el RPC `oCPfdb` de `batchexecute`.
+* [x] Existen los 3 modos en `IngestionMode` (`INCREMENTAL`, `BACKFILL`, `FULL_BACKFILL`) y `IngestionWatermarkState` gestiona fechas máxima/mínima y tokens por partición de estrellas.
+* [x] `SanitizedReviewRecord` garantiza 0% de almacenamiento de `usuario` o `imagen_usuario` en texto plano y preserva códigos de error `ref: 3702`.
+* [x] Los 4 Quality Gates (`ruff`, `pyrefly`, `bandit`, `pytest`) pasan sin errores con cobertura $\ge 85\%$.
