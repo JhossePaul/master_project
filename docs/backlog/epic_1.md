@@ -44,6 +44,8 @@ El Agente IA **DEBE** implementar las siguientes 5 directrices de diseño en `vo
 
 ### FEATURE 1.1: Configuración del Paquete `voc-common` y Catálogo de Constantes (`constants.py`)
 
+**Status: IMPLEMENTADO**
+
 **Objetivo:** Configurar el paquete dentro del workspace de `uv` y declarar todas las enumeraciones, constantes del protocolo RPC de Google Play y parámetros del EDA.
 
 #### Tarea 1.1.1: Configurar `packages/voc-common/pyproject.toml`
@@ -126,7 +128,7 @@ MAX_REVIEW_WORDS: int = 60
 BACKFILL_LOOKBACK_DAYS: int = 365
 
 # Constantes del Protocolo Interno Google Play (batchexecute RPC)
-PLAYSTORE_BATCHEXECUTE_URL: str = "[https://play.google.com/_/PlayStoreUi/data/batchexecute](https://play.google.com/_/PlayStoreUi/data/batchexecute)"
+PLAYSTORE_BATCHEXECUTE_URL: str = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 PLAYSTORE_REVIEWS_RPC_ID: str = "oCPfdb"
 PLAYSTORE_MAX_PAGE_SIZE: int = 199
 DEFAULT_PLAYSTORE_LANG: str = "es"
@@ -145,6 +147,15 @@ DEFAULT_USER_AGENTS: tuple[str, ...] = (
 ---
 
 ### FEATURE 1.2: Utilidades de Limpieza de Texto y Hash Criptográfico (`text_utils.py`)
+
+**Status: IMPLEMENTADO**
+
+> **Notas de implementación:** Para cumplir la prueba de aceptación
+> `test_limpiar_texto_bancario_preserves_error_codes_and_emojis` (Feature 1.5),
+> la implementación final elimina hashtags completos (`#\w*`), colapsa espacios
+> internos (`\s+` → `" "`) y no reduce dígitos repetidos (`(\D)\1{2,}`) para
+> preservar códigos y montos. La 4ª función es `cumple_umbral_palabras`
+> (rango `[MIN_REVIEW_WORDS, MAX_REVIEW_WORDS]`).
 
 **Objetivo:** Aislar en funciones puras, deterministas y fácilmente testeables la lógica de pre-limpieza probada en el notebook del EDA y la anonimización SHA-256 de usuarios.
 
@@ -192,6 +203,15 @@ def hash_username_pii(username: str, salt: str) -> str:
 ---
 
 ### FEATURE 1.3: Contratos de Datos Estrictos en Pydantic v2 (`schemas.py`)
+
+**Status: IMPLEMENTADO**
+
+> **Notas de implementación:**
+> * Todos los modelos usan `extra="forbid"`; todas las `datetime` se normalizan a UTC (las *naive* se asumen UTC) vía `ensure_utc`.
+> * `recent_review_ids` / `oldest_review_ids` guardan los IDs con fecha **igual** a la frontera respectiva, acotados por `WATERMARK_MAX_FRONTIER_IDS = 500`, y se serializan como listas ordenadas.
+> * En `INCREMENTAL`, `should_stop_incremental` debe evaluarse contra una copia congelada del watermark al inicio de la ejecución (`model_copy(deep=True)`), ya que `update_bounds` desplaza `max_review_timestamp` con la primera reseña nueva.
+> * Se añadió `update_star_partition_token(star, token)` para gestionar `star_partition_tokens`.
+> * `SanitizedReviewRecord` valida además que `conteo_palabras` coincida con `texto_limpio`. `AnalyzedReviewPrediction.is_obligatory_5_star_bias` siempre se recalcula.
 
 **Objetivo:** Definir todos los modelos de transferencia de datos entre capas en `packages/voc-common/src/voc_common/schemas.py`.
 
