@@ -1,0 +1,58 @@
+[project]
+name = "bbva-voc-analyzer"
+version = "1.0.0"
+description = "App Store Label Noise & Incident Analyzer"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.3.0",
+    "bandit>=1.7.8",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pyrefly",
+]
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*", "infra"]
+
+[tool.ruff]
+line-length = 80
+target-version = "py311"
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # E: pycodestyle
+    "F",  # F: pyflakes
+    "I",  # I: isort
+    "B",  # B: flake8-bugbear
+    "S",  # S: flake8-bandit
+    "UP", # UP: pyupgrade
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --cov --cov-report=term-missing"
+testpaths = ["packages/*/tests", "services/*/tests"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".github", "docs", "web", ".venv", "infra/.pulumi"]
+skips = ["B101"]
