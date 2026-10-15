@@ -445,3 +445,24 @@ def test_context_mismatch_fails_before_network():
                 )
 
     run(check())
+
+
+def test_terminal_page_without_pagination_block_is_an_end_candidate():
+    # Observado en la última página de NUBANK: filas y `inner[1]` nulo.
+    page = parse(frame([[row(), row()], None, None]))
+    assert page.classification.value == "END_CANDIDATE"
+    assert page.next_token is None
+    assert len(page.reviews) == 2
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        frame([[], None, None]),
+        frame([[row()], None, CURSOR]),
+        frame([[row()], "x", None]),
+    ],
+)
+def test_missing_pagination_block_is_only_accepted_with_rows(body):
+    with pytest.raises((ProtocolError, EmptyAmbiguousError)):
+        parse(body)

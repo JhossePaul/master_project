@@ -276,12 +276,22 @@ def parse_batchexecute_response(
     if not inner:
         rows, token = [], None
     else:
+        # La última página del histórico (observada en NUBANK, 204 filas)
+        # llega sin bloque de paginación: `inner[1]` es null, no [null, null].
+        # Solo se acepta con filas; una página vacía sin cursor sigue siendo
+        # un error de protocolo.
+        terminal = (
+            len(inner) == 3
+            and isinstance(inner[0], list)
+            and bool(inner[0])
+            and inner[1] is None
+        )
         if (
             len(inner) != 3
             or not isinstance(inner[0], list)
-            or not isinstance(inner[1], list)
-            or len(inner[1]) != 2
-            or inner[1][0] is not None
+            or not (terminal or isinstance(inner[1], list))
+            or (not terminal and len(inner[1]) != 2)
+            or (not terminal and inner[1][0] is not None)
             or (
                 inner[2] is not None
                 and inner[2] != [[None, [[1800], None, [72000]]]]
@@ -290,7 +300,7 @@ def parse_batchexecute_response(
             raise ProtocolError(
                 "Unrecognized pagination shape; adapter review required"
             )
-        rows, token = inner[0], inner[1][1]
+        rows, token = inner[0], None if terminal else inner[1][1]
         if token is not None and (not isinstance(token, str) or not token):
             raise ProtocolError("Unrecognized continuation cursor")
     reviews, discarded, dates = [], [], []
