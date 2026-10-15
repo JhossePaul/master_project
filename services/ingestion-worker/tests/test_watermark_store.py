@@ -51,8 +51,18 @@ IDENTITY = {"bank_id": BANK, "app_id": APP}
 class FakeBlob:
     def __init__(self, bucket, name):
         self.bucket, self.name = bucket, name
-        self.metadata = None
+        self._metadata = None
         self.generation = None
+
+    @property
+    def metadata(self):
+        # Como google-cloud-storage 3.x: el getter devuelve una copia, así que
+        # mutar `blob.metadata[k] = v` no persiste.
+        return copy.deepcopy(self._metadata)
+
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = copy.deepcopy(value)
 
     def _get(self, expected=None):
         if self.name not in self.bucket.objects:

@@ -66,8 +66,18 @@ def run(coro: Coroutine[Any, Any, T]) -> T:
 class FakeBlob:
     def __init__(self, bucket: "FakeBucket", name: str) -> None:
         self.bucket, self.name = bucket, name
-        self.metadata: dict[str, str] | None = None
+        self._metadata: dict[str, str] | None = None
         self.generation: int | None = None
+
+    @property
+    def metadata(self):
+        # Como google-cloud-storage 3.x: el getter devuelve una copia, así que
+        # mutar `blob.metadata[k] = v` no persiste.
+        return copy.deepcopy(self._metadata)
+
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = copy.deepcopy(value)
 
     def _get(self, expected: int | None = None) -> dict[str, Any]:
         if self.name not in self.bucket.objects:
