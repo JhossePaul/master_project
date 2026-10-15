@@ -12,6 +12,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -558,15 +559,24 @@ class PubSubDrainer:
 
 # ------------------------------------------------------- manifest replay
 def _latest_manifests(
-    ingestion: WatermarkRepository, bank: BankKey
+    ingestion: WatermarkRepository, bank: BankKey, workers: int = 1
 ) -> list[PageManifest]:
     snapshot = ingestion.load(bank)
     ledger = snapshot.state.manifest_ledger
     if ledger is None:
         return []
+    refs = [
+        ObjectReference.model_validate(raw)
+        for raw in ingestion.iter_ledger(ledger)
+    ]
+    if workers > 1 and len(refs) > 1:
+        # Un banco con el histórico completo tiene miles de manifiestos.
+        with ThreadPoolExecutor(max_workers=min(workers, len(refs))) as pool:
+            manifests = list(pool.map(ingestion.get_manifest, refs))
+    else:
+        manifests = [ingestion.get_manifest(ref) for ref in refs]
     latest: dict[tuple[str, str], PageManifest] = {}
-    for raw in ingestion.iter_ledger(ledger):
-        manifest = ingestion.get_manifest(ObjectReference.model_validate(raw))
+    for manifest in manifests:
         key = (manifest.stream_id, manifest.page_id)
         current = latest.get(key)
         if (

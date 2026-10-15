@@ -80,6 +80,7 @@ def test_unregistered_modes_do_not_pretend_success(
     assert set(pipeline.RUNNERS) == {
         pipeline.ExecutionMode.BATCH_PULL_SERVERLESS,
         pipeline.ExecutionMode.GCS_BACKFILL_MANIFESTS,
+        pipeline.ExecutionMode.GCS_FAST_REPLAY,
     }
     monkeypatch.delitem(
         pipeline.RUNNERS, pipeline.ExecutionMode.BATCH_PULL_SERVERLESS
@@ -205,6 +206,7 @@ class FakeBigQuery:
     def __init__(self) -> None:
         self.merges = 0
         self.rows: list[dict[str, Any]] = []
+        self.sqls: list[str] = []
         self.fail = False
 
     def create_table(self, table, timeout=None):
@@ -215,6 +217,7 @@ class FakeBigQuery:
         return Mock(job_id="load-1", errors=None)
 
     def query(self, sql, **kwargs):
+        self.sqls.append(sql)
         job = Mock(job_id="merge-1", errors=None)
         if self.fail:
             job.result.side_effect = gexc.BadRequest("merge failed")
@@ -307,6 +310,8 @@ class Env:
         publisher = RawReviewBatchPublisher(
             self.ingestion, pubsub, "projects/test-project/topics/raw"
         )
+        self.publisher = publisher
+        self.last_token = NEXT
         handle = self.ingestion.acquire_lease(BANK, "run")
         stream = ScanStreamState(
             bank_id=BANK,
@@ -346,6 +351,33 @@ class Env:
             dataset="bbva_voc_tds",
             clock=lambda: T0,
         )
+
+    def add_page(self, number: int, texts: tuple[str, ...]) -> str:
+        """Otra página encadenada a la anterior, publicada como en prod."""
+        handle = self.ingestion.acquire_lease(BANK, "run")
+        stream = self.ingestion.get_stream(self.ingestion.load(BANK), "stream")
+        base = int(T0.timestamp()) - 100_000 * number
+        token = f"next-page-{number}"
+        inner = [
+            [row(f"p{number}r{i}", t, base - i) for i, t in enumerate(texts)],
+            [None, token],
+            None,
+        ]
+        body = json.dumps([["wrb.fr", "oCPfdb", json.dumps(inner)]]).encode()
+        page = parse_batchexecute_response(body, bank_id=BANK, app_id=APP)
+        manifest = self.publisher.prepare_page(
+            handle,
+            stream,
+            page,
+            mode=IngestionMode.INCREMENTAL,
+            fetched_at=T0,
+            fetch_attempt_id=f"fetch-{number}",
+            input_token=self.last_token,
+        )
+        self.publisher.publish_page(handle, manifest)
+        self.ingestion.release_lease(handle)
+        self.last_token = token
+        return manifest.page_id
 
     def _publish(self, topic, data, **attributes):
         self.published.append((data, attributes))
@@ -919,3 +951,271 @@ def test_pool_never_drops_below_the_library_default(workers, pool):
     from sanitization_pipeline.config import gcs_pool_size
 
     assert gcs_pool_size(workers) == pool
+
+
+# ----------------------------------------------- replay rápido (por página)
+def make_replay(env: "Env", *, io_workers: int = 8, sanitizer=None, **config):
+    from sanitization_pipeline.dlp_transforms import BatchSanitizer
+    from sanitization_pipeline.fast_replay import FastReplay
+
+    ledger = ProcessingLedgerRepository(
+        env.storage,
+        "test-bucket",
+        env.ingestion,
+        clock=lambda: T0,
+        io_workers=io_workers,
+    )
+    sanitizer = sanitizer or BatchSanitizer(
+        user_hash_salt=SALT, clock=lambda: T0
+    )
+    replay = FastReplay(
+        env.ingestion,
+        ledger,
+        env.upsert,
+        sanitizer,
+        SanitizationExecutionConfig(**config),
+        banks=(BANK,),
+    )
+    return replay, ledger
+
+
+def test_fast_replay_loads_a_page_and_closes_it_without_event_receipts():
+    env = Env()
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    assert report.mode == "GCS_FAST_REPLAY"
+    assert report.exit_code() == orch.EX_OK
+    assert report.messages == 3 and report.tds_committed == 3
+    assert report.pages == {"RESOLVED": 1} and report.stop_reason == "drained"
+    # Sin filtro de longitud y con la regex local aplicada.
+    assert len(env.bq.rows) == 3 and env.bq.merges == 1
+    assert any(
+        "[BBVA_ACCOUNT_NUMBER]" in r["texto_sanitizado"] for r in env.bq.rows
+    )
+    closure = ledger.page_closure(BANK, env.page_id)
+    assert closure is not None and closure.tds_committed == 3
+    assert closure.status.value == "RESOLVED" and not closure.missing
+    # La diferencia con el modo normal: ningún recibo por reseña.
+    assert [n for n in env.bucket.objects if "/_events/" in n] == []
+    assert set(report.phase_seconds) >= {
+        "capture_read_s",
+        "sanitize_s",
+        "bigquery_s",
+        "closure_s",
+    }
+
+
+def test_fast_replay_is_idempotent_and_skips_closed_pages():
+    env = Env()
+    replay, _ = make_replay(env)
+    replay.run()
+    merges, rows = env.bq.merges, len(env.bq.rows)
+    report = make_replay(env)[0].run()
+    assert report.messages == 0 and report.pages == {}
+    assert env.bq.merges == merges and len(env.bq.rows) == rows
+
+
+def test_fast_replay_batches_pages_by_rows_and_merges_with_bank_filter():
+    env = Env()
+    for number in (1, 2):
+        env.add_page(number, TEXTS)
+    # Con 1 hilo la ventana es de 2 páginas; umbral de 4 filas => 2 cargas.
+    replay, ledger = make_replay(env, io_workers=1, upsert_batch_rows=4)
+    report = replay.run()
+    assert report.pages == {"RESOLVED": 3} and report.tds_committed == 9
+    assert env.bq.merges == 2
+    assert all("T.bank_id IN ('BBVA')" in sql for sql in env.bq.sqls)
+    manifests = orch._latest_manifests(env.ingestion, BANK)
+    assert ledger.pending_pages(BANK, manifests) == []
+
+
+def test_latest_manifests_can_be_listed_in_parallel():
+    env = Env()
+    for number in (1, 2, 3):
+        env.add_page(number, TEXTS)
+    sequential = orch._latest_manifests(env.ingestion, BANK)
+    parallel = orch._latest_manifests(env.ingestion, BANK, workers=4)
+    assert len(sequential) == 4
+    assert [m.page_id for m in parallel] == [m.page_id for m in sequential]
+
+
+def test_fast_replay_flags_an_expired_capture_as_a_gap():
+    env = Env()
+    env.bucket.objects.pop(env.backup)
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    assert report.expired_captures == 1 and report.tds_committed == 0
+    closure = ledger.page_closure(BANK, env.page_id)
+    assert closure.status.value == "GAPS_DETECTED"
+    assert closure.reason == "STAGING_EXPIRED" and closure.missing == 3
+    assert env.bq.merges == 0
+
+
+def test_fast_replay_detects_a_capture_missing_events(monkeypatch):
+    from sanitization_pipeline import fast_replay as module
+
+    env = Env()
+    original = module.read_committed_capture
+    monkeypatch.setattr(
+        module,
+        "read_committed_capture",
+        lambda repo, manifest: original(repo, manifest)[:2],
+    )
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    closure = ledger.page_closure(BANK, env.page_id)
+    assert report.tds_committed == 2
+    assert closure.status.value == "GAPS_DETECTED"
+    assert closure.reason == "INCOMPLETE_CAPTURE" and closure.missing == 1
+
+
+def test_fast_replay_quarantines_without_losing_the_page(monkeypatch):
+    env = Env()
+
+    def broken(*args, **kwargs):
+        raise ValueError("contract")
+
+    monkeypatch.setattr(
+        "sanitization_pipeline.dlp_transforms.SanitizedReviewRecord."
+        "from_raw_and_dlp",
+        broken,
+    )
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    closure = ledger.page_closure(BANK, env.page_id)
+    assert report.quarantined == 3 and report.tds_committed == 0
+    assert closure.reason == "QUARANTINED" and closure.quarantined == 3
+    assert len(closure.quarantined_event_ids) == 3
+
+
+def test_fast_replay_keeps_pages_open_when_bigquery_fails():
+    env = Env()
+    env.bq.fail = True
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    assert report.transient_failure
+    assert report.stop_reason == "transient_failure"
+    assert report.exit_code() == orch.EX_TEMPFAIL
+    assert ledger.page_closure(BANK, env.page_id) is None
+    env.bq.fail = False
+    assert make_replay(env)[0].run().pages == {"RESOLVED": 1}
+
+
+def test_fast_replay_stops_between_windows_when_a_load_fails():
+    env = Env()
+    for number in (1, 2):
+        env.add_page(number, TEXTS)
+    env.bq.fail = True
+    # Ventana de 2 páginas con umbral de 1 fila: la primera carga ya falla.
+    replay, ledger = make_replay(env, io_workers=1, upsert_batch_rows=1)
+    report = replay.run()
+    assert report.transient_failure and report.pages == {}
+    assert ledger.page_closure(BANK, env.page_id) is None
+
+
+def test_fast_replay_does_not_close_a_page_with_retryable_events():
+    from sanitization_pipeline.dlp_transforms import SanitizedBatch
+
+    env = Env()
+
+    class Retrying:
+        def sanitize(self, envelopes):
+            return SanitizedBatch(retryable=[Mock()] * len(envelopes))
+
+    replay, ledger = make_replay(env, sanitizer=Retrying())
+    report = replay.run()
+    assert report.pages == {} and report.events_retryable == 3
+    assert ledger.page_closure(BANK, env.page_id) is None
+
+
+def test_fast_replay_stops_on_the_time_budget_after_loading_what_it_read():
+    from sanitization_pipeline.dlp_transforms import BatchSanitizer
+    from sanitization_pipeline.fast_replay import FastReplay
+
+    env = Env()
+    for number in (1, 2):
+        env.add_page(number, TEXTS)
+    now = [0.0]
+    inner = BatchSanitizer(user_hash_salt=SALT, clock=lambda: T0)
+
+    class Slow:
+        def sanitize(self, envelopes):
+            now[0] += 2000.0  # cada ventana consume más que el presupuesto
+            return inner.sanitize(envelopes)
+
+    ledger = ProcessingLedgerRepository(
+        env.storage,
+        "test-bucket",
+        env.ingestion,
+        clock=lambda: T0,
+        io_workers=1,
+    )
+    replay = FastReplay(
+        env.ingestion,
+        ledger,
+        env.upsert,
+        Slow(),  # type: ignore[arg-type]
+        SanitizationExecutionConfig(upsert_batch_rows=100_000),
+        banks=(BANK,),
+        monotonic=lambda: now[0],
+    )
+    report = replay.run()
+    # La primera ventana (2 páginas) se carga y se cierra antes de parar.
+    assert report.stop_reason == "runtime_budget"
+    assert report.pages == {"RESOLVED": 2}
+
+
+def test_fast_replay_skips_a_bank_with_unreadable_state(monkeypatch):
+    from sanitization_pipeline.dlp_transforms import BatchSanitizer
+    from sanitization_pipeline.fast_replay import FastReplay
+
+    env = Env()
+    original = env.ingestion.load
+
+    def load(bank):
+        if bank.value == "AZTECA":
+            raise ValueError("app_id does not match bank_id")
+        return original(bank)
+
+    monkeypatch.setattr(env.ingestion, "load", load)
+    ledger = ProcessingLedgerRepository(
+        env.storage, "test-bucket", env.ingestion, clock=lambda: T0
+    )
+    replay = FastReplay(
+        env.ingestion,
+        ledger,
+        env.upsert,
+        BatchSanitizer(user_hash_salt=SALT),
+        SanitizationExecutionConfig(),
+        banks=(BankKey.AZTECA, BANK),
+    )
+    report = replay.run()
+    assert report.bank_errors == {"AZTECA": "ValueError"}
+    assert report.pages == {"RESOLVED": 1}
+    assert report.exit_code() == orch.EX_TEMPFAIL
+
+
+def test_fast_replay_runner_refuses_cloud_dlp_and_runs_end_to_end(capsys):
+    from sanitization_pipeline import fast_replay as module
+    from sanitization_pipeline.config import PreflightError
+
+    env = Env()
+    with pytest.raises(PreflightError):
+        module.run_fast_replay(
+            SanitizationExecutionConfig(use_cloud_dlp_api=True), Mock(), PARENT
+        )
+    services = env.services()
+    code = module.run_fast_replay(
+        SanitizationExecutionConfig(),
+        Mock(user_hash_salt=SALT),
+        PARENT,
+        services_factory=lambda *_: services,
+    )
+    assert code == orch.EX_OK
+    finished = [
+        e
+        for e in _events(capsys)
+        if e["message"] == "Sanitization run finished"
+    ]
+    assert finished[-1]["mode"] == "GCS_FAST_REPLAY"
+    assert finished[-1]["tds_committed"] == 3

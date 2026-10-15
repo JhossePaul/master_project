@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from voc_common import (
     BankKey,
     IngestionStorageLayout,
+    PageManifest,
     ProcessingReceipt,
     ProcessingStatus,
     SanitizationStatus,
@@ -43,6 +44,7 @@ TERMINAL = (
 )
 STAGING_EXPIRED = "STAGING_EXPIRED"
 QUARANTINED = "QUARANTINED"
+INCOMPLETE_CAPTURE = "INCOMPLETE_CAPTURE"
 _SAFE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}")
 _DIGEST = re.compile(r"[0-9a-f]{64}")
 Counter = Annotated[int, Field(ge=0)]
@@ -158,6 +160,66 @@ class ProcessingLedgerRepository:
         ).gcs_processing_receipts_prefix
         self.timeout_sec = timeout_sec
         self.clock = clock
+
+    def parallel_map(self, fn: Callable[[T], R], items: Iterable[T]) -> list[R]:
+        """E/S concurrente con los hilos del ledger, en el orden de entrada."""
+        return self._map(fn, items)
+
+    def pending_pages(
+        self, bank: BankKey, manifests: Sequence[PageManifest]
+    ) -> list[PageManifest]:
+        """Las páginas que aún no tienen cierre (una lectura por página)."""
+        closures = self._map(
+            lambda m: self.page_closure(bank, m.page_id), manifests
+        )
+        return [
+            m for m, c in zip(manifests, closures, strict=True) if c is None
+        ]
+
+    def expected_event_ids(self, manifest: PageManifest) -> list[str]:
+        """Eventos que la ingesta comprometió en la página (su ledger)."""
+        return [
+            ReviewLedgerEntry.model_validate(raw).event_id
+            for raw in self.ingestion.iter_ledger(manifest.ledger)
+        ]
+
+    def close_page(
+        self,
+        manifest: PageManifest,
+        *,
+        committed: int,
+        quarantined: Sequence[str] = (),
+        missing: Sequence[str] = (),
+        reason: str | None = None,
+    ) -> SanitizationStatus:
+        """Cierre por página, sin recibos por evento (replay rápido).
+
+        Escritura condicional: el primer cierre gana, así que repetir es seguro.
+        """
+        gaps = bool(quarantined or missing)
+        closure = PageClosure(
+            bank_id=manifest.bank_id,
+            page_id=manifest.page_id,
+            stream_id=manifest.stream_id,
+            plan_id=manifest.plan_id,
+            status=(
+                SanitizationStatus.GAPS_DETECTED
+                if gaps
+                else SanitizationStatus.RESOLVED
+            ),
+            reason=reason if gaps else None,
+            manifest_version=manifest.manifest_version,
+            content_fingerprint=manifest.content_fingerprint,
+            tds_committed=committed,
+            quarantined=len(quarantined),
+            missing=len(missing),
+            quarantined_event_ids=tuple(sorted(quarantined)),
+            missing_event_ids=tuple(sorted(missing)),
+            closed_at=self.clock(),
+        )
+        return self._create_or_keep(
+            self.closure_path(manifest.bank_id, manifest.page_id), closure
+        ).status
 
     def _map(self, fn: Callable[[T], R], items: Iterable[T]) -> list[R]:
         """Aplica `fn` con hilos acotados conservando el orden de entrada.
