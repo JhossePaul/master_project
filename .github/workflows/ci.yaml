@@ -90,3 +90,28 @@ jobs:
             "import ingestion_worker.job, ingestion_worker.main"
           id=$(docker run --rm ingestion-worker:ci id -u)
           test "$id" = "10001"
+
+  sanitization-image:
+    # Valida que la imagen del Job construye; la publicación es del CD.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build sanitization pipeline image
+        run: >-
+          docker build --platform=linux/amd64
+          --file services/sanitization-pipeline/Dockerfile
+          --tag sanitization-pipeline:ci .
+
+      - name: Smoke test entrypoint
+        run: |
+          set +e
+          docker run --rm sanitization-pipeline:ci
+          code=$?
+          set -e
+          # Sin INGESTION_V2_ENABLED el preflight debe fallar cerrado (64).
+          test "$code" = "64"
+          id=$(docker run --rm --entrypoint id sanitization-pipeline:ci -u)
+          test "$id" = "10001"

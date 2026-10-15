@@ -1,11 +1,10 @@
 """Entrypoint del Job: `python -m sanitization_pipeline.pipeline`.
 
-Feature 4.1: carga configuración, valida el entorno (fail-closed) y despacha
-el modo de ejecución. Los orquestadores de cada modo se implementan en 4.4;
-hasta entonces el Job termina sin hacer pull ni escribir en ningún destino.
+Carga configuración, valida el entorno (fail-closed, 4.1) y despacha el modo
+de ejecución al orquestador (4.4). `DATAFLOW_MANAGED` nunca llega aquí: el
+preflight lo rechaza.
 """
 
-import json
 import sys
 from collections.abc import Callable, Mapping, Sequence
 
@@ -19,6 +18,11 @@ from sanitization_pipeline.config import (
     load_config,
     preflight,
 )
+from sanitization_pipeline.orchestrator import (
+    log_json,
+    run_batch_pull,
+    run_manifest_backfill,
+)
 
 EX_OK = 0
 EX_USAGE = 64
@@ -27,20 +31,10 @@ EX_SOFTWARE = 70
 EX_TEMPFAIL = 75
 
 Runner = Callable[[SanitizationExecutionConfig, Settings, str], int]
-# Se completa en 4.4 con BATCH_PULL_SERVERLESS y GCS_BACKFILL_MANIFESTS.
-RUNNERS: dict[ExecutionMode, Runner] = {}
-
-
-def _log(severity: str, message: str, **fields: object) -> None:
-    # Cloud Logging interpreta JSON de una línea; sin textos ni PII.
-    print(
-        json.dumps(
-            {"severity": severity, "message": message, **fields},
-            default=str,
-            ensure_ascii=False,
-        ),
-        flush=True,
-    )
+RUNNERS: dict[ExecutionMode, Runner] = {
+    ExecutionMode.BATCH_PULL_SERVERLESS: run_batch_pull,
+    ExecutionMode.GCS_BACKFILL_MANIFESTS: run_manifest_backfill,
+}
 
 
 def main(
@@ -58,11 +52,11 @@ def main(
             if isinstance(exc, ValidationError)
             else str(exc)
         )
-        _log("ERROR", "Invalid sanitization configuration", error=detail)
+        log_json("ERROR", "Invalid sanitization configuration", error=detail)
         return EX_USAGE
     runner = RUNNERS.get(config.execution_mode)
     if runner is None:
-        _log(
+        log_json(
             "ERROR",
             "Execution mode not implemented yet",
             execution_mode=config.execution_mode.value,

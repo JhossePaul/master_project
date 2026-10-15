@@ -1,6 +1,6 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** En implementación. Features 4.1–4.3 implementadas; features 4.4–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
+* **Estado:** En implementación. Features 4.1–4.4 implementadas; feature 4.5 pendiente. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**
@@ -324,6 +324,52 @@ Utilizar `IngestionStorageLayout`, nombres validados como segmentos seguros y es
 ### FEATURE 4.4: Orquestador del Pipeline, Renovación de Lease de Ack y Replay desde GCS (`pipeline.py`, `Dockerfile`)
 
 **Objetivo:** Coordinar el ciclo completo de drenado por microbatches desde Pub/Sub (o desde manifiestos en GCS), manteniendo vivo el *ack deadline* durante la ejecución de DLP + BigQuery y confirmando mensajes únicamente tras persistencia duradera.
+
+**Estado: IMPLEMENTADA.** `orchestrator.py` (`MicrobatchProcessor`,
+`AckDeadlineRenewer`, `PubSubDrainer`, `ManifestBackfill`, `run_do_fn`,
+`build_services`) registra `BATCH_PULL_SERVERLESS` y `GCS_BACKFILL_MANIFESTS`
+en `pipeline.py`. `ingestion-worker` expone `restore_capture`,
+`read_committed_capture` y `WatermarkRepository.read_backup` (lectura por URI y
+generación del manifiesto). Dockerfile multi-stage (uid 10001, 651 MB por Beam,
+pyarrow y numpy) y job de CI `sanitization-image`, que construye la imagen y
+comprueba la salida 64 sin v2 y el usuario. La imagen se probó localmente sin
+red: un microbatch en Beam se procesa sin descargar Prism.
+Validación: 86 tests del paquete (100% de cobertura de líneas), 183 del worker
+de ingesta, 567 tests conjuntos; Ruff, formato, Pyrefly y Bandit sin errores.
+Las pruebas del orquestador capturan y publican una página con el publisher
+real de EPIC-3 y usan esos mismos mensajes. Sin Pub/Sub, DLP, BigQuery ni GCS
+reales.
+
+Decisiones de la implementación:
+
+* **Beam por microbatch:** `run_do_fn` ejecuta `BatchCloudDlpDeidentifyDoFn`
+  con el `FnApiRunner` en proceso y recoge las cuatro salidas mediante una
+  función de módulo (Beam serializa por valor los cierres definidos en
+  `__main__`). El DoFn, y por tanto el cliente DLP, se crea por microbatch.
+* **Mensajes veneno:** JSON inválido o atributos que no coinciden con el sobre
+  (`event_id`, `page_id`, `source_revision`, `bank_id`, `schema_version`) se
+  confirman con un log que solo incluye `message_id`; no hay evento con el que
+  emitir un recibo.
+* **Fallos parciales:** si falla el `MERGE`, solo los eventos válidos se
+  devuelven (`nack`); los `FILTERED_LENGTH`/`QUARANTINED` se persisten y se
+  confirman. Un fallo al escribir recibos (GCS) devuelve todo el microbatch y
+  detiene la corrida (salida 75). `DlpConfigurationError` devuelve el
+  microbatch y termina con 64. Un error inesperado devuelve el microbatch y
+  se propaga.
+* **Orden:** recibos → `ack` → cierre de páginas. Un fallo al cerrar se cuenta
+  como `ERROR` en el reporte y no bloquea el `ack` (el cierre se repite).
+* **Renovación:** un hilo renueva el deadline (600 s) cada 180 s mientras dura
+  el microbatch; un fallo de renovación solo se registra (la reentrega es
+  segura).
+* **Presupuestos:** el tiempo se comprueba antes de cada pull; el peor caso de
+  DLP por sub-lote (4 intentos × 60 s + esperas ≤16 s) cabe en el margen de
+  300 s. El backfill cuenta eventos contra `max_messages`.
+* **Backfill:** toma la última versión de cada página del ledger de
+  manifiestos de la ingesta, omite las que ya tienen cierre, lee la captura por
+  URI/generación y, si ya no existe, cierra la página como `STAGING_EXPIRED`.
+* **Salida:** 0 sin pendientes; 75 si quedó algún evento devuelto o hubo un
+  fallo transitorio; 64 por configuración. Log final JSON de una línea con
+  conteos, sin textos ni PII.
 
 #### Tarea 4.4.1: Implementar `services/sanitization-pipeline/src/sanitization_pipeline/pipeline.py`
 

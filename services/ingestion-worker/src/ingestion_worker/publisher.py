@@ -101,6 +101,98 @@ def compute_page_id(
     )
 
 
+def restore_capture(
+    manifest: PageManifest,
+    compressed: bytes,
+    *,
+    mode: IngestionMode | None = None,
+    max_bytes: int = 40_000_000,
+) -> list[RawReviewEnvelope]:
+    """Valida una captura JSONL.gz contra su manifiesto y devuelve sus sobres.
+
+    `mode=None` acepta el modo registrado en la captura (lectores como la
+    sanitización, que no conocen el modo de la corrida que la escribió).
+    """
+    try:
+        # Bound decompression; never materialize an unbounded gzip payload.
+        with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
+            data = stream.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise ValueError("backup exceeds decompression budget")
+        lines = data.splitlines()
+        header = json.loads(lines[0])
+        events = [
+            RawReviewEnvelope.model_validate_json(line) for line in lines[1:]
+        ]
+        page = parse_batchexecute_response(
+            base64.b64decode(header["raw_rpc_base64"], validate=True),
+            bank_id=manifest.bank_id,
+            app_id=manifest.app_id,
+        )
+        expected = [
+            RawReviewEnvelope.from_raw(
+                r,
+                page_id=manifest.page_id,
+                stream_id=manifest.stream_id,
+                plan_id=manifest.plan_id,
+            )
+            for r in page.reviews
+        ]
+        if (
+            header["page_id"] != manifest.page_id
+            or header["schema_version"] != 2
+            or header["mode"]
+            != (mode.value if mode else IngestionMode(header["mode"]).value)
+            or header["discarded"] != [asdict(d) for d in page.discarded]
+            or header["protocol_version"] != manifest.context.protocol_version
+            or page.next_token != manifest.output_token
+            or page.raw_count != manifest.raw_count
+            or len(events) != manifest.valid_count
+            or _fingerprint(page, events) != manifest.content_fingerprint
+            or header["content_fingerprint"] != manifest.content_fingerprint
+            or [e.model_dump(exclude={"raw"}) for e in events]
+            != [e.model_dump(exclude={"raw"}) for e in expected]
+            or any(
+                a.raw.model_dump(exclude={"ingested_at"})
+                != b.raw.model_dump(exclude={"ingested_at"})
+                for a, b in zip(events, expected, strict=True)
+            )
+        ):
+            raise ValueError("capture differs from manifest")
+        return events
+    except (
+        ValueError,
+        KeyError,
+        IndexError,
+        OSError,
+        EOFError,
+        zlib.error,
+    ):
+        raise BackupUnavailable(
+            "Durable capture invalid; recover source"
+        ) from None
+
+
+def read_committed_capture(
+    repository: WatermarkRepository,
+    manifest: PageManifest,
+    *,
+    max_bytes: int = 40_000_000,
+) -> list[RawReviewEnvelope]:
+    """Lectura pública de la captura de un manifiesto comprometido.
+
+    Lee el objeto por URI y generación del manifiesto (nunca por glob).
+    Ausente, reemplazado o inválido => BackupUnavailable (hueco explícito).
+    """
+    try:
+        compressed = repository.read_backup(manifest)
+    except IntegrityError:
+        raise BackupUnavailable(
+            "Durable capture missing; recover source"
+        ) from None
+    return restore_capture(manifest, compressed, max_bytes=max_bytes)
+
+
 class RawReviewBatchPublisher:
     def __init__(
         self,
@@ -418,65 +510,9 @@ class RawReviewBatchPublisher:
     def _restore(
         self, manifest: PageManifest, compressed: bytes, mode: IngestionMode
     ) -> list[RawReviewEnvelope]:
-        try:
-            # Bound decompression; never materialize an unbounded gzip payload.
-            with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
-                data = stream.read(self.max_backup_bytes + 1)
-            if len(data) > self.max_backup_bytes:
-                raise ValueError("backup exceeds decompression budget")
-            lines = data.splitlines()
-            header = json.loads(lines[0])
-            events = [
-                RawReviewEnvelope.model_validate_json(line)
-                for line in lines[1:]
-            ]
-            page = parse_batchexecute_response(
-                base64.b64decode(header["raw_rpc_base64"], validate=True),
-                bank_id=manifest.bank_id,
-                app_id=manifest.app_id,
-            )
-            expected = [
-                RawReviewEnvelope.from_raw(
-                    r,
-                    page_id=manifest.page_id,
-                    stream_id=manifest.stream_id,
-                    plan_id=manifest.plan_id,
-                )
-                for r in page.reviews
-            ]
-            if (
-                header["page_id"] != manifest.page_id
-                or header["schema_version"] != 2
-                or header["mode"] != mode.value
-                or header["discarded"] != [asdict(d) for d in page.discarded]
-                or header["protocol_version"]
-                != manifest.context.protocol_version
-                or page.next_token != manifest.output_token
-                or page.raw_count != manifest.raw_count
-                or len(events) != manifest.valid_count
-                or _fingerprint(page, events) != manifest.content_fingerprint
-                or header["content_fingerprint"] != manifest.content_fingerprint
-                or [e.model_dump(exclude={"raw"}) for e in events]
-                != [e.model_dump(exclude={"raw"}) for e in expected]
-                or any(
-                    a.raw.model_dump(exclude={"ingested_at"})
-                    != b.raw.model_dump(exclude={"ingested_at"})
-                    for a, b in zip(events, expected, strict=True)
-                )
-            ):
-                raise ValueError("capture differs from manifest")
-            return events
-        except (
-            ValueError,
-            KeyError,
-            IndexError,
-            OSError,
-            EOFError,
-            zlib.error,
-        ):
-            raise BackupUnavailable(
-                "Durable capture invalid; recover source"
-            ) from None
+        return restore_capture(
+            manifest, compressed, mode=mode, max_bytes=self.max_backup_bytes
+        )
 
     def publish_page(
         self, handle: LeaseHandle, manifest: PageManifest

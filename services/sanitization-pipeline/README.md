@@ -7,8 +7,8 @@ procesamiento en GCS. Especificación y límites en
 
 Estado: features 4.1 (paquete, configuración, preflight y CLI), 4.2
 (desidentificación DLP, segunda barrera regex, conteo de hallazgos, filtro EDA
-y `DoFn`) y 4.3 (upsert TDS, recibos y cierre de página). Los modos de ejecución se registran en 4.4; hasta entonces el Job
-termina con código 70 sin hacer pull ni escribir en ningún destino.
+y `DoFn`), 4.3 (upsert TDS, recibos y cierre de página) y 4.4 (orquestador,
+renovación de ack, replay desde manifiestos e imagen).
 
 Desde la raíz:
 
@@ -49,8 +49,9 @@ Preflight (*fail-closed*, antes de cualquier pull): `INGESTION_V2_ENABLED`,
 `DLP_DEIDENTIFY_TEMPLATE_ID` con nombre completo dentro de
 `projects/{GCP_PROJECT_ID}/locations/{GCP_REGION}` (son regionales).
 
-Códigos de salida: 0 éxito, 64 configuración inválida, 70 modo no
-implementado, 75 fallo transitorio (mensajes sin `ack`, desde 4.4).
+Códigos de salida: 0 sin pendientes, 64 configuración inválida (incluido un
+rechazo de permisos o plantillas DLP), 70 modo sin registrar, 75 eventos
+devueltos o fallo transitorio (mensajes sin `ack`).
 
 ## Desidentificación (4.2)
 
@@ -101,3 +102,25 @@ ledger.reconcile_page(bank, stream_id, page_id)  # RESOLVED / GAPS_DETECTED / PE
   Escritura condicional: el primer recibo terminal gana.
 * El estado de la ingesta solo se lee (`WatermarkRepository.load`,
   `find_page`, `iter_ledger`); nunca se adquiere lease ni se escribe la raíz.
+
+## Orquestación e imagen (4.4)
+
+| Modo | Fuente | Confirmación |
+| --- | --- | --- |
+| `BATCH_PULL_SERVERLESS` (default) | Pull síncrono de `PUBSUB_RAW_SUBSCRIPTION` en microbatches | `ack` de terminales tras `MERGE` y recibos; `nack` de reintentables |
+| `GCS_BACKFILL_MANIFESTS` | Páginas comprometidas sin cierre, desde su captura (URI + generación) | Sin Pub/Sub; captura expirada => cierre `STAGING_EXPIRED` |
+
+Por microbatch: deduplicar por `event_id` (todos los `ack_ids`), confirmar lo
+ya resuelto copiando el recibo a la página nueva, DLP en Beam (`FnApiRunner` en
+proceso), `MERGE`, recibos, `ack`, cierre de páginas. Mientras tanto, un hilo
+renueva el deadline cada 180 s. Los mensajes que no se pueden interpretar o
+cuyos atributos no coinciden se confirman y solo se registra su `message_id`.
+
+```sh
+docker build -f services/sanitization-pipeline/Dockerfile -t sanitization-pipeline .
+docker run --rm sanitization-pipeline                     # preflight + modo default
+docker run --rm sanitization-pipeline --execution-mode GCS_BACKFILL_MANIFESTS
+```
+
+La imagen pesa ~650 MB (Beam, pyarrow, numpy). `cloudbuild.yaml` la publica
+por SHA cuando el Dockerfile deja de estar vacío.

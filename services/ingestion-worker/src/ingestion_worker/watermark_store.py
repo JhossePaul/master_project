@@ -1042,6 +1042,17 @@ class WatermarkRepository:
             snapshot, handle, state, _replace(snapshot.catalog, pending=pending)
         )
 
+    def read_backup(self, page: PageManifest) -> bytes:
+        """Respaldo crudo exacto del manifiesto (generación fijada)."""
+        blob = self.bucket.blob(self._name(page.backup_uri))
+        try:
+            return blob.download_as_bytes(
+                if_generation_match=page.backup_generation,
+                timeout=self.timeout_sec,
+            )
+        except (NotFound, PreconditionFailed):
+            raise IntegrityError("raw backup missing or replaced") from None
+
     def read_object(self, ref: ObjectReference) -> bytes:
         return self._read_ref(ref)
 
