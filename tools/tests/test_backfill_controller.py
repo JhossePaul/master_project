@@ -312,3 +312,18 @@ def test_project_falls_back_to_gcloud_config(monkeypatch):
     monkeypatch.setattr(bc, "run_gcloud", lambda args: "\n")
     with pytest.raises(bc.ControllerError, match="--project"):
         bc._project(bc.parse_args(["drain"]))
+
+
+def test_job_arguments_compose_fast_replay_and_extra_options():
+    assert bc.job_arguments(None, False) is None
+    assert bc.job_arguments("--io-workers=32", False) == "--io-workers=32"
+    assert bc.job_arguments(None, True) == "--execution-mode=GCS_FAST_REPLAY"
+    assert bc.job_arguments("--upsert-batch-rows=5000", True) == (
+        "--execution-mode=GCS_FAST_REPLAY,--upsert-batch-rows=5000"
+    )
+
+
+def test_drain_command_accepts_the_fast_replay_flag():
+    args = bc.parse_args(["drain", "--fast-replay", "--project", "p"])
+    assert args.fast_replay is True
+    assert bc.parse_args(["drain"]).fast_replay is False

@@ -18,6 +18,7 @@ from sanitization_pipeline.config import (
     load_config,
     preflight,
 )
+from sanitization_pipeline.fast_replay import run_fast_replay
 from sanitization_pipeline.orchestrator import (
     log_json,
     run_batch_pull,
@@ -34,6 +35,7 @@ Runner = Callable[[SanitizationExecutionConfig, Settings, str], int]
 RUNNERS: dict[ExecutionMode, Runner] = {
     ExecutionMode.BATCH_PULL_SERVERLESS: run_batch_pull,
     ExecutionMode.GCS_BACKFILL_MANIFESTS: run_manifest_backfill,
+    ExecutionMode.GCS_FAST_REPLAY: run_fast_replay,
 }
 
 

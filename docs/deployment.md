@@ -552,8 +552,10 @@ FROM bbva_voc_tds.sanitized_reviews_tds GROUP BY bank_id`: debe haber filas
 fuera del rango.
 
 Para la carga completa del histórico (decenas de ejecuciones, con puertas
-de verificación) ver el [plan del full histórico](full_backfill.md) y los
-controladores `tools/backfill_controller.py`.
+de verificación) ver el [plan del full histórico](full_backfill.md), los
+controladores `tools/backfill_controller.py` y el modo `GCS_FAST_REPLAY`
+(`drain --fast-replay`), que reproduce desde las capturas con un cierre por
+página en lugar de un recibo por evento.
 
 ### Capacidad: el cuello de botella es la sanitización
 
@@ -575,6 +577,9 @@ controladores `tools/backfill_controller.py`.
     --args="--max-messages=20000" --wait
   ```
 
+* Para el histórico completo, `GCS_FAST_REPLAY` evita los ~4 M de escrituras de
+  recibos por evento (ver [plan del full](full_backfill.md)); su rendimiento
+  real **tampoco está medido** y se mide en el piloto del plan.
 * El rendimiento **tras las optimizaciones** no está medido: comparar
   `messages / elapsed_sec` de la próxima corrida contra los 2.5 de referencia
   antes de planear el backfill. Los mocks no validan ni cuotas ni latencia de

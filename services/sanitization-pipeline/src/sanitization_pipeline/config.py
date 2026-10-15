@@ -22,11 +22,24 @@ DLP_REQUEST_LIMIT_BYTES = 524_288
 PUBSUB_MAX_ACK_DEADLINE_SEC = 600
 # Máximo de mensajes por solicitud `pull`.
 PUBSUB_MAX_PULL_MESSAGES = 1000
+# Tope de hilos de E/S: con 1 vCPU, más hilos solo añaden cambios de contexto.
+MAX_IO_WORKERS = 64
+# El pool HTTP nunca baja de las 10 conexiones por host de la biblioteca.
+MIN_GCS_POOL_SIZE = 10
+# Margen sobre los hilos para el heartbeat y las llamadas fuera del ledger.
+GCS_POOL_HEADROOM = 4
+
+
+def gcs_pool_size(io_workers: int) -> int:
+    """Conexiones HTTP por host para que ningún hilo espere una conexión."""
+    return max(MIN_GCS_POOL_SIZE, io_workers + GCS_POOL_HEADROOM)
 
 
 class ExecutionMode(StrEnum):
     BATCH_PULL_SERVERLESS = "BATCH_PULL_SERVERLESS"
     GCS_BACKFILL_MANIFESTS = "GCS_BACKFILL_MANIFESTS"
+    # Replay desde las capturas con cierre por página (sin recibo por evento).
+    GCS_FAST_REPLAY = "GCS_FAST_REPLAY"
     DATAFLOW_MANAGED = "DATAFLOW_MANAGED"
 
 
@@ -54,6 +67,13 @@ class SanitizationExecutionConfig(BaseModel):
         default=600, ge=10, le=PUBSUB_MAX_ACK_DEADLINE_SEC
     )
     ack_renew_interval_sec: int = Field(default=180, gt=0)
+    # Hilos de E/S hacia GCS para el ledger. El pool HTTP del cliente se
+    # dimensiona a partir de este valor (ver `gcs_pool_size`). Medido con 8: la
+    # E/S del ledger fue el 68 % del tiempo (3 771 mensajes en 231 s).
+    io_workers: int = Field(default=16, ge=1, le=MAX_IO_WORKERS)
+    # Filas por carga y MERGE en el replay rápido (el modo normal usa
+    # `microbatch_size`, limitado por el `pull` de Pub/Sub).
+    upsert_batch_rows: int = Field(default=10_000, ge=1, le=100_000)
     dlp_max_rows: int = Field(default=250, gt=0)
     dlp_max_bytes: int = Field(
         default=400_000, gt=0, lt=DLP_REQUEST_LIMIT_BYTES
@@ -139,6 +159,14 @@ def preflight(
         raise PreflightError(
             "DATAFLOW_MANAGED requires provisioned Dataflow (API, worker "
             "permissions and apache-beam[gcp])"
+        )
+    if (
+        config.execution_mode == ExecutionMode.GCS_FAST_REPLAY
+        and config.use_cloud_dlp_api
+    ):
+        raise PreflightError(
+            "GCS_FAST_REPLAY sanitizes with local regex only; "
+            "do not combine it with --use-cloud-dlp-api"
         )
     runner = environ.get("BEAM_RUNNER", "DirectRunner")
     if runner != "DirectRunner":

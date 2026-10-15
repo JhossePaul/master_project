@@ -406,6 +406,14 @@ def test_destination_validation():
         )
     with pytest.raises(ValueError):
         bq.merge_statement("p.d.t`; DROP TABLE x; --", "p.d.s")
+    with pytest.raises(ValueError):
+        bq.merge_statement("p.d.t", "p.d.s", ["BBVA') OR 1=1 --"])
+    # El filtro es de cluster (bank_id) y nunca de fecha: una reseña editada
+    # cambia de fecha y su fila anterior quedaría fuera de la partición.
+    sql = bq.merge_statement("p.d.t", "p.d.s", ["NUBANK", "BBVA", "BBVA"])
+    assert "AND T.bank_id IN ('BBVA', 'NUBANK')" in sql
+    assert "T.fecha BETWEEN" not in sql and "T.fecha >=" not in sql
+    assert "IN (" not in bq.merge_statement("p.d.t", "p.d.s")
     record = sanitized(raw_envelope("r1")).record
     with pytest.raises(ValueError):
         bq.record_to_bq_row(Mock(model_dump=lambda mode: {"x": 1}))

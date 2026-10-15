@@ -12,6 +12,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -42,6 +43,7 @@ from sanitization_pipeline.bq_writer import (
 )
 from sanitization_pipeline.config import (
     SanitizationExecutionConfig,
+    gcs_pool_size,
     in_process_runner,
 )
 from sanitization_pipeline.dlp_transforms import (
@@ -557,15 +559,24 @@ class PubSubDrainer:
 
 # ------------------------------------------------------- manifest replay
 def _latest_manifests(
-    ingestion: WatermarkRepository, bank: BankKey
+    ingestion: WatermarkRepository, bank: BankKey, workers: int = 1
 ) -> list[PageManifest]:
     snapshot = ingestion.load(bank)
     ledger = snapshot.state.manifest_ledger
     if ledger is None:
         return []
+    refs = [
+        ObjectReference.model_validate(raw)
+        for raw in ingestion.iter_ledger(ledger)
+    ]
+    if workers > 1 and len(refs) > 1:
+        # Un banco con el histórico completo tiene miles de manifiestos.
+        with ThreadPoolExecutor(max_workers=min(workers, len(refs))) as pool:
+            manifests = list(pool.map(ingestion.get_manifest, refs))
+    else:
+        manifests = [ingestion.get_manifest(ref) for ref in refs]
     latest: dict[tuple[str, str], PageManifest] = {}
-    for raw in ingestion.iter_ledger(ledger):
-        manifest = ingestion.get_manifest(ObjectReference.model_validate(raw))
+    for manifest in manifests:
         key = (manifest.stream_id, manifest.page_id)
         current = latest.get(key)
         if (
@@ -688,12 +699,36 @@ def subscription_path(settings: Settings) -> str:
     return f"projects/{settings.gcp_project_id}/subscriptions/{name}"
 
 
+def gcs_client(project: str, pool_size: int) -> Any:
+    """Cliente de GCS con un pool HTTP del tamaño que piden los hilos.
+
+    Por defecto la biblioteca usa 10 conexiones por host: con más hilos, las
+    conexiones sobrantes se abren y se descartan en cada solicitud.
+    """
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+    from google.cloud import storage
+    from requests.adapters import HTTPAdapter
+
+    credentials, _ = google.auth.default(scopes=storage.Client.SCOPE)
+    session = AuthorizedSession(credentials)
+    session.mount(
+        "https://",
+        HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size),
+    )
+    return storage.Client(
+        project=project, credentials=credentials, _http=session
+    )
+
+
 def build_services(
     settings: Settings, config: SanitizationExecutionConfig, parent: str
 ) -> Services:
-    from google.cloud import bigquery, pubsub_v1, storage
+    from google.cloud import bigquery, pubsub_v1
 
-    client = storage.Client(project=settings.gcp_project_id)
+    client = gcs_client(
+        settings.gcp_project_id, gcs_pool_size(config.io_workers)
+    )
     layout = IngestionStorageLayout.model_validate(
         {k: getattr(settings, k) for k in IngestionStorageLayout.model_fields}
     )
@@ -701,7 +736,11 @@ def build_services(
         client, settings.gcs_raw_datalake_bucket, layout=layout
     )
     ledger = ProcessingLedgerRepository(
-        client, settings.gcs_raw_datalake_bucket, ingestion, layout=layout
+        client,
+        settings.gcs_raw_datalake_bucket,
+        ingestion,
+        layout=layout,
+        io_workers=config.io_workers,
     )
     upsert = BigQueryTdsUpsertManager(
         bigquery.Client(project=settings.gcp_project_id),

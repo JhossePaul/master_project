@@ -408,6 +408,14 @@ def _project(args: argparse.Namespace) -> str:
     return value
 
 
+def job_arguments(job_args: str | None, fast_replay: bool) -> str | None:
+    """Argumentos del Job: `--args` de gcloud separa por comas."""
+    parts = ["--execution-mode=GCS_FAST_REPLAY"] if fast_replay else []
+    if job_args:
+        parts.append(job_args)
+    return ",".join(parts) or None
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--project")
@@ -421,7 +429,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "drain", parents=[common], help="vacía Pub/Sub con la sanitización"
     )
     drain.add_argument("--max-executions", type=int, default=100)
-    drain.add_argument("--job-args", help='p. ej. "--max-runtime-sec=1200"')
+    drain.add_argument(
+        "--job-args",
+        help='separados por coma: "--max-runtime-sec=1200,--io-workers=32"',
+    )
+    drain.add_argument(
+        "--fast-replay",
+        action="store_true",
+        help="replay rápido desde las capturas (recibo por página)",
+    )
     ingest = sub.add_parser(
         "ingest", parents=[common], help="histórico completo de un banco"
     )
@@ -448,7 +464,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         controller = Controller(project=_project(args), region=args.region)
         if args.command == "drain":
             return controller.drain(
-                max_executions=args.max_executions, job_args=args.job_args
+                max_executions=args.max_executions,
+                job_args=job_arguments(args.job_args, args.fast_replay),
             )
         return controller.ingest(
             args.bank.upper(),

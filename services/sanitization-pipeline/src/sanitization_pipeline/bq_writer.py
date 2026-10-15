@@ -105,10 +105,32 @@ def latest_revisions(
     return list(best.values())
 
 
-def merge_statement(target: str, staging: str) -> str:
+_BANK = re.compile(r"[A-Z][A-Z_]*")
+
+
+def merge_statement(
+    target: str, staging: str, banks: Sequence[str] = ()
+) -> str:
+    """MERGE idempotente; con `banks` limita la lectura del destino.
+
+    La tabla está agrupada por `bank_id`, así que `T.bank_id IN (...)` con
+    constantes recorta lo que BigQuery lee del destino sin cambiar el
+    resultado (la llave ya exige igualdad de `bank_id`). No se filtra por
+    `fecha`: una reseña editada llega con una fecha más nueva que la de su fila
+    anterior, que estaría en otra partición, y el filtro dejaría un duplicado.
+    """
     # BigQuery no parametriza identificadores: se validan antes de componer.
     if not (_TABLE_ID.fullmatch(target) and _TABLE_ID.fullmatch(staging)):
         raise ValueError("invalid BigQuery table identifier")
+    if not all(_BANK.fullmatch(bank) for bank in banks):
+        raise ValueError("invalid bank identifier")
+    scope = (
+        " AND T.bank_id IN ("
+        + ", ".join(f"'{bank}'" for bank in sorted(set(banks)))
+        + ")"
+        if banks
+        else ""
+    )
     updates = ",\n    ".join(
         f"{name} = S.{name}" for name in TDS_COLUMNS if name not in _KEYS
     )
@@ -119,7 +141,7 @@ def merge_statement(target: str, staging: str) -> str:
     return (
         f"MERGE `{target}` T\n"  # noqa: S608  # nosec B608
         f"USING `{staging}` S\n"
-        "ON T.bank_id = S.bank_id AND T.id_resena = S.id_resena\n"
+        f"ON T.bank_id = S.bank_id AND T.id_resena = S.id_resena{scope}\n"
         "WHEN MATCHED AND (S.fecha > T.fecha OR (S.fecha = T.fecha AND "
         "S.source_observed_at >= T.source_observed_at)) THEN UPDATE SET\n"
         f"    {updates}\n"
@@ -194,8 +216,9 @@ class BigQueryTdsUpsertManager:
             load.result(timeout=self.timeout_sec)
             if load.errors:
                 raise TdsWriteError("staging load reported errors")
+            banks = sorted({e.record.bank_id.value for e in rows})
             merge = self.client.query(
-                merge_statement(self.table, staging_id),
+                merge_statement(self.table, staging_id, banks),
                 job_id_prefix="voc_tds_merge_",
                 timeout=self.timeout_sec,
             )

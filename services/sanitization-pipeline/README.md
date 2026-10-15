@@ -36,8 +36,10 @@ producción. Precedencia: default < variable `SANITIZATION_<CAMPO>` < flag.
 
 | Campo / flag | Default | Regla |
 | --- | --- | --- |
-| `--execution-mode` | `BATCH_PULL_SERVERLESS` | `GCS_BACKFILL_MANIFESTS`; `DATAFLOW_MANAGED` se rechaza sin Dataflow aprovisionado |
+| `--execution-mode` | `BATCH_PULL_SERVERLESS` | `GCS_BACKFILL_MANIFESTS`, `GCS_FAST_REPLAY` (histórico, solo regex); `DATAFLOW_MANAGED` se rechaza sin Dataflow aprovisionado |
 | `--max-messages` | 20000 | Tope de mensajes por corrida; el límite real es `--max-runtime-sec` (un microbatch nuevo solo arranca si el anterior, con margen de 1.25x, cabe en el presupuesto) |
+| `--upsert-batch-rows` | 10000 | Filas por carga y `MERGE` en `GCS_FAST_REPLAY` (1 a 100 000) |
+| `--io-workers` | 16 | Hilos de E/S hacia GCS para el ledger (1 a 64); el pool HTTP del cliente se dimensiona como `max(10, hilos + 4)` |
 | `--microbatch-size` | 1000 | `<= max_messages`, máximo 1000 (límite de `pull` de Pub/Sub) |
 | `--max-runtime-sec` / `--checkpoint-margin-sec` | 1500 / 300 | Suma `<= --container-timeout-sec` (1800, igual al Job) |
 | `--ack-deadline-sec` / `--ack-renew-interval-sec` | 600 / 180 | Renovación antes del vencimiento; máximo de Pub/Sub 600 |
@@ -193,6 +195,7 @@ ledger.reconcile_page(bank, stream_id, page_id)  # RESOLVED / GAPS_DETECTED / PE
 | --- | --- | --- |
 | `BATCH_PULL_SERVERLESS` (default) | Pull síncrono de `PUBSUB_RAW_SUBSCRIPTION` en microbatches | `ack` de terminales tras `MERGE` y recibos; `nack` de reintentables |
 | `GCS_BACKFILL_MANIFESTS` | Páginas comprometidas sin cierre, desde su captura (URI + generación) | Sin Pub/Sub; captura expirada => cierre `STAGING_EXPIRED` |
+| `GCS_FAST_REPLAY` | Igual que el anterior, pero **sin recibo por evento**: lee las capturas en paralelo, carga ~10 000 filas por `MERGE` (filtrado por `bank_id`, nunca por `fecha`) y escribe solo el `PageClosure` de cada página | Solo regex local (rechaza `--use-cloud-dlp-api`); un fallo de BigQuery deja abiertas las páginas del lote; no consume Pub/Sub. Ver [plan del full](../../docs/full_backfill.md) |
 
 Por microbatch: deduplicar por `event_id` (todos los `ack_ids`), confirmar lo
 ya resuelto copiando el recibo a la página nueva, DLP en Beam (`FnApiRunner` en
