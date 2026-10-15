@@ -6,6 +6,8 @@ página comprometida de verdad con `WatermarkRepository`, que aquí solo se lee.
 
 import ast
 import copy
+import threading
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -631,3 +633,66 @@ def test_page_closure_contract():
             "bad/bucket",
             Mock(),  # type: ignore[arg-type]
         )
+
+
+# ------------------------------------------- concurrencia y cierre temprano
+def test_receipts_are_written_concurrently_and_keep_input_order(monkeypatch):
+    world = World(events=40)
+    threads: set[int] = set()
+    original = FakeBlob.upload_from_string
+
+    def slow_upload(self, *args, **kwargs):
+        threads.add(threading.get_ident())
+        time.sleep(0.002)  # fuerza el solapamiento de las escrituras
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(FakeBlob, "upload_from_string", slow_upload)
+    receipts = [
+        receipt(e, ProcessingStatus.TDS_COMMITTED) for e in world.events
+    ]
+    stored = world.ledger.write_event_receipts(receipts)
+    assert [r.event_id for r in stored] == [e.event_id for e in world.events]
+    assert len(threads) > 1
+    found = world.ledger.find_already_processed_event_ids(
+        BANK, [e.event_id for e in world.events]
+    )
+    assert set(found) == {e.event_id for e in world.events}
+
+
+def test_single_worker_stays_sequential_and_workers_are_validated():
+    sequential = pl.ProcessingLedgerRepository(
+        FakeStorage(), "test-bucket", Mock(), io_workers=1
+    )
+    assert sequential._map(lambda x: x * 2, [3, 1, 2]) == [6, 2, 4]
+    assert sequential._map(lambda x: x, []) == []
+    with pytest.raises(ValueError):
+        pl.ProcessingLedgerRepository(
+            FakeStorage(), "test-bucket", Mock(), io_workers=0
+        )
+
+
+def test_reconcile_reads_one_block_when_the_page_is_pending(monkeypatch):
+    world = World(events=100)
+    world.commit_page()
+    reads: list[str] = []
+    original = FakeBlob.download_as_bytes
+
+    def counting(self, *args, **kwargs):
+        if self.name.startswith("state/ingestion/receipts/BBVA/page-1/"):
+            reads.append(self.name)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(FakeBlob, "download_as_bytes", counting)
+    assert world.ledger.reconcile_page(BANK, "stream", "page-1") == (
+        SanitizationStatus.PENDING
+    )
+    # Un solo bloque (2 x io_workers), no los 100 recibos de la página.
+    assert len(reads) == world.ledger.io_workers * 2
+    world.ledger.write_event_receipts(
+        [receipt(e, ProcessingStatus.TDS_COMMITTED) for e in world.events]
+    )
+    reads.clear()
+    assert world.ledger.reconcile_page(BANK, "stream", "page-1") == (
+        SanitizationStatus.RESOLVED
+    )
+    assert len(reads) == 100

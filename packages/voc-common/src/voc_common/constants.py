@@ -25,8 +25,13 @@ PLAYSTORE_BANK_APPS: dict[BankKey, str] = {
     BankKey.BBVA: "com.bancomer.mbanking",
     BankKey.NUBANK: "com.nu.production",
     BankKey.SANTANDER: "mx.bancosantander.supermovil",
-    BankKey.AZTECA: "baz.app.bancoazteca",
-    BankKey.BANORTE: "com.banorte.movil",
+    # Corregidos el 2026-10-15: los IDs originales (`baz.app.bancoazteca`,
+    # `com.banorte.movil`) no existen en Google Play y la primera corrida real
+    # falló con `protocol_shape`. BBVA, Nu y Santander se validaron con datos.
+    BankKey.AZTECA: "mx.com.bancoazteca.bazdigitalmovil",
+    BankKey.BANORTE: (
+        "org.microemu.android.model.common.VTUserApplicationBNRTMB"
+    ),
 }
 
 
@@ -148,6 +153,8 @@ class ProcessingStatus(StrEnum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     TDS_COMMITTED = "TDS_COMMITTED"
+    # Legado: ya no se emite (el TDS no filtra por longitud); se conserva para
+    # leer recibos de corridas anteriores.
     FILTERED_LENGTH = "FILTERED_LENGTH"
     QUARANTINED = "QUARANTINED"
     RETRYABLE_ERROR = "RETRYABLE_ERROR"

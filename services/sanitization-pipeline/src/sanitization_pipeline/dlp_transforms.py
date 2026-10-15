@@ -6,7 +6,7 @@ los casos medidos) se descartan antes de sanitizar y nunca se persisten.
 
 Flujo por microbatch: rechazo previo (fila sobredimensionada), empaquetado por
 filas/bytes, Cloud DLP opcional con alineación posicional *sidecar*, regex
-local, conteo de tokens introducidos, filtro EDA [2, 60] y construcción de
+local, conteo de tokens introducidos (sin filtro de longitud) y construcción de
 `SanitizedReviewEnvelope`. Con `use_cloud_dlp_api=True` el flujo es
 *fail-closed*: si DLP no responde correctamente ningún evento sale por la
 salida válida usando solo regex.
@@ -36,8 +36,6 @@ from voc_common import (
     RawReviewEnvelope,
     SanitizedReviewEnvelope,
     SanitizedReviewRecord,
-    cumple_umbral_palabras,
-    limpiar_texto_bancario,
 )
 
 # Tokens exactos de voc-dlp-deidentify-template (infra/modules/dlp.py).
@@ -57,7 +55,6 @@ DIAGNOSTIC_PATTERN = re.compile(
 DLP_COLUMNS: tuple[str, str] = ("texto", "texto_respuesta")
 
 OUTPUT_TAG_SANITIZED_VALID = "sanitized_valid"
-OUTPUT_TAG_FILTERED_LENGTH = "filtered_length"
 OUTPUT_TAG_QUARANTINED = "quarantined"
 OUTPUT_TAG_RETRYABLE_ERROR = "retryable_error"
 
@@ -364,7 +361,6 @@ class CloudDlpDeidentifier:
 @dataclass
 class SanitizedBatch:
     valid: list[SanitizedReviewEnvelope] = field(default_factory=list)
-    filtered: list[ProcessingReceipt] = field(default_factory=list)
     quarantined: list[ProcessingReceipt] = field(default_factory=list)
     retryable: list[ProcessingReceipt] = field(default_factory=list)
 
@@ -441,11 +437,6 @@ class BatchSanitizer:
         texto: str,
     ) -> None:
         texto = self.fallback.sanitize(texto)
-        if not cumple_umbral_palabras(limpiar_texto_bancario(texto)):
-            out.filtered.append(
-                self._receipt(event, ProcessingStatus.FILTERED_LENGTH)
-            )
-            return
         findings = count_introduced_pii_tokens(event.raw.texto, texto)
         # Minimización: título y respuesta no llegan al registro curado.
         raw = event.raw.model_copy(
@@ -482,7 +473,7 @@ class BatchCloudDlpDeidentifyDoFn(beam.DoFn):
     """Cada elemento es un microbatch (lista de RawReviewEnvelope).
 
     Salida principal: SanitizedReviewEnvelope. Salidas etiquetadas:
-    recibos FILTERED_LENGTH, QUARANTINED y RETRYABLE_ERROR.
+    recibos QUARANTINED y RETRYABLE_ERROR.
     """
 
     def __init__(
@@ -535,7 +526,6 @@ class BatchCloudDlpDeidentifyDoFn(beam.DoFn):
         result = self.sanitizer.sanitize(list(element))
         yield from result.valid
         for tag, receipts in (
-            (OUTPUT_TAG_FILTERED_LENGTH, result.filtered),
             (OUTPUT_TAG_QUARANTINED, result.quarantined),
             (OUTPUT_TAG_RETRYABLE_ERROR, result.retryable),
         ):

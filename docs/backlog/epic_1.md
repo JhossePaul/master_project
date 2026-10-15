@@ -102,8 +102,8 @@ PLAYSTORE_BANK_APPS: dict[BankKey, str] = {
     BankKey.BBVA: "com.bancomer.mbanking",
     BankKey.NUBANK: "com.nu.production",
     BankKey.SANTANDER: "mx.bancosantander.supermovil",
-    BankKey.AZTECA: "baz.app.bancoazteca",
-    BankKey.BANORTE: "com.banorte.movil",
+    BankKey.AZTECA: "mx.com.bancoazteca.bazdigitalmovil",   # corregido 2026-10-15
+    BankKey.BANORTE: "org.microemu.android.model.common.VTUserApplicationBNRTMB",   # corregido 2026-10-15
 }
 
 class IngestionMode(str, Enum):

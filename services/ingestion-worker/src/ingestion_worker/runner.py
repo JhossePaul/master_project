@@ -35,6 +35,7 @@ from voc_common import (
     ScanContext,
     ScanStatus,
     ScanStreamState,
+    log_event,
 )
 from voc_common.schemas import StarRating, ensure_utc
 
@@ -80,6 +81,13 @@ class ExtractionStatus(StrEnum):
     TRANSPORT_ERROR = "TRANSPORT_ERROR"
     LEASE_CONFLICT = "LEASE_CONFLICT"
 
+
+_OK_STATUSES = frozenset(
+    {
+        ExtractionStatus.TARGET_REACHED,
+        ExtractionStatus.SOURCE_EXHAUSTED_OBSERVED,
+    }
+)
 
 _AUDIT_STATUS = {
     ExtractionStatus.TARGET_REACHED: RunAuditStatus.COMPLETED,
@@ -320,6 +328,62 @@ class _Run:
     def _now(self) -> datetime:
         return ensure_utc(self.x.clock())
 
+    def _event(self, severity: str, message: str, **fields: object) -> None:
+        """Log estructurado de la corrida: sin texto de reseñas ni cursores."""
+        log_event(
+            severity,
+            message,
+            run_id=self.result.run_id,
+            bank_id=self.bank.value,
+            mode=self.request.mode.value,
+            **fields,
+        )
+
+    def _request_event(
+        self,
+        severity: str,
+        outcome: str,
+        began: float,
+        retries: int,
+        recovery: bool,
+        **extra: object,
+    ) -> None:
+        """Latencia y resultado de cada solicitud a Google Play."""
+        self._event(
+            severity,
+            "Play Store request",
+            request_number=self.budget.requests,
+            outcome=outcome,
+            latency_ms=round((self.x.monotonic() - began) * 1000),
+            retries=retries,
+            recovery=recovery,
+            **extra,
+        )
+
+    async def _publish(
+        self, handle: LeaseHandle, manifest: PageManifest
+    ) -> None:
+        started = self.x.monotonic()
+        try:
+            await self._io(self.x.publisher.publish_page, handle, manifest)
+        except Exception as exc:
+            self._event(
+                "WARNING",
+                "Page publication failed",
+                page_id=manifest.page_id,
+                error=type(exc).__name__,
+                latency_ms=round((self.x.monotonic() - started) * 1000),
+            )
+            raise
+        self._event(
+            "INFO",
+            "Page published",
+            page_id=manifest.page_id,
+            stream_id=manifest.stream_id,
+            reviews=manifest.valid_count,
+            latency_ms=round((self.x.monotonic() - started) * 1000),
+        )
+
     async def _heartbeat(self, *, force: bool = False) -> None:
         if self.handle is None:
             return
@@ -364,20 +428,44 @@ class _Run:
                 self.budget.recovery += 1
             retry_after: float | None = None
             limited = False
+            began = self.x.monotonic()
+
             try:
                 page = await self.x.client.fetch_page(self.bank, context, token)
             except RateLimitedError as exc:
                 limited, retry_after = True, exc.retry_after_sec
+                self._request_event(
+                    "WARNING",
+                    "rate_limited",
+                    began,
+                    retries,
+                    recovery,
+                    retry_after_sec=retry_after,
+                )
             except EmptyAmbiguousError:
+                self._request_event(
+                    "ERROR", "empty_ambiguous", began, retries, recovery
+                )
                 raise _Stop(
                     ExtractionStatus.PROTOCOL_ERROR, "empty_ambiguous"
                 ) from None
             except ProtocolError:
+                self._request_event(
+                    "ERROR", "protocol_shape", began, retries, recovery
+                )
                 raise _Stop(
                     ExtractionStatus.PROTOCOL_ERROR, "protocol_shape"
                 ) from None
             except TransportError as exc:
                 code = exc.status_code
+                self._request_event(
+                    "WARNING",
+                    "transport_error",
+                    began,
+                    retries,
+                    recovery,
+                    status_code=code,
+                )
                 if code == 403:
                     # Investigar antes de tratarlo como límite; sin evasión.
                     raise _Stop(ExtractionStatus.BLOCKED, "http_403") from None
@@ -389,6 +477,18 @@ class _Run:
                     ) from None
                 limited = code == 503
             else:
+                self._request_event(
+                    "INFO",
+                    "ok",
+                    began,
+                    retries,
+                    recovery,
+                    classification=page.classification.value,
+                    rows=page.raw_count,
+                    reviews=len(page.reviews),
+                    discarded=len(page.discarded),
+                    response_bytes=len(page.raw_body),
+                )
                 self.failures = 0
                 self.budget.bytes += len(page.raw_body)
                 if not recovery:
@@ -457,6 +557,22 @@ class _Run:
             r.recovery_requests = self.budget.recovery
             r.elapsed_sec = self.x.monotonic() - started
             await self._finish_session(audit=True)
+            self._event(
+                "INFO" if r.status in _OK_STATUSES else "WARNING",
+                "Ingestion run finished",
+                status=r.status.value,
+                reason=r.reason,
+                plan_id=r.plan_id,
+                pages_committed=r.pages_committed,
+                reviews_extracted=r.reviews_extracted,
+                reviews_published=r.reviews_published,
+                reviews_discarded=r.reviews_discarded,
+                requests=r.requests,
+                recovery_requests=r.recovery_requests,
+                response_bytes=r.response_bytes,
+                elapsed_sec=round(r.elapsed_sec, 3),
+                audit_recorded=r.audit_recorded,
+            )
         finally:
             # Error inesperado: liberar sin auditar; el respaldo permite
             # reintentar.
@@ -464,6 +580,7 @@ class _Run:
         return self.result
 
     def _lease_lost(self, reason: str) -> None:
+        self._event("WARNING", "Lease lost", reason=reason)
         self.result.status = ExtractionStatus.LEASE_CONFLICT
         self.result.reason = reason
         self.handle = None
@@ -485,6 +602,15 @@ class _Run:
         else:
             run_id = self.request.run_id or new_run_id(mode, self._now())
         self.result.run_id = run_id
+        self._event(
+            "INFO",
+            "Ingestion run started",
+            max_requests=self.cfg.ingestion_max_requests,
+            max_runtime_sec=self.cfg.ingestion_max_runtime_sec,
+            max_response_bytes=self.cfg.ingestion_max_response_bytes,
+            page_size=self.cfg.scraper_page_size,
+            resumed=run_id == active,
+        )
         drain_run = next(iter(pending_runs), None)
         if drain_run is not None and drain_run != run_id:
             # Completar entregas desde GCS antes de consultar el origen.
@@ -502,6 +628,12 @@ class _Run:
     async def _acquire(self, run_id: str) -> None:
         self.handle = await self._io(self.repo.acquire_lease, self.bank, run_id)
         self.last_heartbeat = self.x.monotonic()
+        self._event(
+            "INFO",
+            "Lease acquired",
+            lease_run_id=run_id,
+            epoch=self.handle.epoch,
+        )
 
     async def _finish_session(self, *, audit: bool) -> None:
         handle = self.handle
@@ -565,7 +697,7 @@ class _Run:
                 continue
             await self._heartbeat()
             try:
-                await self._io(self.x.publisher.publish_page, handle, manifest)
+                await self._publish(handle, manifest)
             except PublicationIncomplete:
                 raise _Stop(
                     ExtractionStatus.PUBLICATION_INCOMPLETE, "pending_capture"
@@ -639,7 +771,7 @@ class _Run:
                     fetch_attempt_id=attempt,
                     input_token=token,
                 )
-                await self._io(self.x.publisher.publish_page, handle, manifest)
+                await self._publish(handle, manifest)
             except PublicationIncomplete:
                 raise _Stop(
                     ExtractionStatus.PUBLICATION_INCOMPLETE, "page_publication"
@@ -771,9 +903,7 @@ class _Run:
                     recovery=recovery,
                 )
                 if committed is None:
-                    await self._io(
-                        self.x.publisher.publish_page, handle, manifest
-                    )
+                    await self._publish(handle, manifest)
                     self._account(manifest, published=True)
             except PublicationIncomplete:
                 raise _Stop(

@@ -316,6 +316,11 @@ def create_cloud_run_resources(
                                     dlp.deidentify_template.id
                                 ),
                                 "BEAM_RUNNER": "DirectRunner",
+                                # El preflight lee el estado de la ingesta y
+                                # exige el flag (sin él: exit 64).
+                                "INGESTION_V2_ENABLED": str(
+                                    ingestion_v2_enabled
+                                ).lower(),
                             }.items()
                         ],
                     }

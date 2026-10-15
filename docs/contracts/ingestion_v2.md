@@ -34,7 +34,7 @@ registro sanitizado. Su fábrica no acredita que se haya ejecutado DLP. No envia
 el sobre crudo a BigQuery ni transformar el digest del origen con DLP.
 
 `ProcessingReceipt.from_event(...)` propaga ID, revisión y página sin texto crudo.
-Distingue `PENDING`, `PROCESSING`, `TDS_COMMITTED`, `FILTERED_LENGTH`,
+Distingue `PENDING`, `PROCESSING`, `TDS_COMMITTED`, `FILTERED_LENGTH` (heredado: ya no se emite),
 `QUARANTINED` y `RETRYABLE_ERROR`. TDS exige digest de resultado e IDs de jobs BQ;
 cuarentena/error exige código. Solo emitir el recibo después de confirmar su
 resultado duradero. `PUBLISHED` en un manifiesto no equivale a `TDS_COMMITTED`.

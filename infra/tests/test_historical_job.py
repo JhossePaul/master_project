@@ -150,6 +150,14 @@ def test_historical_job_profiles_access_and_scheduler(
     assert worker_env["INGESTION_MAX_REQUESTS"] == ("50" if custom else "100")
     assert worker_env["INGESTION_V2_ENABLED"] == str(custom).lower()
     assert job_env["INGESTION_V2_ENABLED"] == worker_env["INGESTION_V2_ENABLED"]
+    sanitization = states["voc-sanitization-job"]["template"]["template"]
+    sanitization_env = {
+        v["name"]: v.get("value") for v in sanitization["containers"][0]["envs"]
+    }
+    assert (
+        sanitization_env["INGESTION_V2_ENABLED"]
+        == worker_env["INGESTION_V2_ENABLED"]
+    )
     assert {
         "ingestion_history_job_id",
         "ingestion_history_job_name",

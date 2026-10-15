@@ -20,6 +20,8 @@ ENV_PREFIX = "SANITIZATION_"
 DLP_REQUEST_LIMIT_BYTES = 524_288
 # Máximo admitido por Pub/Sub para ack deadlines.
 PUBSUB_MAX_ACK_DEADLINE_SEC = 600
+# Máximo de mensajes por solicitud `pull`.
+PUBSUB_MAX_PULL_MESSAGES = 1000
 
 
 class ExecutionMode(StrEnum):
@@ -36,8 +38,13 @@ class SanitizationExecutionConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False)
 
     execution_mode: ExecutionMode = ExecutionMode.BATCH_PULL_SERVERLESS
-    max_messages: int = Field(default=2000, gt=0)
-    microbatch_size: int = Field(default=200, gt=0)
+    # El tiempo (`max_runtime_sec`) es el límite real; el tope de mensajes solo
+    # evita corridas sin fin. Medido: ~2.5 msg/s antes de paralelizar la E/S.
+    max_messages: int = Field(default=20_000, gt=0)
+    # Máximo por `pull` de Pub/Sub: 1000 mensajes.
+    microbatch_size: int = Field(
+        default=1000, gt=0, le=PUBSUB_MAX_PULL_MESSAGES
+    )
     max_runtime_sec: int = Field(default=1500, gt=0)
     # Cubre el último microbatch en vuelo (DLP + carga + MERGE + recibos).
     checkpoint_margin_sec: int = Field(default=300, gt=0)

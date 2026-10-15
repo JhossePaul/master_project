@@ -34,8 +34,6 @@ from voc_common.constants import (
     BACKFILL_LOOKBACK_DAYS,
     DEFAULT_PLAYSTORE_COUNTRY,
     DEFAULT_PLAYSTORE_LANG,
-    MAX_REVIEW_WORDS,
-    MIN_REVIEW_WORDS,
     PLAYSTORE_BANK_APPS,
     PLAYSTORE_DEFAULT_PAGE_SIZE,
     PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
@@ -285,8 +283,10 @@ class SanitizedReviewRecord(_StrictModel):
     )
     titulo: str | None = None
     texto_sanitizado: str = Field(..., min_length=1)
-    texto_limpio: str = Field(..., min_length=1)
-    conteo_palabras: int = Field(..., ge=MIN_REVIEW_WORDS, le=MAX_REVIEW_WORDS)
+    # Sin filtro de longitud: el TDS conserva toda reseña con texto. El rango
+    # del EDA (2 a 60 palabras) se aplica al analizar, con `conteo_palabras`.
+    texto_limpio: str = Field(default="")
+    conteo_palabras: int = Field(..., ge=0)
     pii_findings_count: int = Field(default=0, ge=0)
     estrellas: int = Field(..., ge=1, le=5)
     votos_utilidad: int = Field(default=0, ge=0)
@@ -320,8 +320,7 @@ class SanitizedReviewRecord(_StrictModel):
     ) -> Self:
         """Construye el registro TDS a partir del evento crudo y la salida DLP.
 
-        Lanza ``ValidationError`` si el texto limpio queda fuera de [2, 60]
-        palabras.
+        No filtra por longitud: toda reseña con texto produce un registro.
         """
         texto_limpio = limpiar_texto_bancario(texto_sanitizado)
         return cls(

@@ -193,11 +193,16 @@ def test_non_digest_images_rejected(image: str) -> None:
         )
 
 
-def test_dev_stack_starts_in_phase_one() -> None:
+def test_dev_stack_config_is_consistent_with_its_phase() -> None:
     stack = yaml.safe_load((REPO / "infra/Pulumi.dev.yaml").read_text())
     config = stack["config"]
-    assert config["bbva-voc-infra:deploy_workloads"] in (False, "false")
     assert not [v for v in config.values() if ":latest" in str(v)]
+    if config["bbva-voc-infra:deploy_workloads"] in (True, "true"):
+        # Fase 2: las imágenes son obligatorias y van fijadas por digest.
+        WorkloadImages(
+            ingestion_worker=config["bbva-voc-infra:ingestion_worker_image"],
+            sanitization_job=config["bbva-voc-infra:sanitization_job_image"],
+        )
 
 
 def test_cloud_build_publishes_sha_tagged_amd64_images() -> None:

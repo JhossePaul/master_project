@@ -262,22 +262,19 @@ def test_raw_review_from_batchexecute_entry_sparse_row() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_sanitized_review_record_word_count_bounds() -> None:
+def test_sanitized_review_record_keeps_every_length() -> None:
+    """El TDS no filtra por longitud: el rango del EDA se aplica al analizar."""
     raw = _raw_event()
 
-    with pytest.raises(ValidationError):
-        SanitizedReviewRecord.from_raw_and_dlp(raw, "excelente", 0, SALT)
-    with pytest.raises(ValidationError):
-        SanitizedReviewRecord.from_raw_and_dlp(
-            raw, " ".join(["mal"] * 61), 0, SALT
-        )
-
-    for n_words in (2, 60):
+    for n_words in (1, 2, 60, 61, 500):
         record = SanitizedReviewRecord.from_raw_and_dlp(
             raw, " ".join(["mal"] * n_words), 0, SALT
         )
         assert record.conteo_palabras == n_words
         assert re.fullmatch(r"[0-9a-f]{64}", record.usuario_hash)
+    # Un texto que la limpieza deja vacío tampoco se descarta.
+    empty = SanitizedReviewRecord.from_raw_and_dlp(raw, "...", 0, SALT)
+    assert empty.conteo_palabras == len(empty.texto_limpio.split())
 
 
 def test_sanitized_review_record_from_raw_and_dlp() -> None:
