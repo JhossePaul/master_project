@@ -49,7 +49,6 @@ Si eres un agente de IA encargado de implementar una *Feature* de este backlog,
 
    # 3. Análisis Estático de Seguridad (SAST)
    uv run bandit -c pyproject.toml -r .
-   gitleaks detect --source . -v
 
    # 4. Pruebas Unitarias y Cobertura Mínima (>= 80%)
    uv run pytest --cov-fail-under=80

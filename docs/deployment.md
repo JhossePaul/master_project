@@ -28,6 +28,46 @@ desempaquetan dentro de tests; no se imprimen sus valores en informes.
 Los mocks no certifican permisos efectivos, cuotas, disponibilidad de imágenes,
 comportamiento del proveedor ni recuperación ante cambios del origen.
 
+## Protección de `main`
+
+`main` solo recibe cambios mediante PR. El workflow `Quality gates` corre en
+PRs hacia `main` y en push a `main`; su job `quality` es el check obligatorio.
+La protección no vive en el YAML: es un ruleset del repositorio que debe crear
+un administrador. En repos privados requiere un plan de GitHub con rulesets.
+
+Con `gh` autenticado (`gh auth login`), desde la raíz del repositorio:
+
+```bash
+gh api --method POST repos/JhossePaul/master_project/rulesets --input - <<'EOF'
+{
+  "name": "main-solo-por-pr",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+  "rules": [
+    {"type": "deletion"},
+    {"type": "non_fast_forward"},
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": true,
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": true
+    }},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": true,
+      "required_status_checks": [{"context": "quality"}]
+    }}
+  ]
+}
+EOF
+```
+
+Las aprobaciones requeridas quedan en 0 porque GitHub no permite aprobar el
+propio PR; subirlas cuando haya otro revisor. El check `quality` debe haber
+corrido al menos una vez para aparecer como seleccionable en la interfaz.
+Equivalente en la UI: Settings → Rules → Rulesets → New branch ruleset.
+
 ## Backend de estado recomendado
 
 `pulumi login --local` guarda el estado en `~/.pulumi` de un solo equipo: sin

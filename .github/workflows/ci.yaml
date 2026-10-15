@@ -1,11 +1,18 @@
 name: Quality gates
 
+# main solo recibe cambios por PR; el ruleset exige este job (`quality`).
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -57,3 +64,24 @@ jobs:
         run: >-
           uv run --frozen pytest services/ingestion-worker/tests
           --cov=ingestion_worker --cov-fail-under=85
+
+  ingestion-image:
+    # Valida que la imagen del worker construye; la publicación es del CD.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build ingestion worker image
+        run: >-
+          docker build --platform=linux/amd64
+          --file services/ingestion-worker/Dockerfile
+          --tag ingestion-worker:ci .
+
+      - name: Smoke test entrypoints
+        run: |
+          docker run --rm ingestion-worker:ci python -c \
+            "import ingestion_worker.job, ingestion_worker.main"
+          id=$(docker run --rm ingestion-worker:ci id -u)
+          test "$id" = "10001"

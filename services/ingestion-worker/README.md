@@ -1,8 +1,8 @@
 # ingestion-worker
 
-Features 3.1–3.3: protocolo oCPfdb, cliente HTTP por página, repositorio GCS
-con leases/CAS, auditoría, publicación durable y endpoint de progreso.
-Recorridos y ejecutables de extracción corresponden a 3.4–3.5.
+EPIC-3 completa (3.1–3.5): protocolo oCPfdb, cliente HTTP por página,
+repositorio GCS con leases/CAS, auditoría, publicación durable, recorridos
+reanudables con recuperación, API de ingesta, Job histórico e imagen.
 
 Desde la raíz:
 
@@ -137,3 +137,85 @@ siendo siete días; el endpoint de progreso expone la edad de los pendientes
 mediante fetched_at. La supervisión y recuperación automática pertenecen a 3.4.
 El [contrato de página durable](../../docs/contracts/ingestion_v2.md#página-duradera-de-epic-3-feature-33)
 describe formato JSONL, estados y límites de entrega.
+
+## Recorridos y recuperación (3.4)
+
+`PlayStoreResilientExtractor(repo, publisher, client, config)` ejecuta una
+invocación acotada; `run_extraction(ExtractionRequest(...))` devuelve un
+`ExtractionResult` con estado, motivo, contadores, presupuesto consumido,
+fronteras observadas/confirmadas y acciones de recuperación.
+
+```python
+extractor = PlayStoreResilientExtractor(repo, publisher, client, settings)
+result = await extractor.run_extraction(
+    ExtractionRequest(bank_id=BankKey.BBVA, mode=IngestionMode.INCREMENTAL)
+)
+```
+
+Orden de cada invocación: entregar desde GCS las capturas pendientes (de la
+misma corrida o de otra, sin consultar el origen), tomar el lease, y luego:
+
+* **Incremental:** reanuda la corrida activa si existe; si no, registra un
+  stream nuevo. Recorre desde la cabeza hasta `baseline - 72 h` (bootstrap:
+  primera página - 7 días) y solo entonces confirma el high con el ledger
+  completo de IDs. Una falla deja el high confirmado intacto.
+* **Histórico:** BACKFILL crea un plan con cota `T0 - 365 días`; la página que
+  la cruza se guarda completa. FULL extiende el mismo plan (mismo T0, streams
+  y anclas) y continúa desde el ancla. El plan cierra cuando todos sus streams
+  alcanzan la cota o un EOF observado.
+* **Recuperación** al reanudar un stream o ante un cursor rechazado: replay del
+  ancla, hasta `INGESTION_RECOVERY_MAX_ANCHORS` anclas anteriores y, si
+  ninguna conecta, cadena nueva desde la cabeza. Sin presupuesto de
+  recuperación el stream queda `RECOVERY_REQUIRED`.
+* **Presupuestos:** solicitudes, páginas, bytes, duración y recuperación; el
+  límite de reseñas es blando (se completa la página recibida). Pausa entre
+  páginas `base + jitter`; Retry-After/backoff acotado; circuit breaker por
+  fallos consecutivos; 403 termina en `BLOCKED` sin reintentar con otro
+  User-Agent. El heartbeat renueva el lease entre páginas y durante esperas.
+* **Backlog:** `BacklogSignal.should_pause` pausa solo el histórico; la
+  implementación por defecto nunca pausa hasta que exista EPIC-4.
+
+`select_user_agent(run_id, config)` devuelve un User-Agent fijo por ejecución
+cuando `SCRAPER_ROTATE_USER_AGENT=true`; `PlayStoreClient(user_agent=...)` lo
+usa en todas las solicitudes de ese cliente.
+
+Las acciones de recuperación y los estados (`TARGET_REACHED`,
+`SOURCE_EXHAUSTED_OBSERVED`, `BUDGET_EXHAUSTED`, `PARTIAL_RATE_LIMITED`,
+`PAUSED_BACKLOG`, `PUBLICATION_INCOMPLETE`, `RECOVERY_REQUIRED`,
+`PROTOCOL_ERROR`, `BLOCKED`, `TRANSPORT_ERROR`, `LEASE_CONFLICT`) describen
+evidencia observada; ninguno certifica cobertura total del catálogo.
+Límites conocidos en [EPIC-3 feature 3.4](../../docs/backlog/epic_3.md#feature-34-extracción-y-políticas-de-recuperación).
+
+## API, Job e imagen (3.5)
+
+| Ruta | Comportamiento |
+| --- | --- |
+| `GET /health` | Vida del proceso; no consulta GCP ni el origen |
+| `GET /api/v1/watermarks/{bank}` | Progreso observado, sin cursores ni URIs |
+| `POST /api/v1/ingest` | `INCREMENTAL`: corre en la petición (200/409). `BACKFILL`/`FULL_BACKFILL`: persiste el plan y lanza el Job (202) |
+| `POST /api/v1/ingest/all` | Incremental secuencial para Scheduler, con presupuesto compartido |
+
+Los cuerpos usan `IngestionRequestPayload` y `SequentialBatchIngestionRequest`
+de `voc-common`. Con `INGESTION_V2_ENABLED=false` las rutas de ingesta
+responden 503; los históricos además exigen `INGESTION_HISTORY_JOB_NAME`.
+
+Job histórico (Cloud Run Job o local):
+
+```sh
+INGESTION_BANK_ID=BBVA INGESTION_PLAN_ID=<plan> python -m ingestion_worker.job
+# o: python -m ingestion_worker.job --bank BBVA --plan-id <plan> [--stream-id <s>]
+```
+
+Códigos de salida: 0 fin o pausa con checkpoint, 75 transitorio reintentable,
+1 requiere intervención, 64 configuración inválida, 143 SIGTERM.
+
+Imagen, desde la raíz del workspace (contexto con lista de permitidos):
+
+```sh
+docker build -f services/ingestion-worker/Dockerfile -t ingestion-worker .
+docker run --rm -p 8080:8080 ingestion-worker            # API
+docker run --rm ingestion-worker python -m ingestion_worker.job
+```
+
+`IngestionRuntime.from_settings` crea los clientes GCP una vez por proceso;
+los tests inyectan GCS con generaciones, Pub/Sub, origen y lanzador simulados.

@@ -101,3 +101,8 @@ gcp-key*.json
 !.vscode/extensions.json
 *.sublime-workspace
 *.sublime-project
+
+# ======================================================
+# Evidencia de experimentos de explotación del endpoint
+# ======================================================
+evidence/

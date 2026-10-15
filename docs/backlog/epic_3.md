@@ -1,7 +1,7 @@
 # EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** En implementación. Features 3.1–3.3 implementadas; features 3.4–3.5 pendientes. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
-* **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La integración del worker con ellos corresponde a las siguientes features.
+* **Estado:** Implementada (features 3.1–3.5). Validada localmente con dobles deterministas; sin despliegue ni solicitudes reales. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
+* **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La activación (`INGESTION_V2_ENABLED=true`) espera la imagen publicada, el despliegue por fases de EPIC-2 y el consumidor de EPIC-4.
 * **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
 ## Objetivo y límites de la garantía
@@ -160,9 +160,11 @@ Workspace `ingestion-worker`, Python >=3.11, hatchling, `voc-common` desde
 workspace. Dependencias: FastAPI, uvicorn, `httpx[socks]`, tenacity, clientes GCP
 Pub/Sub, Storage y BigQuery y Pydantic v2. Mantener rangos compatibles probados
 al implementar y resolver con uv; no instalar `google-play-scraper` en producción.
-Implementados: `playstore_protocol.py`, `extractor.py` y tests del adaptador/HTTP.
-`watermark_store.py`, `publisher.py`, `main.py`, `job.py` y Dockerfile se
-completan en las features 3.2–3.5 con sus respectivos tests.
+Implementados: `playstore_protocol.py` y `extractor.py` (3.1),
+`watermark_store.py` y `audit.py` (3.2), `publisher.py` (3.3), `runner.py`
+(3.4), `runtime.py`, `main.py`, `job.py` y Dockerfile (3.5), con sus tests.
+`google-auth`/`requests` llegan como dependencias transitivas de los clientes
+GCP; declararlas explícitamente requiere regenerar `uv.lock`.
 
 ### Serialización estructural, no concatenación de f-strings
 
@@ -298,6 +300,48 @@ TTL del staging para deduplicación y auditoría.
 
 ## FEATURE 3.4: Extracción y políticas de recuperación
 
+**Estado: IMPLEMENTADA.** `runner.py` expone `PlayStoreResilientExtractor`,
+`ExtractionRequest`/`ExtractionResult` y `BacklogSignal` (por defecto sin
+presión: aún no hay consumidor desplegado). Reducers puros nuevos en
+`voc_common.ingestion_state`: `reanchor`, `restart_chain`, `close_stream`,
+`reopen_stream` y `change_plan_status`; el repositorio los persiste con CAS.
+Configuración conservadora nueva en `IngestionExecutionConfig` (páginas,
+recuperación, anclas, backoff, circuit breaker, ventana de revisita 72 h,
+bootstrap 7 días y rotación opcional de User-Agent por ejecución).
+Evidencia usada (`evidence/`, no versionada): una corrida BBVA de 16
+solicitudes; el replay del cursor fue idéntico a +10 s, +10 min y +30 min
+aunque la cabeza cambió; el cursor devuelto cambia en cada respuesta; la
+cabeza mostró ±2 reseñas entre solicitudes; tamaños 200 y 500 aceptados.
+Sin 429, expiración, EOF ni filtro de estrellas observados: esos caminos se
+prueban con un origen simulado.
+Validación: 166 tests del worker (95.24% de cobertura), 444 tests conjuntos;
+Ruff, formato, Pyrefly y Bandit sin errores. Sin solicitudes reales.
+
+Decisiones y límites conocidos:
+
+* Una ancla es consistente si la relectura conserva IDs y forma de la página;
+  con contenido idéntico se versiona el mismo `page_id` con respaldo nuevo
+  (el cursor devuelto cambia); con revisiones distintas se publica como
+  observación nueva en la misma posición. Ninguna de las dos prueba snapshot.
+* Un HTTP 4xx sobre un cursor se trata como síntoma de rechazo e inicia la
+  recuperación; no se interpreta como expiración demostrada.
+* `HEAD_RESCAN` abre `chain_epoch` nuevo y vuelve a publicar las páginas que
+  recorre (al menos una vez); la deduplicación por `event_id` de EPIC-4 cierra
+  esa brecha. No se omiten revisiones confirmadas durante el reescaneo.
+* El incremental usa un stream por corrida (`inc-{run_id}`); la frontera
+  confirmada guarda el ledger completo de IDs de la corrida. Las reseñas de la
+  frontera anterior que no reaparecen se cuentan en `reconciliation_missing`
+  como evidencia; no bloquean el cierre (la cabeza observada no es estable).
+* EOF observado = página sin cursor más relectura consistente sin cursor.
+* Un plan anual con particiones donde una alcanza EOF antes de la cota y otra
+  la cota no puede cerrarse con el reducer de EPIC-1; queda `PAUSED` con
+  `RECOVERY_REQUIRED/plan_mixed_terminal` hasta decidir el contrato.
+* El circuit breaker y los reintentos son por invocación; no se persisten.
+* La estrategia de particiones (estrellas u otra) sigue en discusión: el
+  ejecutor es genérico sobre los streams de un plan. Las fechas no son un
+  filtro del endpoint, así que «particionar por fecha» solo puede significar
+  tramos sucesivos de un mismo stream.
+
 `PlayStoreResilientExtractor.run_extraction` devuelve un resultado tipado con
 `run_id`, plan/stream, status y motivo, contadores, presupuesto consumido,
 fronteras observadas/confirmadas y recuperación. Estados al menos:
@@ -350,6 +394,44 @@ fronteras observadas/confirmadas y recuperación. Estados al menos:
 
 ## FEATURE 3.5: API, Job histórico, Docker y aceptación
 
+**Estado: IMPLEMENTADA.** `runtime.py` cablea Settings con GCS, Pub/Sub,
+BigQuery y un cliente HTTP por invocación (proxy y User-Agent opcionales por
+ejecución). `main.py` expone `GET /health`, `GET /api/v1/watermarks/{bank}`,
+`POST /api/v1/ingest` y `POST /api/v1/ingest/all`. `job.py` es el Cloud Run
+Job histórico. Dockerfile multi-stage (uv, `--frozen --no-dev`, sin editable,
+uid 10001) con `.dockerignore` por lista de permitidos: nunca entran `.env`,
+`evidence/`, `.git` ni `.venv`. CI añade el job `ingestion-image`, que construye
+la imagen amd64 y comprueba entrypoints y usuario; la publicación es del CD.
+Validación: 182 tests del worker (95.98% de cobertura), 460 tests conjuntos;
+Ruff, formato, Pyrefly y Bandit sin errores. Imagen construida y probada
+localmente (`/health` 200, ingest 503 con v2 desactivado, Job sin overrides
+termina con 64). Sin despliegue, IAM real ni solicitudes al origen.
+
+Decisiones:
+
+* **Incremental en la petición:** `POST /api/v1/ingest` con `INCREMENTAL` corre
+  dentro del presupuesto HTTP (780 s) y responde 200 con el resultado tipado,
+  o 409 si otra corrida tiene el lease. `max_reviews_per_run` es límite blando.
+  `page_size` distinto del desplegado se rechaza (422): cambiarlo crea stream.
+* **`/ingest/all`:** solo incremental (422 para históricos: nunca por cron).
+  Bancos únicos en orden, pausa entre bancos, y reparto equitativo del
+  presupuesto restante; un banco sin al menos 2×timeout queda `SKIPPED_BUDGET`.
+* **Históricos:** `BACKFILL`/`FULL_BACKFILL` persisten el plan con
+  `prepare_plan` (crear, o extender el mismo plan a FULL) bajo lease y lanzan
+  `jobs.run` con overrides solo de `INGESTION_BANK_ID`, `INGESTION_PLAN_ID` e
+  `INGESTION_STREAM_ID` (vacío = todos los streams). Respuesta 202 con plan y
+  ejecución; 409 con lease activo o conflicto de plan; 502 si Cloud Run rechaza;
+  503 sin Job configurado. `partition_by_stars` exige FULL (ver 3.4). Un plan
+  cerrado no se reabre: una nueva solicitud crea otro plan.
+* **Job:** continúa solo planes persistidos (nunca crea ni extiende); deriva el
+  modo del plan. Salida 0 para fin o pausa con checkpoint (incluye rate limit),
+  75 para transitorios reintentables (publicación incompleta, transporte,
+  lease), 1 para intervención (recuperación, protocolo, bloqueo), 64 para
+  configuración inválida y 143 tras SIGTERM (cancelación best effort).
+  Log final JSON de una línea, sin cursores ni textos.
+* La auditoría se entrega a BigQuery al final de cada corrida (best effort);
+  la cola GCS conserva lo no entregado.
+
 * `GET /health`; `POST /api/v1/ingest` individual; `POST /api/v1/ingest/all`
   secuencial, compatible con Scheduler. Las peticiones cortas usan los contratos
   compartidos ampliados/versionados; los resultados no prometen cero duplicados.
@@ -382,6 +464,12 @@ fronteras observadas/confirmadas y recuperación. Estados al menos:
 8. Staging expirado antes de destino: hueco observable y recuperación explícita.
 9. Pruebas deterministas sin internet en CI; smoke real separado y opt-in.
 
+Cobertura de la lista: (1) `tests/test_extractor.py`; (2)–(8)
+`tests/test_runner.py` con origen simulado, GCS con generaciones y Pub/Sub
+con fallos inyectados; (5) también `tests/test_watermark_store.py`. El smoke
+real opt-in sigue siendo `experiments/playstore/protocol_probe.py`; no corre
+en CI.
+
 ## Experimentos que desbloquean la implementación
 
 Código autocontenido: `experiments/playstore/protocol_probe.py`, copiable en Colab.
@@ -393,13 +481,18 @@ de revisar los resultados; si no validan la hipótesis, versionar el protocolo.
 
 ## Checklist
 
-* [ ] Contratos actuales y auditoría de infraestructura implementados.
-* [ ] Adaptador validado con fixtures reales y sondeo opt-in; 199 documentado como política.
-* [ ] Anual -> FULL conserva páginas/contexto y reconoce recuperación cara cuando toca.
-* [ ] Lease + CAS, ledger y publicación al menos una vez probados por inyección de fallos.
-* [ ] Estado de transporte y cobertura TDS diferenciados; sin promesas de exhaustividad.
-* [ ] Job histórico y API incremental operativos con presupuestos y observabilidad.
-* [ ] Ruff, formato, Pyrefly, Bandit y pytest >=85% pasan.
+* [x] Contratos actuales y auditoría de infraestructura implementados.
+* [x] Adaptador validado con fixtures reales y sondeo opt-in; 199 documentado como política.
+* [x] Anual -> FULL conserva páginas/contexto y reconoce recuperación cara cuando toca.
+* [x] Lease + CAS, ledger y publicación al menos una vez probados por inyección de fallos.
+* [x] Estado de transporte y cobertura TDS diferenciados; sin promesas de exhaustividad.
+* [x] Job histórico y API incremental implementados con presupuestos y observabilidad
+  (validados localmente; integración real con Cloud Run/IAM pendiente de despliegue).
+* [x] Ruff, formato, Pyrefly, Bandit y pytest >=85% pasan.
+
+Pendiente fuera de esta épica: publicar la imagen por digest y desplegar por
+fases (EPIC-2), activar v2 tras integrar el consumidor (EPIC-4), una prueba
+real de `jobs.run` con overrides y la decisión sobre particiones.
 
 ## Referencias técnicas (consulta 2026-10-14)
 

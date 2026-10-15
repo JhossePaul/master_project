@@ -1,4 +1,4 @@
-"""Protocolo, persistencia y auditoría de ingesta Google Play."""
+"""Protocolo, persistencia, auditoría y recorridos de ingesta Google Play."""
 
 from ingestion_worker.audit import AuditDeliveryError, BigQueryAuditWriter
 from ingestion_worker.extractor import PlayStoreClient
@@ -23,6 +23,15 @@ from ingestion_worker.publisher import (
     RawReviewBatchPublisher,
     compute_page_id,
 )
+from ingestion_worker.runner import (
+    BacklogSignal,
+    ExtractionRequest,
+    ExtractionResult,
+    ExtractionStatus,
+    NoBacklogPressure,
+    PlayStoreResilientExtractor,
+    select_user_agent,
+)
 from ingestion_worker.watermark_store import (
     IntegrityError,
     LeaseConflict,
@@ -34,6 +43,13 @@ from ingestion_worker.watermark_store import (
 )
 
 __all__ = [
+    "BacklogSignal",
+    "ExtractionRequest",
+    "ExtractionResult",
+    "ExtractionStatus",
+    "NoBacklogPressure",
+    "PlayStoreResilientExtractor",
+    "select_user_agent",
     "BackupUnavailable",
     "PublicationIncomplete",
     "RawReviewBatchPublisher",
