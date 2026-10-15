@@ -70,7 +70,7 @@ def http_post(
         url,
         data=json.dumps(body).encode(),
         headers={
-            "Authorization": f"Bearer {token}",
+            **({"Authorization": f"Bearer {token}"} if token else {}),
             "Content-Type": "application/json",
         },
         method="POST",
@@ -153,6 +153,8 @@ class Controller:
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         out: Callable[[str], None] = print,
+        service_url: str | None = None,
+        impersonate: str | None = None,
     ) -> None:
         self.project = project
         self.region = region
@@ -161,6 +163,11 @@ class Controller:
         self.sleep = sleep
         self.monotonic = monotonic
         self.out = out
+        # Con `gcloud run services proxy` el proxy local ya autentica.
+        self.service_url_override = service_url
+        # Cuenta de servicio con la que se firma el token (necesita
+        # roles/iam.serviceAccountTokenCreator para quien ejecuta).
+        self.impersonate = impersonate
 
     # --- Cloud Run
     def execute_job(self, job: str, args: str | None = None) -> str:
@@ -306,6 +313,8 @@ class Controller:
 
     # --- histórico de un banco
     def service_url(self) -> str:
+        if self.service_url_override:
+            return self.service_url_override.rstrip("/")
         return self.gcloud(
             [
                 "run",
@@ -321,7 +330,18 @@ class Controller:
         ).strip()
 
     def launch_history(self, bank: str, *, stars: bool) -> str:
-        token = self.gcloud(["auth", "print-identity-token"]).strip()
+        token = ""  # nosec B105 - sin token: el proxy local autentica
+        if self.impersonate:
+            token = self.gcloud(
+                [
+                    "auth",
+                    "print-identity-token",
+                    f"--impersonate-service-account={self.impersonate}",
+                    f"--audiences={self.service_url()}",
+                ]
+            ).strip()
+        elif not self.service_url_override:
+            token = self.gcloud(["auth", "print-identity-token"]).strip()
         body = {
             "bank_id": bank,
             "mode": "FULL_BACKFILL",
@@ -448,6 +468,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     ingest.add_argument("--max-executions", type=int, default=3)
     ingest.add_argument("--cooldown-sec", type=float, default=900.0)
     ingest.add_argument(
+        "--impersonate",
+        help="cuenta de servicio con la que se firma el token de invocación",
+    )
+    ingest.add_argument(
+        "--service-url",
+        help="URL del proxy local (gcloud run services proxy)",
+    )
+    ingest.add_argument(
         "--yes",
         action="store_true",
         help="confirma el lanzamiento contra Google Play",
@@ -461,7 +489,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("`ingest` consulta Google Play a escala: repetir con --yes.")
         return 64
     try:
-        controller = Controller(project=_project(args), region=args.region)
+        controller = Controller(
+            project=_project(args),
+            region=args.region,
+            service_url=getattr(args, "service_url", None),
+            impersonate=getattr(args, "impersonate", None),
+        )
         if args.command == "drain":
             return controller.drain(
                 max_executions=args.max_executions,
