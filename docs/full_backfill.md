@@ -9,8 +9,8 @@ reales del 2026-10-15; lo que no está medido se marca como supuesto.
 | Dato | Valor | Origen |
 | --- | --- | --- |
 | Rendimiento de sanitización | **16–20 mensajes/s** (3 771 en 231 s) | Medido (logs `Microbatch finished`) |
-| Ritmo de la ingesta | por página de 500: ~0.5 s de consulta + ~5.8 s de publicación + ~2.5 s de pausa ≈ 9 s, **~57 reseñas/s** | Medido en parte: publicación de 2.3 s por página de 199 (logs `Page published`); consulta y pausa de configuración. La publicación domina |
-| Presupuesto por ejecución del histórico | 1000 solicitudes, 200 MB o 3480 s; con páginas de 500 limita el **tiempo** (~395 solicitudes): **~198 mil reseñas** | Perfil `historical_ingestion` y tiempos medidos |
+| Ritmo de la ingesta | por página de 500: ~0.33 s de consulta + ~2.5 s de publicación + ~2.5 s de pausa ≈ 5.4 s, **~93 reseñas/s** | Medido en producción (logs `Play Store request` y `Page published`, 2026-10-15) |
+| Presupuesto por ejecución del histórico | 1000 solicitudes, 200 MB o 3480 s; con páginas de 500 limita el **presupuesto de bytes** (~480 solicitudes): **~240 mil reseñas** | Perfil `historical_ingestion` y tamaños medidos |
 | BBVA con texto | ~788 mil | Caso de uso (ficha de Play). `epic_3.md` advierte que **no es un denominador fiable** del histórico recuperable: usar solo como orden de magnitud |
 | Otros bancos con texto | desconocido | Supuesto: misma proporción que BBVA (13 % de las calificaciones) da ~2.0 M en total |
 | Profundidad del cursor de Google Play | **desconocida** | El sondeo no prueba un máximo ni la exhaustividad del histórico |
@@ -22,14 +22,15 @@ reales del 2026-10-15; lo que no está medido se marca como supuesto.
 | --- | ---: | ---: |
 | Solicitudes a Google Play | ~1 580 | ~4 000 |
 | Ejecuciones del histórico | ~4 | ~10 |
-| Tiempo de ingesta (~57 reseñas/s) | ~3.8 h | ~9.8 h |
+| Tiempo de ingesta (~93 reseñas/s) | ~2.4 h | ~6 h |
 | Tiempo de drenado (18 msg/s) | ~12 h | ~31 h |
 
-Con páginas de 199 serían ~10 000 solicitudes y ~14 h de ingesta (39 reseñas/s):
-bajar las solicitudes 2.5× acelera la ingesta solo 1.4×, porque la publicación
-a Pub/Sub, que es por reseña, domina el tiempo.
+Con páginas de 199 serían ~10 000 solicitudes y ~14 h de ingesta (39 reseñas/s).
+La publicación a Pub/Sub tarda casi lo mismo por página (2.3 s con 199 y 2.5 s
+con 500, medido), así que subir el tamaño acelera la ingesta ~2.4×. Una
+estimación previa que suponía publicación proporcional al tamaño estaba mal.
 
-La ingesta es ~3× más rápida que la sanitización, así que la cola de Pub/Sub
+La ingesta (~93 reseñas/s) es ~5× más rápida que la sanitización (~18 msg/s), así que la cola de Pub/Sub
 crece y se vacía después. La reseña más vieja esperaría ~31 h como máximo, muy
 por debajo de los **7 días** de retención de Pub/Sub y de `raw_staging/`. Eso
 solo se cumple si el drenado no se detiene: es la condición que vigila el plan.
@@ -65,13 +66,41 @@ solicitudes ayuda contra un límite por solicitud, pero no contra uno por bytes
 **Efectos de operación.**
 
 - La página es la unidad de confirmación: una falla repite 500 reseñas.
-- Publicar 500 mensajes toma ~6 s, con 30 s de margen (`confirmation_timeout_sec`).
+- Publicar 500 mensajes tomó 2.5 s (medido), con 30 s de margen (`confirmation_timeout_sec`).
 - El tamaño es parte del contexto del stream. El estado incremental cerrado
   (`active_run_id` nulo en los cinco bancos) abre un stream nuevo de 500 en la
   siguiente corrida; el anterior conserva su contexto de 199. Una corrida abierta
   se reanuda con el contexto con el que nació. Ambos casos tienen prueba.
 - **Orden de despliegue:** `pulumi up` con la imagen nueva **y** `SCRAPER_PAGE_SIZE=500`
   en el mismo paso. Con la imagen vieja, Settings rechaza 500 y el servicio no arranca.
+
+## Palanca: hilos de E/S del ledger
+
+La sanitización rindió 16.3 msg/s con 8 hilos y un pool HTTP de 10 conexiones.
+El 68 % del tiempo fue E/S del ledger en GCS (recibos 36 %, cierre de páginas
+22 %, consulta 10 %); BigQuery 19 %, `pull` 12 % y el saneamiento 1.4 %. Ahora
+`--io-workers` (16 por defecto, 1 a 64, también `SANITIZATION_IO_WORKERS`)
+fija los hilos y el pool HTTP del cliente de GCS se ajusta solo (`hilos + 4`,
+mínimo 10), porque con el pool de 10 los hilos de más abren y descartan
+conexiones.
+
+**Mejora esperada (estimada, no medida).** Si la E/S escala con los hilos y no
+satura la vCPU: con 16 hilos ~1.5× (~25 msg/s), con 32 hasta ~2× (~33 msg/s).
+Con ese ritmo el drenado de ~2.0 M baja de ~31 h a ~17–21 h. El tope es CPU:
+el Job tiene 1 vCPU. Lo no afectado (BigQuery y `pull`, 31 %) pasa a dominar,
+y ahí el siguiente paso sería solapar el `pull` con el procesamiento.
+
+**Cómo medirlo.** Cada ejecución registra `io_workers` y `messages_per_second`
+por microbatch. Con cola de reseñas nuevas, probar escalonadamente y comparar:
+
+```bash
+uv run python tools/backfill_controller.py drain --max-executions 1 --job-args "--io-workers=16"
+uv run python tools/backfill_controller.py drain --max-executions 1 --job-args "--io-workers=32"
+```
+
+Quedarse con el valor donde `messages_per_second` deje de subir. Si la latencia
+por operación sube con más hilos, la vCPU está saturada y conviene un Job de
+2 vCPU antes que más hilos.
 
 ## Etapa 0: antes de empezar
 
