@@ -1574,6 +1574,7 @@ def test_failed_requests_are_logged_with_their_outcome(
     if outcome == "transport_error":
         assert failed[0]["status_code"] == 503
     if outcome == "protocol_shape":
+        assert failed[0]["detail"] == "html"
         assert events[-1]["severity"] == "WARNING"
         assert events[-1]["reason"] == "protocol_shape"
 

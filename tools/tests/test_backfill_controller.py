@@ -327,3 +327,50 @@ def test_drain_command_accepts_the_fast_replay_flag():
     args = bc.parse_args(["drain", "--fast-replay", "--project", "p"])
     assert args.fast_replay is True
     assert bc.parse_args(["drain"]).fast_replay is False
+
+
+def test_ingest_through_a_local_proxy_sends_no_token():
+    sent = {}
+
+    def post(url, body, token):
+        sent.update(url=url, token=token)
+        return 202, {"execution": "x/exec-1"}
+
+    controller = bc.Controller(
+        project="p",
+        region="r",
+        gcloud=lambda args: pytest.fail("no debe llamar a gcloud"),
+        post=post,
+        service_url="http://localhost:8089/",
+    )
+    assert controller.launch_history("BBVA", stars=False) == "exec-1"
+    assert sent == {"url": "http://localhost:8089/api/v1/ingest", "token": ""}
+
+
+def test_ingest_can_sign_the_token_with_a_service_account():
+    calls, sent = [], {}
+
+    def gcloud(args):
+        calls.append(list(args))
+        if args[0] == "run":
+            return "https://svc.example\n"
+        return "tok\n"
+
+    def post(url, body, token):
+        sent["token"] = token
+        return 202, {"execution": "x/exec-2"}
+
+    controller = bc.Controller(
+        project="p",
+        region="r",
+        gcloud=gcloud,
+        post=post,
+        impersonate="sa@p.iam.gserviceaccount.com",
+    )
+    assert controller.launch_history("BBVA", stars=False) == "exec-2"
+    token_call = next(c for c in calls if c[0] == "auth")
+    assert "--impersonate-service-account=sa@p.iam.gserviceaccount.com" in (
+        token_call
+    )
+    assert "--audiences=https://svc.example" in token_call
+    assert sent["token"] == "tok"  # noqa: S105

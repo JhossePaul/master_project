@@ -30,30 +30,61 @@ evento porque el volumen es de cientos de reseñas.
 | Dato | Valor | Origen |
 | --- | --- | --- |
 | Rendimiento de la sanitización normal | **16–20 mensajes/s** (3 771 en 231 s), 68 % en el ledger | Medido (`Microbatch finished`) |
-| Rendimiento del replay rápido | **no medido** | Se mide en el piloto (etapa 2) |
+| Rendimiento del replay rápido | **464 msg/s** (50 000 en 107.7 s, 100 páginas, 8 `MERGE`). Fases: BigQuery 55 s (51 %), cierres 17 s, lectura de capturas 15 s, regex 6 s | Medido el 2026-10-15 (`Sanitization run finished`) |
 | Ritmo de la ingesta | por página de 500: ~0.33 s de consulta + ~2.5 s de publicación + ~2.5 s de pausa ≈ 5.4 s, **~93 reseñas/s** | Medido en producción (`Play Store request`, `Page published`) |
-| Presupuesto por ejecución del histórico | 1000 solicitudes, 200 MB o 3480 s; con páginas de 500 limita el **presupuesto de bytes** (~480 solicitudes): **~240 mil reseñas** | Perfil `historical_ingestion` y tamaños medidos |
-| BBVA con texto | ~788 mil | Caso de uso. `epic_3.md` advierte que **no es un denominador fiable**: orden de magnitud |
-| Otros bancos con texto | desconocido | Supuesto: misma proporción que BBVA da ~2.0 M en total |
-| Profundidad del cursor de Google Play | **desconocida** | El sondeo no prueba un máximo ni la exhaustividad |
+| Presupuesto por ejecución del histórico | Manda el tope de **100 páginas** (`ingestion_max_pages`); el de tiempo del perfil histórico es 3 480 s y no se alcanza. **50 000 reseñas en 650–980 s (51–77 reseñas/s, 6.5–9.8 s por página)**; entre ejecuciones hay 17–48 s de arranque | Medido el 2026-10-15 (`BUDGET_EXHAUSTED/pages`). Subir el tope de páginas ahorraría ~3–5 %: no se hizo |
+| Reseñas por banco según los metadatos de la tienda | BBVA 790 803, NUBANK 107 286, SANTANDER 627 776, AZTECA 588 658, BANORTE 519 825 (total 2 634 348) | Extraído por el usuario. Orden de magnitud: NUBANK lo superó en 19 % (ver resultados) |
+| Profundidad del cursor de Google Play | **Llega al origen de cada banco** (2012–2024) | Observado: los cinco bancos agotaron el cursor (ver resultados) |
 | Retraso de la reseña más reciente | ~24 h en los cinco bancos | Observado; causa sin determinar |
 | `MERGE` de BigQuery | ~20 MB facturados y ~2 s por job de 1000 filas | Medido |
 
-## Estimación
+## Resultado de la ingesta (2026-10-15)
+
+Los cinco bancos agotaron el cursor. Cada plan terminó con `PROTOCOL_ERROR /
+protocol_shape` por la **última página**: una respuesta parcial (menos de 500
+filas) **sin bloque de paginación** (`inner[1]` nulo en vez de
+`[null, cursor]`), que el parser rechazaba. Se reprodujo la solicitud fallida de
+cada banco (solo estructura, sin contenido) y los cinco dan la misma forma:
+
+| Banco | Publicadas | Última página (sin ingerir) | Más antigua | Metadatos de la tienda | Diferencia |
+| --- | ---: | ---: | --- | ---: | ---: |
+| BBVA | 787 433 | 441 | 2013-01-23 | 790 803 | −0.4 % |
+| NUBANK | 128 000 | 204 | 2020-02-21 | 107 286 | **+19.4 %** |
+| SANTANDER | 623 483 | 111 | 2012-07-21 | 627 776 | −0.7 % |
+| AZTECA | 590 499 | 481 | 2017-10-17 | 588 658 | +0.4 % |
+| BANORTE | 517 985 | 408 | 2013-11-11 | 519 825 | −0.3 % |
+| **Total** | **2 647 400** | **1 645** | | **2 634 348** | **+0.6 %** |
+
+Notas:
+
+- *Publicadas* suma `reviews_published` de las auditorías; incluye lo reemitido
+  por reintentos de Cloud Run tras un `exit(1)` (hubo recuperaciones con
+  `ANCHOR_REPLAY`). El TDS deduplica por `(bank_id, id_resena)`: el conteo real
+  se conoce tras el replay.
+- NUBANK extrajo más que su cifra de la tienda: la cifra de metadatos **no es un
+  tope**. Hay que comprobar duplicados en el TDS.
+- El fin del histórico se infiere de la forma de la respuesta (página parcial
+  sin cursor) y de que la fecha más antigua es plausible para cada app; no hay
+  una señal explícita de "fin" en el protocolo.
+- **Corrección en el parser** (`playstore_protocol.py`): `inner[1] is None` con
+  filas se acepta como página final (`END_CANDIDATE`, sin cursor). Sin filas
+  sigue siendo error. Con la imagen corregida, un `ingest` más por banco ingiere
+  esa última página y cierra el plan en `SOURCE_EXHAUSTED_OBSERVED`. El evento
+  `protocol_shape` ahora trae `detail` con el motivo.
+
+## Estimación (previa a la ingesta; ver resultados arriba)
 
 | | BBVA (788 k) | Total (~2.0 M) | Estado |
 | --- | ---: | ---: | --- |
 | Solicitudes a Google Play | ~1 580 | ~4 000 | Calculado |
-| Ejecuciones del histórico | ~4 | ~10 | Calculado |
-| Ingesta (~93 reseñas/s) | ~2.4 h | ~6 h | Medido el ritmo |
+| Ejecuciones del histórico (50 000 c/u) | ~16 | ~40 | Calculado con lo medido |
+| Ingesta (72 reseñas/s, ~12 min por ejecución) | ~3.2 h | **~8 h** | Medido el ritmo |
 | Drenado con sanitización normal (18 msg/s) | ~12 h | ~31 h | Medido el ritmo |
-| Drenado con replay rápido | ~0.5–1 h | **~1–2 h** | **Supuesto, no medido** |
+| Replay rápido (464 msg/s) | ~28 min | **~72 min** | Medido el ritmo |
 
-La cifra del replay rápido sale de suponer que sin el ledger el costo es la
-lectura de la captura (~0.5 MB por página), el regex y un `MERGE` de 10 000
-filas cada ~2–5 s, y que las lecturas en paralelo escalan con los hilos. Hasta
-que el piloto la mida, el plan solo depende de que no sea peor que el drenado
-normal (~31 h), que ya cabe en los 7 días de retención.
+Con el replay rápido el cuello de botella pasa a ser **la ingesta** (72 reseñas/s
+contra 464 del replay). BigQuery es la mitad del replay (7 s por `MERGE`); subir
+`--upsert-batch-rows` es la palanca si hiciera falta, pero ya no es el límite.
 
 Con páginas de 199 serían ~10 000 solicitudes y ~14 h de ingesta (39 reseñas/s).
 La publicación a Pub/Sub tarda casi lo mismo por página (2.3 s con 199 y 2.5 s
@@ -137,7 +168,12 @@ Cada ejecución registra `phase_seconds` con `capture_read_s`, `sanitize_s`,
       `Cola vacía`; DLQ (`voc-raw-reviews-dlq-sub`) sin mensajes (métrica
       `num_undelivered_messages`; **no** extraer mensajes: son crudos).
 - [ ] Cinco bancos con estado `COMPLETED` en `ingestion_runs_log_v2`.
-- [ ] Tu cuenta tiene `roles/run.invoker` sobre `voc-ingestion-worker`.
+- [ ] Tu cuenta puede invocar `voc-ingestion-worker`. En este proyecto el token
+      de usuario de `gcloud auth print-identity-token` da **401 `invalid_token`**
+      aunque tenga `roles/run.invoker` (también por `gcloud run services proxy`).
+      Solución usada: `--impersonate voc-sa-scheduler@…` en `ingest`, que firma el
+      token con esa cuenta de servicio y exige `roles/iam.serviceAccountTokenCreator`
+      para ti. Revocar ambos permisos al terminar. Causa del 401 sin determinar.
 - [ ] Resuelto, o aceptado como limitación, el retraso de ~24 h (comparar la
       primera reseña de la ficha de Play con `MAX(fecha)` del TDS).
 - [ ] Conteos de partida guardados:
@@ -244,6 +280,20 @@ que no queda nada nuevo que valga la pena, o con los conteos por banco). Es un
 paso **no verificado** de este plan. Si se hace con la ingesta todavía en curso,
 lo publicado después del `seek` sigue entrando a la cola normalmente.
 
+## Etapa 4b: cerrar la ingesta tras el cambio del parser
+
+Con la imagen de ingesta corregida desplegada (`pulumi up`), un `ingest` por
+banco ingiere la última página y cierra el plan:
+
+```bash
+uv run python tools/backfill_controller.py ingest --project project-7bafd424-a385-4c05-b5b --bank BBVA --max-executions 2 --yes --impersonate voc-sa-scheduler@project-7bafd424-a385-4c05-b5b.iam.gserviceaccount.com
+```
+
+Repetir con NUBANK, SANTANDER, AZTECA y BANORTE. Cada uno debe terminar en
+`SOURCE_EXHAUSTED_OBSERVED` con unas pocas filas (441, 204, 111, 481, 408). Antes
+de la cola y del replay, **pausar los Schedulers** `voc-trigger-sanitization-daily`
+y `voc-ingest-daily-sequential-all` hasta cerrar la carga.
+
 ## Etapa 5: cierre y verificación
 
 - [ ] Replay sin páginas pendientes: la última ejecución devuelve `messages = 0`.
@@ -272,8 +322,7 @@ ledger, así que relanzar el mismo comando continúa donde quedó.
 
 ## Lo que este plan no resuelve
 
-- La profundidad real del cursor de Google Play: se descubre en el piloto.
-- La exhaustividad del histórico: solo BBVA tiene una cifra de referencia.
+- La exhaustividad del histórico: se infiere del agotamiento del cursor; las cifras de la tienda coinciden salvo NUBANK.
 - El retraso de ~24 h de las reseñas más recientes.
 - El rendimiento real del replay rápido y el efecto del `seek`: se miden/prueban
   en las etapas 2 y 4.

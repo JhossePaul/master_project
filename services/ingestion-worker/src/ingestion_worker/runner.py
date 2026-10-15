@@ -449,9 +449,15 @@ class _Run:
                 raise _Stop(
                     ExtractionStatus.PROTOCOL_ERROR, "empty_ambiguous"
                 ) from None
-            except ProtocolError:
+            except ProtocolError as exc:
+                # Los mensajes de ProtocolError son literales del adaptador.
                 self._request_event(
-                    "ERROR", "protocol_shape", began, retries, recovery
+                    "ERROR",
+                    "protocol_shape",
+                    began,
+                    retries,
+                    recovery,
+                    detail=str(exc),
                 )
                 raise _Stop(
                     ExtractionStatus.PROTOCOL_ERROR, "protocol_shape"
