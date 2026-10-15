@@ -76,6 +76,7 @@ from voc_common.schemas import (
     compute_source_revision,
     ensure_utc,
 )
+from voc_common.structured_log import FORBIDDEN_FIELDS, log_event
 from voc_common.text_utils import (
     contar_palabras,
     cumple_umbral_palabras,
@@ -136,6 +137,7 @@ __all__ = [
     "IngestionMode",
     "IngestionRequestPayload",
     "IngestionWatermarkState",
+    "FORBIDDEN_FIELDS",
     "MAX_REVIEW_WORDS",
     "MIN_REVIEW_WORDS",
     "PLAYSTORE_BANK_APPS",
@@ -156,4 +158,5 @@ __all__ = [
     "get_settings",
     "hash_username_pii",
     "limpiar_texto_bancario",
+    "log_event",
 ]
