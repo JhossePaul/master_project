@@ -1624,3 +1624,54 @@ def test_sequential_endpoint_isolates_a_bank_with_unreadable_state(
         failure[0]["bank_id"] == "NUBANK" and failure[0]["severity"] == "ERROR"
     )
     assert "app_id" not in json.dumps(failure)  # solo el tipo de error
+
+
+# -------------------------------- cambio de tamaño de página en producción
+def test_closed_incremental_state_starts_a_new_stream_at_the_new_page_size():
+    h = Harness(ten_days(), scraper_page_size=20)
+    first = h.run()
+    assert first.status == ExtractionStatus.TARGET_REACHED
+    old = h.stream(first.stream_ids[0])
+    assert old.context.page_size == 20
+    high = h.snapshot().state.incremental.committed_high_at
+    assert h.snapshot().state.incremental.active_run_id is None
+
+    newest = reviews(120, start=T0 + timedelta(days=2), step=1_200, prefix="n")
+    h.source.items = newest + h.source.items
+    h.config = h.config.model_copy(update={"scraper_page_size": 50})
+    second = h.run()
+
+    assert second.status == ExtractionStatus.TARGET_REACHED
+    assert second.stream_ids != first.stream_ids
+    assert h.stream(second.stream_ids[0]).context.page_size == 50
+    # El stream anterior conserva su contexto; nada se reescribe.
+    assert h.stream(first.stream_ids[0]).context.page_size == 20
+    assert second.committed_high_at == T0 + timedelta(days=2)
+    assert high is not None and second.committed_high_at > high
+    # Las 120 reseñas nuevas se publicaron en páginas de 50 (3 solicitudes) y
+    # la ventana de revisita (72 h) añade algunas más para reconectar.
+    assert second.reviews_published >= 120
+    assert second.requests >= 3
+
+
+def test_open_run_resumes_with_its_own_page_size_after_a_change():
+    h = Harness(ten_days(), scraper_page_size=20)
+    h.run()
+    h.source.items = (
+        reviews(120, start=T0 + timedelta(days=2), step=1_200, prefix="n")
+        + h.source.items
+    )
+    base = len(h.source.calls)
+    h.source.on_fetch = lambda n: setattr(
+        h, "fail_publish", 1 if n == base + 2 else 0
+    )
+    first = h.run()
+    assert first.status == ExtractionStatus.PUBLICATION_INCOMPLETE
+    h.source.on_fetch = None
+    h.config = h.config.model_copy(update={"scraper_page_size": 50})
+    second = h.run()
+    # Reanuda la corrida abierta con el contexto con el que nació (20).
+    assert second.run_id == first.run_id
+    assert second.status == ExtractionStatus.TARGET_REACHED
+    assert h.stream(second.stream_ids[0]).context.page_size == 20
+    assert second.committed_high_at == T0 + timedelta(days=2)

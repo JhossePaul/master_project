@@ -93,12 +93,14 @@ para lanzar históricos, `settings.require_ingestion_v2(historical=True)` tambi�
 exige la referencia del Job. Este preflight es local: no garantiza que tabla,
 Job o permisos existan. La activación requiere el despliegue de EPIC-2 primero.
 
-`PLAYSTORE_DEFAULT_PAGE_SIZE=199` y `PLAYSTORE_PAGE_SIZE_POLICY_LIMIT=199` son
-políticas locales separadas. Settings y payloads de ingesta usan las mismas constantes.
-`ScanContext` puede describir páginas experimentales de otro tamaño; eso no las
-habilita en producción. Antes de permitir 500, validar cadenas y actualizar el
-límite, tests y configuración desplegada conjuntamente; cambiar contexto crea
-otro stream y no permite transferir tokens. Los lotes DLP son independientes.
+`PLAYSTORE_DEFAULT_PAGE_SIZE=500` y `PLAYSTORE_PAGE_SIZE_POLICY_LIMIT=500` son
+políticas locales separadas (antes 199; el 500 se validó el 2026-10-15 con una
+cadena de 10 páginas, ver `docs/full_backfill.md`). Settings y payloads de
+ingesta usan las mismas constantes. `ScanContext` puede describir páginas
+experimentales de otro tamaño; eso no las habilita en producción. Subir el
+límite exige validar cadenas y actualizar tests y configuración desplegada
+conjuntamente; cambiar el contexto crea otro stream y no permite transferir
+tokens. Los lotes DLP son independientes.
 
 ## Estado inicial y fixtures
 
@@ -196,7 +198,7 @@ Las claves de cada perfil coinciden con Settings (`ingestion_max_requests`,
 Los campos no especificados mantienen sus defaults del perfil correspondiente.
 El timeout HTTP coincide con el configurado en el servicio, y el timeout histórico
 con el configurado en el Job. Ambos reciben los prefijos, tabla de auditoría,
-tópico y opciones del scraper; mantienen página de 199 y heartbeat menor al lease.
+tópico y opciones del scraper; mantienen página de 500 y heartbeat menor al lease.
 Los presupuestos y la salida anticipada deben hacerse cumplir en el runtime.
 
 Exports: `ingestion_history_job_id`, `ingestion_history_job_name` (nombre completo

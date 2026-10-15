@@ -114,7 +114,7 @@ def test_structural_encoding_preserves_opaque_input():
             0
         ][0][1]
     )
-    assert first[1][2] == [199]
+    assert first[1][2] == [500]
     assert parse_qs(urlsplit(build_batchexecute_url("es&x", "mx+")).query) == {
         "hl": ["es&x"],
         "gl": ["mx+"],

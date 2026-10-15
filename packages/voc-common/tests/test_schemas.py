@@ -114,11 +114,11 @@ def test_rpc_cursor_defaults_and_star_bounds() -> None:
 def test_ingestion_request_payload_bounds() -> None:
     payload = IngestionRequestPayload(bank_id=BankKey.NUBANK)
     assert payload.mode is IngestionMode.INCREMENTAL
-    assert payload.page_size == 199
+    assert payload.page_size == 500
     assert payload.max_reviews_per_run == 5000
     assert payload.partition_by_stars is False
     with pytest.raises(ValidationError):
-        IngestionRequestPayload(bank_id=BankKey.BBVA, page_size=200)
+        IngestionRequestPayload(bank_id=BankKey.BBVA, page_size=501)
     with pytest.raises(ValidationError):
         IngestionRequestPayload(bank_id=BankKey.BBVA, max_reviews_per_run=0)
     with pytest.raises(ValidationError):

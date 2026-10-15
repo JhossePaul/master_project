@@ -96,9 +96,12 @@ PLAYSTORE_BATCHEXECUTE_URL: str = (
     "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 )
 PLAYSTORE_REVIEWS_RPC_ID: str = "oCPfdb"
-# Política local conservadora; no describe un máximo nativo del endpoint.
-PLAYSTORE_DEFAULT_PAGE_SIZE: int = 199
-PLAYSTORE_PAGE_SIZE_POLICY_LIMIT: int = 199
+# Política local; no describe un máximo nativo del endpoint. Se pasó de 199 a
+# 500 el 2026-10-15 tras validar 10 páginas consecutivas de 500 (5 000 reseñas,
+# sin solapes ni huecos y con un control de 199 idéntico en las primeras 995).
+# Es lo más grande probado, no un máximo demostrado.
+PLAYSTORE_DEFAULT_PAGE_SIZE: int = 500
+PLAYSTORE_PAGE_SIZE_POLICY_LIMIT: int = 500
 DEFAULT_PLAYSTORE_LANG: str = "es"
 DEFAULT_PLAYSTORE_COUNTRY: str = "mx"
 

@@ -109,7 +109,7 @@ def test_historical_job_profiles_access_and_scheduler(
     job_env = {v["name"]: v.get("value") for v in container["envs"]}
     for name, value in profile.execution.model_dump().items():
         assert job_env[name.upper()] == str(value)
-    assert job_env["SCRAPER_PAGE_SIZE"] == "199"
+    assert job_env["SCRAPER_PAGE_SIZE"] == "500"
     assert job_env["BQ_INGESTION_RUNS_LOG_TABLE"] == "ingestion_runs_log_v2"
     assert job_env["GCS_INGESTION_LEDGERS_PREFIX"] == "state/ingestion/ledgers"
     assert not {
@@ -184,7 +184,7 @@ def test_historical_job_profiles_access_and_scheduler(
         {"command": [""]},
         {"max_retries": -1},
         {"max_retries": 11},
-        {"execution": {"scraper_page_size": 500}},
+        {"execution": {"scraper_page_size": 501}},
         {"execution": {"ingestion_max_runtime_sec": 3600}},
         {"execution": {"ingestion_heartbeat_interval_sec": 120}},
     ],

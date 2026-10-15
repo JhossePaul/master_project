@@ -124,7 +124,7 @@ def test_public_models_roundtrip() -> None:
         {"sort_order": 1},
         {"star_filter": 1},
         {"device_filter": "tablet"},
-        {"page_size": 500},
+        {"page_size": 400},
     ],
 )
 def test_context_fingerprint_changes_for_each_query_parameter(
@@ -133,7 +133,7 @@ def test_context_fingerprint_changes_for_each_query_parameter(
     assert context().fingerprint != context(**change).fingerprint
     assert context().fingerprint == context().fingerprint
     with pytest.raises(ValidationError):
-        context().page_size = 500
+        context().page_size = 400
 
 
 def test_context_protocol_app_and_opaque_tokens() -> None:

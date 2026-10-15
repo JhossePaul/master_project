@@ -130,7 +130,7 @@ def test_partial_publication_does_not_advance(publication: Any) -> None:
 def test_context_revision_and_sequence_guards() -> None:
     root, stream, page = setup()
     cases = [
-        replace(page, context=replace(page.context, page_size=500)),
+        replace(page, context=replace(page.context, page_size=400)),
         replace(page, chain_epoch=1),
         replace(page, ordinal=1),
         replace(page, input_token=CURSOR),
