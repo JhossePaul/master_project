@@ -153,6 +153,8 @@ class ProcessingStatus(StrEnum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     TDS_COMMITTED = "TDS_COMMITTED"
+    # Legado: ya no se emite (el TDS no filtra por longitud); se conserva para
+    # leer recibos de corridas anteriores.
     FILTERED_LENGTH = "FILTERED_LENGTH"
     QUARANTINED = "QUARANTINED"
     RETRYABLE_ERROR = "RETRYABLE_ERROR"

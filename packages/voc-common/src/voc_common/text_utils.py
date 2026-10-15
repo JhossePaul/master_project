@@ -47,7 +47,10 @@ def contar_palabras(texto: str) -> int:
 
 
 def cumple_umbral_palabras(texto: str) -> bool:
-    """Indica si el texto está dentro del rango del EDA (2 a 60 palabras)."""
+    """Indica si el texto está dentro del rango del EDA (2 a 60 palabras).
+
+    Solo para el análisis. La ingesta y el TDS no filtran por longitud.
+    """
     return MIN_REVIEW_WORDS <= contar_palabras(texto) <= MAX_REVIEW_WORDS
 
 
