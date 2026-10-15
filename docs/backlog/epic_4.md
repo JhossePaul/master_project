@@ -1,6 +1,7 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
 * **Estado:** Implementada (features 4.1–4.5). Validada localmente con dobles deterministas y la imagen sin red; sin despliegue ni llamadas reales a Pub/Sub, Cloud DLP, BigQuery o GCS. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
+* **Revisión de política (2026-10-15, basada en datos):** supera lo que contradiga el resto de este documento. Solo el texto llega al TDS: `titulo`, `texto_respuesta` y `fecha_respuesta` se descartan y quedan `NULL` (se retira `UNEXPECTED_TITLE`; la respuesta saludaba al autor por su nombre en 249 de 302 casos medidos). El valor por defecto es `use_cloud_dlp_api=False` (solo regex local) y ya no se rechaza en producción; Cloud DLP queda como modo opcional con la política *fail-closed* original, y los criterios que mencionan `use_cloud_dlp_api=True` aplican solo a ese modo. Evidencia, método y riesgo residual: [README del servicio](../../services/sanitization-pipeline/README.md#política-de-sanitización-decisión-basada-en-datos).
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**

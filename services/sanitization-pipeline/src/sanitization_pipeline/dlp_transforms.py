@@ -1,11 +1,15 @@
-"""Desidentificación con Cloud DLP y segunda barrera regex (EPIC-4 4.2).
+"""Sanitización por regex local con Cloud DLP opcional (EPIC-4 4.2).
 
-Flujo por microbatch: rechazo previo (título, fila sobredimensionada),
-empaquetado por filas/bytes, Cloud DLP con alineación posicional *sidecar*,
-segunda barrera local, conteo de tokens introducidos, filtro EDA [2, 60] y
-construcción de `SanitizedReviewEnvelope`. Con `use_cloud_dlp_api=True` el
-flujo es *fail-closed*: si DLP no responde correctamente ningún evento sale por
-la salida válida usando solo regex.
+Política de minimización: solo el texto de la reseña llega al TDS. El título y
+la respuesta de la entidad (que saluda al autor por su nombre en la mayoría de
+los casos medidos) se descartan antes de sanitizar y nunca se persisten.
+
+Flujo por microbatch: rechazo previo (fila sobredimensionada), empaquetado por
+filas/bytes, Cloud DLP opcional con alineación posicional *sidecar*, regex
+local, conteo de tokens introducidos, filtro EDA [2, 60] y construcción de
+`SanitizedReviewEnvelope`. Con `use_cloud_dlp_api=True` el flujo es
+*fail-closed*: si DLP no responde correctamente ningún evento sale por la
+salida válida usando solo regex.
 """
 
 import re
@@ -58,7 +62,6 @@ OUTPUT_TAG_QUARANTINED = "quarantined"
 OUTPUT_TAG_RETRYABLE_ERROR = "retryable_error"
 
 # Códigos de recibo sin texto ni PII.
-UNEXPECTED_TITLE = "UNEXPECTED_TITLE"
 DLP_ROW_TOO_LARGE = "DLP_ROW_TOO_LARGE"
 CONTRACT_VIOLATION = "CONTRACT_VIOLATION"
 DLP_UNAVAILABLE = "DLP_UNAVAILABLE"
@@ -192,9 +195,7 @@ class LocalRegexFallbackSanitizer:
 
 # --------------------------------------------------------------- packing
 def _row_bytes(envelope: RawReviewEnvelope) -> int:
-    return len(envelope.raw.texto.encode("utf-8")) + len(
-        (envelope.raw.texto_respuesta or "").encode("utf-8")
-    )
+    return len(envelope.raw.texto.encode("utf-8"))
 
 
 @dataclass(frozen=True)
@@ -375,8 +376,8 @@ class BatchSanitizer:
         self,
         *,
         user_hash_salt: str,
-        deidentifier: Deidentifier | None,
-        use_cloud_dlp_api: bool = True,
+        deidentifier: Deidentifier | None = None,
+        use_cloud_dlp_api: bool = False,
         packer: DlpRowBatchPacker | None = None,
         fallback: LocalRegexFallbackSanitizer | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
@@ -407,26 +408,14 @@ class BatchSanitizer:
         self, envelopes: Sequence[RawReviewEnvelope]
     ) -> SanitizedBatch:
         out = SanitizedBatch()
-        eligible: list[RawReviewEnvelope] = []
-        for event in envelopes:
-            if event.raw.titulo is not None:
-                # from_raw_and_dlp copiaría el título sin sanitizar.
-                out.quarantined.append(
-                    self._receipt(
-                        event, ProcessingStatus.QUARANTINED, UNEXPECTED_TITLE
-                    )
-                )
-            else:
-                eligible.append(event)
-        packed = self.packer.pack(eligible)
+        packed = self.packer.pack(envelopes)
         out.quarantined.extend(
             self._receipt(e, ProcessingStatus.QUARANTINED, DLP_ROW_TOO_LARGE)
             for e in packed.oversized
         )
         for batch in packed.batches:
-            rows: list[Row] = [
-                (e.raw.texto, e.raw.texto_respuesta) for e in batch
-            ]
+            # La respuesta no se procesa ni se persiste: segunda celda vacía.
+            rows: list[Row] = [(e.raw.texto, None) for e in batch]
             if self.deidentifier is not None:
                 try:
                     rows = self.deidentifier.deidentify(rows)
@@ -441,8 +430,8 @@ class BatchSanitizer:
                         for e in batch
                     )
                     continue
-            for event, (texto, reply) in zip(batch, rows, strict=True):
-                self._finish(out, event, texto, reply)
+            for event, (texto, _) in zip(batch, rows, strict=True):
+                self._finish(out, event, texto)
         return out
 
     def _finish(
@@ -450,25 +439,28 @@ class BatchSanitizer:
         out: SanitizedBatch,
         event: RawReviewEnvelope,
         texto: str,
-        reply: str | None,
     ) -> None:
         texto = self.fallback.sanitize(texto)
-        reply = self.fallback.sanitize(reply) if reply is not None else None
         if not cumple_umbral_palabras(limpiar_texto_bancario(texto)):
             out.filtered.append(
                 self._receipt(event, ProcessingStatus.FILTERED_LENGTH)
             )
             return
-        findings = count_introduced_pii_tokens(
-            event.raw.texto, texto
-        ) + count_introduced_pii_tokens(event.raw.texto_respuesta, reply)
+        findings = count_introduced_pii_tokens(event.raw.texto, texto)
+        # Minimización: título y respuesta no llegan al registro curado.
+        raw = event.raw.model_copy(
+            update={
+                "titulo": None,
+                "texto_respuesta": None,
+                "fecha_respuesta": None,
+            }
+        )
         try:
             record = SanitizedReviewRecord.from_raw_and_dlp(
-                event.raw,
+                raw,
                 texto_sanitizado=texto,
                 pii_findings_count=findings,
                 user_hash_salt=self.salt,
-                texto_respuesta_sanitizado=reply,
             )
             out.valid.append(SanitizedReviewEnvelope.from_event(event, record))
         except (ValidationError, ValueError):
@@ -500,7 +492,7 @@ class BatchCloudDlpDeidentifyDoFn(beam.DoFn):
         parent: str,
         inspect_template: str | None,
         deidentify_template: str | None,
-        use_cloud_dlp_api: bool = True,
+        use_cloud_dlp_api: bool = False,
         max_rows: int = 250,
         max_bytes: int = 400_000,
         client_factory: Callable[[], Any] = _default_dlp_client,

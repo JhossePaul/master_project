@@ -25,7 +25,7 @@ def test_defaults_are_valid_for_the_job_without_arguments():
     assert config.max_runtime_sec + config.checkpoint_margin_sec == 1800
     assert config.ack_renew_interval_sec < config.ack_deadline_sec == 600
     assert config.dlp_max_bytes < DLP_REQUEST_LIMIT_BYTES
-    assert config.use_cloud_dlp_api is True
+    assert config.use_cloud_dlp_api is False
 
 
 def test_container_timeout_matches_pulumi_job():
@@ -75,7 +75,8 @@ def test_invalid_budgets_are_rejected(changes):
 
 def test_preflight_accepts_regional_templates(settings, dlp_names):
     parent = dlp_names["parent"]
-    assert preflight(SanitizationExecutionConfig(), settings(), {}) == parent
+    cloud = SanitizationExecutionConfig(use_cloud_dlp_api=True)
+    assert preflight(cloud, settings(), {}) == parent
     assert dlp_parent(settings()) == parent
 
 
@@ -90,9 +91,14 @@ def test_preflight_accepts_regional_templates(settings, dlp_names):
             "Dataflow",
         ),
         ({}, {}, {"BEAM_RUNNER": "DataflowRunner"}, "DirectRunner"),
-        ({}, {"dlp_inspect_template_id": None}, {}, "inspectTemplates"),
         (
+            {"use_cloud_dlp_api": True},
+            {"dlp_inspect_template_id": None},
             {},
+            "inspectTemplates",
+        ),
+        (
+            {"use_cloud_dlp_api": True},
             {
                 "dlp_deidentify_template_id": (
                     "projects/test-project/locations/europe-west1/"
@@ -103,19 +109,10 @@ def test_preflight_accepts_regional_templates(settings, dlp_names):
             "deidentifyTemplates",
         ),
         (
-            {},
+            {"use_cloud_dlp_api": True},
             {"dlp_inspect_template_id": "voc-dlp-inspect-template"},
             {},
             "inspectTemplates",
-        ),
-        (
-            {"use_cloud_dlp_api": False},
-            {
-                "environment": "production",
-                "user_hash_salt": "salt-for-production-tests",
-            },
-            {},
-            "offline",
         ),
     ],
 )
@@ -128,9 +125,15 @@ def test_preflight_fails_closed(settings, config, changes, environ, message):
         )
 
 
-def test_offline_regex_mode_is_allowed_outside_production(settings):
-    offline = SanitizationExecutionConfig(use_cloud_dlp_api=False)
-    assert preflight(offline, settings(dlp_inspect_template_id=None), {})
+def test_regex_mode_is_default_and_allowed_in_production(settings):
+    local = SanitizationExecutionConfig()
+    assert local.use_cloud_dlp_api is False
+    production = settings(
+        environment="production",
+        user_hash_salt="salt-for-production-tests",
+        dlp_inspect_template_id=None,
+    )
+    assert preflight(local, production, {}) == dlp_parent(production)
 
 
 def test_dlp_tokens_and_infra_templates_stay_aligned():

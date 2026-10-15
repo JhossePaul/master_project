@@ -121,12 +121,19 @@ def deidentifier(client: FakeDlp, **kwargs: Any) -> dt.CloudDlpDeidentifier:
 def sanitizer(
     client: FakeDlp | None = None, **kwargs: Any
 ) -> dt.BatchSanitizer:
+    """Modo Cloud DLP (opt-in) con cliente falso."""
     return dt.BatchSanitizer(
         user_hash_salt=SALT,
         deidentifier=deidentifier(client or FakeDlp()),
+        use_cloud_dlp_api=True,
         clock=lambda: T0,
         **kwargs,
     )
+
+
+def local_sanitizer() -> dt.BatchSanitizer:
+    """Modo por defecto: solo regex local, sin cliente DLP."""
+    return dt.BatchSanitizer(user_hash_salt=SALT, clock=lambda: T0)
 
 
 # ------------------------------------------------------- privacy corpus
@@ -141,7 +148,7 @@ CORPUS = [
         "Pagué con la tarjeta 4152-3135-7890-1234 y me cobraron doble 😡",
         "Hola María López, escríbenos a soporte.mx@example.com",
         ["4152-3135-7890-1234", "María López", "soporte.mx@example.com"],
-        3,
+        1,
     ),
     (
         "mi rfc PEPJ800101AB1 y curp PEPJ800101HDFRRN09 quedaron expuestos",
@@ -183,6 +190,74 @@ def test_zero_leaks_and_exact_findings(texto, reply, secrets, count):
         envelope(texto, reply=reply).event_id,
         "page-1",
     )
+
+
+STRUCTURED = [
+    (
+        "mi CLABE 012180001234567891 no recibe SPEI",
+        ["012180001234567891"],
+        1,
+    ),
+    (
+        "Pagué con la tarjeta 4152-3135-7890-1234 y me cobraron doble",
+        ["4152-3135-7890-1234"],
+        1,
+    ),
+    (
+        "mi rfc PEPJ800101AB1 y curp PEPJ800101HDFRRN09 quedaron expuestos",
+        ["PEPJ800101AB1", "PEPJ800101HDFRRN09"],
+        2,
+    ),
+    (
+        "mi cuenta 0123456789 y mi cel 55 1234 5678 o +52 5512345678 ya",
+        ["0123456789", "55 1234 5678", "5512345678"],
+        3,
+    ),
+    (
+        "correo juan.perez1234567890@mail.com sin respuesta del banco",
+        ["juan.perez1234567890@mail.com", "1234567890"],
+        1,
+    ),
+]
+
+
+@pytest.mark.parametrize(("texto", "secrets", "count"), STRUCTURED)
+def test_local_regex_default_removes_structured_pii(texto, secrets, count):
+    sanitizer_ = local_sanitizer()
+    assert sanitizer_.deidentifier is None
+    (clean,) = sanitizer_.sanitize([envelope(texto)]).valid
+    record = clean.record
+    dumped = json.dumps(record.model_dump(mode="json"), ensure_ascii=False)
+    for secret in [*secrets, "Juan Pérez", "avatar.png"]:
+        assert secret not in dumped
+    assert record.pii_findings_count == count
+    assert record.usuario_hash == hash_username_pii("Juan Pérez", SALT)
+
+
+@pytest.mark.parametrize("mode", ["local", "cloud"])
+def test_reply_and_title_are_never_persisted(mode):
+    reply = "¡Hola Daniela! Escríbenos a buzon@example.com con tu folio"
+    event = envelope("falla al pagar", reply=reply, titulo="Título Daniela")
+    client = FakeDlp()
+    batch = (
+        local_sanitizer() if mode == "local" else sanitizer(client)
+    ).sanitize([event])
+    (clean,) = batch.valid
+    assert not batch.quarantined
+    record = clean.record
+    assert record.titulo is None
+    assert record.texto_respuesta_sanitizado is None
+    assert record.fecha_respuesta is None
+    dumped = json.dumps(record.model_dump(mode="json"), ensure_ascii=False)
+    assert "Daniela" not in dumped and "buzon@example.com" not in dumped
+    # El texto original del evento no se muta.
+    assert event.raw.texto_respuesta == reply
+    if mode == "cloud":
+        rows = client.requests[0]["item"]["table"]["rows"]
+        assert [v["string_value"] for v in rows[0]["values"]] == [
+            "falla al pagar",
+            "",
+        ]
 
 
 def test_diagnostic_codes_survive_with_adjacent_pii():
@@ -333,7 +408,10 @@ def test_configuration_errors_stop_the_run(error):
 
 def test_cloud_mode_requires_dlp_and_offline_mode_uses_regex_only():
     with pytest.raises(dt.DlpConfigurationError):
-        dt.BatchSanitizer(user_hash_salt=SALT, deidentifier=None)
+        dt.BatchSanitizer(
+            user_hash_salt=SALT, deidentifier=None, use_cloud_dlp_api=True
+        )
+    assert dt.BatchSanitizer(user_hash_salt=SALT).deidentifier is None
     offline = dt.BatchSanitizer(
         user_hash_salt=SALT,
         deidentifier=deidentifier(FakeDlp()),
@@ -386,10 +464,7 @@ def test_eda_word_bounds_after_sanitization(words, valid):
         assert receipt.error_code is None
 
 
-def test_title_and_contract_violations_are_quarantined(monkeypatch):
-    titled = sanitizer().sanitize([envelope("falla al pagar", titulo="Juan")])
-    assert [r.error_code for r in titled.quarantined] == [dt.UNEXPECTED_TITLE]
-
+def test_contract_violations_are_quarantined(monkeypatch):
     def broken(*args, **kwargs):
         raise ValueError("contract")
 
@@ -415,6 +490,7 @@ def do_fn(**kwargs: Any) -> dt.BatchCloudDlpDeidentifyDoFn:
         "deidentify_template": DEIDENTIFY,
         "client_factory": FakeDlpFactory(),
         "retry_sleep": lambda _: None,
+        "use_cloud_dlp_api": True,
     }
     return dt.BatchCloudDlpDeidentifyDoFn(**(options | kwargs))
 
@@ -450,14 +526,14 @@ def test_do_fn_routes_tagged_outputs_in_test_pipeline(monkeypatch):
             )
         )
         assert_that(
-            results[dt.OUTPUT_TAG_SANITIZED_VALID], ids(["valid"]), label="v"
+            results[dt.OUTPUT_TAG_SANITIZED_VALID],
+            ids(["valid", "titled"]),
+            label="v",
         )
         assert_that(
             results[dt.OUTPUT_TAG_FILTERED_LENGTH], ids(["short"]), label="f"
         )
-        assert_that(
-            results[dt.OUTPUT_TAG_QUARANTINED], ids(["titled"]), label="q"
-        )
+        assert_that(results[dt.OUTPUT_TAG_QUARANTINED], ids([]), label="q")
         assert_that(results[dt.OUTPUT_TAG_RETRYABLE_ERROR], ids([]), label="r")
 
 

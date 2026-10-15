@@ -51,8 +51,10 @@ class SanitizationExecutionConfig(BaseModel):
     dlp_max_bytes: int = Field(
         default=400_000, gt=0, lt=DLP_REQUEST_LIMIT_BYTES
     )
-    # False solo para pruebas offline; nunca en producción.
-    use_cloud_dlp_api: bool = True
+    # Por defecto, sanitización local con regex (sin costo ni dependencia de
+    # DLP): en el corpus medido (evidence/) el texto del usuario no trajo PII
+    # detectable. True activa Cloud DLP como capa previa (entorno corporativo).
+    use_cloud_dlp_api: bool = False
 
     @model_validator(mode="after")
     def _budgets(self) -> Self:
@@ -136,8 +138,6 @@ def preflight(
         raise PreflightError("only DirectRunner is supported")
     parent = dlp_parent(settings)
     if not config.use_cloud_dlp_api:
-        if settings.is_production:
-            raise PreflightError("regex-only sanitization is offline only")
         return parent
     for kind, name in (
         ("inspectTemplates", settings.dlp_inspect_template_id),

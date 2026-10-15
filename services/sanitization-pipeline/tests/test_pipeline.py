@@ -68,7 +68,7 @@ def test_disabled_v2_and_missing_templates_fail_closed(capsys, settings):
     assert "not enabled" in last_log(capsys)["error"]
     missing = pipeline.main(
         [],
-        {},
+        {"SANITIZATION_USE_CLOUD_DLP_API": "true"},
         settings_factory=lambda: settings(dlp_deidentify_template_id=None),
     )
     assert missing == pipeline.EX_USAGE
@@ -353,9 +353,12 @@ class Env:
         future.result.return_value = "id"
         return future
 
+    cloud_dlp = True
+
     def do_fn(self) -> BatchCloudDlpDeidentifyDoFn:
         return BatchCloudDlpDeidentifyDoFn(
             user_hash_salt=SALT,
+            use_cloud_dlp_api=self.cloud_dlp,
             parent=PARENT,
             inspect_template=INSPECT,
             deidentify_template=DEIDENTIFY,
@@ -472,6 +475,20 @@ def test_bigquery_failure_nacks_valid_events_only():
     assert sorted(subscriber.nacked) == ["a0", "a2"]
     assert report.exit_code() == orch.EX_TEMPFAIL
     assert env.ledger.page_closure(BANK, env.page_id) is None
+
+
+def test_local_regex_default_drains_without_calling_dlp():
+    env = Env()
+    env.cloud_dlp = False
+    report, subscriber = env.drain([env.messages()])
+    assert report.exit_code() == orch.EX_OK
+    assert sorted(subscriber.acked) == ["a0", "a1", "a2"]
+    assert not subscriber.nacked and not DLP_CALLS
+    assert env.bq.merges == 1 and report.tds_committed == 2
+    assert all(
+        row["texto_respuesta_sanitizado"] is None and row["titulo"] is None
+        for row in env.bq.rows
+    )
 
 
 def test_dlp_outage_nacks_and_configuration_error_stops(capsys):
