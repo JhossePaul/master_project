@@ -302,9 +302,12 @@ class WatermarkRepository:
         catalog_ref: ObjectReference | None,
     ) -> RepositorySnapshot:
         blob = self.bucket.blob(self._root(state.bank_id))
-        blob.metadata = {"lease": lease.model_dump_json()}
+        # google-cloud-storage devuelve una copia en `blob.metadata`: hay que
+        # armar el diccionario completo y asignarlo una sola vez.
+        metadata = {"lease": lease.model_dump_json()}
         if catalog_ref:
-            blob.metadata["catalog"] = catalog_ref.model_dump_json()
+            metadata["catalog"] = catalog_ref.model_dump_json()
+        blob.metadata = metadata
         try:
             blob.upload_from_string(
                 _dump(state),
