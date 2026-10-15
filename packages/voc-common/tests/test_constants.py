@@ -81,7 +81,7 @@ def test_eda_and_rpc_constants() -> None:
         "https://play.google.com/_/PlayStoreUi/data/batchexecute"
     )
     assert PLAYSTORE_REVIEWS_RPC_ID == "oCPfdb"
-    assert PLAYSTORE_DEFAULT_PAGE_SIZE == 199
+    assert PLAYSTORE_DEFAULT_PAGE_SIZE == 500
 
 
 def test_user_agents_pool() -> None:

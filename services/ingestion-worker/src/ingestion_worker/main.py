@@ -22,6 +22,7 @@ from voc_common import (
     IngestionRequestPayload,
     SequentialBatchIngestionRequest,
     Settings,
+    log_event,
 )
 
 from ingestion_worker.runner import (
@@ -207,7 +208,7 @@ def create_app(
     async def ingest_all(
         payload: SequentialBatchIngestionRequest,
         rt: Annotated[IngestionRuntime, Depends(get_runtime)],
-    ) -> dict[str, Any]:
+    ) -> JSONResponse:
         if payload.mode != IngestionMode.INCREMENTAL:
             # Los históricos se lanzan bajo demanda, nunca por cron.
             raise HTTPException(
@@ -230,17 +231,40 @@ def create_app(
                 )
                 continue
             runtime_sec = int(share)
-            result = await _incremental(
-                rt,
-                bank,
-                payload.max_reviews_per_bank,
-                ingestion_max_runtime_sec=runtime_sec,
-                ingestion_max_backoff_sec=min(
-                    settings.ingestion_max_backoff_sec, runtime_sec / 2
-                ),
-            )
+            try:
+                result = await _incremental(
+                    rt,
+                    bank,
+                    payload.max_reviews_per_bank,
+                    ingestion_max_runtime_sec=runtime_sec,
+                    ingestion_max_backoff_sec=min(
+                        settings.ingestion_max_backoff_sec, runtime_sec / 2
+                    ),
+                )
+            except Exception as exc:
+                # Un banco con estado ilegible no debe frenar a los demás.
+                log_event(
+                    "ERROR",
+                    "Bank run failed",
+                    bank_id=bank.value,
+                    error=type(exc).__name__,
+                )
+                results.append(
+                    {
+                        "bank_id": bank.value,
+                        "status": "ERROR",
+                        "error": type(exc).__name__,
+                    }
+                )
+                continue
             results.append(_view(result))
-        return {"mode": payload.mode.value, "results": results}
+        failed = any(r.get("status") == "ERROR" for r in results)
+        # 500 si algún banco falló, para que Scheduler lo marque como fallido,
+        # pero todos los bancos ya corrieron.
+        return JSONResponse(
+            status_code=500 if failed else 200,
+            content={"mode": payload.mode.value, "results": results},
+        )
 
     return app
 

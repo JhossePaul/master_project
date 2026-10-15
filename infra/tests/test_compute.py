@@ -85,7 +85,7 @@ def test_compute_and_scheduler_modes(
     assert json.loads(worker_env["SCRAPER_PROXY_POOL_URLS"]) == [
         "http://proxy:8080"
     ]
-    assert worker_env["SCRAPER_PAGE_SIZE"] == "199"
+    assert worker_env["SCRAPER_PAGE_SIZE"] == "500"
     assert worker_env["SCRAPER_BASE_DELAY_SEC"] == "1.5"
     assert worker_env["SCRAPER_MAX_JITTER_SEC"] == "2.0"
     assert worker_env["SCRAPER_MAX_RETRIES"] == "5"
@@ -170,7 +170,7 @@ def test_compute_and_scheduler_modes(
             single = IngestionRequestPayload.model_validate_json(body)
             seen.append(single.bank_id)
             assert (
-                single.page_size == 199 and single.max_reviews_per_run == 2000
+                single.page_size == 500 and single.max_reviews_per_run == 2000
             )
             offset = list(BankKey).index(single.bank_id) * 15
             assert (

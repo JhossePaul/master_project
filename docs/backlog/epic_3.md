@@ -10,8 +10,9 @@ Extraer reseñas textuales de BBVA, Nubank, Santander, Azteca y Banorte mediante
 un cliente propio, con respaldo por página, publicación al menos una vez y
 recuperación verificable. El endpoint `batchexecute` es interno: no tiene contrato
 público de estabilidad, filtros temporales documentados ni garantía de enumerar
-el histórico completo. El tamaño 199 es una política conservadora inicial,
-**no un máximo demostrado**. Las cifras de la ficha de la app no constituyen
+el histórico completo. El tamaño 199 fue una política conservadora inicial,
+**no un máximo demostrado**; el 2026-10-15 la política pasó a 500 tras validar una
+cadena de 10 páginas (ver `docs/full_backfill.md`). Las cifras de la ficha de la app no constituyen
 un denominador fiable para calcular el porcentaje de reseñas recuperadas.
 
 La garantía implementable es conservar/reprocesar páginas ya aceptadas mientras

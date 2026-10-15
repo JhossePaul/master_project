@@ -842,3 +842,32 @@ def test_pending_pages_are_counted_but_not_logged_as_closed(capsys):
     assert not [e for e in events if e["message"] == "Page closed"]
     batch = next(e for e in events if e["message"] == "Microbatch finished")
     assert batch["pages"] == {"PENDING": 1} and batch["retryable"] == 3
+
+
+def test_replay_skips_a_bank_with_unreadable_state_and_flags_the_run(
+    monkeypatch, capsys
+):
+    env = Env()
+    original = env.ingestion.load
+
+    def load(bank):
+        if bank.value == "AZTECA":
+            raise ValueError("app_id does not match bank_id")
+        return original(bank)
+
+    monkeypatch.setattr(env.ingestion, "load", load)
+    backfill = orch.ManifestBackfill(
+        env.ingestion,
+        env.services().processor(),
+        SanitizationExecutionConfig(),
+        banks=(BankKey.AZTECA, BANK),
+    )
+    report = backfill.run()
+    # El banco sano se procesa completo aunque el anterior estaba roto.
+    assert report.bank_errors == {"AZTECA": "ValueError"}
+    assert report.pages == {"RESOLVED": 1} and report.messages == 3
+    assert report.exit_code() == orch.EX_TEMPFAIL
+    errors = [
+        e for e in _events(capsys) if e["message"].startswith("Bank state")
+    ]
+    assert errors[0]["bank_id"] == "AZTECA" and errors[0]["severity"] == "ERROR"

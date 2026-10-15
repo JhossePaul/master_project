@@ -35,7 +35,7 @@ def test_defaults() -> None:
     assert settings.dlp_inspect_template_id is None
     assert settings.user_hash_salt == DEV_USER_HASH_SALT
     assert settings.scraper_proxy_pool_urls == []
-    assert settings.scraper_page_size == 199
+    assert settings.scraper_page_size == 500
     assert settings.hitl_entropy_threshold == 0.65
     assert settings.enable_dedicated_vertex_endpoints is False
     assert settings.is_production is False
@@ -108,7 +108,7 @@ def test_blank_dlp_template_ids_become_none(
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
-        ("SCRAPER_PAGE_SIZE", "200"),
+        ("SCRAPER_PAGE_SIZE", "501"),
         ("SCRAPER_PAGE_SIZE", "0"),
         ("SCRAPER_TIMEOUT_SEC", "0"),
         ("SCRAPER_ROTATE_PROXY_EVERY_N_BATCHES", "0"),
@@ -226,7 +226,7 @@ def test_v2_settings_defaults_payloads_and_policy_are_coherent() -> None:
         bank_id=voc_common.BankKey.BBVA
     )
     assert settings.scraper_page_size == payload.page_size
-    assert payload.page_size == voc_common.PLAYSTORE_DEFAULT_PAGE_SIZE == 199
+    assert payload.page_size == voc_common.PLAYSTORE_DEFAULT_PAGE_SIZE == 500
     assert settings.ingestion_v2_enabled is False
     assert settings.ingestion_history_job_name is None
     assert settings.bq_ingestion_runs_log_table == "ingestion_runs_log_v2"
