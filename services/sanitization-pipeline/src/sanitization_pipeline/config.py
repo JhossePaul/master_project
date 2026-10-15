@@ -10,7 +10,7 @@ import os
 import re
 from collections.abc import Mapping, Sequence
 from enum import StrEnum
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from voc_common import Settings
@@ -97,6 +97,18 @@ def load_config(
     args = vars(_parser().parse_args(argv))
     values |= {k: v for k, v in args.items() if v is not None}
     return SanitizationExecutionConfig.model_validate(values)
+
+
+def in_process_runner() -> Any:
+    """Runner en proceso para `BEAM_RUNNER=DirectRunner`.
+
+    Desde Beam 2.6x, `DirectRunner` intenta primero Prism, que descarga un
+    binario en tiempo de ejecución; no hay opción para desactivarlo. El Job
+    (y CI) usan directamente el FnApiRunner en proceso: sin red ni binarios.
+    """
+    from apache_beam.runners.portability.fn_api_runner import FnApiRunner
+
+    return FnApiRunner()
 
 
 def dlp_parent(settings: Settings) -> str:

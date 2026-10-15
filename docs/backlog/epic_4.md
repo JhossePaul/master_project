@@ -1,6 +1,6 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** En implementación. Feature 4.1 implementada; features 4.2–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
+* **Estado:** En implementación. Features 4.1–4.2 implementadas; features 4.3–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**
@@ -169,6 +169,45 @@ Modelo puro `SanitizationExecutionConfig` (Pydantic, `extra="forbid"`, `frozen=T
 ### FEATURE 4.2: Desidentificación Tabular en Cloud DLP, Protección de Diagnósticos y *Fail-Closed* (`dlp_transforms.py`)
 
 **Objetivo:** Implementar el sanitizador local de respaldo y el `DoFn` de Apache Beam que empaqueta lotes respetando límites de filas y bytes de Cloud DLP, protege códigos `ref: 3702`, calcula `pii_findings_count` por fila y aplica el filtro de 2 a 60 palabras del EDA.
+
+**Estado: IMPLEMENTADA.** `dlp_transforms.py` contiene `LocalRegexFallbackSanitizer`,
+`count_introduced_pii_tokens`, `DlpRowBatchPacker`, `CloudDlpDeidentifier`,
+`BatchSanitizer` (lógica pura por microbatch) y `BatchCloudDlpDeidentifyDoFn`
+(envoltorio Beam con salidas etiquetadas). Validación: 52 tests del paquete
+(100% de cobertura de líneas), 532 tests conjuntos; Ruff, formato, Pyrefly y
+Bandit sin errores. Sin llamadas reales a Cloud DLP: el DLP simulado reconoce
+solo nombres y correos, de modo que el corpus prueba la segunda barrera.
+
+Decisiones y hallazgos de la implementación:
+
+* **Beam y Prism:** desde Beam 2.6x, `DirectRunner` intenta primero Prism, que
+  descarga un binario (~65 MB) en tiempo de ejecución, y no hay opción para
+  desactivarlo. `in_process_runner()` (`config.py`) devuelve el `FnApiRunner`
+  en proceso; es la interpretación de `BEAM_RUNNER=DirectRunner` en el Job y en
+  CI. Un test falla si Prism llega a ejecutarse.
+* **Orden de reglas:** email primero (los dígitos de una dirección no deben
+  partirla), luego CLABE, CURP antes de RFC (los 13 primeros caracteres de una
+  CURP cumplen el patrón de RFC), tarjeta y teléfonos con formato. Los límites
+  numéricos usan `(?<!\d)`/`(?!\d)` en lugar de `\b`, que no corta entre `_` y
+  un dígito y permitiría evadir con `id_5512345678_x`.
+* **10 dígitos:** se mira una ventana de 40 caracteres previos; decide la
+  palabra de contexto más cercana (teléfono: `tel`, `cel`, `llam`, `whats`,
+  `marc`, `número`, `contacto`; cuenta: `cuenta`, `cta`, `clabe`, `depósito`).
+  Sin contexto, `[BBVA_ACCOUNT_NUMBER]`. Es una heurística: el número queda
+  enmascarado en ambos casos.
+* **Placeholders:** el nonce es de 16 letras aleatorias por instancia; ninguna
+  regla numérica puede alterarlo y un usuario no puede predecirlo.
+* **Fail-closed:** respuesta desalineada (filas o celdas) y transitorios
+  agotados (`429`, `503`, `504`, `500`; 4 intentos, backoff exponencial ≤16 s,
+  timeout de 60 s por llamada) emiten recibos `RETRYABLE_ERROR`
+  (`DLP_MISALIGNED`/`DLP_UNAVAILABLE`) y ningún sobre válido. Permisos,
+  credenciales, argumento inválido, plantilla inexistente o precondición
+  fallida lanzan `DlpConfigurationError` y detienen la corrida.
+* **Recibos:** `receipt_id = event_id`; los `RETRYABLE_ERROR` salen por su
+  etiqueta para que 4.4 no haga `ack`, pero no se persisten como terminales.
+  Un mensaje imposible de parsear como `RawReviewEnvelope` se trata en 4.4.
+* **Pendiente para 4.4:** los reintentos de DLP no conocen el presupuesto de
+  tiempo restante; el orquestador debe comprobarlo antes de cada microbatch.
 
 #### Tarea 4.2.1: Implementar `LocalRegexFallbackSanitizer` en `dlp_transforms.py`
 

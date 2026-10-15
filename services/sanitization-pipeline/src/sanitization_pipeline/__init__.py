@@ -6,6 +6,7 @@ from sanitization_pipeline.config import (
     PreflightError,
     SanitizationExecutionConfig,
     dlp_parent,
+    in_process_runner,
     load_config,
     preflight,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "PreflightError",
     "SanitizationExecutionConfig",
     "dlp_parent",
+    "in_process_runner",
     "load_config",
     "preflight",
 ]
