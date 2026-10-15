@@ -1,8 +1,8 @@
 # ingestion-worker
 
-Features 3.1–3.4: protocolo oCPfdb, cliente HTTP por página, repositorio GCS
-con leases/CAS, auditoría, publicación durable, endpoint de progreso y
-recorridos reanudables con recuperación. API y Job ejecutables son 3.5.
+EPIC-3 completa (3.1–3.5): protocolo oCPfdb, cliente HTTP por página,
+repositorio GCS con leases/CAS, auditoría, publicación durable, recorridos
+reanudables con recuperación, API de ingesta, Job histórico e imagen.
 
 Desde la raíz:
 
@@ -185,3 +185,37 @@ Las acciones de recuperación y los estados (`TARGET_REACHED`,
 `PROTOCOL_ERROR`, `BLOCKED`, `TRANSPORT_ERROR`, `LEASE_CONFLICT`) describen
 evidencia observada; ninguno certifica cobertura total del catálogo.
 Límites conocidos en [EPIC-3 feature 3.4](../../docs/backlog/epic_3.md#feature-34-extracción-y-políticas-de-recuperación).
+
+## API, Job e imagen (3.5)
+
+| Ruta | Comportamiento |
+| --- | --- |
+| `GET /health` | Vida del proceso; no consulta GCP ni el origen |
+| `GET /api/v1/watermarks/{bank}` | Progreso observado, sin cursores ni URIs |
+| `POST /api/v1/ingest` | `INCREMENTAL`: corre en la petición (200/409). `BACKFILL`/`FULL_BACKFILL`: persiste el plan y lanza el Job (202) |
+| `POST /api/v1/ingest/all` | Incremental secuencial para Scheduler, con presupuesto compartido |
+
+Los cuerpos usan `IngestionRequestPayload` y `SequentialBatchIngestionRequest`
+de `voc-common`. Con `INGESTION_V2_ENABLED=false` las rutas de ingesta
+responden 503; los históricos además exigen `INGESTION_HISTORY_JOB_NAME`.
+
+Job histórico (Cloud Run Job o local):
+
+```sh
+INGESTION_BANK_ID=BBVA INGESTION_PLAN_ID=<plan> python -m ingestion_worker.job
+# o: python -m ingestion_worker.job --bank BBVA --plan-id <plan> [--stream-id <s>]
+```
+
+Códigos de salida: 0 fin o pausa con checkpoint, 75 transitorio reintentable,
+1 requiere intervención, 64 configuración inválida, 143 SIGTERM.
+
+Imagen, desde la raíz del workspace (contexto con lista de permitidos):
+
+```sh
+docker build -f services/ingestion-worker/Dockerfile -t ingestion-worker .
+docker run --rm -p 8080:8080 ingestion-worker            # API
+docker run --rm ingestion-worker python -m ingestion_worker.job
+```
+
+`IngestionRuntime.from_settings` crea los clientes GCP una vez por proceso;
+los tests inyectan GCS con generaciones, Pub/Sub, origen y lanzador simulados.

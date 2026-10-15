@@ -1,4 +1,4 @@
-"""Feature 3.4: recorridos, recuperación y presupuestos con fallos inyectados.
+"""Features 3.4–3.5: recorridos, recuperación, API y Job con fallos inyectados.
 
 El origen simulado usa cursores por posición (la evidencia del experimento
 mostró relecturas idénticas a +30 min) y emite un token distinto en cada
@@ -213,7 +213,9 @@ class Source:
                 self.tokens[next_token] = (-last.ts, last.id)
         inner = [[row(r) for r in chunk], [None, next_token], None]
         body = json.dumps([["wrb.fr", "oCPfdb", json.dumps(inner)]]).encode()
-        page = parse_batchexecute_response(body, bank_id=bank, app_id=APP)
+        page = parse_batchexecute_response(
+            body, bank_id=bank, app_id=PLAYSTORE_BANK_APPS[bank]
+        )
         if page.classification == PageClassification.EMPTY_AMBIGUOUS:
             raise EmptyAmbiguousError(page)
         return page
@@ -1036,3 +1038,456 @@ def test_repository_replay_guards():
             recovery=RecoveryStatus.ANCHOR_REPLAY,
         )
     assert h.repo.abandon_pending(handle, "missing").state.revision == revision
+
+
+# ===================================================================
+# Feature 3.5: API, Job histórico y cableado de runtime.
+# ===================================================================
+JOB = "projects/test/locations/us-central1/jobs/voc-ingestion-history-job"
+
+
+class FakeHttp:
+    """Sustituye httpx.AsyncClient; registra opciones (proxy, redirects)."""
+
+    created: list[dict[str, Any]] = []
+
+    def __init__(self, **options: Any) -> None:
+        FakeHttp.created.append(options)
+
+    async def __aenter__(self) -> "FakeHttp":
+        return self
+
+    async def __aexit__(self, *_: Any) -> None:
+        return None
+
+
+def service(h: Harness, **settings: Any):
+    from ingestion_worker.runtime import IngestionRuntime
+    from voc_common import Settings
+
+    values = {
+        "ingestion_v2_enabled": True,
+        "ingestion_history_job_name": JOB,
+        "gcp_project_id": "test",
+    } | {
+        key: getattr(h.config, key)
+        for key in IngestionExecutionConfig.model_fields
+    }
+    launcher = Mock()
+    launcher.launch.return_value = {
+        "operation": "projects/test/locations/us-central1/operations/op",
+        "execution": f"{JOB}/executions/e1",
+    }
+    writer = Mock()
+    writer.flush.return_value = 1
+    return IngestionRuntime(
+        settings=Settings(_env_file=None, **(values | settings)),
+        repository=h.repo,
+        publisher=h.publisher,
+        audit_writer=writer,
+        launcher=launcher,
+        backlog=h.backlog,
+        http_factory=FakeHttp,
+        client_factory=lambda http, config, agent: h.source,
+        extractor_options={
+            "clock": lambda: h.now[0],
+            "monotonic": lambda: h.mono[0],
+            "sleep": h._sleep,
+        },
+        sleep=h._sleep,
+        monotonic=lambda: h.mono[0],
+    )
+
+
+def call(app, method: str, url: str, body: Any = None):
+    import httpx
+
+    async def request():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            return await client.request(method, url, json=body)
+
+    return run(request())
+
+
+def api(h: Harness, **settings: Any):
+    from ingestion_worker.main import create_app
+
+    rt = service(h, **settings)
+    return create_app(runtime=rt), rt
+
+
+def test_health_and_incremental_endpoint():
+    h = Harness(ten_days())
+    app, rt = api(h)
+    assert call(app, "GET", "/health").json() == {"status": "ok"}
+    h.advance(60)
+    response = call(
+        app,
+        "POST",
+        "/api/v1/ingest",
+        {"bank_id": "BBVA", "page_size": 50, "max_reviews_per_run": 5000},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "TARGET_REACHED"
+    assert body["committed_high_at"].startswith("2026-10-14T12:00")
+    assert "tok-" not in response.text and "gs://" not in response.text
+    rt.audit_writer.flush.assert_called_once_with(h.repo, BANK)
+    assert FakeHttp.created[-1] == {"follow_redirects": False}
+    progress = call(app, "GET", "/api/v1/watermarks/BBVA").json()
+    assert progress["committed_high_at"] is not None
+
+
+def test_ingest_rejects_changed_page_size_and_reports_lease_conflict():
+    h = Harness(ten_days())
+    app, _ = api(h)
+    changed = call(app, "POST", "/api/v1/ingest", {"bank_id": "BBVA"})
+    assert changed.status_code == 422
+    h.repo.acquire_lease(BANK, "other-run")
+    busy = call(
+        app, "POST", "/api/v1/ingest", {"bank_id": "BBVA", "page_size": 50}
+    )
+    assert busy.status_code == 409
+    assert busy.json()["status"] == "LEASE_CONFLICT"
+    assert not h.source.calls
+
+
+def test_historical_request_persists_plan_and_launches_job():
+    h = Harness(year_and_half())
+    app, rt = api(h)
+    h.advance(60)
+    body = {"bank_id": "BBVA", "mode": "BACKFILL", "page_size": 50}
+    response = call(app, "POST", "/api/v1/ingest", body)
+    assert response.status_code == 202
+    launched = response.json()
+    plan_id = launched["plan_id"]
+    assert launched["launched"] is True
+    assert launched["execution"].endswith("/executions/e1")
+    rt.launcher.launch.assert_called_once_with(BANK, plan_id, None)
+    plan = h.plan(plan_id)
+    assert plan.status == ScanStatus.NOT_STARTED
+    assert not h.source.calls  # La API nunca recorre el histórico.
+    again = call(app, "POST", "/api/v1/ingest", body).json()
+    assert again["plan_id"] == plan_id
+    full = call(
+        app, "POST", "/api/v1/ingest", body | {"mode": "FULL_BACKFILL"}
+    ).json()
+    assert full["plan_id"] == plan_id
+    assert full["requested_lower_at"] is None
+    assert len(h.plan(plan_id).extension_events) == 1
+    shrink = call(app, "POST", "/api/v1/ingest", body)
+    assert shrink.status_code == 409
+    stars = call(
+        app, "POST", "/api/v1/ingest", body | {"partition_by_stars": True}
+    )
+    assert stars.status_code == 422
+
+
+def test_historical_launch_failures_and_configuration():
+    from ingestion_worker.runtime import LaunchError
+
+    h = Harness(reviews(20, start=T0, step=DAY), scraper_page_size=10)
+    app, rt = api(h, scraper_page_size=10)
+    body = {"bank_id": "BBVA", "mode": "FULL_BACKFILL", "page_size": 10}
+    rt.launcher.launch.side_effect = LaunchError("rejected")
+    assert call(app, "POST", "/api/v1/ingest", body).status_code == 502
+    h.repo.acquire_lease(BANK, "job-run")
+    assert call(app, "POST", "/api/v1/ingest", body).status_code == 409
+    h.advance(600)
+    finished = h.run(IngestionMode.FULL_BACKFILL)
+    assert finished.status == ExtractionStatus.SOURCE_EXHAUSTED_OBSERVED
+    # Un plan cerrado no se reabre: una nueva solicitud crea otro plan.
+    rt.launcher.launch.side_effect = None
+    fresh = call(app, "POST", "/api/v1/ingest", body)
+    assert fresh.status_code == 202
+    assert fresh.json()["plan_id"] != finished.plan_id
+    unconfigured, _ = api(h, ingestion_history_job_name=None)
+    assert call(unconfigured, "POST", "/api/v1/ingest", body).status_code == 503
+
+
+def test_sequential_endpoint_shares_budget_and_rejects_historical():
+    h = Harness(ten_days())
+    app, _ = api(h)
+    historical = call(app, "POST", "/api/v1/ingest/all", {"mode": "BACKFILL"})
+    assert historical.status_code == 422
+    response = call(
+        app,
+        "POST",
+        "/api/v1/ingest/all",
+        {
+            "banks": ["BBVA", "NUBANK", "BBVA"],
+            "max_reviews_per_bank": 1000,
+            "inter_bank_delay_sec": 5,
+        },
+    )
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [r["bank_id"] for r in results] == ["BBVA", "NUBANK"]
+    assert results[0]["status"] == "TARGET_REACHED"
+    assert 5 in h.sleeps
+    h.source.on_fetch = lambda n: h.advance(10_000)
+    starved = call(
+        app,
+        "POST",
+        "/api/v1/ingest/all",
+        {"banks": ["BBVA", "NUBANK"], "inter_bank_delay_sec": 1},
+    ).json()["results"]
+    assert starved[-1] == {"bank_id": "NUBANK", "status": "SKIPPED_BUDGET"}
+
+
+def test_runtime_unavailable_when_v2_disabled(monkeypatch):
+    from ingestion_worker import main
+    from voc_common import Settings
+
+    monkeypatch.setattr(main, "Settings", lambda: Settings(_env_file=None))
+    main._runtime.cache_clear()
+    try:
+        app = main.create_app()
+        response = call(app, "POST", "/api/v1/ingest", {"bank_id": "BBVA"})
+        assert response.status_code == 503
+    finally:
+        main._runtime.cache_clear()
+
+
+# ------------------------------------------------------------------- job
+def prepared_plan(h: Harness, mode=IngestionMode.FULL_BACKFILL, **kwargs):
+    rt = service(h)
+
+    async def prepare():
+        async with rt.extractor() as extractor:
+            return await extractor.prepare_plan(
+                ExtractionRequest(bank_id=BANK, mode=mode, **kwargs)
+            )
+
+    h.advance(60)
+    return rt, run(prepare())
+
+
+def test_job_continues_persisted_plan_until_budget_then_completes(capsys):
+    from ingestion_worker.job import EX_OK, run_job
+
+    h = Harness(year_and_half(), ingestion_max_pages=3)
+    rt, plan = prepared_plan(h)
+    assert plan.requested_lower_at is None
+    assert run(run_job(rt, BANK, plan.plan_id)) == EX_OK
+    assert h.plan(plan.plan_id).status == ScanStatus.PAUSED
+    log = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert log["status"] == "BUDGET_EXHAUSTED"
+    assert "tok-" not in json.dumps(log)
+    rt = service(h, ingestion_max_pages=100)
+    assert run(run_job(rt, BANK, plan.plan_id)) == EX_OK
+    assert h.plan(plan.plan_id).status == ScanStatus.SOURCE_EXHAUSTED_OBSERVED
+    rt.audit_writer.flush.assert_called_with(h.repo, BANK)
+
+
+def test_job_never_creates_plans_and_selects_streams():
+    from ingestion_worker.job import EX_FAILED, EX_OK, EX_USAGE, run_job
+
+    h = Harness(reviews(40, start=T0, step=DAY), scraper_page_size=10)
+    rt = service(h)
+    assert run(run_job(rt, BANK, "missing-plan")) == EX_USAGE
+    assert not h.snapshot().state.historical_plan_ids
+    rt, plan = prepared_plan(h, star_filters=(1, 2))
+    first, second = plan.stream_ids
+    assert run(run_job(rt, BANK, plan.plan_id, first)) == EX_OK
+    assert h.plan(plan.plan_id).status == ScanStatus.PAUSED
+    assert {star for _, star in h.source.calls} == {1}
+    assert run(run_job(rt, BANK, plan.plan_id, second)) == EX_OK
+    assert h.plan(plan.plan_id).status == ScanStatus.SOURCE_EXHAUSTED_OBSERVED
+    assert run(run_job(rt, BANK, plan.plan_id, "other")) == EX_FAILED
+
+
+def test_job_annual_plan_uses_backfill_mode():
+    from ingestion_worker.job import EX_OK, run_job
+
+    h = Harness(year_and_half())
+    rt, plan = prepared_plan(h, mode=IngestionMode.BACKFILL)
+    assert plan.requested_lower_at is not None
+    assert run(run_job(rt, BANK, plan.plan_id)) == EX_OK
+    assert h.plan(plan.plan_id).status == ScanStatus.TARGET_REACHED
+
+
+def test_job_sigterm_cancellation_is_best_effort():
+    from ingestion_worker.job import EX_TERMINATED, run_job
+
+    h = Harness(year_and_half())
+    rt, plan = prepared_plan(h)
+
+    def cancel(n):
+        raise asyncio.CancelledError
+
+    h.source.on_fetch = cancel
+    assert run(run_job(rt, BANK, plan.plan_id)) == EX_TERMINATED
+
+
+def test_job_exit_codes_cover_every_status():
+    from ingestion_worker.job import EXIT_CODES
+
+    assert set(EXIT_CODES) == set(ExtractionStatus)
+
+
+def test_job_main_validates_overrides(monkeypatch):
+    from ingestion_worker import job
+    from voc_common import Settings
+
+    # asyncio.run anula el loop global que usan los mocks de Pulumi.
+    monkeypatch.setattr(job.asyncio, "run", run)
+    assert job.main([]) == job.EX_USAGE
+    assert job.main(["--bank", "NOPE", "--plan-id", "p"]) == job.EX_USAGE
+    monkeypatch.setattr(job, "Settings", lambda: Settings(_env_file=None))
+    assert job.main(["--bank", "BBVA", "--plan-id", "p"]) == job.EX_USAGE
+    h = Harness([])
+    rt = service(h)
+    monkeypatch.setattr(job, "Settings", lambda: rt.settings)
+    monkeypatch.setattr(
+        job.IngestionRuntime, "from_settings", classmethod(lambda cls, s: rt)
+    )
+    monkeypatch.setenv("INGESTION_BANK_ID", "BBVA")
+    monkeypatch.setenv("INGESTION_PLAN_ID", "absent")
+    monkeypatch.setenv("INGESTION_STREAM_ID", "")
+    assert job.main([]) == job.EX_USAGE
+
+
+# --------------------------------------------------------------- runtime
+def test_cloud_run_launcher_sends_only_validated_identifiers():
+    from ingestion_worker.runtime import CloudRunJobLauncher, LaunchError
+
+    with pytest.raises(ValueError):
+        CloudRunJobLauncher("voc-ingestion-history-job", Mock())
+    session = Mock()
+    session.post.return_value = Mock(
+        status_code=200,
+        json=lambda: {
+            "name": "projects/test/operations/op",
+            "metadata": {"name": f"{JOB}/executions/e1"},
+        },
+    )
+    launcher = CloudRunJobLauncher(JOB, session)
+    assert launcher.launch(BANK, "plan-1", None) == {
+        "operation": "projects/test/operations/op",
+        "execution": f"{JOB}/executions/e1",
+    }
+    url = session.post.call_args.args[0]
+    sent = session.post.call_args.kwargs["json"]
+    assert url == f"https://run.googleapis.com/v2/{JOB}:run"
+    (override,) = sent["overrides"]["containerOverrides"]
+    assert override["name"] == "historical-ingestion"
+    assert {e["name"] for e in override["env"]} == {
+        "INGESTION_BANK_ID",
+        "INGESTION_PLAN_ID",
+        "INGESTION_STREAM_ID",
+    }
+    assert "args" not in override and "commands" not in override
+    with pytest.raises(ValueError):
+        launcher.launch(BANK, "../plan", None)
+    session.post.return_value = Mock(status_code=403)
+    with pytest.raises(LaunchError):
+        launcher.launch(BANK, "plan-1", "stream-1")
+    session.post.side_effect = OSError("network")
+    with pytest.raises(LaunchError):
+        launcher.launch(BANK, "plan-1", None)
+
+
+def test_runtime_factories_use_settings(monkeypatch):
+    import google.auth
+    import google.auth.transport.requests as transport
+    from google.cloud import bigquery, pubsub_v1, storage
+    from ingestion_worker.runtime import (
+        CloudRunJobLauncher,
+        IngestionRuntime,
+        execution_config,
+        playstore_client,
+        topic_path,
+    )
+    from voc_common import Settings
+
+    settings = Settings(
+        _env_file=None,
+        ingestion_v2_enabled=True,
+        ingestion_history_job_name=JOB,
+        gcp_project_id="test",
+        scraper_proxy_pool_urls=["http://proxy-a:8080", "http://proxy-b:8080"],
+        scraper_rotate_user_agent=True,
+    )
+    assert topic_path(settings) == (
+        "projects/test/topics/voc-raw-reviews-topic"
+    )
+    full = Settings(
+        _env_file=None, pubsub_raw_reviews_topic="projects/x/topics/raw"
+    )
+    assert topic_path(full) == "projects/x/topics/raw"
+    profile = execution_config(settings, ingestion_max_pages=7)
+    assert type(profile) is IngestionExecutionConfig
+    assert profile.ingestion_max_pages == 7
+    monkeypatch.setattr(storage, "Client", lambda **_: FakeStorage())
+    monkeypatch.setattr(pubsub_v1, "PublisherClient", Mock)
+    monkeypatch.setattr(bigquery, "Client", lambda **_: Mock())
+    rt = IngestionRuntime.from_settings(settings)
+    assert rt.publisher.topic == topic_path(settings)
+    assert rt.audit_writer.table.endswith(".ingestion_runs_log_v2")
+    monkeypatch.setattr(google.auth, "default", lambda scopes: (Mock(), "test"))
+    monkeypatch.setattr(transport, "AuthorizedSession", lambda creds: Mock())
+    assert CloudRunJobLauncher.from_settings(settings).job_name == JOB
+    captured: list[Any] = []
+    rt.http_factory = FakeHttp
+
+    def factory(http, config, agent):
+        captured.append(playstore_client(http, config, agent))
+        return h_source
+
+    h_source = Source([])
+    rt.client_factory = factory
+
+    async def open_extractor():
+        async with rt.extractor() as extractor:
+            return extractor
+
+    run(open_extractor())
+    assert FakeHttp.created[-1]["proxy"] in settings.scraper_proxy_pool_urls
+    assert captured[0].headers["User-Agent"] in DEFAULT_USER_AGENTS
+
+
+def test_audit_flush_failures_are_deferred():
+    from ingestion_worker.audit import AuditDeliveryError
+
+    h = Harness([])
+    rt = service(h)
+    rt.audit_writer.flush.side_effect = AuditDeliveryError("bq down")
+    assert run(rt.flush_audits(BANK)) is None
+    rt.audit_writer = None
+    assert run(rt.flush_audits(BANK)) is None
+
+
+def test_prepare_plan_and_stream_selection_guards():
+    h = Harness([])
+    rt = service(h)
+
+    async def prepare(request):
+        async with rt.extractor() as extractor:
+            return await extractor.prepare_plan(request)
+
+    with pytest.raises(ValueError):
+        run(
+            prepare(
+                ExtractionRequest(bank_id=BANK, mode=IngestionMode.INCREMENTAL)
+            )
+        )
+    with pytest.raises(ValueError):
+        ExtractionRequest(
+            bank_id=BANK, mode=IngestionMode.BACKFILL, stream_id="orphan"
+        )
+    with pytest.raises(ValueError, match="unknown_plan"):
+        run(
+            prepare(
+                ExtractionRequest(
+                    bank_id=BANK, mode=IngestionMode.BACKFILL, plan_id="nope"
+                )
+            )
+        )
+    result = h.run(IngestionMode.BACKFILL, create_plan=False)
+    assert (result.status, result.reason) == (
+        ExtractionStatus.RECOVERY_REQUIRED,
+        "no_open_plan",
+    )

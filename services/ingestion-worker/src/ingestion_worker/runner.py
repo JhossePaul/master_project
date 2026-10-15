@@ -119,8 +119,14 @@ class ExtractionRequest:
     # Límite blando: se completa la página validada que lo cruza.
     max_reviews: int | None = None
     run_id: str | None = None
+    # Job histórico: continuar solo un stream del plan persistido.
+    stream_id: str | None = None
+    # False exige un plan persistido; el Job nunca crea ni extiende planes.
+    create_plan: bool = True
 
     def __post_init__(self) -> None:
+        if self.stream_id is not None and self.plan_id is None:
+            raise ValueError("stream selection requires its plan")
         if not self.star_filters or len(set(self.star_filters)) != len(
             self.star_filters
         ):
@@ -258,6 +264,28 @@ class PlayStoreResilientExtractor:
         self, request: ExtractionRequest
     ) -> ExtractionResult:
         return await _Run(self, request).execute()
+
+    async def prepare_plan(self, request: ExtractionRequest) -> HistoricalPlan:
+        """Persiste (crea o extiende a FULL) el plan sin consultar el origen.
+
+        La API lo usa antes de lanzar el Job histórico, que solo continúa
+        planes persistidos. LeaseConflict indica una corrida en curso.
+        """
+        if request.mode == IngestionMode.INCREMENTAL:
+            raise ValueError("incremental runs have no historical plan")
+        run = _Run(self, request)
+        await run._acquire(new_run_id(request.mode, run._now()))
+        try:
+            plan = await run._plan()
+            if request.mode == IngestionMode.FULL_BACKFILL:
+                await run._extend(plan)
+            elif plan.requested_lower_at is None:
+                raise ValueError("plan is already FULL")
+            return self.repository.get_plan(await run._load(), plan.plan_id)
+        except _Stop as stop:
+            raise ValueError(stop.reason) from None
+        finally:
+            await run._finish_session(audit=False)
 
 
 class _Run:
@@ -928,6 +956,14 @@ class _Run:
             plan = self.repo.get_plan(await self._load(), plan.plan_id)
         elif mode == IngestionMode.BACKFILL and plan.requested_lower_at is None:
             raise _Stop(ExtractionStatus.RECOVERY_REQUIRED, "plan_is_full")
+        selected = plan.stream_ids
+        if self.request.stream_id is not None:
+            if self.request.stream_id not in plan.stream_ids:
+                raise _Stop(
+                    ExtractionStatus.RECOVERY_REQUIRED, "unknown_stream"
+                )
+            selected = (self.request.stream_id,)
+            self.result.stream_ids = [self.request.stream_id]
         if plan.status in _TERMINAL:
             self.result.status = ExtractionStatus(plan.status.value)
             return
@@ -935,7 +971,7 @@ class _Run:
             self.repo.set_plan_status, handle, plan.plan_id, ScanStatus.RUNNING
         )
         try:
-            for stream_id in plan.stream_ids:
+            for stream_id in selected:
                 stream = await self._stream(stream_id)
                 if stream.status in _TERMINAL:
                     continue
@@ -962,6 +998,8 @@ class _Run:
     async def _plan(self) -> HistoricalPlan:
         handle = self._held()
         snapshot = await self._load()
+        if self.request.plan_id is None and not self.request.create_plan:
+            raise _Stop(ExtractionStatus.RECOVERY_REQUIRED, "no_open_plan")
         if self.request.plan_id is not None:
             if self.request.plan_id not in snapshot.catalog.plans:
                 raise _Stop(ExtractionStatus.RECOVERY_REQUIRED, "unknown_plan")
@@ -979,6 +1017,8 @@ class _Run:
         ]
         if candidates:
             return max(candidates, key=lambda p: p.started_at)
+        if not self.request.create_plan:
+            raise _Stop(ExtractionStatus.RECOVERY_REQUIRED, "no_open_plan")
         started = await self._io(self.repo._now)
         plan_id = f"plan-{self.bank.value.lower()}-{started:%Y%m%dT%H%M%SZ}"
         streams = [
@@ -1030,6 +1070,21 @@ class _Run:
         handle = self._held()
         snapshot = await self._load()
         streams = [self.repo.get_stream(snapshot, s) for s in plan.stream_ids]
+        pending = [s for s in streams if s.status not in _TERMINAL]
+        if pending:
+            # Ejecución por stream: el plan sigue abierto hasta que todos
+            # sus streams terminen.
+            await self._io(
+                self.repo.set_plan_status,
+                handle,
+                plan.plan_id,
+                ScanStatus.PAUSED,
+            )
+            done = {s.stream_id: s.status for s in streams}
+            last = done[self.result.stream_ids[-1]]
+            self.result.status = ExtractionStatus(last.value)
+            self.result.reason = "plan_streams_pending"
+            return
         exhausted = all(
             s.status == ScanStatus.SOURCE_EXHAUSTED_OBSERVED for s in streams
         )
