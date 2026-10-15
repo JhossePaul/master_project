@@ -5,9 +5,9 @@ idempotente en `bbva_voc_tds.sanitized_reviews_tds` y recibos de
 procesamiento en GCS. Especificación y límites en
 [EPIC-4](../../docs/backlog/epic_4.md).
 
-Estado: features 4.1 (paquete, configuración, preflight y CLI) y 4.2
+Estado: features 4.1 (paquete, configuración, preflight y CLI), 4.2
 (desidentificación DLP, segunda barrera regex, conteo de hallazgos, filtro EDA
-y `DoFn`). Los modos de ejecución se registran en 4.4; hasta entonces el Job
+y `DoFn`) y 4.3 (upsert TDS, recibos y cierre de página). Los modos de ejecución se registran en 4.4; hasta entonces el Job
 termina con código 70 sin hacer pull ni escribir en ningún destino.
 
 Desde la raíz:
@@ -79,3 +79,25 @@ result = BatchSanitizer(
 * Fuera de [2, 60] palabras tras limpiar: recibo `FILTERED_LENGTH`.
 * DLP caído o respuesta desalineada: recibos `RETRYABLE_ERROR` y ningún sobre
   válido; errores de permisos/plantillas detienen la corrida.
+
+## Persistencia y recibos (4.3)
+
+```python
+commit = BigQueryTdsUpsertManager(
+    bq_client, project=settings.gcp_project_id, dataset=settings.bq_dataset_id
+).upsert_sanitized_batch(result.valid)
+ledger.write_event_receipts(
+    tds_committed_receipts(result.valid, commit.job_ids, now)
+    + result.filtered + result.quarantined
+)
+ledger.reconcile_page(bank, stream_id, page_id)  # RESOLVED / GAPS_DETECTED / PENDING
+```
+
+* `MERGE` hacia las 17 columnas ordenado por `(fecha, source_observed_at)`;
+  una fila por reseña en cada lote. Tabla temporal con TTL de 1 h, borrada al
+  terminar; job IDs con prefijo (nunca deterministas).
+* Recibos en `GCS_PROCESSING_RECEIPTS_PREFIX`: `{bank}/{page_id}/{event_id}.json`,
+  índice `{bank}/_events/{event_id}.json` y cierre `{bank}/_pages/{page_id}.json`.
+  Escritura condicional: el primer recibo terminal gana.
+* El estado de la ingesta solo se lee (`WatermarkRepository.load`,
+  `find_page`, `iter_ledger`); nunca se adquiere lease ni se escribe la raíz.

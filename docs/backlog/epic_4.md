@@ -1,6 +1,6 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** En implementación. Features 4.1–4.2 implementadas; features 4.3–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
+* **Estado:** En implementación. Features 4.1–4.3 implementadas; features 4.4–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**
@@ -251,6 +251,41 @@ Decisiones y hallazgos de la implementación:
 ### FEATURE 4.3: Persistencia Idempotente en BigQuery TDS y Ledger de Recibos (`bq_writer.py`, `processing_ledger.py`)
 
 **Objetivo:** Persistir los lotes de `SanitizedReviewEnvelope` en `bbva_voc_tds.sanitized_reviews_tds` mediante cargas batch y `MERGE` determinista, y escribir los recibos `ProcessingReceipt` en Cloud Storage respetando el layout de `EPIC-2`/`EPIC-3`.
+
+**Estado: IMPLEMENTADA.** `bq_writer.py` (`BigQueryTdsUpsertManager`,
+`record_to_bq_row`, `latest_revisions`, `merge_statement`, `envelope_digest`) y
+`processing_ledger.py` (`ProcessingLedgerRepository`, `PageClosure`,
+`tds_committed_receipts`). Validación: 69 tests del paquete (100% de cobertura
+de líneas), 549 tests conjuntos; Ruff, formato, Pyrefly y Bandit sin errores.
+Sin BigQuery ni GCS reales: el `MERGE` se valida por su texto y la página se
+compromete con `WatermarkRepository` sobre GCS simulado con generaciones.
+
+Decisiones de la implementación:
+
+* **Staging:** `_staging_sanitized_{hash16}_{aleatorio8}` en `bbva_voc_tds`,
+  esquema de 17 columnas, expiración de 1 h, carga NDJSON `WRITE_TRUNCATE` y
+  borrado en `finally` (`not_found_ok`). Si el borrado falla, la expiración la
+  limpia. El sufijo aleatorio evita chocar con una tabla huérfana al reintentar.
+* **Errores:** cualquier fallo de carga o `MERGE` (incluidos `errors` del job)
+  se convierte en `TdsWriteError` sin propagar el mensaje de BigQuery, que puede
+  citar datos. Los identificadores del `MERGE` se validan con expresión regular
+  antes de componer el SQL (BigQuery no parametriza identificadores).
+* **Recibos `TDS_COMMITTED`:** se emiten para todos los sobres del lote,
+  incluidas las revisiones superadas por la deduplicación, con los IDs de los
+  jobs de carga y `MERGE` y el digest de su propio sobre.
+* **Ledger:** primer escritor gana. Un reintento con otro `processed_at`
+  devuelve el recibo ya persistido. El índice `_events/` se escribe después del
+  recibo de la página y conserva el primer resultado del evento.
+  `copy_receipt_for_page` replica ese resultado para otra página sin volver a
+  invocar DLP ni BigQuery.
+* **Cierre de página:** `PageClosure` es un modelo local del paquete (no está
+  en `voc-common`); se promoverá cuando el GET de progreso de la ingesta lo lea.
+  `reconcile_page` devuelve `PENDING` sin escribir si la página aún no está
+  comprometida (el publisher publica antes del commit) o si faltan recibos; con
+  `staging_expired=True` los faltantes se cierran como hueco `STAGING_EXPIRED`.
+  El cierre no toca la raíz ni los manifiestos de la ingesta (probado).
+* **Rendimiento:** `find_already_processed_event_ids` hace una lectura por
+  evento (≤ `microbatch_size`); paralelizarla queda para 4.4 si hace falta.
 
 #### Tarea 4.3.1: Implementar `BigQueryTdsUpsertManager` en `bq_writer.py`
 
