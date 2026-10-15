@@ -47,3 +47,8 @@ jobs:
         run: >-
           uv run --frozen pytest packages/voc-common/tests
           --cov=packages/voc-common/src --cov-fail-under=85
+
+      - name: Infrastructure tests and coverage
+        run: >-
+          uv run --frozen pytest infra/tests
+          --cov=infra/modules --cov-fail-under=80

@@ -1,335 +1,364 @@
-# EPIC-3: Ingesta Paralela Multibanco desde Google Play Store (Scraper Propio Tolerante a Fallas)
+# EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** Pendiente
-* **Semanas Objetivo:** Semana 2
-* **Paquetes / Directorios Afectados:**
-  * `services/ingestion-worker/pyproject.toml`
-  * `services/ingestion-worker/Dockerfile`
-  * `services/ingestion-worker/src/ingestion_worker/__init__.py`
-  * `services/ingestion-worker/src/ingestion_worker/playstore_protocol.py`
-  * `services/ingestion-worker/src/ingestion_worker/extractor.py`
-  * `services/ingestion-worker/src/ingestion_worker/watermark_store.py`
-  * `services/ingestion-worker/src/ingestion_worker/publisher.py`
-  * `services/ingestion-worker/src/ingestion_worker/main.py`
-  * `services/ingestion-worker/tests/__init__.py`
-  * `services/ingestion-worker/tests/test_playstore_protocol.py`
-  * `services/ingestion-worker/tests/test_extractor_and_recovery.py`
-  * `services/ingestion-worker/tests/test_api_main.py`
-* **Dependencias Previas:** `EPIC-1` (`voc-common` disponible en el workspace).
+* **Estado:** Pendiente. Especificación revisada el 2026-10-14; falta validación experimental del protocolo.
+* **Dependencias:** EPIC-1 y EPIC-2. Los cambios de contratos y de despliegue descritos aquí son trabajo pendiente, no capacidades ya implementadas.
+* **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
----
+## Objetivo y límites de la garantía
 
-## 🎯 Contexto y Reglas Arquitectónicas para el Agente IA
+Extraer reseñas textuales de BBVA, Nubank, Santander, Azteca y Banorte mediante
+un cliente propio, con respaldo por página, publicación al menos una vez y
+recuperación verificable. El endpoint `batchexecute` es interno: no tiene contrato
+público de estabilidad, filtros temporales documentados ni garantía de enumerar
+el histórico completo. El tamaño 199 es una política conservadora inicial,
+**no un máximo demostrado**. Las cifras de la ficha de la app no constituyen
+un denominador fiable para calcular el porcentaje de reseñas recuperadas.
 
-Esta épica construye el microservicio contenerizado `services/ingestion-worker/` encargado de extraer las reseñas públicas de Google Play Store para `BBVA`, `NUBANK`, `SANTANDER`, `AZTECA` y `BANORTE`[cite: 1, 8].
+La garantía implementable es conservar/reprocesar páginas ya aceptadas mientras
+sus respaldos estén disponibles. No se promete cero duplicados en transporte,
+ni recuperar registros que el origen deje de exponer. No se confunde el mínimo
+observado con cobertura continua, ni un cursor guardado con una snapshot.
 
-En lugar de utilizar la librería externa `google-play-scraper` (cuyo `urllib.request` síncrono se bloquea ante *rate limits* y pierde el progreso en memoria), el Agente IA **DEBE implementar un motor de extracción propio** basado en la especificación exacta del protocolo RPC `batchexecute` (`oCPfdb`) de Google Play con las siguientes **5 Garantías de Resiliencia y Gobierno**:
+## Modelo de estado: progreso lógico y cursor físico son diferentes
 
-1. **Checkpointing Atómico por Página (Tolerancia a Fallas Total):**
-   * Jamás acumular miles de reseñas en una lista en memoria antes de guardar.
-   * El flujo obligatorio dentro del bucle de extracción es **Página por Página (máximo 199 reseñas por lote RPC)**:
-     `Extraer 1 página RPC` $\rightarrow$ `Validar con RawReviewEvent` $\rightarrow$ `Publicar lote en Cloud Pub/Sub` $\rightarrow$ `Actualizar y persistir IngestionWatermarkState (con oldest_page_token, min_review_timestamp y max_review_timestamp) en Cloud Storage`.
-2. **Evasión de Rate Limit y Recuperación Elegante (*Graceful Degradation*):**
-   * Cada petición HTTP hacia `/_/PlayStoreUi/data/batchexecute` debe rotar el encabezado `User-Agent` (desde `DEFAULT_USER_AGENTS`), inyectar cabeceras realistas (`Accept-Language: es-MX,es;q=0.9`, `Origin: https://play.google.com`) y soportar rotación de proxies HTTP/SOCKS5 (`scraper_proxy_pool_urls`).
-   * Entre página y página se debe aplicar una pausa de `scraper_base_delay_sec + random.uniform(0, scraper_max_jitter_sec)`.
-   * Si Google Play responde con `HTTP 429 (Too Many Requests)`, `HTTP 503`, `HTTP 403` o devuelve un bloque vacío inesperado (estrangulamiento silencioso), el cliente debe rotar al siguiente proxy del pool y reintentar con *Exponential Backoff + Jitter* (hasta `scraper_max_retries`).
-   * Si se agotan los reintentos por bloqueo de IP, **el worker NO debe crashear perdiendo el estado**: debe persistir el `IngestionWatermarkState` con el `oldest_page_token` pendiente en Cloud Storage, registrar el evento en BigQuery y devolver un estado estructurado `status="PARTIAL_RATE_LIMITED"` para que la siguiente corrida retome exactamente desde ese `page_token`.
-3. **Soporte para los 3 Modos de Ingesta (`INCREMENTAL`, `BACKFILL`, `FULL_BACKFILL`):**
-   * **`INCREMENTAL`:** Empieza siempre desde `page_token=None` (reseñas más nuevas de hoy hacia atrás) y corta el bucle en cuanto `watermark.should_stop_incremental(review.id_resena, review.fecha)` sea `True`.
-   * **`BACKFILL` (1 año):** Si `watermark.oldest_page_token` existe y `not watermark.backfill_one_year_completed`, retoma directamente desde `oldest_page_token` hacia el pasado hasta que `watermark.has_reached_one_year_backfill(review.fecha)` sea `True`, momento en el que marca `backfill_one_year_completed = True`.
-   * **`FULL_BACKFILL` (Exhaustivo):** Retoma desde `watermark.oldest_page_token` (o itera por particiones de estrellas `1..5` usando `watermark.star_partition_tokens`) hasta que Google Play devuelva `next_page_token = None` de forma legítima, marcando `full_backfill_completed = True`.
-4. **Respaldo de Carga Cruda en Data Lake (Capa de Integración):**
-   * Además de publicar cada lote de `RawReviewEvent` en `Cloud Pub/Sub` (`voc-raw-reviews-topic`)[cite: 11, 13], el publicador escribe un archivo comprimido JSONL (`.jsonl.gz`) del lote en `gs://<gcs_raw_datalake_bucket>/raw_staging/{bank_id}/{date}/{batch_uuid}.jsonl.gz` para cumplir con la Capa 2 del diagrama de arquitectura [*Almacenamiento crudo en Cloud Storage Data Lake*](cite: 11, 12).
-5. **Exposición Dual (Individual y Secuencial para Free Tier):**
-   * Exponer en FastAPI los endpoints `POST /api/v1/ingest` (para un banco individual) y `POST /api/v1/ingest/all` (para iterar secuencialmente sobre los 5 bancos con pausa intermedia en modo *Free Tier*).
+### Tarea preparatoria: contratos v2 y migración en `voc-common`
 
----
+Implementar modelos Pydantic con `extra="forbid"`, UTC y `schema_version=2`.
+Estos contratos deben incorporarse antes de escribir el extractor; el watermark
+v1 no permite expresar las garantías siguientes.
 
-## 📦 Desglose de Features e Historias Técnicas
+| Contrato | Campos y significado obligatorio |
+| --- | --- |
+| `IngestionWatermarkState` v2 | `bank_id`, `app_id`, `schema_version`, `revision`, `updated_at`; `observed_min_at`/`observed_max_at` descriptivos; `incremental` separado; referencias a planes/streams y manifiestos. Los contadores no demuestran cobertura. |
+| `IncrementalProgress` | `committed_high_at`, referencia al conjunto completo de IDs de esa frontera, `active_run_id`, `baseline_high_at` congelado, `candidate_high_at`, `replay_from_at`, estado pendiente y cursor del scan en curso. |
+| `HistoricalPlan` | `plan_id`, `started_at`, `upper_anchor_at` fijo, `requested_lower_at` (fecha o `None` para agotar origen), `stream_ids`, `status`, `completion_evidence`, `extension_events`. La cota anual se fija una vez: `started_at - 365 días`. |
+| `ScanContext` | `app_id`, `lang`, `country`, `sort_order`, `star_filter`, `device_filter`, `page_size`, `protocol_version`; fingerprint determinista del contexto completo. |
+| `ScanStreamState` | `stream_id`, `context`, `chain_epoch`, `status`, `frontier_page_id`, `frontier_oldest_at`, `anchor_page_id`, referencia al último cursor de entrada/salida, `last_success_at`, `recovery_status`. Un stream por contexto/estrella; no comparte tokens con otros. |
+| `PageManifest` | `page_id`, `run_id`, `plan_id`, `stream_id`, `chain_epoch`, `ordinal`, contexto, cursores de entrada/salida, `fetched_at`, límites de fechas, referencia al ledger de IDs/revisiones, conteos crudos/válidos/descartados, fingerprint de contenido, URI/generación del respaldo, fase de publicación, fase de sanitización, `source_evidence`. |
 
-### FEATURE 3.1: Configuración del Servicio `ingestion-worker` y Protocolo `batchexecute` (`playstore_protocol.py`)
+* Los IDs y los campos de revisión son distintos: `(bank_id, id_resena)` identifica
+  una reseña; una revisión incluye cambios de texto, estrellas, versión, votos y
+  respuesta. `source_revision` es un digest determinista del contenido observado,
+  sin fecha local de extracción. `event_id` se deriva de banco, ID y revisión.
+* Los manifiestos/ledgers contienen metadatos e IDs, nunca copias de texto o
+  usuarios. Los cursores se almacenan íntegros en estado protegido; no se imprimen
+  en logs. El estado apunta a ledgers paginados; no crece con todo el corpus.
+* No se trunca a 500 el conjunto usado como prueba de cierre de una frontera.
+  Una caché acotada sirve para acelerar consultas, no para decidir que un scan
+  terminó. Si se supera el límite se consulta el ledger o se continúa el scan.
+* `observed_min_at` no significa que todo lo más reciente esté completo.
+  Registrar segmentos de **traversal observado** mediante manifiestos enlazados.
+  El límite del origen mutable y las comprobaciones de continuidad se mantienen
+  explícitos en `completion_evidence`; no se certifica completitud absoluta.
+* Un `None` de cursor no representa simultáneamente «no iniciado» y «terminado»:
+  `status` distingue `NOT_STARTED`, `RUNNING`, `PAUSED`, `RECOVERY_REQUIRED`,
+  `TARGET_REACHED`, `SOURCE_EXHAUSTED_OBSERVED` y `BLOCKED`.
+* Migración v1: conservar sus campos como observaciones y cursores candidatos,
+  marcar cobertura `UNVERIFIED` y validar/reconciliar la frontera. No convertir
+  `backfill_one_year_completed`, `full_backfill_completed` o un máximo v1 en
+  evidencia v2. `oldest_page_token` global queda obsoleto como fuente de verdad.
+* El avance se realiza por página mediante un reducer validado, no con llamadas
+  por reseña a `update_bounds`. Permitir borrar explícitamente un cursor terminal.
 
-**Objetivo:** Configurar las dependencias del microservicio y programar el serializador/parser puro del protocolo interno de Google Play Store basado en `constants/request.py`, `constants/regex.py` y `constants/element.py` de `google-play-scraper`.
+### BACKFILL anual seguido de FULL_BACKFILL
 
-#### Tarea 3.1.1: Configurar `services/ingestion-worker/pyproject.toml`
+1. Crear el plan anual en T0, con cota `T0 - 365 días`, y stream global NEWEST.
+2. Guardar **la página completa** que cruza esa cota, incluidos los registros más
+   antiguos que la cota. El margen extra evita cortar una página arbitrariamente.
+3. Tras confirmar respaldo/publicación/checkpoint, marcar `TARGET_REACHED`.
+   Conservar el cursor de entrada de esa página, su ledger y el cursor de salida.
+4. Para FULL_BACKFILL con **el mismo contexto**, ampliar el objetivo del mismo
+   plan a `requested_lower_at=None`, conservando `plan_id`, T0, páginas y cobertura
+   observada; registrar el cambio en `extension_events`. No volver a empezar el
+   año ni recalcular la cota. Replay de la página ancla y luego continuación.
+5. El incremental obtiene novedades posteriores independientemente; no modifica
+   el cursor histórico. Cambiar idioma, estrellas, tamaño o versión de protocolo
+   crea un stream nuevo. Los datos existentes se reutilizan vía deduplicación,
+   pero **no** se traslada un cursor global a las particiones por estrellas.
 
-Escribir `services/ingestion-worker/pyproject.toml`:
+Una página ancla no hace estable el cursor. Si el origen inserta, modifica o
+elimina reseñas, el replay puede ser distinto. Esta incertidumbre debe exponerse,
+no reemplazarse por una garantía de snapshot.
 
-```toml
-[project]
-name = "ingestion-worker"
-version = "0.1.0"
-description = "Worker Cloud Run para extraccion resiliente de resenas en Google Play Store y publicacion en Pub/Sub"
-requires-python = ">=3.11"
-dependencies = [
-    "fastapi>=0.110.0,<1.0.0",
-    "uvicorn[standard]>=0.28.0,<1.0.0",
-    "httpx[socks]>=0.27.0,<1.0.0",
-    "tenacity>=8.2.3,<10.0.0",
-    "google-cloud-pubsub>=2.21.0,<3.0.0",
-    "google-cloud-storage>=2.16.0,<3.0.0",
-    "google-cloud-bigquery>=3.20.0,<4.0.0",
-    "pydantic>=2.6.0,<3.0.0",
-    "voc-common",
-]
+Ejemplo conceptual del estado al terminar el anual (estructura abreviada;
+las cadenas entre `<...>` son referencias, no cursores reales):
 
-[tool.uv.sources]
-voc-common = { workspace = true }
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
+```json
+{
+  "schema_version": 2,
+  "bank_id": "BBVA",
+  "incremental": {
+    "committed_high_at": "2026-10-13T08:00:00Z",
+    "active_run_id": null
+  },
+  "historical_plan": {
+    "plan_id": "initial-bbva-20261014",
+    "upper_anchor_at": "2026-10-14T08:00:00Z",
+    "requested_lower_at": "2025-10-14T08:00:00Z",
+    "status": "TARGET_REACHED",
+    "stream_ids": ["bbva-es-mx-newest-global-v1"]
+  },
+  "historical_stream": {
+    "stream_id": "bbva-es-mx-newest-global-v1",
+    "chain_epoch": 1,
+    "frontier_oldest_at": "2025-10-12T07:00:00Z",
+    "anchor_page_id": "<pagina-completa-que-cruzo-el-ano>",
+    "input_cursor_ref": "<cursor-para-releer-esa-pagina>",
+    "next_cursor_ref": "<cursor-devuelto-por-esa-pagina>",
+    "recovery_status": "NOT_CHECKED_SINCE_LAST_COMMIT"
+  }
+}
 ```
 
-#### Tarea 3.1.2: Implementar `services/ingestion-worker/src/ingestion_worker/playstore_protocol.py`
+Al pedir FULL, cambiar el objetivo inferior del **mismo plan** a `null`,
+registrar la extensión y ponerlo `RUNNING`; conservar ancla, stream y T0.
+El estado incremental permanece separado. No convertir el cursor en un número
+de página ni usar `frontier_oldest_at` como parámetro de búsqueda del servidor.
 
-Implementar la codificación de payloads y extracción posicional segura:
+### Recuperación por coste creciente
 
-1. **Generación de URL y Payload (`build_batchexecute_request`):**
+1. Si hay página respaldada pero publicación pendiente, completar su entrega
+   desde GCS antes de consultar de nuevo el origen. No avanzar el cursor.
+2. Replay del cursor **de entrada** de la última página comprometida, manteniendo
+   todo el contexto. Comparar IDs/revisiones, fechas y estructura con el manifiesto;
+   persistir cualquier cambio como nueva observación. El solapamiento se evalúa
+   como evidencia, no como prueba matemática de que no existen saltos.
+3. Con ancla consistente, continuar con el cursor **devuelto por el replay**.
+   No asumir que el token viejo conserva la misma página o TTL.
+4. Si falla/deriva, probar unas pocas anclas anteriores de la misma cadena
+   (presupuesto configurable), sin mezclar contextos. Registrar cada intento.
+5. Si ninguna sirve, abrir `chain_epoch` nuevo y recorrer desde la cabeza hasta
+   conectar con el ledger/frontera anterior. Las fechas ayudan a detectar la
+   región objetivo; **no son un filtro temporal enviado al endpoint**. Saltar
+   escritura de revisiones ya confirmadas, pero no simular que esto ahorra las
+   solicitudes necesarias para atravesar páginas del origen.
+6. Limitar la recuperación por solicitudes y tiempo; si no conecta, devolver
+   `RECOVERY_REQUIRED`. Mantener segmentos separados y no cerrar un hueco.
 
-* Función `build_batchexecute_url(lang: str = "es", country: str = "mx") -> str`:
-* Retorna `f"{PLAYSTORE_BATCHEXECUTE_URL}?hl={lang}&gl={country}"`.
+**Límite inevitable:** si Google invalida todos los cursores y no ofrece una
+búsqueda temporal verificable, recuperar la posición requiere volver a recorrer
+el prefijo. No hay salto directo fiable ni búsqueda binaria por fecha usando
+este contrato. Ejecutar bloques largos en Jobs reduce interrupciones; guardar
+anclas reduce riesgo y puede reducir coste, pero no elimina ese peor caso.
 
-* Función `build_batchexecute_body(app_id: str, sort_order: PlayStoreSortOrder = PlayStoreSortOrder.NEWEST, count: int = 199, filter_score_with: int | None = None, filter_device_with: int | None = None, page_token: str | None = None) -> bytes`:
-* Basado exactamente en `Formats.Reviews` de `google-play-scraper/constants/request.py`:
-* Si `score` o `device` son `None`, en el payload interno se representan con la cadena literal `"null"`.
-* **Cuando `page_token is None` (Primera página):**
+## FEATURE 3.1: Paquete y adaptación del protocolo
+
+### Dependencias y archivos
+
+Workspace `ingestion-worker`, Python >=3.11, hatchling, `voc-common` desde
+workspace. Dependencias: FastAPI, uvicorn, `httpx[socks]`, tenacity, clientes GCP
+Pub/Sub, Storage y BigQuery y Pydantic v2. Mantener rangos compatibles probados
+al implementar y resolver con uv; no instalar `google-play-scraper` en producción.
+Archivos: `playstore_protocol.py`, `extractor.py`, `watermark_store.py`,
+`publisher.py`, `main.py`, `job.py`, Dockerfile y tests de cada módulo.
+
+### Serialización estructural, no concatenación de f-strings
+
+`build_batchexecute_body(app_id, sort_order=NEWEST, count=199,
+filter_score_with=None, filter_device_with=None, page_token=None) -> bytes`.
+Hipótesis de protocolo de referencia consultada el 2026-10-14:
 
 ```python
-inner_payload = f'[[null,[2,{ int(sort_order) },[{count}],null,[null,{score_str},null,null,null,{device_str}]],["{app_id}",7]]]'
-
+pagination = [count] if page_token is None else [count, None, page_token]
+filters = [None, filter_score_with, None, None, None, None, None, None,
+           filter_device_with]
+inner = [None, [2, int(sort_order), pagination, None, filters], [app_id, 7]]
+outer = [[["oCPfdb", json.dumps(inner), None, "generic"]]]
+body = urllib.parse.urlencode({"f.req": json.dumps(outer)}).encode("utf-8")
 ```
 
-* **Cuando `page_token is not None` (Páginas subsecuentes con cursor):**
-
-```python
-inner_payload = f'[[null,[2,{ int(sort_order) },[{count},null,"{page_token}"],null,[null,{score_str},null,null,null,{device_str}]],["{app_id}",7]]]'
-
-```
-
-* Escapar comillas dobles en `inner_payload` (o serializar con `json.dumps(["oCPfdb", inner_payload, None, "generic"])`) y envolver en `f"f.req={urllib.parse.quote(outer_json)}".encode("utf-8")`.
-
-1. **Extracción Regex y Mapeo Posicional (`parse_batchexecute_response`):**
-
-* Expresión regular pre-compilada basada en `Regex.REVIEWS`:
-
-```python
-_WRB_FR_REGEX = re.compile(r"\)]}'\n\n([\s\S]+)")
-
-```
-
-* Función `parse_batchexecute_response(raw_text: str, bank_id: BankKey, app_id: str) -> tuple[list[RawReviewEvent], str | None]`:
-* Elimina el prefijo de seguridad XSS `)]}'\n\n`, localiza la línea JSON que contiene `"wrb.fr"` y `"oCPfdb"`, y ejecuta `parsed_root = json.loads(line)`.
-* Extrae el payload interno: `inner_data = json.loads(parsed_root[0][2])`.
-* Si `inner_data` está vacío o no tiene elementos: retorna `([], None)`.
-* La lista de reseñas crudas se encuentra en `raw_reviews_list = inner_data[0]` (si existe).
-* El `next_page_token: str | None` se extrae de forma segura desde `inner_data[-1][-1]` si `isinstance(inner_data[-1], list) and len(inner_data[-1]) > 0 and isinstance(inner_data[-1][-1], str)` (exactamente como `token = _nested_lookup(dom, [-1, -1])` en `google-play-scraper`).
-* Para cada elemento `entry` en `raw_reviews_list`, extrae con una función auxiliar segura `_nested_lookup(obj: Any, indexes: list[int], default: Any = None) -> Any` (equivalente a `ElementSpec.extract_content`):
-* `id_resena`: `_nested_lookup(entry, [0])`
-* `usuario`: `_nested_lookup(entry, [1, 0]) or "Usuario de Google"`
-* `imagen_usuario`: `_nested_lookup(entry, [1, 1, 3, 2])`
-* `estrellas`: `int(_nested_lookup(entry, [2], 0))`
-* `votos_utilidad`: `int(_nested_lookup(entry, [3], 0))`
-* `texto`: `_nested_lookup(entry, [4]) or ""`
-* `fecha`: `datetime.fromtimestamp(_nested_lookup(entry, [5, 0]), tz=timezone.utc)`
-* `texto_respuesta`: `_nested_lookup(entry, [7, 1])`
-* `fecha_respuesta`: `datetime.fromtimestamp(ts, tz=timezone.utc)` si `ts := _nested_lookup(entry, [7, 2, 0])` existe, si no `None`.
-* `version_app`: `_nested_lookup(entry, [10]) or "UNKNOWN"`
-
-* Filtra cualquier reseña cuyo `texto.strip()` esté vacío (reseñas sin comentario textual) e instancia `RawReviewEvent` de `voc-common`.
-
----
-
-### FEATURE 3.2: Almacén de Estado y Continuidad (`watermark_store.py`)
-
-**Objetivo:** Gestionar la lectura y escritura atómica del estado de paginación (`IngestionWatermarkState`) en Cloud Storage y el registro de linaje en BigQuery para garantizar la continuidad del proceso ante interrupciones o bloqueos.
-
-#### Tarea 3.2.1: Implementar `services/ingestion-worker/src/ingestion_worker/watermark_store.py`
-
-Crear la clase `WatermarkRepository`:
-
-```python
-class WatermarkRepository:
-    def __init__(self, settings: Settings, storage_client: storage.Client | None = None, bq_client: bigquery.Client | None = None) -> None:
-
-```
-
-1. **`load_watermark(self, bank_id: BankKey) -> IngestionWatermarkState`**:
-
-* Busca el blob `f"{self.settings.gcs_watermark_prefix}/{bank_id.value}.json"` en el bucket `self.settings.gcs_raw_datalake_bucket`.
-* Si no existe (primera ejecución histórica), devuelve una instancia limpia de `IngestionWatermarkState(bank_id=bank_id, app_id=PLAYSTORE_BANK_APPS[bank_id])`.
-* Si existe, descarga el JSON y lo valida con `IngestionWatermarkState.model_validate_json(...)`.
-
-1. **`save_watermark_checkpoint(self, state: IngestionWatermarkState) -> None`**:
-
-* Se invoca **después de cada lote (página) exitoso** o al capturar un corte por *rate limit*.
-* Actualiza `state.updated_at = datetime.now(timezone.utc)` y sube el JSON de forma atómica a `gs://<bucket>/state/watermarks/{bank_id.value}.json`.
-
-1. **`log_run_to_bigquery(self, state: IngestionWatermarkState, mode: IngestionMode, extracted_in_run: int, status: str) -> None`**:
-
-* Al finalizar la ejecución del banco, inserta una fila de auditoría en la tabla `ingestion_watermarks_log` de BigQuery.
-
----
-
-### FEATURE 3.3: Publicador por Lotes hacia Pub/Sub y Respaldo en Data Lake (`publisher.py`)
-
-**Objetivo:** Publicar asíncronamente los lotes de `RawReviewEvent` en Cloud Pub/Sub e inyectar el respaldo crudo en Cloud Storage (Data Lake) antes de avanzar el cursor del watermark.
-
-#### Tarea 3.3.1: Implementar `services/ingestion-worker/src/ingestion_worker/publisher.py`
-
-Crear la clase `RawReviewBatchPublisher`:
-
-1. **`publish_page_batch(self, events: list[RawReviewEvent], bank_id: BankKey, mode: IngestionMode) -> int`**:
-
-* Si `events` está vacío, retorna `0`.
-* **Paso 1 (Respaldo en Data Lake - Capa 2):** Serializa la lista de `RawReviewEvent` en formato JSON Lines comprimido con `gzip` y la sube a `gs://{bucket}/{gcs_raw_staging_prefix}/{bank_id.value}/{fecha_utc_iso}/{batch_id}.jsonl.gz`.
-* **Paso 2 (Emisión a Cloud Pub/Sub - Capa 1):**
-* Publica cada `event.model_dump_json().encode("utf-8")` en `projects/{project_id}/topics/{pubsub_raw_reviews_topic}` adjuntando como atributos del mensaje:
-* `bank_id=event.bank_id.value`
-* `app_id=event.app_id`
-* `id_resena=event.id_resena`
-* `version_app=event.version_app`
-* `ingestion_mode=mode.value`
-
-* Espera la confirmación de los futuros (`concurrent.futures.wait`) antes de retornar `len(events)` para garantizar **Entrega Al Menos Una Vez (*At-Least-Once Delivery*)** antes de actualizar el watermark.
-
----
-
-### FEATURE 3.4: Motor de Extracción Resiliente con Rotación de Proxies y Reintentos (`extractor.py`)
-
-**Objetivo:** Orquestar la extracción paginada combinando el protocolo RPC, la rotación de IPs/User-Agents, el corte temprano por watermark y la recuperación ante *throttling*.
-
-#### Tarea 3.4.1: Implementar Excepciones y Resultado de Ejecución en `extractor.py`
-
-Definir:
-
-* `class PlayStoreRateLimitError(Exception)`: Lanzada cuando Google Play responde con HTTP 429, 503, 403 o bloquea la IP.
-* `class IngestionRunResult(BaseModel)`:
-* `bank_id: BankKey`
-* `app_id: str`
-* `mode: IngestionMode`
-* `status: Literal["COMPLETED", "PARTIAL_RATE_LIMITED", "MAX_LIMIT_REACHED"]`
-* `reviews_extracted: int`
-* `pages_fetched: int`
-* `resumed_from_token: str | None`
-* `last_saved_token: str | None`
-* `max_review_timestamp: datetime | None`
-* `min_review_timestamp: datetime | None`
-
-#### Tarea 3.4.2: Implementar `PlayStoreResilientExtractor` en `extractor.py`
-
-```python
-class PlayStoreResilientExtractor:
-    def __init__(
-        self,
-        settings: Settings,
-        watermark_repo: WatermarkRepository,
-        publisher: RawReviewBatchPublisher,
-    ) -> None:
-
-```
-
-1. **Rotador de Clientes HTTP y Proxies (`_get_http_headers` y `_get_current_proxy`):**
-
-* Mantiene un índice rotatorio sobre `settings.scraper_proxy_pool_urls` (si la lista no está vacía).
-* En cada petición o tras cada `scraper_rotate_proxy_every_n_batches` lotes, o **inmediatamente si ocurre un `PlayStoreRateLimitError**`, avanza al siguiente proxy del pool y selecciona un `User-Agent` distinto de `DEFAULT_USER_AGENTS`.
-
-1. **Petición RPC con Backoff Exponencial y Jitter (`_fetch_single_rpc_page`):**
-
-* Utiliza `httpx.AsyncClient(proxy=current_proxy, timeout=settings.scraper_timeout_sec)`.
-* Envuelto con lógica de reintentos de `tenacity` (`stop_after_attempt(settings.scraper_max_retries)`, `wait_random_exponential(multiplier=settings.scraper_base_delay_sec, max=60.0)`):
-* Si el código HTTP es `429`, `503` o `403`, rota el proxy en el `before_sleep` hook y lanza `PlayStoreRateLimitError`.
-* Parsea la respuesta con `parse_batchexecute_response(...)`.
-
-1. **Flujo de Continuidad y Recuperación en `run_extraction(self, payload: IngestionRequestPayload) -> IngestionRunResult`:**
-
-* Carga el estado actual: `watermark = self.watermark_repo.load_watermark(payload.bank_id)`.
-* **Selección del Cursor Inicial según el Modo:**
-* Si `payload.mode == IngestionMode.INCREMENTAL`:
-* `current_token = None` (siempre inicia en la página 1 de las más recientes).
-
-* Si `payload.mode in (IngestionMode.BACKFILL, IngestionMode.FULL_BACKFILL)`:
-* Si `watermark.oldest_page_token` no es `None`, **retoma directamente desde `current_token = watermark.oldest_page_token**` (evitando volver a descargar páginas que ya se extrajeron en ejecuciones previas). Si es `None`, inicia en `None`.
-
-* **Bucle de Paginación Tolerante a Fallas (`while total_extracted < payload.max_reviews_per_run:`):**
-* Intenta `_fetch_single_rpc_page(app_id, page_token=current_token)`.
-* **Si captura `PlayStoreRateLimitError` tras agotar todos los reintentos y proxies:**
-* Guarda `watermark.oldest_page_token = current_token` en Cloud Storage (`save_watermark_checkpoint`).
-* Registra en BigQuery con estado `"PARTIAL_RATE_LIMITED"`.
-* Retorna `IngestionRunResult(status="PARTIAL_RATE_LIMITED", last_saved_token=current_token, ...)` sin lanzar excepción HTTP 500, asegurando que ningún lote previo se pierda y dejando listo el token para la siguiente ejecución.
-
-* **Filtrado y Deduplicación lote por lote:**
-* Para cada `review` en el lote descargado:
-* En modo `INCREMENTAL`: si `watermark.should_stop_incremental(review.id_resena, review.fecha)` es `True`, marca `stop_pagination = True` y rompe el bucle interno (no incluye ni republica reseñas ya vistas).
-* En modo `BACKFILL` (1 año): si `review.id_resena in watermark.oldest_review_ids`, la omite por duplicada; si `watermark.has_reached_one_year_backfill(review.fecha)` es `True`, marca `watermark.backfill_one_year_completed = True`, `stop_pagination = True` y rompe el bucle interno.
-* En modo `FULL_BACKFILL`: omite si `review.id_resena in watermark.oldest_review_ids`.
-
-* **Persistencia Inmediata del Lote Válido:**
-* Publica las reseñas nuevas del lote con `self.publisher.publish_page_batch(new_reviews, ...)`.
-* Actualiza el `watermark.update_bounds(...)` guardando `next_page_token` como nuevo `oldest_page_token` (si estamos en `BACKFILL` o `FULL_BACKFILL`, o si es la primera corrida histórica).
-* Llama a `self.watermark_repo.save_watermark_checkpoint(watermark)` **en esa misma iteración**.
-
-* Si `stop_pagination` es `True` o `next_page_token is None`:
-* Si estábamos en `FULL_BACKFILL` y `next_page_token is None`, marca `watermark.full_backfill_completed = True` y guarda el watermark.
-* Termina el bucle con `status="COMPLETED"`.
-
-* Aplica pausa anti-throttling: `await asyncio.sleep(settings.scraper_base_delay_sec + random.uniform(0, settings.scraper_max_jitter_sec))`.
-
----
-
-### FEATURE 3.5: API HTTP en FastAPI, Contenedor Docker y Suite de Pruebas (`main.py`, `Dockerfile`, `tests/`)
-
-**Objetivo:** Exponer los endpoints para Cloud Scheduler / invocaciones manuales, empaquetar el contenedor Docker usando `uv` y garantizar cobertura $\ge 80\%$.
-
-#### Tarea 3.5.1: Implementar `services/ingestion-worker/src/ingestion_worker/main.py`
-
-Crear la aplicación FastAPI con los siguientes endpoints:
-
-1. **`GET /health`**: Retorna `{"status": "healthy", "service": "ingestion-worker"}`.
-2. **`POST /api/v1/ingest`**:
-
-* Recibe `payload: IngestionRequestPayload`.
-* Ejecuta `await extractor.run_extraction(payload)` y retorna `IngestionRunResult`.
-
-1. **`POST /api/v1/ingest/all`** (Endpoint para el Job Maestro de Free Tier):
-
-* Recibe `payload: SequentialBatchIngestionRequest`.
-* Itera secuencialmente sobre `payload.banks` (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), ejecutando `run_extraction` para cada uno y esperando `await asyncio.sleep(payload.inter_bank_delay_sec)` entre bancos para evitar bloqueo de IP.
-* Retorna `list[IngestionRunResult]`.
-
-1. **`GET /api/v1/watermarks/{bank_id}`**:
-
-* Devuelve el `IngestionWatermarkState` actual almacenado en Cloud Storage para monitoreo de qué porcentaje de historia se ha recuperado de cada banco.
-
-#### Tarea 3.5.2: Implementar `services/ingestion-worker/Dockerfile`
-
-Construir un `Dockerfile` multi-stage optimizado con `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`, usuario no-root (`appuser`) para aprobar el escaneo de seguridad de `Bandit`/Docker, instalando `voc-common` y `ingestion-worker` desde el workspace y exponiendo el puerto `8080` con `uvicorn ingestion_worker.main:app --host 0.0.0.0 --port 8080`.
-
-#### Tarea 3.5.3: Suite de Pruebas Unitarias y de Recuperación (`services/ingestion-worker/tests/`)
-
-El Agente IA debe escribir pruebas exhaustivas usando `pytest` y `respx` / `unittest.mock` (sin realizar llamadas reales a internet ni a GCP):
-
-1. **`test_playstore_protocol.py`**:
-
-* Validar que `build_batchexecute_body` genere el payload exacto con y sin `page_token`.
-* Simular una respuesta real de `batchexecute` con prefijo `)]}'\n\n` y estructura `["wrb.fr","oCPfdb", ...]` verificando que `parse_batchexecute_response` extraiga correctamente el `id_resena`, `texto`, `estrellas`, `version_app`, `votos_utilidad` y el `next_page_token` en Base64, filtrando reseñas sin texto.
-
-1. **`test_extractor_and_recovery.py`**:
-
-* **Test de Corte Incremental (`INCREMENTAL`):** Simular una página con 5 reseñas donde las primeras 3 son nuevas y la 4ta tiene un `id_resena` ya presente en `watermark.recent_review_ids`. Comprobar que solo se publican 3 reseñas en Pub/Sub, se detiene la paginación en la página 1 y se actualiza `max_review_timestamp`.
-* **Test de Fallo por Rate Limit y Recuperación (`BACKFILL`):**
-* *Corrida 1:* Simular que la Página 1 (`token="TOKEN_P1"`) responde HTTP 200 con 2 reseñas, pero la Página 2 responde `HTTP 429 Too Many Requests` en todos los reintentos. Verificar que el extractor rota los proxies del pool, publica las 2 reseñas de la Página 1, guarda `oldest_page_token="TOKEN_P1"` en el watermark y retorna `status="PARTIAL_RATE_LIMITED"`.
-* *Corrida 2:* Volver a llamar `run_extraction` con el watermark guardado. Verificar que **no** vuelve a pedir la Página 1 (`token=None`), sino que arranca pidiendo directamente `page_token="TOKEN_P1"` hasta llegar a 1 año atrás (`has_reached_one_year_backfill == True`) y retorna `status="COMPLETED"`.
-
-1. **`test_api_main.py`**:
-
-* Probar `POST /api/v1/ingest` y `POST /api/v1/ingest/all` mediante `fastapi.testclient.TestClient`.
-
----
-
-## ✅ Criterios de Aceptación de la Épica 3 (Checklist de Verificación)
-
-* [ ] Cero dependencia del paquete `google-play-scraper`: toda la comunicación con Google Play se realiza vía `playstore_protocol.py` y `httpx` con soporte de proxies y rotación de `User-Agent`.
-* [ ] Si ocurre un error HTTP 429/503 a mitad de un `BACKFILL` o `FULL_BACKFILL`, las páginas previas ya están publicadas en Pub/Sub y respaldadas en GCS, y el `oldest_page_token` queda guardado en `gs://<bucket>/state/watermarks/{bank_id}.json` para reanudar sin pérdida ni duplicación.
-* [ ] Los comandos `uv run ruff check services/ingestion-worker`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/ingestion-worker` y `uv run pytest services/ingestion-worker/tests --cov=services/ingestion-worker/src --cov-fail-under=85` pasan con **0 errores**.
+`None` se serializa como JSON `null`. URL construida con `urlencode` para `hl`
+y `gl`; Content-Type form-urlencoded. Tokens opacos, sin decodificarlos ni
+editar su contenido. `page_size` se fija por stream; solo cambiarlo al crear uno.
+Versionar el adaptador y registrar el commit/fingerprint de la referencia cuando
+se incorporen fixtures reales. No importar código remoto dinámicamente.
+
+### Parser y errores
+
+Retornar `RpcPageResult`: filas válidas, cantidad de filas crudas, descartes
+explícitos, cursor, `protocol_version`, evidencia y clasificación. Separar
+`ProtocolError`, `TransportError`, `RateLimitedError`, `InvalidCursorError` y
+`EmptyAmbiguousError`. No transformar errores en `([], None)`.
+
+* Reconocer prefijo XSSI y frames JSON con `wrb.fr`/`oCPfdb`, permitiendo líneas
+  de longitud. Una regex que captura todo el documento no basta. HTML, JSON
+  truncado, frame ausente/ambiguo o estructura desconocida fallan explícitamente.
+* Mapeo candidato: ID `[0]`, usuario `[1][0]`, imagen `[1][1][3][2]`, estrellas
+  `[2]`, texto `[4]`, fecha `[5][0]`, **votos `[6]`**, respuesta `[7][1]`, fecha de
+  respuesta `[7][2][0]`, versión `[10]`. Reutilizar/ajustar la fábrica compartida
+  `RawReviewEvent.from_batchexecute_entry`, evitando parsers divergentes.
+* Cursor candidato de la referencia actual: `inner_data[-2][-1]`, sujeto a
+  estructura/fixtures. No buscar cualquier string en la respuesta ni aceptar
+  `[-1][-1]` como fallback silencioso. Desconocido => cambio de protocolo.
+* `PAGE_WITH_CURSOR`, `END_CANDIDATE`, `EMPTY_WITH_CURSOR`, `EMPTY_AMBIGUOUS`,
+  `PROTOCOL_ERROR`. Una página sin reseñas textuales puede tener filas crudas y
+  cursor: seguir. Una página vacía no demuestra agotamiento.
+* EOF observado exige forma terminal validada y relectura consistente bajo el
+  presupuesto. Registrar evidencia, no prometer enumeración total del catálogo.
+  Una repetición HTTP 200 del mismo error no es validación terminal.
+* Si aparecen fechas fuera de orden, no cortar inmediatamente al primer registro
+  viejo: procesar página completa y abrir reconciliación por ventana/IDs.
+
+## FEATURE 3.2: Repositorio de estado, leases y auditoría
+
+`WatermarkRepository` implementa lectura v2, reducer de páginas, migración,
+ledger, adquisición/renovación/liberación de lease y CAS por generación GCS.
+
+* Estado actual: `state/watermarks/{bank_id}.json`; manifiestos y planes bajo
+  `state/ingestion/{bank_id}/`. Leer datos y generación consistentemente.
+* `if_generation_match=0` al crear; generación leída al actualizar. Un 412 no
+  permite sobrescribir: releer, comprobar dueño/epoch y reconciliar o abandonar.
+* Lease por banco con `owner_run_id`, vencimiento, heartbeat y fencing epoch;
+  incremento con CAS. Antes de comprometer, el escritor confirma que conserva
+  el lease. Un lock en memoria y `max_instance_count=1` no protegen reintentos
+  ni procesos distintos. No asumir transacciones multiobjeto de GCS.
+* Los manifiestos son inmutables por versión; estado raíz cambia con CAS tras
+  todas las operaciones requeridas. Objetos huérfanos se reconcilian por ID;
+  no reconstruir progreso usando únicamente contadores o timestamps.
+* La auditoría conserva `run_id`, `plan_id`, stream, estado, motivo, páginas,
+  conteos extraídos/publicados/descartados, solicitudes de recuperación y tiempos.
+  **Migración de infra pendiente:** crear `ingestion_runs_log_v2` según el ajuste
+  de EPIC-2, conservando `ingestion_watermarks_log` v1 durante la transición.
+  La tabla actual no incluye `status`/`run_id`; no enviar eventos v2 a su schema.
+  BigQuery no es almacenamiento transaccional del estado vivo.
+* Exponer `GET /api/v1/watermarks/{bank_id}` como progreso y cobertura observados,
+  con huecos e incertidumbre. No devolver porcentaje ficticio de completitud.
+
+## FEATURE 3.3: Página duradera y publicación al menos una vez
+
+`RawReviewBatchPublisher` opera con un `PageManifest`, no con un UUID nuevo por
+cada reintento. `page_id` determinista por stream, epoch, input cursor y fingerprint
+observado; la misma captura conserva su ID. Un replay cambiado es otra captura.
+
+1. Persistir página completa JSONL.gz en `raw_staging/{bank_id}/{date}/{page_id}`
+   con creación condicional y verificar generación/fingerprint. Si ya existe,
+   reutilizar solo si coincide; no sobrescribir una captura diferente.
+2. Publicar registros con `event_id`, `page_id`, `source_revision`, banco y modo.
+   Confirmar **cada `future.result()`** con timeout; `wait()` por sí solo no basta.
+3. Tras confirmar todos, comprometer manifiesto/estado raíz por CAS. Publicación
+   parcial o fallo del CAS mantienen posibilidad de replay y duplicados. No hay
+   transacción atómica GCS-Pub/Sub; la idempotencia de EPIC-4 cierra esa brecha.
+4. Registrar filas sin texto o rechazadas con motivo y conteo. Errores de parser
+   invalidan la página completa; no descartar silenciosamente un schema drift.
+5. El estado de ingesta (`PUBLISHED`) es distinto de `SANITIZED_COMMITTED`.
+   La cobertura TDS solo avanza tras la confirmación de EPIC-4.
+
+La retención cruda de siete días sigue vigente. Supervisar páginas pendientes
+antes de expirar. Manifiestos solos no reconstruyen cuerpos borrados: si se
+pierden ambas copias antes de confirmar destino, registrar hueco y recuperar
+origen; no marcar completitud. El ledger final, sin texto, puede sobrevivir al
+TTL del staging para deduplicación y auditoría.
+
+## FEATURE 3.4: Extracción y políticas de recuperación
+
+`PlayStoreResilientExtractor.run_extraction` devuelve un resultado tipado con
+`run_id`, plan/stream, status y motivo, contadores, presupuesto consumido,
+fronteras observadas/confirmadas y recuperación. Estados al menos:
+`TARGET_REACHED`, `SOURCE_EXHAUSTED_OBSERVED`, `PARTIAL_RATE_LIMITED`,
+`BUDGET_EXHAUSTED`, `RECOVERY_REQUIRED`, `PROTOCOL_ERROR`, `LEASE_CONFLICT`.
+
+### Incremental
+
+* Usar copia congelada del **high confirmado**, no el máximo observado actualizado
+  por página. Reanudar la corrida pendiente antes de abrir otra.
+* Candidato high y progreso se guardan por página, pero high confirmado solo
+  avanza tras cerrar el traversal hasta la frontera anterior, con reconciliación.
+* Cortar por ventana conservadora/ledger de IDs, no por el primer ID duplicado.
+  Revisitar una ventana configurable para cambios, revisiones tardías o empates.
+  La ventana reduce riesgo pero no demuestra que capture todas las ediciones.
+* Bootstrap puede confirmar una ventana reciente explícita; nunca declarar que
+  esa ventana inicial representa todo el histórico que aún no se recorrió.
+
+### Histórico y particiones
+
+* Aplicar el plan y recuperación anteriores. Guardar y publicar páginas completas,
+  incluida la que cruza el cutoff anual. El FULL conserva toda esa captura.
+* Hacer checkpoints por stream/estrella. Missing state = no iniciado; estado EOF
+  explícito = agotamiento observado. No compartir límites temporales de particiones
+  para deduplicar: consultar el ledger de reseñas/revisiones.
+* Terminar plan particionado solo cuando todos sus streams alcanzan el objetivo
+  o EOF validado, sin huecos pendientes. Cambios de estrellas pueden producir
+  duplicados y movimientos; reconciliar mediante el ID estable de la reseña.
+
+### Presupuestos y HTTP
+
+* Reservar capacidad para el delta diario durante la carga inicial. El histórico
+  no debe publicar más de lo que sanitización puede drenar antes del TTL crudo.
+  Coordinar sus presupuestos con edad/backlog de EPIC-4 y pausar el histórico
+  cuando se supera el umbral. La misma suscripción no ofrece prioridad por modo;
+  si se requiere aislamiento real, crear colas/suscripciones y filtros mediante
+  migración explícita de infra, conservando las mismas claves de deduplicación.
+* Presupuestos por solicitudes, páginas, bytes, duración y recuperación; no cortar
+  una página ya recibida a mitad. El límite de reseñas es **blando por página**:
+  puede excederse hasta la página validada; documentarlo o introducir una API de
+  límite de páginas. Un límite estricto requiere persistir el resto antes de avanzar.
+* Honrar Retry-After; 429/503 => backoff acotado con jitter y circuit breaker.
+  403/HTML desconocido => investigar antes de tratarlo como rate limit. Proxies
+  son configuración opcional, no garantía de recuperación ni de acceso permitido.
+  En experimentos se detiene el sondeo al bloqueo; no se rota para eludirlo.
+* Mantener cliente HTTP reutilizable por contexto; no abrir conexión por reseña.
+  La rotación de User-Agent no cambia el modelo de confiabilidad del origen.
+* Salir por presupuesto de tiempo antes del timeout para comprometer la última
+  página. Cancelación/SIGTERM => best effort; el respaldo/ledger permiten reintentar.
+
+## FEATURE 3.5: API, Job histórico, Docker y aceptación
+
+* `GET /health`; `POST /api/v1/ingest` individual; `POST /api/v1/ingest/all`
+  secuencial, compatible con Scheduler. Las peticiones cortas usan los contratos
+  compartidos ampliados/versionados; los resultados no prometen cero duplicados.
+* **Iniciales largas:** CLI `python -m ingestion_worker.job` ejecutado como Cloud
+  Run Job, con plan/stream y presupuesto. No usar FastAPI BackgroundTasks como
+  persistencia. El servicio HTTP actual tiene timeout 900s y CPU bajo demanda:
+  no da continuidad a un histórico largo después de responder o de un 504.
+* Cambios de infra pendientes: declarar Job de ingesta histórica, imágenes y
+  permisos de invocación propios, tiempo de tarea acotado, flags/entorno y saltos
+  de versión de estado. No activar históricos masivos con cron diario por defecto.
+* Docker multi-stage con uv workspace y usuario no root. Ajustar pyproject root
+  y CI al incorporar el servicio; pruebas y cobertura >=85% del código del worker.
+
+### Tests obligatorios
+
+1. Payload exacto, null/escapes, token opaco, protocolo versionado y fixtures
+   estructurales; votos [6], cursor observado, frames/HTML/error no confundidos con EOF.
+2. Incremental: falla tras página 1; high confirmado no cambia y la página 2 se
+   recupera antes de cerrar la corrida. Empates >500 y orden no monotónico.
+3. Anual: página cruza cutoff y contiene filas anteriores; FULL mismo contexto
+   reusa plan/ancla, no pierde la cola de esa página ni recorre el año si el cursor sirve.
+4. Cursor inválido/derivado, ancla anterior válida, todas las anclas inválidas,
+   conexión desde cabeza y presupuesto agotado sin declarar cobertura cerrada.
+5. Publicación parcialmente fallida, respaldo duplicado, CAS 412, lease vencido,
+   dos workers y falla de auditoría: ninguna fase avanza por una confirmación falsa.
+6. Página de 199 con presupuesto restante 5: procesar entera o guardar el resto.
+7. Particiones 1..5, contexto cambiado, token repetido, EOF por partición y ediciones
+   de estrellas; deduplicación no elimina revisiones nuevas.
+8. Staging expirado antes de destino: hueco observable y recuperación explícita.
+9. Pruebas deterministas sin internet en CI; smoke real separado y opt-in.
+
+## Experimentos que desbloquean la implementación
+
+Código autocontenido: `experiments/playstore/protocol_probe.py`, copiable en Colab.
+Sondea tamaños, páginas consecutivas, replay inmediato/diferido y estrellas opcionales;
+exporta `report.json`, `checkpoint.json` y respuestas crudas comprimidas opcionales.
+Los resultados describen capacidad/estabilidad **observadas**: no establecen un máximo
+global ni un TTL garantizado. Aprobar adaptador y política de recuperación después
+de revisar los resultados; si no validan la hipótesis, versionar el protocolo.
+
+## Checklist
+
+* [ ] Contratos v2/migración y auditoría de infra implementados.
+* [ ] Adaptador validado con fixtures reales y sondeo opt-in; 199 documentado como política.
+* [ ] Anual -> FULL conserva páginas/contexto y reconoce recuperación cara cuando toca.
+* [ ] Lease + CAS, ledger y publicación al menos una vez probados por inyección de fallos.
+* [ ] Estado de transporte y cobertura TDS diferenciados; sin promesas de exhaustividad.
+* [ ] Job histórico y API incremental operativos con presupuestos y observabilidad.
+* [ ] Ruff, formato, Pyrefly, Bandit y pytest >=85% pasan.
+
+## Referencias técnicas (consulta 2026-10-14)
+
+* [Payload de referencia](https://github.com/JoMingyu/google-play-scraper/blob/master/google_play_scraper/constants/request.py).
+* [Mapeo de campos](https://github.com/JoMingyu/google-play-scraper/blob/master/google_play_scraper/constants/element.py).
+* [Paginación de referencia](https://github.com/JoMingyu/google-play-scraper/blob/master/google_play_scraper/features/reviews.py).
+* [Precondiciones GCS](https://docs.cloud.google.com/storage/docs/request-preconditions).
+* [Timeout de Cloud Run](https://docs.cloud.google.com/run/docs/configuring/request-timeout).
+
+Las ramas master son referencias cambiantes, no una especificación de Google.

@@ -1,0 +1,11 @@
+config:
+  gcp:project: "bbva-voc-analyzer-dev"
+  gcp:region: "us-central1"
+  bbva-voc-infra:environment: "dev"
+  bbva-voc-infra:free_tier_mode: true
+  bbva-voc-infra:enable_cmek: false
+  bbva-voc-infra:enable_vpc_sc: false
+  bbva-voc-infra:enable_dedicated_vertex_endpoints: false
+  bbva-voc-infra:ingestion_worker_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/ingestion-worker:latest"
+  bbva-voc-infra:sanitization_job_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/sanitization-pipeline:latest"
+  bbva-voc-infra:api_backend_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/api-backend:latest"

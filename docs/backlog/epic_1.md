@@ -1,6 +1,6 @@
 # EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
 
-* **Estado:** IMPLEMENTADO — Features 1.1 a 1.5 completadas y verificadas localmente.
+* **Estado:** Base v1 IMPLEMENTADA — Features 1.1 a 1.5 verificadas localmente. Migración de contratos v2 pendiente para EPIC-3/EPIC-4; ver ajuste siguiente.
 * **Semanas Objetivo:** Semana 1
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/pyproject.toml`
@@ -18,6 +18,76 @@
 
 ---
 
+## Ajuste pendiente: contratos compartidos v2 para ingesta reanudable
+
+Esta sección amplía la base implementada; no declara cambios de código ya hechos.
+EPIC-3 define los campos y transiciones de ingesta; EPIC-4 define resultados de
+sanitización; EPIC-2 aprovisiona persistencia, auditoría y ejecución. Los modelos
+compartidos de ambas deben implementarse aquí antes de sus consumidores.
+
+### Modelos, invariantes y migración
+
+* Incorporar modelos estrictos (`extra="forbid"`, fechas UTC, `schema_version=2`):
+  `IngestionWatermarkState`, `IncrementalProgress`, `HistoricalPlan`, `ScanContext`,
+  `ScanStreamState`, `PageManifest` y `ProcessingReceipt`, según EPIC-3/EPIC-4.
+  La raíz conserva revisión y referencias; ledgers paginados contienen los IDs,
+  sin cargar todo el corpus ni textos/usuarios en el watermark.
+* Separar `observed_min_at`/`observed_max_at` de `committed_high_at`. Los límites
+  observados no demuestran cobertura; un máximo no descarta publicaciones tardías.
+  Mantener baseline incremental congelado, frontera completa y reconciliación.
+  Un ID conocido aislado no cierra el scan. No truncar a 500 los IDs necesarios
+  como evidencia: usar referencias al ledger cuando superen la caché.
+* `HistoricalPlan` fija T0 y corte anual T0-365 días. Anual -> FULL elimina la cota
+  inferior del mismo plan y registra la extensión; conserva ancla, páginas y T0.
+  Guardar completa la página que cruza el corte. No recalcularlo al reanudar.
+* `ScanContext` incluye app, idioma, país, orden, filtros, tamaño y versión de
+  protocolo; su fingerprint delimita el stream. Cambiar contexto crea otro stream,
+  sin heredar tokens. `None` de cursor no distingue inicio de EOF: usar estado
+  explícito. El replay recupera el nuevo cursor de salida de la página ancla.
+* Versionar manifiestos inmutables con cursores de entrada/salida, fingerprint de
+  contenido, respaldo URI/generación y fases de publicación/sanitización separadas.
+  Identificar páginas independientemente del token: se observó distinto token de
+  continuación con idénticos IDs. `SOURCE_EXHAUSTED_OBSERVED` no certifica que el
+  origen exponga todo su histórico.
+* Sustituir avance por reseña (`update_bounds`) por un reducer puro de páginas
+  confirmadas, probado de forma independiente. El repositorio de EPIC-3 realiza
+  CAS/lease y efectos externos; Pydantic no proporciona atomicidad de almacenamiento.
+* Migrar v1 explícitamente: fechas como observaciones, tokens como candidatos y
+  cobertura `UNVERIFIED`. No convertir booleanos de backfill o contadores v1 en
+  evidencia v2. Despachar por versión en la migración; no relajar modelos con
+  `extra="ignore"` para aceptar silenciosamente estados incompatibles.
+* Añadir un sobre de evento con `event_id`, `page_id`, `plan_id`, `stream_id`,
+  banco, ID y `source_revision`, más `RawReviewEvent`. Derivar revisión del contenido
+  del origen (incluidos cambios de votos/respuesta), nunca de `ingested_at`.
+  Propagar identidad/revisión al resultado sanitizado y `ProcessingReceipt` según
+  EPIC-4. Repetir la misma revisión es idempotente; cambiar contenido produce otra.
+* Definir modelo de auditoría separado para `ingestion_runs_log_v2` de EPIC-2,
+  sin cursores completos ni texto crudo. Publicación confirmada y resultado TDS
+  son estados distintos; recibos de filtrado/cuarentena no equivalen a fila TDS.
+
+### Configuración y aceptación de la migración
+
+* `PLAYSTORE_MAX_PAGE_SIZE=199` y el `le=199` de los contratos actuales son límites
+  de política v1, no evidencia del máximo del endpoint. Separar nombre/valor por
+  defecto y límite permitido al migrar; mantener 199 inicialmente. Antes de
+  habilitar 500, validar paginación y actualizar conjuntamente `Settings`, payloads,
+  pruebas y configuración de EPIC-2. Los lotes DLP tienen límites independientes.
+* Añadir configuración de prefijos de manifiestos/ledgers, tabla de auditoría v2,
+  referencia del Job histórico y presupuestos de tiempo/solicitudes/bytes. Definir
+  propietario de cada parámetro y defaults compatibles con EPIC-2/EPIC-3; conservar
+  lectura de estados v1 durante la transición. No desplegar consumidores v2 sobre
+  tablas v1 ni activar un Job no aprovisionado.
+* Pruebas pendientes: serialización estricta y dispatch por versión; migración
+  sin cobertura inventada; anual -> FULL con T0 fijo; fronteras con más de 500 IDs;
+  cambio de contexto; inicio/pausa/EOF distintos; borrado explícito de cursor;
+  reducer sin avance ante publicación parcial; revisiones estables e idempotentes;
+  recibos con resultados TDS, filtrado y cuarentena diferenciados.
+* Las pruebas de regresión v1 siguen documentando la base actual; no certifican
+  recuperación v2. CAS/lease y fallos externos se verifican en EPIC-3, IAM/recursos
+  con Pulumi Mocks en EPIC-2. Ejecutar los quality gates al implementar código.
+
+---
+
 ## 🎯 Contexto y Reglas Arquitectónicas para el Agente IA
 
 Esta épica construye el paquete compartido `voc-common`, la gestión centralizada de configuración (`config.py` / `.env`) y el pipeline de Integración Continua (GitHub Actions). Todos los servicios del monorepo importarán exclusivamente estos contratos.
@@ -26,10 +96,10 @@ El Agente IA **DEBE** implementar las siguientes 5 directrices de diseño en `vo
 
 1. **Soporte Nativo para Scraper Propio (`batchexecute` RPC) sin `google-play-scraper`:**
    * No se debe incluir `google-play-scraper` como dependencia.
-   * Los contratos deben modelar el protocolo interno de Google Play (`/_/PlayStoreUi/data/batchexecute`, RPC ID `oCPfdb`), donde el tamaño máximo de lote por petición es de **199 reseñas** y el token de paginación (`page_token`) es un `str` puro en Base64 serializable directamente en JSON.
+   * Los contratos deben modelar el protocolo interno de Google Play (`/_/PlayStoreUi/data/batchexecute`, RPC ID `oCPfdb`), con tamaño inicial de página **199 como política conservadora**, no máximo del origen: el sondeo devolvió 500 registros únicos en una petición. El token (`page_token`) es un `str` opaco serializable en JSON; no se decodifica ni se presupone formato Base64, TTL o estabilidad.
 2. **Tres Modos de Ingesta y Watermark Bidireccional en Cloud Storage:**
-   * Soportar los modos `INCREMENTAL` (delta diario), `BACKFILL` (ventana histórica de 1 año / 365 días hacia atrás) y `FULL_BACKFILL` (extracción total hasta agotar páginas, soportando particionamiento por calificación de 1 a 5 estrellas para evadir límites de paginación profunda).
-   * El esquema `IngestionWatermarkState` debe rastrear tanto la frontera superior (`max_review_timestamp` y `recent_review_ids`) como la frontera inferior (`min_review_timestamp`, `oldest_review_ids` y `oldest_page_token` por estrella/global), permitiendo guardar checkpoints atómicos en Cloud Storage (`gs://<bucket>/state/watermarks/{bank_id}.json`) tras cada página descargada.
+   * Soportar los modos `INCREMENTAL` (delta diario), `BACKFILL` (ventana histórica de 1 año / 365 días hacia atrás) y `FULL_BACKFILL` (recorrido hasta agotamiento observado del origen; particionamiento por calificación de 1 a 5 estrellas como estrategia experimental, sin promesa de recuperar todo el histórico).
+   * El esquema v2 separa observaciones, progreso incremental comprometido, planes históricos y streams contextualizados. El estado raíz reside en `gs://<bucket>/state/watermarks/{bank_id}.json`; el repositorio de EPIC-3 aplica CAS y lease. Una página descargada aún no autoriza el avance: requiere respaldo y confirmación de todas sus publicaciones. El modelo bidireccional v1 queda como contrato de migración.
 3. **Separación Estricta entre Carga Cruda (Pre-DLP) y Tabla TDS (Post-DLP):**
    * `RawReviewEvent` modela el evento en tránsito hacia `Cloud Pub/Sub` y el staging efímero en `Cloud Storage` (conservando `texto` y `usuario` crudos para que sean inspeccionados por Cloud DLP).
    * `SanitizedReviewRecord` modela el registro post-DLP que persiste en `BigQuery (Trusted Data Source - TDS)`, donde `usuario` fue transformado irreversiblemente en `usuario_hash` (SHA-256 con sal), `imagen_usuario` fue eliminada, el PII textual fue reemplazado por tokens semánticos (`[PERSON_NAME]`, `[MX_CLABE_BANCARIA]`, etc.) preservando códigos técnicos como `ref: 3702`, y el conteo de palabras cumple el umbral del EDA (2 a 60 palabras).
@@ -209,7 +279,7 @@ def hash_username_pii(username: str, salt: str) -> str:
 > **Notas de implementación:**
 > * Todos los modelos usan `extra="forbid"`; todas las `datetime` se normalizan a UTC (las *naive* se asumen UTC) vía `ensure_utc`.
 > * `recent_review_ids` / `oldest_review_ids` guardan los IDs con fecha **igual** a la frontera respectiva, acotados por `WATERMARK_MAX_FRONTIER_IDS = 500`, y se serializan como listas ordenadas.
-> * En `INCREMENTAL`, `should_stop_incremental` debe evaluarse contra una copia congelada del watermark al inicio de la ejecución (`model_copy(deep=True)`), ya que `update_bounds` desplaza `max_review_timestamp` con la primera reseña nueva.
+> * En v1, `should_stop_incremental` usa una copia congelada del watermark. Este comportamiento no basta para v2: un ID conocido o una fecha anterior al máximo no autorizan por sí solos el cierre del scan.
 > * Se añadió `update_star_partition_token(star, token)` para gestionar `star_partition_tokens`.
 > * `SanitizedReviewRecord` valida además que `conteo_palabras` coincida con `texto_limpio`. `AnalyzedReviewPrediction.is_obligatory_5_star_bias` siempre se recalcula.
 
@@ -223,8 +293,8 @@ def hash_username_pii(username: str, salt: str) -> str:
 * `lang: str = DEFAULT_PLAYSTORE_LANG`
 * `country: str = DEFAULT_PLAYSTORE_COUNTRY`
 * `sort_order: PlayStoreSortOrder = PlayStoreSortOrder.NEWEST`
-* `star_filter: int | None = Field(default=None, ge=1, le=5)` (`None` consulta todas las estrellas; `1..5` permite particionar consultas en `FULL_BACKFILL` para superar el límite de paginación de Google Play).
-* `page_token: str | None = None` (Cursor en Base64 devuelto por `batchexecute`).
+* `star_filter: int | None = Field(default=None, ge=1, le=5)` (`None` consulta todas las estrellas; `1..5` identifica streams experimentales separados, sin garantía de superar límites del origen).
+* `page_token: str | None = None` (Cursor opaco devuelto por `batchexecute`, ligado al contexto completo del stream).
 
 1. **`IngestionRequestPayload(BaseModel)`**:
 
@@ -242,17 +312,20 @@ def hash_username_pii(username: str, salt: str) -> str:
 * `max_reviews_per_bank: int = Field(default=1000, ge=1, le=50000)`
 * `inter_bank_delay_sec: float = Field(default=15.0, ge=1.0, le=120.0)`
 
-#### Tarea 1.3.2: Esquema de Watermark Bidireccional (`IngestionWatermarkState`)
+#### Tarea 1.3.2: Esquema de Watermark Bidireccional v1 (`IngestionWatermarkState`)
 
-Modela el archivo `gs://<bucket>/state/watermarks/{bank_id}.json` y la tabla de auditoría en BigQuery:
+**Contrato legado implementado, pendiente de migración.** Los campos y métodos
+siguientes describen v1; no son criterios de cierre válidos para el extractor v2.
+El archivo raíz y los eventos de auditoría BigQuery tendrán contratos distintos.
+La sustitución obligatoria se especifica en el ajuste v2 de esta épica y EPIC-3:
 
 * `bank_id: BankKey`
 * `app_id: str`
 * `max_review_timestamp: datetime | None = None` (Fecha UTC de la reseña más nueva ya extraída).
 * `min_review_timestamp: datetime | None = None` (Fecha UTC de la reseña más antigua ya extraída).
-* `recent_review_ids: set[str] = Field(default_factory=set)` (IDs en la frontera `max_review_timestamp`, acotado a los últimos 500 IDs para búsqueda $O(1)$).
+* `recent_review_ids: set[str] = Field(default_factory=set)` (IDs en la frontera `max_review_timestamp`, con límite v1 de 500; no representa una prueba completa de continuidad).
 * `oldest_review_ids: set[str] = Field(default_factory=set)` (IDs en la frontera `min_review_timestamp`).
-* `oldest_page_token: str | None = None` (Último `page_token` Base64 válido en la frontera inferior global para reanudar `BACKFILL` / `FULL_BACKFILL` tras una rotación de IP o corte de ejecución).
+* `oldest_page_token: str | None = None` (Cursor global candidato de v1; debe validarse mediante replay antes de reutilizarse. No garantiza reanudación ni reemplaza contexto/página ancla).
 * `star_partition_tokens: dict[int, str | None] = Field(default_factory=dict)` (Tokens de continuación por calificación `1..5` cuando se usa particionamiento en `FULL_BACKFILL`).
 * `backfill_one_year_completed: bool = False`
 * `full_backfill_completed: bool = False`
@@ -510,11 +583,11 @@ Escribir mínimo 10 pruebas unitarias que validen:
 1. **`test_limpiar_texto_bancario_preserves_error_codes_and_emojis`**: Comprobar que el texto real del notebook `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi. noooo sirveee 😡 http://spam.com @bbva #asco"` se convierta en `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi. noo sirvee 😡"`.
 2. **`test_raw_review_from_playstore_dict`**: Verificar mapeo exacto de columnas del notebook, eliminación de `appVersion` e inyección de `titulo=None`.
 3. **`test_sanitized_review_record_word_count_bounds`**: Comprobar que una reseña de 1 palabra (`"excelente"`) o de 61 palabras dispare `ValidationError`, mientras que una de 2 a 60 palabras se construya correctamente y genere un `usuario_hash` SHA-256 de 64 caracteres hexadecimales.
-4. **`test_watermark_bidirectional_incremental_and_backfill`**:
+4. **`test_watermark_bidirectional_incremental_and_backfill` (regresión v1, no aceptación v2)**:
 
 * Verificar que `should_stop_incremental` retorne `True` por ID duplicado en la frontera o por `review_date < max_review_timestamp`.
 * Verificar que `has_reached_one_year_backfill` detecte con exactitud el corte de 365 días.
-* Verificar que `update_bounds` actualice `max_review_timestamp`, `min_review_timestamp` y `oldest_page_token` (string Base64).
+* Verificar que `update_bounds` actualice `max_review_timestamp`, `min_review_timestamp` y `oldest_page_token` (string opaco).
 
 1. **`test_obligatory_5_star_label_noise_detection`**: Comprobar que `AnalyzedReviewPrediction` marque `is_obligatory_5_star_bias=True` cuando `estrellas=5` y `tnss_score=SentimentLabel.NEG`.
 
@@ -522,7 +595,16 @@ Escribir mínimo 10 pruebas unitarias que validen:
 
 ## ✅ Criterios de Aceptación de la Épica 1 (Checklist de Verificación)
 
-* [x] `voc-common` no depende de `google-play-scraper` y modela los tokens de paginación como `str` Base64 compatibles con el RPC `oCPfdb` de `batchexecute`.
+* [x] `voc-common` no depende de `google-play-scraper` y modela los tokens de paginación como `str` opacos compatibles con el RPC `oCPfdb` de `batchexecute`.
 * [x] Existen los 3 modos en `IngestionMode` (`INCREMENTAL`, `BACKFILL`, `FULL_BACKFILL`) y `IngestionWatermarkState` gestiona fechas máxima/mínima y tokens por partición de estrellas.
 * [x] `SanitizedReviewRecord` garantiza 0% de almacenamiento de `usuario` o `imagen_usuario` en texto plano y preserva códigos de error `ref: 3702`.
 * [x] Los 4 Quality Gates (`ruff`, `pyrefly`, `bandit`, `pytest`) pasan sin errores con cobertura $\ge 85\%$.
+
+
+Criterios adicionales de migración (pendientes):
+
+* [ ] Modelos v2, eventos/revisiones y recibos compartidos implementados y exportados.
+* [ ] Migración v1 preserva observaciones sin declarar cobertura verificada.
+* [ ] Reducer por página, T0 fijo y fronteras completas probados.
+* [ ] Configuración/contratos coordinados con infraestructura y consumidores v2.
+* [ ] Quality gates y pruebas de migración pasan antes de activar EPIC-3/EPIC-4.

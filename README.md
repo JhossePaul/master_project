@@ -100,7 +100,7 @@ uv run pytest packages/voc-common/tests --cov=packages/voc-common/src --cov-fail
 
 El workflow `.github/workflows/ci.yaml` ejecuta estos gates en cada push y
 pull request con Python 3.11 y las versiones de `uv.lock`. La cobertura mínima
-de `voc-common` es del 85%. Los servicios e infraestructura vacíos se incorporan
+de `voc-common` es del 85%. Los servicios vacíos se incorporan
 al workspace al implementar sus respectivas épicas.
 
 4. **Activar hooks locales:**
@@ -113,6 +113,69 @@ uv run pre-commit run --all-files
 Los hooks ejecutan Ruff (lint con correcciones y formato) y Bandit usando el
 mismo entorno de `uv` que CI. Los fallbacks de variables en CI son exclusivos
 de pruebas; la sal real de producción se configura por separado.
+
+### Infraestructura Pulumi (Épica 2 implementada)
+
+`infra` forma parte del workspace. Sincroniza desde la raíz con
+`uv sync --all-packages --locked` antes de ejecutar Pulumi; el runtime utiliza
+el entorno compartido `.venv`.
+
+La opción del runtime se documenta en la
+[referencia de proyectos Pulumi](https://www.pulumi.com/docs/iac/concepts/projects/project-file/).
+
+La validación de infraestructura usa mocks y no requiere credenciales GCP:
+
+```bash
+uv run pytest infra/tests --cov=infra/modules --cov-fail-under=80
+```
+
+Para revisar el plan de desarrollo, instala la CLI de Pulumi, configura su
+backend y las credenciales GCP con permisos de activación de servicios, ajusta
+el proyecto en `infra/Pulumi.dev.yaml` y ejecuta desde `infra`:
+
+```bash
+pulumi preview --stack dev
+```
+
+El plan activa las APIs y crea las cuatro cuentas de servicio con sus roles.
+Con `bbva-voc-infra:enable_cmek=true` también crea el keyring regional y una
+llave de cifrado con rotación cada 90 días; por defecto CMEK está desactivado.
+Las asignaciones usan
+[`projects.IAMMember`](https://www.pulumi.com/registry/packages/gcp%407.x/api-docs/projects/iammember/)
+para agregar permisos sin reemplazar los miembros existentes de cada rol.
+El plan también crea las plantillas DLP regionales de inspección y
+desidentificación, con detectores bancarios y exclusión para códigos técnicos.
+La sustitución explícita por detector produce tokens con corchetes, como
+`[PERSON_NAME]`; la
+[sustitución nativa por infoType](https://docs.cloud.google.com/sensitive-data-protection/docs/deidentify-sensitive-data#replacewithinfotypeconfig)
+devuelve nombres sin corchetes. Se exportan los IDs de ambas plantillas para
+el futuro pipeline de sanitización.
+El plan crea también Pub/Sub con DLQ, un bucket de staging con eliminación
+por edad de 7 días y el dataset BigQuery con cuatro tablas curadas/auditoría.
+No hay tabla de reseñas crudas. Los prefijos de watermarks quedan fuera de la
+regla de eliminación. CMEK, cuando está activado, incluye permisos para los
+agentes de servicio y se aplica a todos los repositorios. El borrado de contenido
+al destruir recursos solo está habilitado en `dev`.
+El cómputo incluye dos servicios Cloud Run privados con escala mínima cero,
+un Job de sanitización con DirectRunner y dos jobs diarios de Scheduler en
+modo Free Tier (08:00 ingesta, 08:30 sanitización, America/Mexico_City).
+Con `free_tier_mode=false`, hay cinco ingestas escalonadas y sanitización
+a las 09:30. Con el flag de Vertex activo también se define el endpoint y
+un índice vectorial batch; primero deben existir embeddings en
+`gs://<bucket>/vertex/embeddings/`.
+
+Antes de desplegar, publica las imágenes indicadas por `ingestion_worker_image`,
+`sanitization_job_image` y `api_backend_image`. En producción configura la sal
+desde `infra` con `pulumi config set --secret user_hash_salt '<sal-propia>'`.
+El pool de proxies admite una lista JSON en `scraper_proxy_pool_urls`, también
+configurable como secreto. Estos valores se mantienen secretos en el estado
+Pulumi; Cloud Run recibe las variables necesarias para ejecutar los servicios.
+La suite de aceptación `infra/tests/test_infra.py` comprueba BigQuery sin PII
+cruda, reglas DLP, escala mínima cero, cuota de dos jobs Free Tier y lifecycle
+del staging, además del grafo de dependencias declarado. Hay 37 pruebas de
+infraestructura con 100% de cobertura de los módulos, ejecutadas también en CI.
+La implementación de las seis features está terminada; el preview y la
+validación real de despliegue siguen pendientes.
 
 ## 🔐 Gobierno de Datos
 

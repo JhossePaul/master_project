@@ -1,0 +1,73 @@
+"""Mocks compartidos: recursos, outputs calculados y dependencias Pulumi."""
+
+from typing import Any
+
+import pulumi
+import pytest
+from pulumi.runtime.mocks import MockMonitor
+
+
+class InfrastructureMocks(pulumi.runtime.Mocks):
+    def __init__(self) -> None:
+        self.records: list[pulumi.runtime.MockResourceArgs] = []
+
+    def new_resource(
+        self, args: pulumi.runtime.MockResourceArgs
+    ) -> tuple[str, dict[str, Any]]:
+        self.records.append(args)
+        outputs = dict(args.inputs)
+        if args.typ == "gcp:cloudrunv2/service:Service":
+            outputs["uri"] = f"https://{args.name}.run.app"
+        if args.typ == "gcp:serviceaccount/account:Account":
+            outputs["email"] = (
+                f"{outputs['accountId']}@{outputs['project']}.iam.gserviceaccount.com"
+            )
+        if args.typ == "gcp:projects/serviceIdentity:ServiceIdentity":
+            outputs["email"] = (
+                "service-123@gcp-sa-pubsub.iam.gserviceaccount.com"
+            )
+        return f"{args.name}-id", outputs
+
+    def call(self, args: pulumi.runtime.MockCallArgs) -> dict[str, Any]:
+        if (
+            args.token
+            == "gcp:storage/getProjectServiceAccount:getProjectServiceAccount"  # noqa: S105
+        ):
+            return {
+                "project": args.args["project"],
+                "emailAddress": (
+                    "service-123@gs-project-accounts.iam.gserviceaccount.com"
+                ),
+            }
+        if (
+            args.token
+            == "gcp:bigquery/getDefaultServiceAccount:getDefaultServiceAccount"  # noqa: S105
+        ):
+            return {
+                "project": args.args["project"],
+                "email": "bq-123@bigquery-encryption.iam.gserviceaccount.com",
+            }
+        raise AssertionError(
+            f"No se esperan llamadas al proveedor: {args.token}"
+        )
+
+
+class InfrastructureMonitor(MockMonitor):
+    def __init__(self, mocks: InfrastructureMocks) -> None:
+        super().__init__(mocks)
+        self.dependencies: dict[str, set[str]] = {}
+
+    def RegisterResource(self, request: Any) -> Any:  # noqa: N802
+        self.dependencies[request.name] = set(request.dependencies)
+        return super().RegisterResource(request)
+
+
+@pytest.fixture(autouse=True)
+def pulumi_mocks() -> InfrastructureMonitor:
+    mocks = InfrastructureMocks()
+    monitor = InfrastructureMonitor(mocks)
+    pulumi.runtime.set_mocks(
+        mocks, project="bbva-voc-infra", stack="dev", monitor=monitor
+    )
+    pulumi.runtime.set_all_config({"gcp:project": "test-voc-project"})
+    return monitor

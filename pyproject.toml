@@ -18,9 +18,8 @@ dev = [
 [tool.uv.workspace]
 members = ["packages/*", "services/*", "infra"]
 # TEMPORAL: miembros con pyproject.toml aun vacio/ausente. Retirar cada
-# entrada al implementar su epica (infra -> EPIC-2, ingestion-worker -> EPIC-3).
+# entrada al implementar su epica (ingestion-worker -> EPIC-3).
 exclude = [
-    "infra",
     "services/api-backend",
     "services/ingestion-worker",
     "services/ml-delora",
@@ -61,8 +60,8 @@ exclude = ["**/*.md"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --cov=voc_common --cov-report=term-missing"
-testpaths = ["packages/*/tests", "services/*/tests"]
+addopts = "-ra -q --cov-report=term-missing"
+testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
 
 [tool.bandit]
 exclude_dirs = ["tests", ".github", "docs", "web", ".venv", "infra/.pulumi"]

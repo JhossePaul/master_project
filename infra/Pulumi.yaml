@@ -1,0 +1,6 @@
+name: bbva-voc-infra
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+description: Aprovisionamiento Serverless y MLOps para App Store Label Noise & Incident Analyzer
