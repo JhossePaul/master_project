@@ -20,7 +20,14 @@ La suite se valida con Python 3.11.14. Con la selección automática de Python
 3.14 se observó un fallo de inicialización del event loop de Pulumi Mocks;
 por eso el comando fija el intérprete usado por CI.
 
-CI ejecuta esas suites y Ruff, Pyrefly y Bandit. La matriz integrada de `infra`
+Además de esas dos suites, CI ejecuta las de cada servicio (cobertura ≥ 85 %):
+
+```bash
+uv run pytest services/ingestion-worker/tests --cov=ingestion_worker --cov-fail-under=85
+uv run pytest services/sanitization-pipeline/tests --cov=sanitization_pipeline --cov-fail-under=85
+```
+
+CI ejecuta además Ruff, Pyrefly y Bandit. La matriz integrada de `infra`
 combina dev/prod, Free Tier/normal, CMEK on/off y las dos fases de despliegue.
 Comprueba DAG, tablas, jobs, Scheduler, lifecycle, grants, exports y Settings
 cargado desde las variables de los contenedores. Los secretos simulados solo se
@@ -239,10 +246,10 @@ una Mac). El flujo es GitHub → Cloud Build → Artifact Registry:
   lo invoca por servicio al hacer merge a `main` (cambios en `services/`,
   `packages/`, lock o pipeline) o con `workflow_dispatch`, siempre desde `main`.
   No tiene disparador `pull_request`, así que las credenciales nunca llegan a
-  código no revisado. Omite servicios con Dockerfile vacío: hoy solo construye
-  `ingestion-worker` (feature 3.5); `sanitization-pipeline` y `api-backend`
-  entran cuando tengan Dockerfile. `develop` no publica imágenes: se publican
-  al integrar en `main` por PR.
+  código no revisado. Omite servicios con Dockerfile vacío: construye
+  `ingestion-worker` (feature 3.5) y `sanitization-pipeline` (feature 4.4);
+  `api-backend` entra cuando tenga Dockerfile. `develop` no publica imágenes:
+  se publican al integrar en `main` por PR.
 - Solo se sube a Cloud Build lo que permite [`.gcloudignore`](../.gcloudignore)
   (nunca `.env` ni `evidence/`), y el contexto Docker lo restringe
   [`.dockerignore`](../.dockerignore); el build usa BuildKit
@@ -324,13 +331,170 @@ invocación pública. Cualquier reemplazo/borrado inesperado requiere entender s
 causa antes de aplicar. No activar CMEK, Vertex u otros servicios sin revisar sus
 recursos condicionales, permisos y cuotas. El preview no ejecuta el extractor.
 
-## Orden de activación
+## Qué configura cada archivo
 
-1. Aplicar la fase 1 cuando se autorice (`pulumi up`) y configurar la identidad
-   de CI.
+El despliegue **no usa `.env`**. Cada pieza lee su configuración de un lugar
+distinto:
+
+| Origen | Para qué sirve | En Cloud Run |
+| --- | --- | --- |
+| `infra/Pulumi.dev.yaml` y secretos del stack (`pulumi config set --secret`) | Proyecto, fase, imágenes, perfiles de ejecución y la sal del hash | Sí: Pulumi inyecta las variables de los contenedores |
+| Variables del environment `dev` de GitHub | Identidad de CI para publicar imágenes (ver «Identidad de CI») | No |
+| `gcloud auth application-default login` y `PULUMI_CONFIG_PASSPHRASE` | Credenciales de quien opera Pulumi | No |
+| `.env` (ignorado por git) | Ejecutar y depurar servicios **en local** | No |
+
+Hallazgos de la revisión del `.env` actual (2026-10-15), que no bloquean el
+despliegue pero conviene corregir:
+
+* `GCS_RAW_DATALAKE_BUCKET` apunta a `voc-datalake-bbva-voc-analyzer-dev`, pero
+  el bucket que crea Pulumi es `voc-datalake-<proyecto>` (en `dev`:
+  `voc-datalake-project-7bafd424-a385-4c05-b5b`). Cualquier ejecución local
+  contra GCP usaría un bucket inexistente.
+* Guarda `PULUMI_CONFIG_PASSPHRASE`, lo que contradice la regla de no dejarla en
+  archivos. Está ignorado por git, `.dockerignore` y `.gcloudignore`, así que no
+  se publica, pero cualquiera con acceso al disco la lee.
+* `DLP_*_TEMPLATE_ID` vacíos es correcto: el modo por defecto es regex local y
+  no los necesita. Solo hacen falta con `--use-cloud-dlp-api`.
+* Le faltan variables de recorrido y recuperación que sí están en
+  `.env.example` (`INGESTION_MAX_PAGES`, `INGESTION_MAX_RECOVERY_REQUESTS`…);
+  `Settings` usa sus valores por defecto.
+
+## Antes de la fase 2: sal del hash de usuarios
+
+`Pulumi.dev.yaml` no define `user_hash_salt`. Fuera de producción, Pulumi usa
+entonces `DEV_USER_HASH_SALT`, una constante pública del repositorio, y los
+`usuario_hash` del TDS serían reproducibles. **Fijar una sal secreta antes de
+escribir datos**, porque cambiarla después deja hashes inconsistentes entre sí:
+
+```bash
+cd infra
+pulumi config set --secret --stack dev bbva-voc-infra:user_hash_salt "$(openssl rand -hex 32)"
+```
+
+La sal llega a Cloud Run como variable de entorno, no desde Secret Manager
+(riesgo F-04 de la [Matriz Ethical FMEA](governance/ethical_fmea_matrix.md)).
+
+## Runbook del primer despliegue (alimentar el TDS)
+
+Prerrequisitos de operador: `gcloud` y `pulumi` autenticados (ver «Backend de
+estado»), `gh` autenticado y el entorno `.venv` sincronizado.
+
+1. **Fase 1.** `pulumi preview` y `pulumi up --stack dev` con
+   `deploy_workloads: false` y la sal ya configurada. Revisar el plan según
+   «Revisión del plan».
+2. **Identidad de CI.** Ejecutar el bloque de «Identidad de CI» y crear las
+   variables del environment `dev`:
+
+   ```bash
+   gh api -X PUT repos/JhossePaul/master_project/environments/dev
+   gh variable set GCP_PROJECT_ID --env dev --repo JhossePaul/master_project --body "$PROJECT_ID"
+   gh variable set GCP_REGION --env dev --repo JhossePaul/master_project --body us-central1
+   gh variable set GCP_WORKLOAD_IDENTITY_PROVIDER --env dev --repo JhossePaul/master_project \
+     --body "projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github/providers/github-main"
+   gh variable set GCP_CLOUD_BUILD_SA --env dev --repo JhossePaul/master_project --body "$SA"
+   ```
+
+3. **Imágenes.** `develop` está por delante de `main`; abrir el PR y esperar
+   el check `quality`. Al integrar en `main`, el workflow publica
+   `ingestion-worker` y `sanitization-pipeline`:
+
+   ```bash
+   gh pr create --base main --head develop --title "Releases EPIC-1 to EPIC-4"
+   ```
+
+4. **Fase 2.** Con los digests del resumen del job:
+
+   ```bash
+   cd infra
+   pulumi config set --stack dev bbva-voc-infra:ingestion_worker_image '<ref@sha256:...>'
+   pulumi config set --stack dev bbva-voc-infra:sanitization_job_image '<ref@sha256:...>'
+   pulumi config set --stack dev bbva-voc-infra:deploy_workloads true
+   pulumi preview --stack dev --non-interactive
+   pulumi up --stack dev
+   ```
+
+5. **Activar la ingesta v2.** Es requisito de cualquier corrida: sin ella el
+   servicio y el Job rechazan toda solicitud (`require_ingestion_v2`), incluido
+   el cron. La verificación de integración es la primera corrida del paso 6, que
+   conviene vigilar:
+
+   ```bash
+   pulumi config set --stack dev bbva-voc-infra:ingestion_v2_enabled true
+   pulumi up --stack dev
+   ```
+
+6. **Primera corrida manual** (no esperar al cron de las 08:00 y 08:30,
+   `America/Mexico_City`):
+
+   ```bash
+   gcloud scheduler jobs run voc-ingest-daily-sequential-all --location us-central1
+   # Cuando termine la ingesta (revisar logs del servicio):
+   gcloud scheduler jobs run voc-trigger-sanitization-daily --location us-central1
+   ```
+
+7. **Verificar**, en este orden:
+
+   ```bash
+   gcloud logging read 'resource.type="cloud_run_revision"' --limit=50 --freshness=1h
+   bq query --use_legacy_sql=false \
+     'SELECT bank_id, COUNT(*) AS n, MIN(fecha) AS desde, MAX(fecha) AS hasta
+      FROM `bbva_voc_tds.sanitized_reviews_tds` GROUP BY bank_id'
+   bq query --use_legacy_sql=false \
+     'SELECT COUNT(*) AS con_respuesta FROM `bbva_voc_tds.sanitized_reviews_tds`
+      WHERE texto_respuesta_sanitizado IS NOT NULL OR titulo IS NOT NULL'  # debe ser 0
+   ```
+
+   Comprobar también la auditoría en `ingestion_runs_log_v2`, que el
+   `ack` de Pub/Sub ocurre tras el `MERGE` (mensajes pendientes en
+   `voc-raw-reviews-sub` → 0) y que el crudo expira a los 7 días.
+
+8. **Backfill histórico** (después del paso 7, nunca antes). Se lanza por
+   solicitud a la API (requiere identidad: si responde 403, otorgar
+   `roles/run.invoker` al operador sobre el servicio):
+
+   ```bash
+   URL=$(pulumi stack output ingestion_worker_uri --stack dev)
+   curl -X POST "$URL/api/v1/ingest" \
+     -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+     -H "Content-Type: application/json" \
+     -d '{"bank_id": "BBVA", "mode": "BACKFILL"}'
+   ```
+
+   La API persiste el plan y lanza `voc-ingestion-history-job`; cada
+   ejecución continúa el plan y se detiene en su presupuesto (1000
+   solicitudes, 200 MB o 3480 s). Hay que relanzar hasta completarlo.
+
+### Capacidad: el cuello de botella es la sanitización
+
+* El Job de sanitización procesa como máximo **2000 mensajes por ejecución**
+  (`--max-messages`) y el Scheduler lo lanza **una vez al día**. El flujo
+  incremental normal cabe (BBVA ronda las 166 reseñas diarias), pero un
+  backfill de cientos de miles de reseñas tardaría meses a ese ritmo.
+* El crudo en `raw_staging/` y los mensajes de Pub/Sub **expiran a los 7 días**.
+  Un backfill que publica más de lo que se drena en ese plazo pierde páginas
+  (cierre `STAGING_EXPIRED`). Por eso: lanzar el backfill por tramos y drenar
+  entre ellos con ejecuciones manuales del Job:
+
+  ```bash
+  gcloud run jobs execute voc-sanitization-job --region us-central1 \
+    --args="--max-messages=20000" --wait
+  ```
+
+* El rendimiento por ejecución **no está medido**. Medirlo en la primera
+  corrida real (mensajes procesados dentro de los 1500 s de presupuesto) antes
+  de planear el backfill; la cifra de `--max-messages` debe ajustarse a esa
+  medición. Los mocks no validan ni cuotas ni latencia de BigQuery.
+* El sondeo de la ingesta (`experiments/playstore/protocol_probe.py`) se ejecutó
+  desde Colab. Cloud Run sale por otras IP de Google y no hay proxies
+  configurados (`SCRAPER_PROXY_POOL_URLS` vacío): si Google Play responde con
+  limitación (`RateLimitedError`) o con una página distinta, la primera corrida
+  lo mostrará en los logs y en la auditoría.
+
+## Orden de activación (resumen y verificaciones)
+
+1. Aplicar la fase 1 y configurar la identidad de CI.
 2. Integrar en `main` las imágenes de EPIC-3 (feature 3.5) y EPIC-4 (feature
-   4.4), ya en `develop`; el merge a `main` publica las imágenes.
-   La declaración IaC de una imagen no comprueba que su módulo arranque.
+   4.4). La declaración IaC de una imagen no comprueba que su módulo arranque.
 3. Fijar las imágenes por digest, pasar a `deploy_workloads: true`, revisar el
    preview y desplegar la fase 2.
 4. Verificar acceso real a GCS y objetos cifrados si CMEK está activo, publicación
@@ -338,8 +502,8 @@ recursos condicionales, permisos y cuotas. El preview no ejecuta el extractor.
 5. Probar lease/fencing/CAS, publicación parcial, replay y continuación, y límites
    de ejecución en EPIC-3. Sanitización debe confirmar resultados duraderos antes
    de ack y respetar el TTL crudo de siete días.
-6. Habilitar explícitamente `ingestion_v2_enabled` cuando runtime e integración
-   estén verificados. Mantener los históricos bajo demanda y observar sus estados,
+6. Habilitar `ingestion_v2_enabled` (requisito de la primera corrida) y vigilar
+   esa corrida. Mantener los históricos bajo demanda y observar sus estados,
    presupuesto y recuperación antes de ampliar volumen o tamaño de página.
 
 Los consumidores reciben configuración desde outputs/variables del despliegue.
