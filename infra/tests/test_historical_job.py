@@ -15,7 +15,15 @@ from infra.modules.cloud_run import (
     HistoricalExecutionConfig,
     HistoricalJobConfig,
 )
-from infra.tests.conftest import InfrastructureMonitor, unwrap_outputs
+from infra.tests.conftest import (
+    INGESTION_IMAGE,
+    WORKLOAD_CONFIG,
+    InfrastructureMonitor,
+    digest_image,
+    unwrap_outputs,
+)
+
+HISTORY_IMAGE = digest_image("ingestion-history", "d")
 
 ENTRYPOINT = Path(__file__).resolve().parents[1] / "__main__.py"
 
@@ -54,7 +62,7 @@ def test_historical_job_profiles_access_and_scheduler(
         config = {
             "gcp:project": "test-voc-project",
             "gcp:region": "us-east1",
-            "bbva-voc-infra:ingestion_worker_image": "example/worker:test",
+            **WORKLOAD_CONFIG,
             "bbva-voc-infra:free_tier_mode": str(free_tier).lower(),
             "bbva-voc-infra:ingestion_v2_enabled": str(custom).lower(),
         }
@@ -64,9 +72,7 @@ def test_historical_job_profiles_access_and_scheduler(
                     "bbva-voc-infra:historical_ingestion": (
                         profile.model_dump_json()
                     ),
-                    "bbva-voc-infra:historical_job_image": (
-                        "example/history:test"
-                    ),
+                    "bbva-voc-infra:historical_job_image": HISTORY_IMAGE,
                     "bbva-voc-infra:ingestion_execution": json.dumps(
                         {
                             "ingestion_max_requests": 50,
@@ -98,9 +104,7 @@ def test_historical_job_profiles_access_and_scheduler(
     assert task["maxRetries"] == profile.max_retries
     container = task["containers"][0]
     assert container["commands"] == list(profile.command)
-    assert container["image"] == (
-        "example/history:test" if custom else "example/worker:test"
-    )
+    assert container["image"] == (HISTORY_IMAGE if custom else INGESTION_IMAGE)
     assert container["name"] == "historical-ingestion"
     job_env = {v["name"]: v.get("value") for v in container["envs"]}
     for name, value in profile.execution.model_dump().items():

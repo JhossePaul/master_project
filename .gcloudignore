@@ -1,0 +1,22 @@
+# Fuente subida por `gcloud builds submit` (ver cloudbuild.yaml). El contexto
+# Docker real lo filtra .dockerignore (lista de permitidos); aquí solo se evita
+# subir lo pesado o sensible. Nunca: .env, evidence/ (PII), .git, .venv.
+.git
+.gitignore
+.github/
+.venv/
+**/__pycache__/
+**/.pytest_cache/
+.ruff_cache/
+.coverage
+.env
+.env.*
+!.env.example
+evidence/
+**/evidence/
+web/
+experiments/
+docs/
+# Los Dockerfiles copian infra/pyproject.toml (miembro del workspace uv).
+infra/*
+!infra/pyproject.toml

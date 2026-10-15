@@ -7,6 +7,25 @@ import pytest
 from pulumi.runtime import rpc
 from pulumi.runtime.mocks import MockMonitor
 
+REGISTRY = "us-central1-docker.pkg.dev/test-voc-project/voc-containers-repo"
+
+
+def digest_image(service: str, fill: str = "a") -> str:
+    """Referencia inmutable como la publica Cloud Build (tag SHA + digest)."""
+    return f"{REGISTRY}/{service}:0123abc@sha256:{fill * 64}"
+
+
+INGESTION_IMAGE = digest_image("ingestion-worker", "a")
+SANITIZATION_IMAGE = digest_image("sanitization-pipeline", "b")
+API_BACKEND_IMAGE = digest_image("api-backend", "c")
+# Fase 2: cargas Cloud Run/Scheduler con todas las imágenes publicadas.
+WORKLOAD_CONFIG = {
+    "bbva-voc-infra:deploy_workloads": "true",
+    "bbva-voc-infra:ingestion_worker_image": INGESTION_IMAGE,
+    "bbva-voc-infra:sanitization_job_image": SANITIZATION_IMAGE,
+    "bbva-voc-infra:api_backend_image": API_BACKEND_IMAGE,
+}
+
 
 class InfrastructureMocks(pulumi.runtime.Mocks):
     def __init__(self) -> None:

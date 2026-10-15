@@ -1,0 +1,131 @@
+name: Container images (Cloud Build)
+
+# Construye en Cloud Build (linux/amd64) y publica en Artifact Registry con el
+# SHA del commit como tag. Solo en merge a main o disparo manual: nunca en PRs,
+# para no exponer la identidad de GCP a código no revisado.
+on:
+  push:
+    branches: [main]
+    paths:
+      - services/**
+      - packages/**
+      - pyproject.toml
+      - uv.lock
+      - cloudbuild.yaml
+      - .gcloudignore
+      - .github/workflows/cd-cloud-build.yaml
+  workflow_dispatch:
+    inputs:
+      services:
+        description: >-
+          Servicios separados por espacio (vacío = todos los que tengan
+          Dockerfile). Ej.: ingestion-worker sanitization-pipeline
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-cloud-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      services: ${{ steps.select.outputs.services }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select services with a Dockerfile
+        id: select
+        env:
+          REQUESTED: ${{ inputs.services }}
+        run: |
+          set -euo pipefail
+          # Servicios desplegables por infra/ (ver docs/deployment.md).
+          known="ingestion-worker sanitization-pipeline api-backend"
+          requested="${REQUESTED:-$known}"
+          selected=()
+          for svc in $requested; do
+            if [[ ! " $known " =~ " $svc " ]]; then
+              echo "::error::Servicio desconocido: $svc"; exit 1
+            fi
+            # Dockerfile vacío = feature pendiente (p. ej. 3.5); se omite.
+            if [[ -s "services/$svc/Dockerfile" ]]; then
+              selected+=("$svc")
+            else
+              echo "::notice::services/$svc/Dockerfile vacío; se omite"
+            fi
+          done
+          json=$(printf '%s\n' "${selected[@]}" | jq -Rnc '[inputs | select(length > 0)]')
+          echo "services=$json" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Reglas de protección y variables del ambiente viven en GitHub.
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.plan.outputs.services) }}
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+      REPOSITORY: voc-containers-repo
+      SERVICE: ${{ matrix.service }}
+      BUILD_SA: ${{ vars.GCP_CLOUD_BUILD_SA }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_CLOUD_BUILD_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push unless the SHA tag already exists
+        run: |
+          set -euo pipefail
+          image="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE"
+          # Los tags son inmutables: un re-run reutiliza la imagen publicada.
+          if ! gcloud artifacts docker images describe \
+              "$image:$GITHUB_SHA" --quiet >/dev/null 2>&1; then
+            gcloud builds submit . \
+              --project="$PROJECT_ID" \
+              --region="$REGION" \
+              --config=cloudbuild.yaml \
+              --service-account="projects/$PROJECT_ID/serviceAccounts/$BUILD_SA" \
+              --substitutions="_SERVICE=$SERVICE,_TAG=$GITHUB_SHA,_REGION=$REGION,_REPOSITORY=$REPOSITORY"
+          fi
+          digest=$(gcloud artifacts docker images describe "$image:$GITHUB_SHA" \
+            --format='value(image_summary.digest)')
+          case "$SERVICE" in
+            ingestion-worker) key=ingestion_worker_image ;;
+            sanitization-pipeline) key=sanitization_job_image ;;
+            api-backend) key=api_backend_image ;;
+          esac
+          {
+            echo "### $SERVICE"
+            echo
+            echo "Imagen: \`$image:$GITHUB_SHA@$digest\`"
+            echo
+            echo '```bash'
+            echo "pulumi config set --stack dev bbva-voc-infra:$key \\"
+            echo "  '$image:$GITHUB_SHA@$digest'"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

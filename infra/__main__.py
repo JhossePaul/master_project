@@ -11,8 +11,12 @@ from voc_common.config import (
 
 from infra.modules.apis import enable_project_apis
 from infra.modules.cloud_run import (
+    ARTIFACT_REPOSITORY_ID,
     HistoricalJobConfig,
+    WorkloadImages,
+    create_artifact_registry,
     create_cloud_run_resources,
+    validate_execution_profiles,
 )
 from infra.modules.cloud_scheduler import create_scheduler_jobs
 from infra.modules.dlp import create_dlp_templates
@@ -40,6 +44,8 @@ if user_hash_salt is None:
     else:
         user_hash_salt = pulumi.Output.secret(DEV_USER_HASH_SALT)
 proxies = config.get_secret_object("scraper_proxy_pool_urls")
+# Fase 1 (false): base sin Cloud Run ni Scheduler hasta publicar imágenes.
+deploy_workloads = config.get_bool("deploy_workloads") or False
 # Leer solo Pulumi: los prefijos no dependen de .env ni variables del host.
 storage_layout = IngestionStorageLayout.model_validate(
     {
@@ -79,57 +85,61 @@ storage_access = create_datalake_access(
     security,
     list(project_apis.values()),
 )
-image_prefix = f"{region}-docker.pkg.dev/{project_id}/voc-containers-repo"
+repository = create_artifact_registry(
+    project_id, region, list(project_apis.values())
+)
 ingestion_execution = IngestionExecutionConfig.model_validate(
     config.get_object("ingestion_execution") or {}
 )
 historical_config = HistoricalJobConfig.model_validate(
     config.get_object("historical_ingestion") or {}
 )
-cloud_run = create_cloud_run_resources(
-    project_id,
-    region,
-    security,
-    pubsub,
-    storage_bq,
-    dlp_templates,
-    [*project_apis.values(), *storage_access],
-    ingestion_execution=ingestion_execution,
-    historical_config=historical_config,
-    historical_job_image=config.get("historical_job_image"),
-    ingestion_v2_enabled=config.get_bool("ingestion_v2_enabled") or False,
-    ingestion_worker_image=(
-        config.get("ingestion_worker_image")
-        or f"{image_prefix}/ingestion-worker:latest"
-    ),
-    sanitization_job_image=(
-        config.get("sanitization_job_image")
-        or f"{image_prefix}/sanitization-pipeline:latest"
-    ),
-    api_backend_image=(
-        config.get("api_backend_image") or f"{image_prefix}/api-backend:latest"
-    ),
-    user_hash_salt=user_hash_salt,
-    environment=environment,
-    free_tier_mode=free_tier,
-    enable_vertex=enable_vertex,
-    scraper_proxy_pool_urls=proxies.apply(json.dumps)
-    if proxies is not None
-    else None,
-)
-scheduler_jobs = create_scheduler_jobs(
-    region,
-    cloud_run.ingestion_worker.uri,
-    cloud_run.sanitization_job.name,
-    security.sa_scheduler_invoker.email,
-    free_tier_mode=free_tier,
-    project_id=project_id,
-    api_deps=[
-        *project_apis.values(),
-        cloud_run.ingestion_invoker,
-        cloud_run.sanitization_invoker,
-    ],
-)
+validate_execution_profiles(ingestion_execution, historical_config)
+cloud_run = None
+scheduler_jobs = []
+if deploy_workloads:
+    images = WorkloadImages.model_validate(
+        {
+            "ingestion_worker": config.require("ingestion_worker_image"),
+            "sanitization_job": config.require("sanitization_job_image"),
+            "api_backend": config.get("api_backend_image"),
+            "historical_job": config.get("historical_job_image"),
+        }
+    )
+    cloud_run = create_cloud_run_resources(
+        project_id,
+        region,
+        security,
+        pubsub,
+        storage_bq,
+        dlp_templates,
+        [*project_apis.values(), *storage_access],
+        repository=repository,
+        images=images,
+        ingestion_execution=ingestion_execution,
+        historical_config=historical_config,
+        ingestion_v2_enabled=config.get_bool("ingestion_v2_enabled") or False,
+        user_hash_salt=user_hash_salt,
+        environment=environment,
+        free_tier_mode=free_tier,
+        enable_vertex=enable_vertex,
+        scraper_proxy_pool_urls=proxies.apply(json.dumps)
+        if proxies is not None
+        else None,
+    )
+    scheduler_jobs = create_scheduler_jobs(
+        region,
+        cloud_run.ingestion_worker.uri,
+        cloud_run.sanitization_job.name,
+        security.sa_scheduler_invoker.email,
+        free_tier_mode=free_tier,
+        project_id=project_id,
+        api_deps=[
+            *project_apis.values(),
+            cloud_run.ingestion_invoker,
+            cloud_run.sanitization_invoker,
+        ],
+    )
 vertex = create_vertex_resources(
     project_id,
     region,
@@ -169,13 +179,20 @@ pulumi.export(
     "bq_ingestion_runs_log_table", storage_bq.ingestion_runs_log.table_id
 )
 pulumi.export("bq_hitl_audit_table", storage_bq.hitl_triage_audit_log.table_id)
-pulumi.export("artifact_registry_id", cloud_run.repository.id)
-pulumi.export("ingestion_worker_uri", cloud_run.ingestion_worker.uri)
-pulumi.export("api_backend_uri", cloud_run.api_backend.uri)
-pulumi.export("sanitization_job_id", cloud_run.sanitization_job.id)
-pulumi.export("ingestion_history_job_id", cloud_run.historical_job.id)
-pulumi.export("ingestion_history_job_name", cloud_run.historical_job_name)
-pulumi.export("ingestion_history_job_region", region)
+pulumi.export("deploy_workloads", deploy_workloads)
+pulumi.export("artifact_registry_id", repository.id)
+pulumi.export(
+    "artifact_registry_url",
+    f"{region}-docker.pkg.dev/{project_id}/{ARTIFACT_REPOSITORY_ID}",
+)
+if cloud_run is not None:
+    pulumi.export("ingestion_worker_uri", cloud_run.ingestion_worker.uri)
+    if cloud_run.api_backend is not None:
+        pulumi.export("api_backend_uri", cloud_run.api_backend.uri)
+    pulumi.export("sanitization_job_id", cloud_run.sanitization_job.id)
+    pulumi.export("ingestion_history_job_id", cloud_run.historical_job.id)
+    pulumi.export("ingestion_history_job_name", cloud_run.historical_job_name)
+    pulumi.export("ingestion_history_job_region", region)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])
 pulumi.export(
     "vertex_endpoint_id", vertex.endpoint.id if vertex.endpoint else None
