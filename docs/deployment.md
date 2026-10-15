@@ -551,6 +551,10 @@ No tocar `state/ingestion/manifests/`, `state/ingestion/ledgers/` ni
 FROM bbva_voc_tds.sanitized_reviews_tds GROUP BY bank_id`: debe haber filas
 fuera del rango.
 
+Para la carga completa del histórico (decenas de ejecuciones, con puertas
+de verificación) ver el [plan del full histórico](full_backfill.md) y los
+controladores `tools/backfill_controller.py`.
+
 ### Capacidad: el cuello de botella es la sanitización
 
 * Medición real (2026-10-15, antes de optimizar): **2.5 mensajes/s**, 2000
