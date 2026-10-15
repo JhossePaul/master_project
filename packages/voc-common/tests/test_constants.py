@@ -24,6 +24,16 @@ from voc_common.constants import (
 def test_every_bank_has_playstore_app_id() -> None:
     assert set(PLAYSTORE_BANK_APPS) == set(BankKey)
     assert PLAYSTORE_BANK_APPS[BankKey.BBVA] == "com.bancomer.mbanking"
+    # IDs corregidos tras la primera corrida real (`protocol_shape`): los
+    # originales no existen en Google Play.
+    assert PLAYSTORE_BANK_APPS[BankKey.AZTECA] == (
+        "mx.com.bancoazteca.bazdigitalmovil"
+    )
+    assert PLAYSTORE_BANK_APPS[BankKey.BANORTE] == (
+        "org.microemu.android.model.common.VTUserApplicationBNRTMB"
+    )
+    assert "baz.app.bancoazteca" not in PLAYSTORE_BANK_APPS.values()
+    assert "com.banorte.movil" not in PLAYSTORE_BANK_APPS.values()
     assert len(set(PLAYSTORE_BANK_APPS.values())) == len(BankKey)
 
 
