@@ -16,7 +16,7 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 | **EPIC-1** | Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates | **IMPLEMENTADO** [Features 1.1–1.8](cite: 23) | Sem 1[cite: 23, 27] | `packages/voc-common/`, `docs/contracts/`, `.github/`[cite: 23] | `epic_1.md`[cite: 27] |
 | **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | **IMPLEMENTADO** [Features 2.1–2.10 en Mocks](cite: 24) | Sem 1 - 2[cite: 24, 27] | `infra/`[cite: 24, 27] | `epic_2.md`[cite: 27] |
 | **EPIC-3** | Ingesta Multibanco Reanudable desde Google Play (`batchexecute`) | **IMPLEMENTADO** [Features 3.1–3.5; sin despliegue](cite: 25) | Sem 2[cite: 27] | `services/ingestion-worker/`, `experiments/playstore/`[cite: 25] | `epic_3.md`[cite: 27] |
-| **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **PENDIENTE** [Especificación revisada; lista para 4.1](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
+| **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **IMPLEMENTADO** [Features 4.1–4.5; sin despliegue](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
 | **EPIC-5** | Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA | **PENDIENTE** (Especificación v2 lista) | Sem 4 - 6[cite: 27] | `services/ml-delora/`[cite: 27] | `epic_5.md`[cite: 27] |
 | **EPIC-6** | Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | **PENDIENTE** (Especificación v2 lista) | Sem 7 - 8[cite: 14, 27] | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/`[cite: 27] | `epic_6.md`[cite: 27] |
 
@@ -69,7 +69,7 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 
 ### EPIC-4: Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** **PENDIENTE** [Especificación revisada el 2026-10-15 contra EPIC-1–3; lista para 4.1](cite: 26).
+* **Estado:** **IMPLEMENTADO** [Features 4.1–4.5 completadas y validadas localmente; despliegue pendiente](cite: 26).
 * **Objetivo Técnico:** Desarrollar el pipeline en **Apache Beam** (`services/sanitization-pipeline/`) ejecutable con `DirectRunner` dentro de `voc-sanitization-job` (`DataflowRunner` queda opt-in hasta aprovisionar Dataflow) que drena los sobres `RawReviewEnvelope`, desidentifica PII mediante **Cloud DLP + Regex de segunda barrera**, filtra el umbral de 2 a 60 palabras del EDA, actualiza `bbva_voc_tds.sanitized_reviews_tds` de forma idempotente y emite recibos `ProcessingReceipt` para cerrar la cobertura TDS por página[cite: 24, 26, 27].
 * **Alcance y Componentes:**
   * **Transformación DLP Tabular y *Fail-Closed* (`dlp_transforms.py`):** Empaquetador dual ($\le 250$ filas y $\le 400\text{ KB}$) con *sidecar* posicional para no enviar IDs a DLP, protección de códigos diagnósticos `ref: 3702` mediante nonce, segunda barrera `LocalRegexFallbackSanitizer`, conteo exacto de tokens `[<INFO_TYPE>]` por fila (`pii_findings_count: int`) y política *fail-closed* en producción[cite: 24, 26].

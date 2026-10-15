@@ -285,6 +285,8 @@ class RunReport:
     mode: str
     messages: int = 0
     poison: int = 0
+    # Entregas repetidas del mismo evento en un microbatch (mismo ack final).
+    duplicate_messages: int = 0
     events_terminal: int = 0
     events_retryable: int = 0
     already_processed: int = 0
@@ -296,6 +298,7 @@ class RunReport:
     bigquery_jobs: int = 0
     stop_reason: str = "drained"
     transient_failure: bool = False
+    elapsed_sec: float = 0.0
 
     def add(self, outcome: MicrobatchOutcome) -> None:
         self.events_terminal += len(outcome.terminal)
@@ -377,6 +380,13 @@ class PubSubDrainer:
     def run(self) -> RunReport:
         report = RunReport(mode="BATCH_PULL_SERVERLESS")
         started = self.monotonic()
+        try:
+            self._drain(report, started)
+        finally:
+            report.elapsed_sec = round(self.monotonic() - started, 3)
+        return report
+
+    def _drain(self, report: RunReport, started: float) -> None:
         while report.messages < self.config.max_messages:
             if self.monotonic() - started >= self.config.max_runtime_sec:
                 report.stop_reason = "runtime_budget"
@@ -414,6 +424,7 @@ class PubSubDrainer:
             # Un mensaje veneno no es reintentable: se confirma sin texto.
             self._ack(poison)
             report.poison += len(poison)
+            report.duplicate_messages += sum(len(a) - 1 for a in acks.values())
             ack_ids = [a for ids in acks.values() for a in ids]
             try:
                 with AckDeadlineRenewer(
@@ -438,7 +449,6 @@ class PubSubDrainer:
             report.add_pages(self.processor.reconcile(outcome.pages))
         else:
             report.stop_reason = "message_budget"
-        return report
 
 
 # ------------------------------------------------------- manifest replay
@@ -482,16 +492,23 @@ class ManifestBackfill:
 
     def run(self) -> RunReport:
         report = RunReport(mode="GCS_BACKFILL_MANIFESTS")
-        ledger = self.processor.ledger
         started = self.monotonic()
+        try:
+            self._replay(report, started)
+        finally:
+            report.elapsed_sec = round(self.monotonic() - started, 3)
+        return report
+
+    def _replay(self, report: RunReport, started: float) -> None:
+        ledger = self.processor.ledger
         for bank in self.banks:
             for manifest in _latest_manifests(self.ingestion, bank):
                 if report.messages >= self.config.max_messages:
                     report.stop_reason = "message_budget"
-                    return report
+                    return
                 if self.monotonic() - started >= self.config.max_runtime_sec:
                     report.stop_reason = "runtime_budget"
-                    return report
+                    return
                 if ledger.page_closure(bank, manifest.page_id) is not None:
                     continue
                 key = (bank, manifest.stream_id, manifest.page_id)
@@ -514,10 +531,9 @@ class ManifestBackfill:
                     except TRANSIENT:
                         report.transient_failure = True
                         report.stop_reason = "transient_failure"
-                        return report
+                        return
                     report.add(outcome)
                 report.add_pages(self.processor.reconcile([key]))
-        return report
 
 
 # --------------------------------------------------------------- wiring

@@ -1,7 +1,8 @@
 # Activación del primer despliegue
 
 EPIC-2 declara recursos y dispone de aceptación local con mocks. No hay datos
-anteriores que convertir. EPIC-3/EPIC-4 aún deben implementar sus consumidores.
+anteriores que convertir. EPIC-3 y EPIC-4 ya tienen sus consumidores e imágenes
+(validados localmente; sin integración real con GCP).
 El contrato de watermark es único y se inicia vacío cuando falta el objeto;
 Pulumi no crea checkpoints, planes, manifiestos o ejecuciones de backfill.
 
@@ -327,8 +328,8 @@ recursos condicionales, permisos y cuotas. El preview no ejecuta el extractor.
 
 1. Aplicar la fase 1 cuando se autorice (`pulumi up`) y configurar la identidad
    de CI.
-2. Integrar en `main` la imagen de EPIC-3 (feature 3.5, ya en `develop`) y,
-   cuando exista, el pipeline de EPIC-4; el merge a `main` publica las imágenes.
+2. Integrar en `main` las imágenes de EPIC-3 (feature 3.5) y EPIC-4 (feature
+   4.4), ya en `develop`; el merge a `main` publica las imágenes.
    La declaración IaC de una imagen no comprueba que su módulo arranque.
 3. Fijar las imágenes por digest, pasar a `deploy_workloads: true`, revisar el
    preview y desplegar la fase 2.

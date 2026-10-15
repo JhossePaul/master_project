@@ -1,6 +1,6 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** En implementación. Features 4.1–4.4 implementadas; feature 4.5 pendiente. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
+* **Estado:** Implementada (features 4.1–4.5). Validada localmente con dobles deterministas y la imagen sin red; sin despliegue ni llamadas reales a Pub/Sub, Cloud DLP, BigQuery o GCS. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**
@@ -405,6 +405,35 @@ Mismo patrón que `services/ingestion-worker/Dockerfile`: multi-stage con `pytho
 
 **Objetivo:** Validar con `pytest` y `apache_beam.testing.test_pipeline.TestPipeline` (sin red ni credenciales GCP en CI) todos los invariantes de privacidad, empaquetado DLP, idempotencia en BigQuery y manejo de leases de Pub/Sub.
 
+**Estado: IMPLEMENTADA.** Los 10 escenarios obligatorios quedaron cubiertos a
+medida que se implementó cada feature:
+
+| Escenario | Pruebas |
+| --- | --- |
+| 1–5 (privacidad, `ref: 3702`, empaquetado, *fail-closed*, bordes EDA) | `test_dlp_transforms.py` |
+| 6–8 (`ack_ids`, recibo previo, atomicidad, renovación de ack) | `test_pipeline.py` (con publisher real de EPIC-3) y `test_bq_writer_and_ledger.py` |
+| 9 (cierre de página y staging expirado) | `test_bq_writer_and_ledger.py` y `test_pipeline.py` |
+| 10 (configuración, tokens DLP y 17 columnas contra `infra/`) | `test_execution_config.py`, `test_dlp_transforms.py`, `test_bq_writer_and_ledger.py` |
+
+Observabilidad: el log final de cada corrida incluye mensajes recibidos,
+mensajes veneno, entregas duplicadas, eventos por estado, eventos ya resueltos,
+páginas por estado, capturas expiradas, jobs de BigQuery, motivo de parada y
+tiempo consumido (`elapsed_sec`), sin textos ni PII.
+Validación final: 86 tests del paquete (100% de cobertura de líneas sobre 931
+sentencias), 567 tests conjuntos; los cinco comandos del checklist pasan
+literalmente. Un test falla si Beam llega a ejecutar Prism.
+
+Límites que quedan explícitos:
+
+* El `MERGE` se valida por su texto y por la deduplicación en Python; su
+  semántica en BigQuery real queda para la integración posterior al despliegue.
+* El comportamiento real de Cloud DLP (detección de nombres, solapes entre
+  `PHONE_NUMBER` y `BBVA_ACCOUNT_NUMBER`) no se prueba sin red; el DLP simulado
+  reconoce solo nombres y correos y el resto lo cubre la segunda barrera.
+* `BacklogSignal` real para la ingesta sigue pendiente: necesita una fuente de
+  backlog (p. ej., Cloud Monitoring con `roles/monitoring.viewer` para la
+  cuenta de ingesta) aprovisionada en EPIC-2.
+
 #### Tarea 4.5.1: Implementar `test_dlp_transforms.py`, `test_bq_writer_and_ledger.py` y `test_pipeline.py`
 
 La suite debe cubrir obligatoriamente estos escenarios:
@@ -437,12 +466,17 @@ La suite debe cubrir obligatoriamente estos escenarios:
 
 ## ✅ Checklist de Aceptación de la Épica 4
 
-* [ ] Consume `RawReviewEnvelope` y emite `SanitizedReviewEnvelope` y `ProcessingReceipt` de `voc-common` sin duplicar contratos ni alterar las 17 columnas de `bbva_voc_tds.sanitized_reviews_tds`.
-* [ ] Integra el paquete al workspace sin cambiar versiones compartidas de `uv.lock`.
-* [ ] Calcula `pii_findings_count: int` (`>= 0`) contando los tokens introducidos por fila, cumpliendo el contrato `INTEGER REQUIRED` de BigQuery.
-* [ ] Empaqueta peticiones tabulares a Cloud DLP respetando simultáneamente $\le 250$ filas y $\le 400\text{ KB}$, manteniendo identificadores en un sidecar fuera de la tabla DLP.
-* [ ] Opera en modo *fail-closed* en producción (`use_cloud_dlp_api=True`): jamás escribe en TDS usando solo regex si Cloud DLP falla.
-* [ ] Carga lotes sanitizados en tablas temporales con TTL de 1 hora dentro de `bbva_voc_tds` y ejecuta `MERGE` idempotente sin usar *Streaming Inserts*.
-* [ ] Gestiona cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), renueva leases de ack y confirma mensajes en Pub/Sub únicamente después de persistir en BigQuery y en el ledger de recibos.
-* [ ] Cierra páginas como `RESOLVED`/`GAPS_DETECTED` sin escribir en el estado de la ingesta.
-* [ ] Los comandos `uv run ruff check services/sanitization-pipeline`, `uv run ruff format --check services/sanitization-pipeline`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/sanitization-pipeline` y `uv run pytest services/sanitization-pipeline/tests --cov=sanitization_pipeline --cov-fail-under=85` pasan con **0 errores**.
+* [x] Consume `RawReviewEnvelope` y emite `SanitizedReviewEnvelope` y `ProcessingReceipt` de `voc-common` sin duplicar contratos ni alterar las 17 columnas de `bbva_voc_tds.sanitized_reviews_tds`.
+* [x] Integra el paquete al workspace sin cambiar versiones compartidas de `uv.lock`.
+* [x] Calcula `pii_findings_count: int` (`>= 0`) contando los tokens introducidos por fila, cumpliendo el contrato `INTEGER REQUIRED` de BigQuery.
+* [x] Empaqueta peticiones tabulares a Cloud DLP respetando simultáneamente $\le 250$ filas y $\le 400\text{ KB}$, manteniendo identificadores en un sidecar fuera de la tabla DLP.
+* [x] Opera en modo *fail-closed* en producción (`use_cloud_dlp_api=True`): jamás escribe en TDS usando solo regex si Cloud DLP falla.
+* [x] Carga lotes sanitizados en tablas temporales con TTL de 1 hora dentro de `bbva_voc_tds` y ejecuta `MERGE` idempotente sin usar *Streaming Inserts*.
+* [x] Gestiona cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), renueva leases de ack y confirma mensajes en Pub/Sub únicamente después de persistir en BigQuery y en el ledger de recibos.
+* [x] Cierra páginas como `RESOLVED`/`GAPS_DETECTED` sin escribir en el estado de la ingesta.
+* [x] Los comandos `uv run ruff check services/sanitization-pipeline`, `uv run ruff format --check services/sanitization-pipeline`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/sanitization-pipeline` y `uv run pytest services/sanitization-pipeline/tests --cov=sanitization_pipeline --cov-fail-under=85` pasan con **0 errores**.
+
+Pendiente fuera de esta épica: publicar la imagen por digest y desplegar por
+fases (EPIC-2), integración real con Pub/Sub, Cloud DLP regional, BigQuery e
+IAM, la señal de backlog para el histórico y exponer los cierres de página en
+el GET de progreso de la ingesta (promoviendo `PageClosure` a `voc-common`).

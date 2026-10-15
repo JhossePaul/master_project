@@ -2,7 +2,8 @@
 
 `voc-common` implementa contratos, transiciones puras y configuración.
 EPIC-3 (3.1–3.5) implementa protocolo, repositorio, publicación durable,
-recorridos, API, Job e imagen; los consumidores de EPIC-4 siguen pendientes. Almacenamiento, auditoría
+recorridos, API, Job e imagen; EPIC-4 implementa el consumidor de sanitización
+(recibos y cierres de página bajo el prefijo de recibos). Almacenamiento, auditoría
 y Job histórico están declarados en EPIC-2 (2.7–2.9); no desplegados.
 Las funciones puras no comprueban objetos GCS, permisos, publicación ni resultados
 DLP/BigQuery. Esas comprobaciones corresponden a sus repositorios/pipelines.

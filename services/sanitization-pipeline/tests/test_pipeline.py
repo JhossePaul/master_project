@@ -5,6 +5,7 @@ simulado con generaciones; esos mismos mensajes alimentan al suscriptor.
 """
 
 import copy
+import itertools
 import json
 import threading
 from datetime import UTC, datetime
@@ -406,6 +407,8 @@ def test_drain_persists_before_ack_and_closes_the_page():
     assert DLP_CALLS == [3]
     assert (report.tds_committed, report.filtered_length) == (2, 1)
     assert report.pages == {"RESOLVED": 1}
+    assert (report.messages, report.duplicate_messages) == (4, 1)
+    assert report.elapsed_sec >= 0
     closure = env.ledger.page_closure(BANK, env.page_id)
     assert closure.status == SanitizationStatus.RESOLVED
     dumped = json.dumps(env.bq.rows, ensure_ascii=False)
@@ -513,7 +516,7 @@ def test_budgets_bound_pulls_and_stop_cleanly():
     assert report.stop_reason == "message_budget"
     empty, _ = env.drain([])
     assert empty.stop_reason == "drained" and empty.messages == 0
-    clock = iter([0.0, 2000.0])
+    clock = itertools.chain([0.0, 2000.0], itertools.repeat(2000.0))
     drainer = orch.PubSubDrainer(
         FakeSubscriber([env.messages()]),
         SUBSCRIPTION,
@@ -521,7 +524,9 @@ def test_budgets_bound_pulls_and_stop_cleanly():
         SanitizationExecutionConfig(),
         monotonic=lambda: next(clock),
     )
-    assert drainer.run().stop_reason == "runtime_budget"
+    late = drainer.run()
+    assert late.stop_reason == "runtime_budget"
+    assert late.elapsed_sec == 2000.0
 
 
 def test_ack_deadline_is_renewed_while_the_microbatch_runs():
@@ -620,7 +625,7 @@ def test_manifest_backfill_budgets_and_transient_stop():
         env.ingestion, processor, config, banks=(BANK, BANK)
     ).run()
     assert stopped.stop_reason == "message_budget"
-    clock = iter([0.0, 5000.0])
+    clock = itertools.chain([0.0, 5000.0], itertools.repeat(5000.0))
     late = orch.ManifestBackfill(
         Env().ingestion,
         processor,
@@ -629,6 +634,7 @@ def test_manifest_backfill_budgets_and_transient_stop():
         monotonic=lambda: next(clock),
     ).run()
     assert late.stop_reason == "runtime_budget"
+    assert late.elapsed_sec == 5000.0
     failing = Env()
     failing.bucket.fail_prefix = "state/ingestion/receipts/"
     report = orch.ManifestBackfill(
@@ -670,6 +676,7 @@ def test_main_runs_registered_modes_end_to_end(monkeypatch, capsys, settings):
     log = last_log(capsys)
     assert log["message"] == "Sanitization run finished"
     assert log["tds_committed"] == 2 and "Juan" not in json.dumps(log)
+    assert {"duplicate_messages", "elapsed_sec", "stop_reason"} <= set(log)
     code = orch.run_manifest_backfill(
         SanitizationExecutionConfig(),
         Mock(),
