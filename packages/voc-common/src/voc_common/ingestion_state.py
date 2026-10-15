@@ -427,3 +427,230 @@ def finish_historical_plan(
     else:
         raise ValueError("historical target not reached")
     return _replace(plan, status=status, completion_evidence=evidence)
+
+
+def reanchor(
+    state: IngestionWatermarkState,
+    stream: ScanStreamState,
+    anchor: PageManifest,
+    replay: PageManifest,
+    *,
+    expected_revision: int,
+    at: datetime,
+    manifest_ledger: LedgerReference,
+    recovery: RecoveryStatus,
+) -> PageTransition:
+    """Continúa desde la relectura de una página comprometida de la cadena.
+
+    El replay ocupa la misma posición (ordinal, página previa y cursor de
+    entrada). Con contenido idéntico conserva page_id y sube de versión; si el
+    origen cambió es una observación nueva con otro page_id. La frontera vuelve
+    a la posición del ancla y continúa con el cursor devuelto por el replay.
+    """
+    _check(state, stream, expected_revision, at)
+    _page_identity(stream, anchor)
+    _page_identity(stream, replay)
+    if stream.status not in (
+        ScanStatus.RUNNING,
+        ScanStatus.PAUSED,
+        ScanStatus.RECOVERY_REQUIRED,
+    ):
+        raise ValueError("stream is not replayable")
+    if recovery not in (
+        RecoveryStatus.ANCHOR_REPLAY,
+        RecoveryStatus.EARLIER_ANCHOR,
+    ):
+        raise ValueError("reanchor requires an anchor recovery step")
+    frontier = stream.frontier_ordinal
+    if frontier is None or anchor.ordinal > frontier:
+        raise ValueError("anchor is outside the current chain")
+    if recovery == RecoveryStatus.ANCHOR_REPLAY and (
+        anchor.page_id != stream.frontier_page_id
+    ):
+        raise ValueError("anchor replay must use the current frontier")
+    if recovery == RecoveryStatus.EARLIER_ANCHOR and anchor.ordinal >= frontier:
+        raise ValueError("earlier anchor must precede the frontier")
+    if (
+        replay.ordinal != anchor.ordinal
+        or replay.previous_page_id != anchor.previous_page_id
+        or replay.input_token != anchor.input_token
+        or replay.publication_status != PublicationStatus.PUBLISHED
+        or anchor.publication_status != PublicationStatus.PUBLISHED
+        or replay.fetched_at < anchor.fetched_at
+        or replay.fetched_at > ensure_utc(at)
+    ):
+        raise ValueError("replay does not occupy the anchor position")
+    same_page = replay.page_id == anchor.page_id
+    if same_page and (
+        replay.content_fingerprint != anchor.content_fingerprint
+        or replay.manifest_version <= anchor.manifest_version
+    ):
+        raise ValueError("same page replay must keep content, new version")
+    if (
+        replay.raw_count == 0
+        or replay.observed_min_at is None
+        or replay.observed_max_at is None
+        or (replay.valid_count == 0 and replay.output_token is None)
+    ):
+        raise ValueError("empty/ambiguous replay cannot anchor a chain")
+    incremental = state.incremental
+    if incremental.stream_id == stream.stream_id:
+        if incremental.active_run_id != replay.run_id:
+            raise ValueError("incremental run mismatch")
+        dates = [
+            x
+            for x in (
+                incremental.candidate_high_at,
+                incremental.baseline_high_at,
+                replay.observed_max_at,
+            )
+            if x is not None
+        ]
+        incremental = _replace(
+            incremental,
+            candidate_high_at=max(dates),
+            status=ScanStatus.RUNNING,
+        )
+    lows = [
+        x
+        for x in (state.observed_min_at, replay.observed_min_at)
+        if x is not None
+    ]
+    highs = [
+        x
+        for x in (state.observed_max_at, replay.observed_max_at)
+        if x is not None
+    ]
+    updated = _replace(
+        state,
+        revision=state.revision + 1,
+        updated_at=ensure_utc(at),
+        observed_min_at=min(lows),
+        observed_max_at=max(highs),
+        incremental=incremental,
+        manifest_ledger=manifest_ledger,
+    )
+    updated_stream = _replace(
+        stream,
+        status=ScanStatus.RUNNING,
+        recovery_status=RecoveryStatus.NONE,
+        frontier_page_id=replay.page_id,
+        frontier_oldest_at=replay.observed_min_at,
+        anchor_page_id=replay.page_id,
+        frontier_ordinal=replay.ordinal,
+        input_token=replay.input_token,
+        output_token=replay.output_token,
+        last_success_at=replay.fetched_at,
+        committed_pages=stream.committed_pages + (0 if same_page else 1),
+        committed_reviews=stream.committed_reviews
+        + (0 if same_page else replay.valid_count),
+    )
+    return PageTransition(updated, updated_stream, replay, duplicate=same_page)
+
+
+def restart_chain(
+    state: IngestionWatermarkState,
+    stream: ScanStreamState,
+    *,
+    expected_revision: int,
+    at: datetime,
+) -> tuple[IngestionWatermarkState, ScanStreamState]:
+    """Abre un chain_epoch nuevo desde la cabeza; no traslada cursores.
+
+    Las páginas comprometidas permanecen; la nueva cadena se recorre completa
+    y no se presenta como continuación de la anterior.
+    """
+    _check(state, stream, expected_revision, at)
+    if stream.status not in (
+        ScanStatus.RUNNING,
+        ScanStatus.PAUSED,
+        ScanStatus.RECOVERY_REQUIRED,
+    ):
+        raise ValueError("stream cannot restart from this status")
+    if stream.frontier_page_id is None:
+        raise ValueError("stream has no chain to restart")
+    updated_stream = _replace(
+        stream,
+        chain_epoch=stream.chain_epoch + 1,
+        status=ScanStatus.RUNNING,
+        recovery_status=RecoveryStatus.HEAD_RESCAN,
+        frontier_page_id=None,
+        frontier_oldest_at=None,
+        anchor_page_id=None,
+        frontier_ordinal=None,
+        input_token=None,
+        output_token=None,
+    )
+    incremental = state.incremental
+    if incremental.stream_id == stream.stream_id:
+        incremental = _replace(incremental, status=ScanStatus.RUNNING)
+    return _replace(
+        state,
+        revision=state.revision + 1,
+        updated_at=ensure_utc(at),
+        incremental=incremental,
+    ), updated_stream
+
+
+def close_stream(
+    state: IngestionWatermarkState,
+    stream: ScanStreamState,
+    *,
+    status: ScanStatus,
+    expected_revision: int,
+    at: datetime,
+) -> tuple[IngestionWatermarkState, ScanStreamState]:
+    """Objetivo alcanzado, EOF observado o bloqueo; conserva los cursores."""
+    _check(state, stream, expected_revision, at)
+    if stream.status not in (ScanStatus.RUNNING, ScanStatus.PAUSED):
+        raise ValueError("only an active stream can be closed")
+    if status not in (
+        ScanStatus.TARGET_REACHED,
+        ScanStatus.SOURCE_EXHAUSTED_OBSERVED,
+        ScanStatus.BLOCKED,
+    ):
+        raise ValueError("invalid terminal stream status")
+    if status != ScanStatus.BLOCKED and stream.frontier_page_id is None:
+        raise ValueError("terminal stream requires a committed frontier")
+    updated_stream = _replace(stream, status=status)
+    return _replace(
+        state, revision=state.revision + 1, updated_at=ensure_utc(at)
+    ), updated_stream
+
+
+def reopen_stream(
+    state: IngestionWatermarkState,
+    stream: ScanStreamState,
+    *,
+    expected_revision: int,
+    at: datetime,
+) -> tuple[IngestionWatermarkState, ScanStreamState]:
+    """FULL tras anual: el ancla y cursores se conservan; se exige replay."""
+    _check(state, stream, expected_revision, at)
+    if stream.plan_id is None or stream.status != ScanStatus.TARGET_REACHED:
+        raise ValueError("only a historical target can be reopened")
+    return _replace(
+        state, revision=state.revision + 1, updated_at=ensure_utc(at)
+    ), _replace(stream, status=ScanStatus.PAUSED)
+
+
+def change_plan_status(
+    plan: HistoricalPlan, status: ScanStatus
+) -> HistoricalPlan:
+    """Estados operativos; el cierre usa finish_historical_plan."""
+    allowed = {
+        ScanStatus.NOT_STARTED: {ScanStatus.RUNNING},
+        ScanStatus.PAUSED: {ScanStatus.RUNNING},
+        ScanStatus.RUNNING: {
+            ScanStatus.PAUSED,
+            ScanStatus.RECOVERY_REQUIRED,
+            ScanStatus.BLOCKED,
+        },
+        ScanStatus.RECOVERY_REQUIRED: {ScanStatus.RUNNING, ScanStatus.PAUSED},
+        ScanStatus.BLOCKED: {ScanStatus.PAUSED},
+    }
+    if plan.status == status:
+        return plan
+    if status not in allowed.get(plan.status, set()):
+        raise ValueError("invalid plan transition")
+    return _replace(plan, status=status)

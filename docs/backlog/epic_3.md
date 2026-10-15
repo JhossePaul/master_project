@@ -1,6 +1,6 @@
 # EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** En implementación. Features 3.1–3.3 implementadas; features 3.4–3.5 pendientes. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
+* **Estado:** En implementación. Features 3.1–3.4 implementadas; feature 3.5 pendiente. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
 * **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La integración del worker con ellos corresponde a las siguientes features.
 * **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
@@ -297,6 +297,48 @@ origen; no marcar completitud. El ledger final, sin texto, puede sobrevivir al
 TTL del staging para deduplicación y auditoría.
 
 ## FEATURE 3.4: Extracción y políticas de recuperación
+
+**Estado: IMPLEMENTADA.** `runner.py` expone `PlayStoreResilientExtractor`,
+`ExtractionRequest`/`ExtractionResult` y `BacklogSignal` (por defecto sin
+presión: aún no hay consumidor desplegado). Reducers puros nuevos en
+`voc_common.ingestion_state`: `reanchor`, `restart_chain`, `close_stream`,
+`reopen_stream` y `change_plan_status`; el repositorio los persiste con CAS.
+Configuración conservadora nueva en `IngestionExecutionConfig` (páginas,
+recuperación, anclas, backoff, circuit breaker, ventana de revisita 72 h,
+bootstrap 7 días y rotación opcional de User-Agent por ejecución).
+Evidencia usada (`evidence/`, no versionada): una corrida BBVA de 16
+solicitudes; el replay del cursor fue idéntico a +10 s, +10 min y +30 min
+aunque la cabeza cambió; el cursor devuelto cambia en cada respuesta; la
+cabeza mostró ±2 reseñas entre solicitudes; tamaños 200 y 500 aceptados.
+Sin 429, expiración, EOF ni filtro de estrellas observados: esos caminos se
+prueban con un origen simulado.
+Validación: 166 tests del worker (95.24% de cobertura), 444 tests conjuntos;
+Ruff, formato, Pyrefly y Bandit sin errores. Sin solicitudes reales.
+
+Decisiones y límites conocidos:
+
+* Una ancla es consistente si la relectura conserva IDs y forma de la página;
+  con contenido idéntico se versiona el mismo `page_id` con respaldo nuevo
+  (el cursor devuelto cambia); con revisiones distintas se publica como
+  observación nueva en la misma posición. Ninguna de las dos prueba snapshot.
+* Un HTTP 4xx sobre un cursor se trata como síntoma de rechazo e inicia la
+  recuperación; no se interpreta como expiración demostrada.
+* `HEAD_RESCAN` abre `chain_epoch` nuevo y vuelve a publicar las páginas que
+  recorre (al menos una vez); la deduplicación por `event_id` de EPIC-4 cierra
+  esa brecha. No se omiten revisiones confirmadas durante el reescaneo.
+* El incremental usa un stream por corrida (`inc-{run_id}`); la frontera
+  confirmada guarda el ledger completo de IDs de la corrida. Las reseñas de la
+  frontera anterior que no reaparecen se cuentan en `reconciliation_missing`
+  como evidencia; no bloquean el cierre (la cabeza observada no es estable).
+* EOF observado = página sin cursor más relectura consistente sin cursor.
+* Un plan anual con particiones donde una alcanza EOF antes de la cota y otra
+  la cota no puede cerrarse con el reducer de EPIC-1; queda `PAUSED` con
+  `RECOVERY_REQUIRED/plan_mixed_terminal` hasta decidir el contrato.
+* El circuit breaker y los reintentos son por invocación; no se persisten.
+* La estrategia de particiones (estrellas u otra) sigue en discusión: el
+  ejecutor es genérico sobre los streams de un plan. Las fechas no son un
+  filtro del endpoint, así que «particionar por fecha» solo puede significar
+  tramos sucesivos de un mismo stream.
 
 `PlayStoreResilientExtractor.run_extraction` devuelve un resultado tipado con
 `run_id`, plan/stream, status y motivo, contadores, presupuesto consumido,

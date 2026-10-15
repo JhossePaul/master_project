@@ -235,6 +235,11 @@ def test_v2_settings_defaults_payloads_and_policy_are_coherent() -> None:
         + (settings.ingestion_checkpoint_margin_sec)
         <= settings.ingestion_container_timeout_sec
     )
+    assert settings.ingestion_max_recovery_requests <= (
+        settings.ingestion_max_requests
+    )
+    assert settings.ingestion_incremental_revisit_window_sec == 3 * 86_400
+    assert settings.scraper_rotate_user_agent is False
     with pytest.raises(ValueError, match="not enabled"):
         settings.require_ingestion_v2()
     incremental = Settings(ingestion_v2_enabled=True)
@@ -261,6 +266,13 @@ def test_v2_settings_defaults_payloads_and_policy_are_coherent() -> None:
         {"ingestion_max_runtime_sec": 850},
         {"ingestion_heartbeat_interval_sec": 120},
         {"scraper_timeout_sec": 61},
+        {"ingestion_max_pages": 0},
+        {"ingestion_max_recovery_requests": 101},
+        {"ingestion_recovery_max_anchors": -1},
+        {"ingestion_max_backoff_sec": 780},
+        {"ingestion_circuit_breaker_threshold": 0},
+        {"ingestion_incremental_revisit_window_sec": -1},
+        {"ingestion_bootstrap_window_sec": 0},
         {"gcs_watermark_prefix": "/state/watermarks"},
         {"gcs_ingestion_state_prefix": "state//ingestion"},
         {"gcs_ingestion_ledgers_prefix": "state/ingestion/../ledger"},
