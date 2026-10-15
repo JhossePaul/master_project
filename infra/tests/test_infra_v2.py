@@ -11,6 +11,7 @@ import pytest
 from voc_common import IngestionRunAudit, IngestionWatermarkState, Settings
 
 from infra.tests.conftest import (
+    WORKLOAD_CONFIG,
     InfrastructureMonitor,
     assert_acyclic,
     unwrap_outputs,
@@ -50,6 +51,7 @@ def test_complete_infrastructure_matrix(
                 "bbva-voc-infra:free_tier_mode": str(free_tier).lower(),
                 "bbva-voc-infra:enable_cmek": str(cmek).lower(),
                 "bbva-voc-infra:user_hash_salt": "fixture-only-salt-1234567890",
+                **WORKLOAD_CONFIG,
             }
         )
         with patch("pulumi.export", side_effect=capture):

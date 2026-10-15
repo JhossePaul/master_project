@@ -1,11 +1,11 @@
 """Servicios Gen2 y sanitización efímera con identidad dedicada."""
 
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Final
 
 import pulumi
 import pulumi_gcp as gcp
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from voc_common.config import DEV_USER_HASH_SALT, IngestionExecutionConfig
 
 from infra.modules.dlp import DlpTemplates
@@ -15,6 +15,28 @@ from infra.modules.kms_iam import (
 )
 from infra.modules.pubsub import PubSubResources
 from infra.modules.storage_bq import StorageAndBqResources
+
+ARTIFACT_REPOSITORY_ID: Final = "voc-containers-repo"
+# Solo digest inmutable: un tag mutable (p. ej. :latest) no dispara redeploys.
+DigestImage = Annotated[
+    str,
+    StringConstraints(
+        pattern=(
+            r"^[a-z0-9.-]+(:[0-9]+)?(/[a-z0-9._-]+)+"
+            r"(:[A-Za-z0-9._-]{1,128})?@sha256:[0-9a-f]{64}$"
+        )
+    ),
+]
+
+
+class WorkloadImages(BaseModel):
+    """Imágenes publicadas por Cloud Build y fijadas por digest."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    ingestion_worker: DigestImage
+    sanitization_job: DigestImage
+    api_backend: DigestImage | None = None
+    historical_job: DigestImage | None = None
 
 
 class HistoricalExecutionConfig(IngestionExecutionConfig):
@@ -43,10 +65,9 @@ class HistoricalJobConfig(BaseModel):
 
 @dataclass
 class CloudRunResources:
-    repository: gcp.artifactregistry.Repository
     ingestion_worker: gcp.cloudrunv2.Service
     sanitization_job: gcp.cloudrunv2.Job
-    api_backend: gcp.cloudrunv2.Service
+    api_backend: gcp.cloudrunv2.Service | None
     ingestion_invoker: gcp.cloudrunv2.ServiceIamMember
     sanitization_invoker: gcp.cloudrunv2.JobIamMember
     historical_job: gcp.cloudrunv2.Job
@@ -65,6 +86,35 @@ def _validate_hash_salt(value: str, environment: str) -> str:
     return value
 
 
+def validate_execution_profiles(
+    execution: IngestionExecutionConfig,
+    history: HistoricalJobConfig,
+) -> None:
+    """Valida perfiles en ambas fases para fallar antes de publicar imágenes."""
+    if execution.ingestion_container_timeout_sec > 3600:
+        raise ValueError("HTTP timeout cannot exceed 3600 seconds")
+    if history.execution.ingestion_container_timeout_sec > 604800:
+        raise ValueError("historical task timeout cannot exceed seven days")
+
+
+def create_artifact_registry(
+    project_id: str,
+    region: str,
+    api_deps: list[pulumi.Resource],
+) -> gcp.artifactregistry.Repository:
+    """Fase 1: el repositorio existe antes de que Cloud Build publique."""
+    return gcp.artifactregistry.Repository(
+        ARTIFACT_REPOSITORY_ID,
+        project=project_id,
+        location=region,
+        repository_id=ARTIFACT_REPOSITORY_ID,
+        format="DOCKER",
+        # Tags = SHA de commit: inmutables para que digest y tag no diverjan.
+        docker_config={"immutable_tags": True},
+        opts=pulumi.ResourceOptions(depends_on=api_deps),
+    )
+
+
 def create_cloud_run_resources(
     project_id: str,
     region: str,
@@ -74,9 +124,8 @@ def create_cloud_run_resources(
     dlp: DlpTemplates,
     api_deps: list[pulumi.Resource],
     *,
-    ingestion_worker_image: str,
-    sanitization_job_image: str,
-    api_backend_image: str,
+    repository: gcp.artifactregistry.Repository,
+    images: WorkloadImages,
     user_hash_salt: pulumi.Output[str],
     environment: str = "dev",
     free_tier_mode: bool = True,
@@ -84,26 +133,14 @@ def create_cloud_run_resources(
     scraper_proxy_pool_urls: pulumi.Output[str] | None = None,
     ingestion_execution: IngestionExecutionConfig | None = None,
     historical_config: HistoricalJobConfig | None = None,
-    historical_job_image: str | None = None,
     ingestion_v2_enabled: bool = False,
 ) -> CloudRunResources:
-    """Define contenedores y permisos; no ejecuta jobs ni publica imágenes."""
+    """Fase 2: define contenedores y permisos; no ejecuta jobs ni builds."""
     execution = ingestion_execution or IngestionExecutionConfig()
     history = historical_config or HistoricalJobConfig()
-    if execution.ingestion_container_timeout_sec > 3600:
-        raise ValueError("HTTP timeout cannot exceed 3600 seconds")
-    if history.execution.ingestion_container_timeout_sec > 604800:
-        raise ValueError("historical task timeout cannot exceed seven days")
+    validate_execution_profiles(execution, history)
     user_hash_salt = user_hash_salt.apply(
         lambda value: _validate_hash_salt(value, environment)
-    )
-    repository = gcp.artifactregistry.Repository(
-        "voc-containers-repo",
-        project=project_id,
-        location=region,
-        repository_id="voc-containers-repo",
-        format="DOCKER",
-        opts=pulumi.ResourceOptions(depends_on=api_deps),
     )
     common: dict[str, pulumi.Input[str]] = {
         "ENVIRONMENT": environment,
@@ -173,7 +210,8 @@ def create_cloud_run_resources(
                 "containers": [
                     {
                         "name": "historical-ingestion",
-                        "image": historical_job_image or ingestion_worker_image,
+                        "image": images.historical_job
+                        or images.ingestion_worker,
                         "commands": list(history.command),
                         "resources": {"limits": {"cpu": "1", "memory": "1Gi"}},
                         "envs": [
@@ -240,7 +278,7 @@ def create_cloud_run_resources(
 
     ingestion = service(
         "voc-ingestion-worker",
-        ingestion_worker_image,
+        images.ingestion_worker,
         security.sa_ingestion_worker.email,
         {
             **common,
@@ -265,7 +303,7 @@ def create_cloud_run_resources(
                 "max_retries": 1,
                 "containers": [
                     {
-                        "image": sanitization_job_image,
+                        "image": images.sanitization_job,
                         "resources": {"limits": {"cpu": "1", "memory": "1Gi"}},
                         "envs": [
                             {"name": k, "value": v}
@@ -286,11 +324,16 @@ def create_cloud_run_resources(
         },
         opts=opts,
     )
-    backend = service(
-        "voc-api-backend",
-        api_backend_image,
-        security.sa_ml_and_backend.email,
-        common,
+    # El backend (EPIC-5) es opcional para activar ingesta y sanitización.
+    backend = (
+        service(
+            "voc-api-backend",
+            images.api_backend,
+            security.sa_ml_and_backend.email,
+            common,
+        )
+        if images.api_backend is not None
+        else None
     )
     invoker = security.sa_scheduler_invoker.email.apply(
         lambda email: f"serviceAccount:{email}"
@@ -314,7 +357,6 @@ def create_cloud_run_resources(
         opts=opts,
     )
     return CloudRunResources(
-        repository,
         ingestion,
         sanitization,
         backend,

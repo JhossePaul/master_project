@@ -118,6 +118,18 @@ class IngestionExecutionConfig(BaseModel):
     ingestion_checkpoint_margin_sec: int = Field(default=60, gt=0)
     ingestion_lease_duration_sec: int = Field(default=120, gt=0)
     ingestion_heartbeat_interval_sec: int = Field(default=30, gt=0)
+    # Feature 3.4: valores conservadores; no derivan de límites del origen.
+    ingestion_max_pages: int = Field(default=100, gt=0)
+    ingestion_max_recovery_requests: int = Field(default=10, ge=0)
+    ingestion_recovery_max_anchors: int = Field(default=3, ge=0)
+    ingestion_max_backoff_sec: float = Field(default=60.0, gt=0.0)
+    ingestion_circuit_breaker_threshold: int = Field(default=3, gt=0)
+    # Ventana de revisita del incremental: reduce riesgo, no prueba ediciones.
+    ingestion_incremental_revisit_window_sec: int = Field(default=259_200, ge=0)
+    # Bootstrap: ventana reciente explícita; no representa el histórico.
+    ingestion_bootstrap_window_sec: int = Field(default=604_800, gt=0)
+    # Rotación opcional por ejecución; nunca como reacción a un bloqueo.
+    scraper_rotate_user_agent: bool = False
 
     @model_validator(mode="after")
     def _ingestion_limits(self) -> Self:
@@ -136,6 +148,10 @@ class IngestionExecutionConfig(BaseModel):
             >= self.ingestion_lease_duration_sec
         ):
             raise ValueError("heartbeat must precede lease expiration")
+        if self.ingestion_max_recovery_requests > self.ingestion_max_requests:
+            raise ValueError("recovery budget cannot exceed request budget")
+        if self.ingestion_max_backoff_sec >= self.ingestion_max_runtime_sec:
+            raise ValueError("backoff must fit inside the execution budget")
         return self
 
 

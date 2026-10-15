@@ -295,6 +295,9 @@ class SanitizedReviewRecord(_StrictModel):
     texto_respuesta_sanitizado: str | None = None
     fecha_respuesta: UtcDatetime | None = None
     sanitized_at: UtcDatetime = Field(default_factory=_utcnow)
+    # Tiempo de captura en el origen (ingested_at del sobre crudo). Ordena
+    # revisiones con igual ``fecha`` en el MERGE; sanitized_at es de proceso.
+    source_observed_at: UtcDatetime
 
     @model_validator(mode="after")
     def _check_word_count_matches(self) -> Self:
@@ -337,6 +340,7 @@ class SanitizedReviewRecord(_StrictModel):
             fecha=raw.fecha,
             texto_respuesta_sanitizado=texto_respuesta_sanitizado,
             fecha_respuesta=raw.fecha_respuesta,
+            source_observed_at=raw.ingested_at,
         )
 
 
@@ -914,6 +918,8 @@ class SanitizedReviewEnvelope(_ReviewEnvelopeV2):
         for name in ("fecha", "estrellas", "votos_utilidad", "version_app"):
             if getattr(record, name) != getattr(event.raw, name):
                 raise ValueError("sanitized source metadata changed")
+        if record.source_observed_at != event.raw.ingested_at:
+            raise ValueError("sanitized record must keep source observation")
         return cls(
             **event.model_dump(exclude={"raw"}),
             record=SanitizedReviewSnapshot.model_validate(record.model_dump()),

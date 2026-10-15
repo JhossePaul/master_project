@@ -223,6 +223,7 @@ def hash_username_pii(username: str, salt: str) -> str:
 **Status: IMPLEMENTADO**
 
 > **Notas de implementación:**
+>
 > * Todos los modelos usan `extra="forbid"`; todas las `datetime` se normalizan a UTC (las *naive* se asumen UTC) vía `ensure_utc`.
 > * El watermark separa observaciones, progreso incremental y planes históricos;
 >   los cursores pertenecen a streams con contexto completo y las fronteras se
@@ -309,6 +310,7 @@ Modela el registro limpio en la tabla `sanitized_reviews_tds`:
 * `texto_respuesta_sanitizado: str | None = None`
 * `fecha_respuesta: datetime | None = None`
 * `sanitized_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))`
+* `source_observed_at: datetime` (obligatorio; `raw.ingested_at`, tiempo de captura en el origen. Añadido por la decisión D1 de EPIC-4 para ordenar revisiones con igual `fecha`; `SanitizedReviewEnvelope.from_event` exige que coincida con el sobre crudo).
 * **Método de construcción obligatorio:**
 * `@classmethod def from_raw_and_dlp(cls, raw: RawReviewEvent, texto_sanitizado: str, pii_findings_count: int, user_hash_salt: str, texto_respuesta_sanitizado: str | None = None) -> "SanitizedReviewRecord"`: Calcula `usuario_hash` usando `hash_username_pii(raw.usuario, user_hash_salt)`, aplica `limpiar_texto_bancario(texto_sanitizado)`, calcula `conteo_palabras` y valida el rango `[2, 60]`.
 
@@ -364,6 +366,7 @@ Modela el registro limpio en la tabla `sanitized_reviews_tds`:
 **Status: IMPLEMENTADO**
 
 > **Notas de implementación y revisión (2026-10-14):**
+>
 > * `Settings` incluye todos los campos del contrato y `.env.example` cubre
 >   exactamente sus variables. `get_settings()` usa caché; se puede invalidar
 >   mediante `get_settings.cache_clear()`.
@@ -461,6 +464,7 @@ Generar en la raíz del repositorio el archivo `.env.example` con comentarios ex
 **Status: IMPLEMENTADO**
 
 > **Notas de implementación y verificación (2026-10-14):**
+>
 > * GitHub Actions ejecuta los gates en `push` y `pull_request`, con Python 3.11,
 >   `astral-sh/setup-uv@v3`, permisos de lectura y límite de 15 minutos.
 > * `GCP_PROJECT_ID`, `USER_HASH_SALT` y `SCRAPER_PROXY_POOL_URLS` se obtienen
@@ -506,7 +510,7 @@ Escribir mínimo 10 pruebas unitarias que validen:
 fronteras mediante ledger, idempotencia por página, fallo de publicación y
 anual -> FULL con T0 fijo, según las suites de features 1.6–1.7.
 
-1. **`test_obligatory_5_star_label_noise_detection`**: Comprobar que `AnalyzedReviewPrediction` marque `is_obligatory_5_star_bias=True` cuando `estrellas=5` y `tnss_score=SentimentLabel.NEG`.
+5. **`test_obligatory_5_star_label_noise_detection`**: Comprobar que `AnalyzedReviewPrediction` marque `is_obligatory_5_star_bias=True` cuando `estrellas=5` y `tnss_score=SentimentLabel.NEG`.
 
 ---
 
@@ -521,6 +525,7 @@ incremental, histórico y recuperación sin confundir cursor con cobertura.
 del paquete `voc-common`.
 
 > **Notas de implementación:**
+>
 > * `IngestionWatermarkState` es el único contrato raíz y usa schema_version=2.
 > * Los modelos v2 son inmutables, estrictos ante campos extra, normalizan UTC y
 >   usan referencias de ledger; tokens opacos se conservan pero se ocultan en repr.
@@ -648,6 +653,7 @@ publicar, auditar y procesar páginas de forma idempotente.
 paquete, `.env.example` y documentación de configuración.
 
 > **Notas de implementación:**
+>
 > * Sobres `RawReviewEnvelope`/`SanitizedReviewEnvelope` con snapshots inmutables,
 >   identidad determinista y propagación a `ProcessingReceipt.from_event`.
 >   `compute_source_revision` excluye `ingested_at`; `compute_event_id` no incluye
@@ -679,7 +685,6 @@ paquete, `.env.example` y documentación de configuración.
 * Definir modelo de auditoría separado para `ingestion_runs_log_v2` de EPIC-2,
   sin cursores completos ni texto crudo. Publicación confirmada y resultado TDS
   son estados distintos; recibos de filtrado/cuarentena no equivalen a fila TDS.
-
 
 #### Tarea 1.8.2: Actualizar configuración y límites de política
 
@@ -721,7 +726,6 @@ paquete, `.env.example` y documentación de configuración.
 * [x] Los tres modos de `IngestionMode` comparten contratos de planes/streams y progreso incremental independientes.
 * [x] `SanitizedReviewRecord` garantiza 0% de almacenamiento de `usuario` o `imagen_usuario` en texto plano y preserva códigos de error `ref: 3702`.
 * [x] Los 4 Quality Gates (`ruff`, `pyrefly`, `bandit`, `pytest`) pasan sin errores con cobertura $\ge 85\%$.
-
 
 Criterios adicionales de contratos y transiciones:
 

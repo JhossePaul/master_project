@@ -1,4 +1,4 @@
-"""Fetch acotado de una página; recorridos y checkpoints quedan pendientes."""
+"""Fetch acotado de una página; los recorridos viven en runner.py."""
 
 import asyncio
 import math
@@ -45,6 +45,7 @@ class PlayStoreClient:
         *,
         timeout_sec: float = 30.0,
         max_response_bytes: int = 2_000_000,
+        user_agent: str | None = None,
     ) -> None:
         if not math.isfinite(timeout_sec) or timeout_sec <= 0:
             raise ValueError("timeout must be positive and finite")
@@ -53,6 +54,10 @@ class PlayStoreClient:
         self.client = client
         self.timeout_sec = timeout_sec
         self.max_response_bytes = max_response_bytes
+        # Fijo por cliente: rotarlo no cambia la confiabilidad del origen.
+        self.headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        if user_agent:
+            self.headers["User-Agent"] = user_agent
 
     async def fetch_page(
         self,
@@ -79,9 +84,7 @@ class PlayStoreClient:
                     "POST",
                     url,
                     content=body,
-                    headers={
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
+                    headers=self.headers,
                     timeout=self.timeout_sec,
                     follow_redirects=False,
                 ) as response:

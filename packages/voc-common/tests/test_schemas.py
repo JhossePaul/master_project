@@ -308,6 +308,10 @@ def test_sanitized_review_record_from_raw_and_dlp() -> None:
     assert record.fecha == raw.fecha
     assert record.texto_respuesta_sanitizado == "Hola [PERSON_NAME]"
     assert record.sanitized_at.tzinfo is UTC
+    assert record.source_observed_at == raw.ingested_at
+    without = record.model_dump(exclude={"source_observed_at"})
+    with pytest.raises(ValidationError):
+        SanitizedReviewRecord.model_validate(without)
 
 
 def test_sanitized_review_record_rejects_pii_and_inconsistency() -> None:

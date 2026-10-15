@@ -1,8 +1,9 @@
 # Contratos de ingesta v2
 
 `voc-common` implementa contratos, transiciones puras y configuración.
-EPIC-3.1–3.3 implementan protocolo, repositorio y publicación durable por página;
-los recorridos y consumidores de EPIC-4 siguen pendientes. Almacenamiento, auditoría
+EPIC-3 (3.1–3.5) implementa protocolo, repositorio, publicación durable,
+recorridos, API, Job e imagen; EPIC-4 implementa el consumidor de sanitización
+(recibos y cierres de página bajo el prefijo de recibos). Almacenamiento, auditoría
 y Job histórico están declarados en EPIC-2 (2.7–2.9); no desplegados.
 Las funciones puras no comprueban objetos GCS, permisos, publicación ni resultados
 DLP/BigQuery. Esas comprobaciones corresponden a sus repositorios/pipelines.
@@ -229,8 +230,12 @@ ni un Scheduler histórico: cada lanzamiento continúa el plan bajo demanda.
 El invocador no debe ejecutar backfill mediante BackgroundTasks o esperar tras
 responder HTTP. No hay recursos `JobExecution` ni ejecución inmediata en Pulumi.
 
-El módulo `ingestion_worker.job`, su Docker y la API aún se implementarán en
-EPIC-3. Crear el recurso no comprueba que esa imagen exista o contenga el módulo.
+Runtime de EPIC-3 feature 3.5: la API persiste el plan (`prepare_plan`) antes de
+lanzar y envía solo los tres identificadores; `INGESTION_STREAM_ID` vacío
+continúa todos los streams del plan. `ingestion_worker.job` falla con 64 si
+faltan banco/plan, v2 está desactivado o el plan no existe; deriva BACKFILL o
+FULL del plan persistido. Crear el recurso no comprueba que la imagen publicada
+contenga el módulo.
 Antes de activar, publicar y validar la imagen y realizar integración real de
 IAM, overrides, leases y recuperación. El preview real permanece pendiente del
 stack/backend `dev`; no se ejecutó un despliegue ni un backfill.
@@ -367,7 +372,7 @@ El reducer permite filas crudas sin texto con cursor, pero rechaza páginas
 sin filas o sin texto y sin cursor como evidencia ambigua.
 Un parser roto invalida la página completa, sin descartar filas silenciosamente.
 
-PUBLISHED nunca implica SANITIZED_COMMITTED: este publisher deja sanitización
+PUBLISHED nunca implica TDS_COMMITTED: este publisher deja sanitización
 PENDING y no confirma high incremental, cobertura TDS ni EOF.
 El respaldo sigue sujeto al TTL de siete días. Falta, cambio de generación/hash,
 gzip inválido o incongruencia del contenido producen BackupUnavailable;

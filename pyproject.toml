@@ -22,7 +22,6 @@ members = ["packages/*", "services/*", "infra"]
 exclude = [
     "services/api-backend",
     "services/ml-delora",
-    "services/sanitization-pipeline",
 ]
 
 [tool.ruff]

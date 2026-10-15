@@ -19,6 +19,7 @@ from voc_common import (
     PageManifest,
     PublicationStatus,
     RawReviewEnvelope,
+    RecoveryStatus,
     SanitizationStatus,
     ScanStreamState,
 )
@@ -100,6 +101,98 @@ def compute_page_id(
     )
 
 
+def restore_capture(
+    manifest: PageManifest,
+    compressed: bytes,
+    *,
+    mode: IngestionMode | None = None,
+    max_bytes: int = 40_000_000,
+) -> list[RawReviewEnvelope]:
+    """Valida una captura JSONL.gz contra su manifiesto y devuelve sus sobres.
+
+    `mode=None` acepta el modo registrado en la captura (lectores como la
+    sanitización, que no conocen el modo de la corrida que la escribió).
+    """
+    try:
+        # Bound decompression; never materialize an unbounded gzip payload.
+        with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
+            data = stream.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise ValueError("backup exceeds decompression budget")
+        lines = data.splitlines()
+        header = json.loads(lines[0])
+        events = [
+            RawReviewEnvelope.model_validate_json(line) for line in lines[1:]
+        ]
+        page = parse_batchexecute_response(
+            base64.b64decode(header["raw_rpc_base64"], validate=True),
+            bank_id=manifest.bank_id,
+            app_id=manifest.app_id,
+        )
+        expected = [
+            RawReviewEnvelope.from_raw(
+                r,
+                page_id=manifest.page_id,
+                stream_id=manifest.stream_id,
+                plan_id=manifest.plan_id,
+            )
+            for r in page.reviews
+        ]
+        if (
+            header["page_id"] != manifest.page_id
+            or header["schema_version"] != 2
+            or header["mode"]
+            != (mode.value if mode else IngestionMode(header["mode"]).value)
+            or header["discarded"] != [asdict(d) for d in page.discarded]
+            or header["protocol_version"] != manifest.context.protocol_version
+            or page.next_token != manifest.output_token
+            or page.raw_count != manifest.raw_count
+            or len(events) != manifest.valid_count
+            or _fingerprint(page, events) != manifest.content_fingerprint
+            or header["content_fingerprint"] != manifest.content_fingerprint
+            or [e.model_dump(exclude={"raw"}) for e in events]
+            != [e.model_dump(exclude={"raw"}) for e in expected]
+            or any(
+                a.raw.model_dump(exclude={"ingested_at"})
+                != b.raw.model_dump(exclude={"ingested_at"})
+                for a, b in zip(events, expected, strict=True)
+            )
+        ):
+            raise ValueError("capture differs from manifest")
+        return events
+    except (
+        ValueError,
+        KeyError,
+        IndexError,
+        OSError,
+        EOFError,
+        zlib.error,
+    ):
+        raise BackupUnavailable(
+            "Durable capture invalid; recover source"
+        ) from None
+
+
+def read_committed_capture(
+    repository: WatermarkRepository,
+    manifest: PageManifest,
+    *,
+    max_bytes: int = 40_000_000,
+) -> list[RawReviewEnvelope]:
+    """Lectura pública de la captura de un manifiesto comprometido.
+
+    Lee el objeto por URI y generación del manifiesto (nunca por glob).
+    Ausente, reemplazado o inválido => BackupUnavailable (hueco explícito).
+    """
+    try:
+        compressed = repository.read_backup(manifest)
+    except IntegrityError:
+        raise BackupUnavailable(
+            "Durable capture missing; recover source"
+        ) from None
+    return restore_capture(manifest, compressed, max_bytes=max_bytes)
+
+
 class RawReviewBatchPublisher:
     def __init__(
         self,
@@ -137,6 +230,157 @@ class RawReviewBatchPublisher:
         input_token: str | None = None,
     ) -> PageManifest:
         """Prepare a fetch; resume by persisted page_id after a crash."""
+        return self._prepare(
+            handle,
+            stream,
+            page,
+            mode=mode,
+            fetched_at=fetched_at,
+            fetch_attempt_id=fetch_attempt_id,
+            input_token=input_token,
+        )
+
+    def capture_replay(
+        self,
+        handle: LeaseHandle,
+        stream: ScanStreamState,
+        anchor: PageManifest,
+        page: RpcPageResult,
+        *,
+        mode: IngestionMode,
+        fetched_at: datetime,
+        fetch_attempt_id: str,
+        recovery: RecoveryStatus,
+    ) -> tuple[PageManifest, RepositorySnapshot | None]:
+        """Persist an anchor replay as a new observation.
+
+        Identical content keeps the page_id: its events were already
+        confirmed, so the replay is committed at once with a fresh backup
+        carrying the new cursor. Changed content is a new pending capture that
+        must be published before it can replace the anchor (publish_page).
+        """
+        manifest = self._prepare(
+            handle,
+            stream,
+            page,
+            mode=mode,
+            fetched_at=fetched_at,
+            fetch_attempt_id=fetch_attempt_id,
+            input_token=anchor.input_token,
+            replaces=anchor,
+            recovery=recovery,
+        )
+        if manifest.page_id != anchor.page_id:
+            return manifest, None
+        repo = self.repository
+        events, _, fingerprint = self._events(stream, page, fetched_at)
+        backup = repo.write_raw_backup(
+            stream.bank_id,
+            handle.owner_run_id,
+            anchor.page_id,
+            fetch_attempt_id,
+            self._capture(anchor.page_id, mode, page, events, fingerprint),
+        )
+        replay = PageManifest.model_validate(
+            anchor.model_dump()
+            | {
+                "manifest_version": max(
+                    anchor.manifest_version + 1, time.time_ns()
+                ),
+                "fetch_attempt_id": fetch_attempt_id,
+                "run_id": handle.owner_run_id,
+                "fetched_at": ensure_utc(fetched_at),
+                "output_token": page.next_token,
+                "backup_uri": backup.uri,
+                "backup_generation": backup.generation,
+            }
+        )
+        snapshot = repo.reanchor_page(
+            handle,
+            anchor,
+            replay,
+            recovery=recovery,
+            expected_revision=repo.load(handle.bank_id).state.revision,
+        )
+        return replay, snapshot
+
+    def _events(
+        self,
+        stream: ScanStreamState,
+        page: RpcPageResult,
+        fetched_at: datetime,
+    ) -> tuple[list[RawReviewEnvelope], RpcPageResult, str]:
+        observed = parse_batchexecute_response(
+            page.raw_body, bank_id=stream.bank_id, app_id=stream.app_id
+        )
+        # Freeze ingestion time to the capture timestamp for stable gzip.
+        reviews = [
+            type(r).model_validate(
+                r.model_dump() | {"ingested_at": ensure_utc(fetched_at)}
+            )
+            for r in observed.reviews
+        ]
+        events = [
+            RawReviewEnvelope.from_raw(
+                r,
+                page_id="capture",
+                stream_id=stream.stream_id,
+                plan_id=stream.plan_id,
+            )
+            for r in reviews
+        ]
+        return events, observed, _fingerprint(observed, events)
+
+    def _capture(
+        self,
+        page_id: str,
+        mode: IngestionMode,
+        page: RpcPageResult,
+        events: list[RawReviewEnvelope],
+        fingerprint: str,
+    ) -> bytes:
+        events = [
+            RawReviewEnvelope.model_validate(
+                e.model_dump() | {"page_id": page_id}
+            )
+            for e in events
+        ]
+        header = {
+            "record_type": "capture",
+            "schema_version": 2,
+            "page_id": page_id,
+            "mode": mode.value,
+            "protocol_version": page.protocol_version,
+            "raw_rpc_base64": base64.b64encode(page.raw_body).decode("ascii"),
+            "discarded": [asdict(d) for d in page.discarded],
+            "content_fingerprint": fingerprint,
+        }
+        data = (
+            b"\n".join(
+                [
+                    _json(header),
+                    *[_json(e.model_dump(mode="json")) for e in events],
+                ]
+            )
+            + b"\n"
+        )
+        if len(data) > self.max_backup_bytes:
+            raise ValueError("capture exceeds uncompressed backup budget")
+        return gzip.compress(data, mtime=0)
+
+    def _prepare(
+        self,
+        handle: LeaseHandle,
+        stream: ScanStreamState,
+        page: RpcPageResult,
+        *,
+        mode: IngestionMode,
+        fetched_at: datetime,
+        fetch_attempt_id: str,
+        input_token: str | None,
+        replaces: PageManifest | None = None,
+        recovery: RecoveryStatus | None = None,
+    ) -> PageManifest:
         repo = self.repository
         snapshot = repo.load(handle.bank_id)
         repo._held(snapshot, handle)
@@ -165,21 +409,7 @@ class RawReviewBatchPublisher:
         fetched_at = ensure_utc(fetched_at)
         if fetched_at > repo._now():
             raise ValueError("fetch cannot be in the future")
-        # Freeze ingestion time to the capture timestamp for stable gzip.
-        reviews = [
-            type(r).model_validate(r.model_dump() | {"ingested_at": fetched_at})
-            for r in page.reviews
-        ]
-        events = [
-            RawReviewEnvelope.from_raw(
-                r,
-                page_id="capture",
-                stream_id=stream.stream_id,
-                plan_id=stream.plan_id,
-            )
-            for r in reviews
-        ]
-        fingerprint = _fingerprint(page, events)
+        events, page, fingerprint = self._events(stream, page, fetched_at)
         page_id = compute_page_id(stream, input_token, fingerprint)
         existing = repo.find_page(snapshot, stream.stream_id, page_id)
         if existing:
@@ -199,34 +429,13 @@ class RawReviewBatchPublisher:
                     "same page has a different pending capture"
                 )
             return pending
+        compressed = self._capture(page_id, mode, page, events, fingerprint)
         events = [
             RawReviewEnvelope.model_validate(
                 e.model_dump() | {"page_id": page_id}
             )
             for e in events
         ]
-        header = {
-            "record_type": "capture",
-            "schema_version": 2,
-            "page_id": page_id,
-            "mode": mode.value,
-            "protocol_version": page.protocol_version,
-            "raw_rpc_base64": base64.b64encode(page.raw_body).decode("ascii"),
-            "discarded": [asdict(d) for d in page.discarded],
-            "content_fingerprint": fingerprint,
-        }
-        data = (
-            b"\n".join(
-                [
-                    _json(header),
-                    *[_json(e.model_dump(mode="json")) for e in events],
-                ]
-            )
-            + b"\n"
-        )
-        if len(data) > self.max_backup_bytes:
-            raise ValueError("capture exceeds uncompressed backup budget")
-        compressed = gzip.compress(data, mtime=0)
         backup = repo.write_raw_backup(
             stream.bank_id,
             handle.owner_run_id,
@@ -262,11 +471,17 @@ class RawReviewBatchPublisher:
             stream_id=stream.stream_id,
             chain_epoch=stream.chain_epoch,
             ordinal=(
-                stream.frontier_ordinal + 1
+                replaces.ordinal
+                if replaces is not None
+                else stream.frontier_ordinal + 1
                 if stream.frontier_ordinal is not None
                 else 0
             ),
-            previous_page_id=stream.frontier_page_id,
+            previous_page_id=(
+                replaces.previous_page_id
+                if replaces is not None
+                else stream.frontier_page_id
+            ),
             context=stream.context,
             input_token=input_token,
             output_token=page.next_token,
@@ -282,71 +497,22 @@ class RawReviewBatchPublisher:
             backup_uri=backup.uri,
             backup_generation=backup.generation,
         )
-        repo.stage_page(handle, manifest, backup, mode)
+        repo.stage_page(
+            handle,
+            manifest,
+            backup,
+            mode,
+            replaces=replaces,
+            recovery=recovery,
+        )
         return manifest
 
     def _restore(
         self, manifest: PageManifest, compressed: bytes, mode: IngestionMode
     ) -> list[RawReviewEnvelope]:
-        try:
-            # Bound decompression; never materialize an unbounded gzip payload.
-            with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
-                data = stream.read(self.max_backup_bytes + 1)
-            if len(data) > self.max_backup_bytes:
-                raise ValueError("backup exceeds decompression budget")
-            lines = data.splitlines()
-            header = json.loads(lines[0])
-            events = [
-                RawReviewEnvelope.model_validate_json(line)
-                for line in lines[1:]
-            ]
-            page = parse_batchexecute_response(
-                base64.b64decode(header["raw_rpc_base64"], validate=True),
-                bank_id=manifest.bank_id,
-                app_id=manifest.app_id,
-            )
-            expected = [
-                RawReviewEnvelope.from_raw(
-                    r,
-                    page_id=manifest.page_id,
-                    stream_id=manifest.stream_id,
-                    plan_id=manifest.plan_id,
-                )
-                for r in page.reviews
-            ]
-            if (
-                header["page_id"] != manifest.page_id
-                or header["schema_version"] != 2
-                or header["mode"] != mode.value
-                or header["discarded"] != [asdict(d) for d in page.discarded]
-                or header["protocol_version"]
-                != manifest.context.protocol_version
-                or page.next_token != manifest.output_token
-                or page.raw_count != manifest.raw_count
-                or len(events) != manifest.valid_count
-                or _fingerprint(page, events) != manifest.content_fingerprint
-                or header["content_fingerprint"] != manifest.content_fingerprint
-                or [e.model_dump(exclude={"raw"}) for e in events]
-                != [e.model_dump(exclude={"raw"}) for e in expected]
-                or any(
-                    a.raw.model_dump(exclude={"ingested_at"})
-                    != b.raw.model_dump(exclude={"ingested_at"})
-                    for a, b in zip(events, expected, strict=True)
-                )
-            ):
-                raise ValueError("capture differs from manifest")
-            return events
-        except (
-            ValueError,
-            KeyError,
-            IndexError,
-            OSError,
-            EOFError,
-            zlib.error,
-        ):
-            raise BackupUnavailable(
-                "Durable capture invalid; recover source"
-            ) from None
+        return restore_capture(
+            manifest, compressed, mode=mode, max_bytes=self.max_backup_bytes
+        )
 
     def publish_page(
         self, handle: LeaseHandle, manifest: PageManifest
@@ -377,7 +543,11 @@ class RawReviewBatchPublisher:
                 "Durable capture missing; recover source"
             ) from None
         events = self._restore(current, compressed, capture.mode)
-        repo.stage_page(handle, current, capture.backup, capture.mode)
+        replaces = (
+            repo.get_manifest(capture.replaces) if capture.replaces else None
+        )
+        replay = {"replaces": replaces, "recovery": capture.recovery}
+        repo.stage_page(handle, current, capture.backup, capture.mode, **replay)
         if current.publication_status != PublicationStatus.PUBLISHED:
             # Re-send the whole page: a timed-out future may still succeed.
             repo._held(repo.load(handle.bank_id), handle)
@@ -433,9 +603,19 @@ class RawReviewBatchPublisher:
                     "sanitization_status": SanitizationStatus.PENDING,
                 }
             )
-            repo.stage_page(handle, current, capture.backup, capture.mode)
+            repo.stage_page(
+                handle, current, capture.backup, capture.mode, **replay
+            )
             if status != PublicationStatus.PUBLISHED:
                 raise PublicationIncomplete(current)
+        if replaces is not None and capture.recovery is not None:
+            return repo.reanchor_page(
+                handle,
+                replaces,
+                current,
+                recovery=capture.recovery,
+                expected_revision=repo.load(handle.bank_id).state.revision,
+            )
         return repo.commit_page(
             handle,
             current,

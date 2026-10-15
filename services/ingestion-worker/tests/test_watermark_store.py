@@ -1059,3 +1059,32 @@ def test_future_without_message_id_cannot_commit(durable, env):
     with pytest.raises(PublicationIncomplete):
         publisher.publish_page(handle, manifest)
     assert env[0].get_stream(env[0].load(BANK), "stream").committed_pages == 0
+
+
+def test_public_capture_reader_for_committed_pages(durable, env):
+    from ingestion_worker.publisher import (
+        BackupUnavailable,
+        read_committed_capture,
+        restore_capture,
+    )
+
+    repo, bucket, now = env
+    publisher, handle, s, parsed, pubsub, futures = durable
+    manifest = prepare(durable, env)
+    publisher.publish_page(handle, manifest)
+    committed = repo.find_page(repo.load(BANK), s.stream_id, manifest.page_id)
+    events = read_committed_capture(repo, committed)
+    published = [c.kwargs["event_id"] for c in pubsub.publish.call_args_list]
+    assert [e.event_id for e in events] == published[: len(events)]
+    assert {e.page_id for e in events} == {committed.page_id}
+    raw = repo.read_backup(committed)
+    assert restore_capture(committed, raw) == events
+    with pytest.raises(BackupUnavailable):
+        restore_capture(committed, raw, mode=IngestionMode.BACKFILL)
+    name = committed.backup_uri.removeprefix("gs://test-bucket/")
+    bucket.objects[name]["generation"] += 1
+    with pytest.raises(BackupUnavailable):
+        read_committed_capture(repo, committed)
+    del bucket.objects[name]
+    with pytest.raises(BackupUnavailable):
+        read_committed_capture(repo, committed)

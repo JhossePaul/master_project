@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from voc_common import (
     PLAYSTORE_BANK_APPS,
     BankKey,
+    CompletionEvidence,
     HistoricalPlan,
     IngestionMode,
     IngestionRunAudit,
@@ -24,13 +25,21 @@ from voc_common import (
     PlanExtensionEvent,
     ProcessingReceipt,
     PublicationStatus,
+    RecoveryStatus,
     ScanStatus,
     ScanStreamState,
     begin_incremental,
+    change_plan_status,
     change_stream_status,
+    close_stream,
     commit_page,
     compute_event_id,
     extend_to_full,
+    finish_historical_plan,
+    finish_incremental,
+    reanchor,
+    reopen_stream,
+    restart_chain,
 )
 from voc_common.schemas import Digest, NonEmpty, UtcDatetime, ensure_utc
 
@@ -88,6 +97,9 @@ class PendingCapture(_Frozen):
     manifest: ObjectReference
     backup: ObjectReference
     mode: IngestionMode
+    # Replay con contenido cambiado: sustituye al ancla al confirmarse.
+    replaces: ObjectReference | None = None
+    recovery: RecoveryStatus | None = None
 
 
 class _Catalog(_Frozen):
@@ -639,6 +651,8 @@ class WatermarkRepository:
         key: str,
         value: ObjectReference,
         depth: int = 0,
+        *,
+        replace: bool = False,
     ) -> ObjectReference:
         node = (
             _IndexNode.model_validate_json(self._read_ref(ref))
@@ -648,12 +662,17 @@ class WatermarkRepository:
         if node.children:
             children = dict(node.children)
             children[key[depth]] = self._index_put(
-                bank, children.get(key[depth]), key, value, depth + 1
+                bank,
+                children.get(key[depth]),
+                key,
+                value,
+                depth + 1,
+                replace=replace,
             )
             node = _IndexNode(children=children)
         else:
             pages = dict(node.pages)
-            if key in pages and pages[key] != value:
+            if key in pages and pages[key] != value and not replace:
                 raise IntegrityError("page index conflict")
             pages[key] = value
             if len(pages) <= 128:
@@ -721,7 +740,34 @@ class WatermarkRepository:
             if existing != page:
                 raise IntegrityError("conflicting committed page")
             return snapshot
-        # Verify every reference before creating a new committed chain.
+        self._verify_page(page)
+        previous = (
+            self.find_page(snapshot, stream.stream_id, stream.frontier_page_id)
+            if stream.frontier_page_id
+            else None
+        )
+        manifest_ref = self.put_manifest(page)
+        ledger = self._append(
+            handle.bank_id,
+            "manifest-index",
+            [manifest_ref],
+            snapshot.state.manifest_ledger,
+        )
+        transition = commit_page(
+            snapshot.state,
+            stream,
+            page,
+            expected_revision=expected_revision,
+            committed_at=self._now(),
+            manifest_ledger=ledger,
+            previous_page=previous,
+        )
+        return self._publish_page(
+            snapshot, handle, transition.stream, transition.state, manifest_ref
+        )
+
+    def _verify_page(self, page: PageManifest) -> None:
+        """Verify every durable reference before a page joins a chain."""
         entries = [
             ReviewLedgerEntry.model_validate(e)
             for e in self.iter_ledger(page.ledger)
@@ -758,52 +804,254 @@ class WatermarkRepository:
             )
         except (NotFound, PreconditionFailed):
             raise IntegrityError("raw backup missing or replaced") from None
-        previous = (
-            self.find_page(snapshot, stream.stream_id, stream.frontier_page_id)
-            if stream.frontier_page_id
-            else None
-        )
-        manifest_ref = self.put_manifest(page)
-        ledger = self._append(
-            handle.bank_id,
-            "manifest-index",
-            [manifest_ref],
-            snapshot.state.manifest_ledger,
-        )
-        transition = commit_page(
-            snapshot.state,
-            stream,
-            page,
-            expected_revision=expected_revision,
-            committed_at=self._now(),
-            manifest_ledger=ledger,
-            previous_page=previous,
-        )
+
+    def _publish_page(
+        self,
+        snapshot: RepositorySnapshot,
+        handle: LeaseHandle,
+        stream: ScanStreamState,
+        state: IngestionWatermarkState,
+        manifest_ref: ObjectReference,
+        *,
+        page_id: str | None = None,
+        replace_index: bool = False,
+    ) -> RepositorySnapshot:
+        page_id = page_id or stream.frontier_page_id
+        if page_id is None:
+            raise ValueError("committed page requires an identifier")
         refs = dict(snapshot.catalog.streams)
         refs[stream.stream_id] = self._object(
             f"{self._base(handle.bank_id)}/streams/{stream.stream_id}",
-            transition.stream,
+            stream,
         )
         return self._publish(
             snapshot,
             handle,
-            transition.state,
+            state,
             _replace(
                 snapshot.catalog,
                 streams=refs,
                 pending={
                     k: v
                     for k, v in snapshot.catalog.pending.items()
-                    if k != page.page_id
+                    if k != page_id
                 },
                 manifest_index=self._index_put(
                     handle.bank_id,
                     snapshot.catalog.manifest_index,
-                    self._index_key(page.stream_id, page.page_id),
+                    self._index_key(stream.stream_id, page_id),
                     manifest_ref,
+                    replace=replace_index,
                 ),
             ),
         )
+
+    def reanchor_page(
+        self,
+        handle: LeaseHandle,
+        anchor: PageManifest,
+        replay: PageManifest,
+        *,
+        recovery: RecoveryStatus,
+        expected_revision: int,
+    ) -> RepositorySnapshot:
+        """Commit a validated replay of a committed page of the chain."""
+        snapshot = self.load(handle.bank_id)
+        self._held(snapshot, handle)
+        if snapshot.state.revision != expected_revision:
+            raise StateConflict("stale logical revision")
+        if replay.run_id != handle.owner_run_id:
+            raise ValueError("replay run differs from lease owner")
+        stream = self.get_stream(snapshot, replay.stream_id)
+        committed = self.find_page(snapshot, stream.stream_id, anchor.page_id)
+        if committed != anchor:
+            raise IntegrityError("anchor is not the committed version")
+        self._verify_page(replay)
+        manifest_ref = self.put_manifest(replay)
+        ledger = self._append(
+            handle.bank_id,
+            "manifest-index",
+            [manifest_ref],
+            snapshot.state.manifest_ledger,
+        )
+        transition = reanchor(
+            snapshot.state,
+            stream,
+            anchor,
+            replay,
+            expected_revision=expected_revision,
+            at=self._now(),
+            manifest_ledger=ledger,
+            recovery=recovery,
+        )
+        return self._publish_page(
+            snapshot,
+            handle,
+            transition.stream,
+            transition.state,
+            manifest_ref,
+            replace_index=replay.page_id == anchor.page_id,
+        )
+
+    def _stream_change(
+        self,
+        handle: LeaseHandle,
+        stream_id: str,
+        change: Callable[
+            [IngestionWatermarkState, ScanStreamState, int, datetime],
+            tuple[IngestionWatermarkState, ScanStreamState],
+        ],
+    ) -> RepositorySnapshot:
+        snapshot = self.load(handle.bank_id)
+        self._held(snapshot, handle)
+        state, stream = change(
+            snapshot.state,
+            self.get_stream(snapshot, stream_id),
+            snapshot.state.revision,
+            self._now(),
+        )
+        refs = dict(snapshot.catalog.streams)
+        refs[stream.stream_id] = self._object(
+            f"{self._base(handle.bank_id)}/streams/{stream.stream_id}", stream
+        )
+        return self._publish(
+            snapshot, handle, state, _replace(snapshot.catalog, streams=refs)
+        )
+
+    def restart_chain(
+        self, handle: LeaseHandle, stream_id: str
+    ) -> RepositorySnapshot:
+        return self._stream_change(
+            handle,
+            stream_id,
+            lambda state, stream, revision, at: restart_chain(
+                state, stream, expected_revision=revision, at=at
+            ),
+        )
+
+    def close_stream(
+        self, handle: LeaseHandle, stream_id: str, status: ScanStatus
+    ) -> RepositorySnapshot:
+        return self._stream_change(
+            handle,
+            stream_id,
+            lambda state, stream, revision, at: close_stream(
+                state, stream, status=status, expected_revision=revision, at=at
+            ),
+        )
+
+    def reopen_stream(
+        self, handle: LeaseHandle, stream_id: str
+    ) -> RepositorySnapshot:
+        return self._stream_change(
+            handle,
+            stream_id,
+            lambda state, stream, revision, at: reopen_stream(
+                state, stream, expected_revision=revision, at=at
+            ),
+        )
+
+    def _plan_change(
+        self,
+        handle: LeaseHandle,
+        plan_id: str,
+        change: Callable[[HistoricalPlan, RepositorySnapshot], HistoricalPlan],
+    ) -> RepositorySnapshot:
+        snapshot = self.load(handle.bank_id)
+        self._held(snapshot, handle)
+        old = self.get_plan(snapshot, plan_id)
+        plan = change(old, snapshot)
+        if plan == old:
+            return snapshot
+        refs = dict(snapshot.catalog.plans)
+        refs[plan.plan_id] = self._object(
+            f"{self._base(handle.bank_id)}/plans/{plan.plan_id}", plan
+        )
+        state = _replace(
+            snapshot.state,
+            revision=snapshot.state.revision + 1,
+            updated_at=self._now(),
+        )
+        return self._publish(
+            snapshot, handle, state, _replace(snapshot.catalog, plans=refs)
+        )
+
+    def set_plan_status(
+        self, handle: LeaseHandle, plan_id: str, status: ScanStatus
+    ) -> RepositorySnapshot:
+        return self._plan_change(
+            handle, plan_id, lambda plan, _: change_plan_status(plan, status)
+        )
+
+    def finish_plan(
+        self, handle: LeaseHandle, plan_id: str, evidence: CompletionEvidence
+    ) -> RepositorySnapshot:
+        """Close a plan only from persisted stream states and evidence."""
+        return self._plan_change(
+            handle,
+            plan_id,
+            lambda plan, snapshot: finish_historical_plan(
+                plan,
+                tuple(self.get_stream(snapshot, s) for s in plan.stream_ids),
+                evidence,
+            ),
+        )
+
+    def finish_incremental(
+        self,
+        handle: LeaseHandle,
+        evidence: CompletionEvidence,
+        frontier_ledger: LedgerReference,
+    ) -> RepositorySnapshot:
+        """Advance the confirmed high only with a complete frontier ledger."""
+        snapshot = self.load(handle.bank_id)
+        self._held(snapshot, handle)
+        entries = [
+            ReviewLedgerEntry.model_validate(e)
+            for e in self.iter_ledger(frontier_ledger)
+        ]
+        if len(entries) != frontier_ledger.entry_count:
+            raise IntegrityError("frontier ledger is incomplete")
+        state = finish_incremental(
+            snapshot.state,
+            expected_revision=snapshot.state.revision,
+            at=self._now(),
+            run_id=handle.owner_run_id,
+            evidence=evidence,
+            frontier_ledger=frontier_ledger,
+        )
+        return self._publish(snapshot, handle, state, snapshot.catalog)
+
+    def abandon_pending(
+        self, handle: LeaseHandle, page_id: str
+    ) -> RepositorySnapshot:
+        """Drop an unreplayable capture; the frontier never advanced for it."""
+        snapshot = self.load(handle.bank_id)
+        self._held(snapshot, handle)
+        if _id(page_id) not in snapshot.catalog.pending:
+            return snapshot
+        state = _replace(
+            snapshot.state,
+            revision=snapshot.state.revision + 1,
+            updated_at=self._now(),
+        )
+        pending = {
+            k: v for k, v in snapshot.catalog.pending.items() if k != page_id
+        }
+        return self._publish(
+            snapshot, handle, state, _replace(snapshot.catalog, pending=pending)
+        )
+
+    def read_backup(self, page: PageManifest) -> bytes:
+        """Respaldo crudo exacto del manifiesto (generación fijada)."""
+        blob = self.bucket.blob(self._name(page.backup_uri))
+        try:
+            return blob.download_as_bytes(
+                if_generation_match=page.backup_generation,
+                timeout=self.timeout_sec,
+            )
+        except (NotFound, PreconditionFailed):
+            raise IntegrityError("raw backup missing or replaced") from None
 
     def read_object(self, ref: ObjectReference) -> bytes:
         return self._read_ref(ref)
@@ -833,6 +1081,9 @@ class WatermarkRepository:
         page: PageManifest,
         backup: ObjectReference,
         mode: IngestionMode,
+        *,
+        replaces: PageManifest | None = None,
+        recovery: RecoveryStatus | None = None,
     ) -> RepositorySnapshot:
         snapshot = self.load(handle.bank_id)
         self._held(snapshot, handle)
@@ -859,24 +1110,51 @@ class WatermarkRepository:
             )
             if mode != expected_mode:
                 raise ValueError("capture mode differs from historical plan")
-        previous = (
-            self.find_page(snapshot, stream.stream_id, stream.frontier_page_id)
-            if stream.frontier_page_id
-            else None
+        published = _replace(
+            page,
+            published_count=page.valid_count,
+            publication_status=PublicationStatus.PUBLISHED,
         )
-        commit_page(
-            snapshot.state,
-            stream,
-            _replace(
-                page,
-                published_count=page.valid_count,
-                publication_status=PublicationStatus.PUBLISHED,
-            ),
-            expected_revision=snapshot.state.revision,
-            committed_at=self._now(),
-            manifest_ledger=page.ledger,
-            previous_page=previous,
-        )
+        replaced_ref = None
+        if replaces is not None or recovery is not None:
+            if replaces is None or recovery is None:
+                raise ValueError("replay capture needs anchor and recovery")
+            replaced_ref = self._index_get(
+                snapshot.catalog.manifest_index,
+                self._index_key(stream.stream_id, replaces.page_id),
+            )
+            if replaced_ref is None or self.get_manifest(replaced_ref) != (
+                replaces
+            ):
+                raise IntegrityError("replaced anchor is not committed")
+            # Same validation as the final commit, before publishing.
+            reanchor(
+                snapshot.state,
+                stream,
+                replaces,
+                published,
+                expected_revision=snapshot.state.revision,
+                at=self._now(),
+                manifest_ledger=page.ledger,
+                recovery=recovery,
+            )
+        else:
+            previous = (
+                self.find_page(
+                    snapshot, stream.stream_id, stream.frontier_page_id
+                )
+                if stream.frontier_page_id
+                else None
+            )
+            commit_page(
+                snapshot.state,
+                stream,
+                published,
+                expected_revision=snapshot.state.revision,
+                committed_at=self._now(),
+                manifest_ledger=page.ledger,
+                previous_page=previous,
+            )
         pending = dict(snapshot.catalog.pending)
         if page.page_id in pending:
             old_capture = pending[page.page_id]
@@ -894,13 +1172,19 @@ class WatermarkRepository:
                 or page.manifest_version <= old.manifest_version
                 or old_capture.backup != backup
                 or old_capture.mode != mode
+                or old_capture.replaces != replaced_ref
+                or old_capture.recovery != recovery
                 or old.publication_status == PublicationStatus.PUBLISHED
             ):
                 raise IntegrityError("pending capture changed or regressed")
         elif page.manifest_version != 1:
             raise IntegrityError("new pending capture must start at version 1")
         pending[page.page_id] = PendingCapture(
-            manifest=self.put_manifest(page), backup=backup, mode=mode
+            manifest=self.put_manifest(page),
+            backup=backup,
+            mode=mode,
+            replaces=replaced_ref,
+            recovery=recovery,
         )
         state = _replace(
             snapshot.state,

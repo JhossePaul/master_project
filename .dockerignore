@@ -1,0 +1,15 @@
+# Lista de permitidos: el contexto es la raíz del workspace uv (cloudbuild.yaml).
+# Nunca entran .env, evidence/ (respuestas crudas con PII), .git ni .venv.
+# Cada servicio que se contenedorice añade aquí sus rutas.
+*
+!pyproject.toml
+!uv.lock
+!infra/pyproject.toml
+!packages/voc-common/pyproject.toml
+!packages/voc-common/src/
+!services/ingestion-worker/pyproject.toml
+!services/ingestion-worker/src/
+!services/sanitization-pipeline/pyproject.toml
+!services/sanitization-pipeline/src/
+**/__pycache__
+**/*.pyc

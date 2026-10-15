@@ -1,0 +1,45 @@
+# Construye la imagen linux/amd64 de un servicio del monorepo y la publica en
+# Artifact Registry con el SHA del commit como tag (inmutable en el repo).
+# Lo invoca .github/workflows/cd-cloud-build.yaml; uso manual:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_SERVICE=ingestion-worker,_TAG="$(git rev-parse HEAD)" .
+# El contexto es la raíz del workspace uv para que el Dockerfile del servicio
+# pueda copiar packages/voc-common y uv.lock; .dockerignore lo restringe.
+substitutions:
+  _SERVICE: ""
+  _TAG: ""
+  _REGION: us-central1
+  _REPOSITORY: voc-containers-repo
+  _IMAGE: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}
+options:
+  dynamicSubstitutions: true
+  # Requerido al ejecutar con una cuenta de servicio dedicada.
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
+steps:
+  - id: guard
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -euc
+      - |
+        [[ "${_SERVICE}" =~ ^[a-z0-9-]+$$ ]] || { echo "_SERVICE inválido"; exit 1; }
+        [[ "${_TAG}" =~ ^[0-9a-f]{40}$$ ]] || { echo "_TAG debe ser un SHA"; exit 1; }
+        test -s "services/${_SERVICE}/Dockerfile" \
+          || { echo "services/${_SERVICE}/Dockerfile vacío o ausente"; exit 1; }
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    # Los Dockerfiles usan `# syntax=` y montajes de caché de BuildKit.
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - build
+      - --platform=linux/amd64
+      - --file=services/${_SERVICE}/Dockerfile
+      - --tag=${_IMAGE}:${_TAG}
+      - --label=org.opencontainers.image.revision=${_TAG}
+      - --label=org.opencontainers.image.source=services/${_SERVICE}
+      - .
+# Cloud Build publica y registra el digest en results.images.
+images:
+  - ${_IMAGE}:${_TAG}

@@ -10,7 +10,11 @@ import pytest
 from pydantic import ValidationError
 from voc_common import IngestionStorageLayout, Settings
 
-from infra.tests.conftest import InfrastructureMonitor, unwrap_outputs
+from infra.tests.conftest import (
+    WORKLOAD_CONFIG,
+    InfrastructureMonitor,
+    unwrap_outputs,
+)
 
 ENTRYPOINT = Path(__file__).resolve().parents[1] / "__main__.py"
 
@@ -63,6 +67,7 @@ def test_watermark_storage_lifecycle_iam_and_consumers(
         config = {
             "gcp:project": "test-voc-project",
             "bbva-voc-infra:enable_cmek": str(cmek).lower(),
+            **WORKLOAD_CONFIG,
         }
         if custom:
             config.update(

@@ -156,6 +156,17 @@ def test_sanitized_result_and_receipt_keep_revision_without_raw_fields() -> (
                 }
             ),
         )
+    with pytest.raises(ValueError, match="source observation"):
+        vc.SanitizedReviewEnvelope.from_event(
+            original,
+            vc.SanitizedReviewRecord.model_validate(
+                {
+                    **clean.record.model_dump(),
+                    "source_observed_at": original.raw.ingested_at
+                    + timedelta(seconds=1),
+                }
+            ),
+        )
     data = clean.model_dump()
     data["record"]["id_resena"] = "wrong"
     with pytest.raises(ValidationError):

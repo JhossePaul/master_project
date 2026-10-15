@@ -18,6 +18,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 # Conserva la estructura infra/modules sin instalar un paquete global "modules".
+# Sin force-include de infra/__init__.py: en modo editable se copiaría a
+# site-packages y ocultaría el paquete del repo (infra.modules no importable).
+# En el wheel normal `infra` queda como namespace package.
 [tool.hatch.build]
 dev-mode-dirs = [".."]
 
@@ -26,6 +29,3 @@ packages = ["modules"]
 
 [tool.hatch.build.targets.wheel.sources]
 "modules" = "infra/modules"
-
-[tool.hatch.build.targets.wheel.force-include]
-"__init__.py" = "infra/__init__.py"
