@@ -289,7 +289,8 @@ observado; la misma captura conserva su ID. Un replay cambiado es otra captura.
    transacción atómica GCS-Pub/Sub; la idempotencia de EPIC-4 cierra esa brecha.
 4. Registrar filas sin texto o rechazadas con motivo y conteo. Errores de parser
    invalidan la página completa; no descartar silenciosamente un schema drift.
-5. El estado de ingesta (`PUBLISHED`) es distinto de `SANITIZED_COMMITTED`.
+5. El estado de ingesta (`PUBLISHED`) es distinto de `TDS_COMMITTED` por evento y
+   del cierre de página `RESOLVED`/`GAPS_DETECTED` que emite EPIC-4.
    La cobertura TDS solo avanza tras la confirmación de EPIC-4.
 
 La retención cruda de siete días sigue vigente. Supervisar páginas pendientes

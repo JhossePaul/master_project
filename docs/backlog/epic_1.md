@@ -310,6 +310,7 @@ Modela el registro limpio en la tabla `sanitized_reviews_tds`:
 * `texto_respuesta_sanitizado: str | None = None`
 * `fecha_respuesta: datetime | None = None`
 * `sanitized_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))`
+* `source_observed_at: datetime` (obligatorio; `raw.ingested_at`, tiempo de captura en el origen. Añadido por la decisión D1 de EPIC-4 para ordenar revisiones con igual `fecha`; `SanitizedReviewEnvelope.from_event` exige que coincida con el sobre crudo).
 * **Método de construcción obligatorio:**
 * `@classmethod def from_raw_and_dlp(cls, raw: RawReviewEvent, texto_sanitizado: str, pii_findings_count: int, user_hash_salt: str, texto_respuesta_sanitizado: str | None = None) -> "SanitizedReviewRecord"`: Calcula `usuario_hash` usando `hash_username_pii(raw.usuario, user_hash_salt)`, aplica `limpiar_texto_bancario(texto_sanitizado)`, calcula `conteo_palabras` y valida el rango `[2, 60]`.
 

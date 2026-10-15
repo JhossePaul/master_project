@@ -371,7 +371,7 @@ El reducer permite filas crudas sin texto con cursor, pero rechaza páginas
 sin filas o sin texto y sin cursor como evidencia ambigua.
 Un parser roto invalida la página completa, sin descartar filas silenciosamente.
 
-PUBLISHED nunca implica SANITIZED_COMMITTED: este publisher deja sanitización
+PUBLISHED nunca implica TDS_COMMITTED: este publisher deja sanitización
 PENDING y no confirma high incremental, cobertura TDS ni EOF.
 El respaldo sigue sujeto al TTL de siete días. Falta, cambio de generación/hash,
 gzip inválido o incongruencia del contenido producen BackupUnavailable;

@@ -47,6 +47,8 @@ _SANITIZED = (
     ("texto_respuesta_sanitizado", "STRING", "NULLABLE"),
     ("fecha_respuesta", "TIMESTAMP", "NULLABLE"),
     ("sanitized_at", "TIMESTAMP", "REQUIRED"),
+    # Captura en el origen: desempata revisiones con igual fecha (EPIC-4 D1).
+    ("source_observed_at", "TIMESTAMP", "REQUIRED"),
 )
 _PREDICTIONS = (
     ("id_resena", "STRING", "REQUIRED"),

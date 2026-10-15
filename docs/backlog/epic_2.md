@@ -417,6 +417,7 @@ Definir `StorageAndBqResources` y la función `create_storage_and_bq_resources(p
 * `texto_respuesta_sanitizado` (`STRING`, `NULLABLE`)
 * `fecha_respuesta` (`TIMESTAMP`, `NULLABLE`)
 * `sanitized_at` (`TIMESTAMP`, `REQUIRED`)
+* `source_observed_at` (`TIMESTAMP`, `REQUIRED`): tiempo de captura en el origen; desempata revisiones con igual `fecha` en el `MERGE` de EPIC-4 (decisión D1, añadida antes del primer despliegue, sin datos que migrar).
 
 * `time_partitioning={"type": "DAY", "field": "fecha"}`
 * `clustering=["bank_id", "version_app"]`
