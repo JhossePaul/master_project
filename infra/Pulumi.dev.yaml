@@ -43,4 +43,9 @@ config:
       ingestion_checkpoint_margin_sec: 120
       ingestion_lease_duration_sec: 120
       ingestion_heartbeat_interval_sec: 30
-encryptionsalt: v1:n1GtkP0Hbiw=:v1:12Bqr6gyphULOOAg:uYkQlrb+aDMohTFAuqjAEzfARQFE3w==
+  bbva-voc-infra:user_hash_salt:
+    secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
+  gcp:userProjectOverride: "true"
+  gcp:billingProject: project-7bafd424-a385-4c05-b5b
+secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
+encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=

@@ -85,13 +85,15 @@ compartido) ya no se usa.
 
 | Stack | Backend | Secretos |
 | --- | --- | --- |
-| `dev` | `gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b` | passphrase (`encryptionsalt` en `Pulumi.dev.yaml`) |
+| `dev` | `gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b` | Cloud KMS: `gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev` (`secretsprovider` y `encryptedkey` en `Pulumi.dev.yaml`) |
 | `prod` | pendiente: mismo patrón, bucket en el proyecto de prod | se recomienda `gcpkms://` |
 
 Bucket de `dev` (2026-10-15): `us-central1`, versionado activo, acceso uniforme
 a nivel de bucket y soft delete de 7 días. El stack `dev` se creó con
-`pulumi stack init dev` en ese backend y el preview se validó; aún no tiene
-recursos desplegados.
+`pulumi stack init dev` en ese backend. La **fase 1 se aplicó el 2026-10-15**
+(46 recursos; sin Cloud Run ni Scheduler). El stack usa Cloud KMS y no una
+passphrase: una passphrase vacía con `Pulumi.dev.yaml` versionado en un
+repositorio público dejaría cualquier secreto descifrable por cualquiera.
 
 Para operar el stack:
 
@@ -99,8 +101,10 @@ Para operar el stack:
 gcloud auth application-default login       # credenciales para backend y proveedor
 pulumi login gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b
 cd infra && pulumi stack select dev
-export PULUMI_CONFIG_PASSPHRASE=...           # la del stack; nunca en archivos ni logs
 ```
+
+Con el proveedor KMS no hace falta `PULUMI_CONFIG_PASSPHRASE`; quien opere el
+stack necesita `roles/cloudkms.cryptoKeyEncrypterDecrypter` sobre la llave.
 
 Quien opere Pulumi necesita `roles/storage.objectAdmin` sobre el bucket; nadie
 necesita acceso público. Endurecimiento opcional del bucket existente:
@@ -185,7 +189,8 @@ esa llave.
 
 1. Autenticarse con el backend GCS del ambiente (ver «Backend de estado»); no
    crear un backend alternativo solo para que pase el preview.
-2. Desde `infra/`, seleccionar el stack `dev` con `PULUMI_CONFIG_PASSPHRASE`.
+2. Desde `infra/`, seleccionar el stack `dev` (los secretos se descifran con
+   la llave KMS; hace falta el ADC del paso anterior).
 3. Revisar `Pulumi.dev.yaml`: proyecto/región reales, fase
    (`deploy_workloads`), imágenes por digest, perfiles HTTP/histórico, modo de
    operación y prefijos. Configurar los secretos con `pulumi config set
@@ -193,6 +198,20 @@ esa llave.
 4. Proporcionar credenciales GCP válidas (`gcloud auth application-default
    login`) y confirmar proyecto y permisos del ambiente elegido.
 5. Ejecutar `pulumi preview --stack dev --non-interactive` y revisar el plan.
+
+**Proyecto de cuota (credenciales de usuario).** Con ADC de usuario, el
+proveedor factura cada llamada al proyecto del cliente OAuth de `gcloud`, y
+APIs como DLP responden 403 «requires a quota project» (`consumer:
+projects/764086051850`). Repetir `pulumi up` no lo arregla. El stack fija:
+
+```bash
+pulumi config set --stack dev gcp:userProjectOverride true
+pulumi config set --stack dev gcp:billingProject <proyecto-gcp>
+```
+
+En cambio, un 403 «API no habilitada» con el proyecto propio como `consumer`
+sí es propagación de una API recién habilitada: esperar unos minutos y repetir
+`pulumi up` (es idempotente).
 
 El entorno virtual de Pulumi es `../.venv` (`Pulumi.yaml`); sincronizarlo con
 `uv sync --all-packages --locked --python 3.11` antes del preview.
@@ -350,9 +369,8 @@ despliegue pero conviene corregir:
   el bucket que crea Pulumi es `voc-datalake-<proyecto>` (en `dev`:
   `voc-datalake-project-7bafd424-a385-4c05-b5b`). Cualquier ejecución local
   contra GCP usaría un bucket inexistente.
-* Guarda `PULUMI_CONFIG_PASSPHRASE`, lo que contradice la regla de no dejarla en
-  archivos. Está ignorado por git, `.dockerignore` y `.gcloudignore`, así que no
-  se publica, pero cualquiera con acceso al disco la lee.
+* Conserva `PULUMI_CONFIG_PASSPHRASE` (vacía), que ya no se usa con el proveedor
+  KMS; eliminarla del `.env` para no confundir.
 * `DLP_*_TEMPLATE_ID` vacíos es correcto: el modo por defecto es regex local y
   no los necesita. Solo hacen falta con `--use-cloud-dlp-api`.
 * Le faltan variables de recorrido y recuperación que sí están en
@@ -361,18 +379,20 @@ despliegue pero conviene corregir:
 
 ## Antes de la fase 2: sal del hash de usuarios
 
-`Pulumi.dev.yaml` no define `user_hash_salt`. Fuera de producción, Pulumi usa
-entonces `DEV_USER_HASH_SALT`, una constante pública del repositorio, y los
-`usuario_hash` del TDS serían reproducibles. **Fijar una sal secreta antes de
-escribir datos**, porque cambiarla después deja hashes inconsistentes entre sí:
+Sin `user_hash_salt`, fuera de producción Pulumi usa `DEV_USER_HASH_SALT`, una
+constante pública del repositorio, y los `usuario_hash` del TDS serían
+reproducibles. **Fijar una sal secreta antes de escribir datos**, porque
+cambiarla después deja hashes inconsistentes entre sí. En `dev` ya está fijada
+(2026-10-15, cifrada con KMS). Para otro stack:
 
 ```bash
 cd infra
 pulumi config set --secret --stack dev bbva-voc-infra:user_hash_salt "$(openssl rand -hex 32)"
 ```
 
-La sal llega a Cloud Run como variable de entorno, no desde Secret Manager
-(riesgo F-04 de la [Matriz Ethical FMEA](governance/ethical_fmea_matrix.md)).
+Cifrada en el repositorio, la sal llega a Cloud Run como variable de entorno en
+claro, no desde Secret Manager: quien pueda leer el servicio la ve (riesgo
+residual F-04 de la [Matriz Ethical FMEA](governance/ethical_fmea_matrix.md)).
 
 ## Runbook del primer despliegue (alimentar el TDS)
 

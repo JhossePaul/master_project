@@ -39,7 +39,7 @@ una acción con responsable antes del siguiente despliegue.
 | **F-01** | Un nombre propio escrito en el texto libre llega al TDS | El nombre queda visible para quien consulte `sanitized_reviews_tds` y en el portal HITL | La regex local no detecta nombres; Cloud DLP (NER) está desactivado por defecto | Regex local para datos estructurados; `usuario`/`imagen_usuario` no existen en el TDS; solo texto, calificación e id; muestra: 0 de 798 con presentación o firma con nombre | 5 | 3 | 7 | **105** | **Acción abierta**: ver detalle |
 | **F-02** | La respuesta de la entidad (que saluda al autor por su nombre) se almacena | Nombre de pila del autor en el TDS (medido en 249 de 302 respuestas) | `texto_respuesta` se capturaba y persistía | Se descarta antes de persistir: `titulo`, `texto_respuesta` y `fecha_respuesta` quedan `NULL` (commit `0da26dd`) | 5 | 2 | 3 | 30 | Controlado; el dato crudo sigue en tránsito (F-05) |
 | **F-03** | Falso positivo de la regex altera el texto | Pérdida de señal (p. ej. un monto de 10 dígitos se vuelve `[BBVA_ACCOUNT_NUMBER]`); sesgo menor en el modelo | Reglas numéricas sin contexto suficiente | El contexto (`cuenta`, `cel`…) decide entre cuenta y teléfono; pruebas con corpus adversarial; se conserva `ref: 3702…` | 3 | 3 | 5 | 45 | Monitorear: medir la tasa en el conjunto de oro |
-| **F-04** | Re-identificación a partir de `usuario_hash` | Un atacante con la sal puede confirmar si un usuario conocido está en el TDS | Si no se configura `user_hash_salt`, el stack usa `DEV_USER_HASH_SALT`, una constante pública del repositorio; además la sal viaja como variable de entorno de Cloud Run, no como secreto | SHA-256 salado e irreversible; prod exige sal propia (validador); el hash no sale del TDS | 6 | 7 | 6 | **252** | **Acción abierta**: fijar sal secreta antes de la fase 2 |
+| **F-04** | Re-identificación a partir de `usuario_hash` | Un atacante con la sal puede confirmar si un usuario conocido está en el TDS | Sin `user_hash_salt`, el stack usa `DEV_USER_HASH_SALT`, una constante pública del repositorio; además la sal viaja como variable de entorno de Cloud Run, no como secreto | SHA-256 salado e irreversible; prod exige sal propia (validador); la sal de `dev` se fijó el 2026-10-15 cifrada con Cloud KMS (el repositorio es público) | 6 | 2 | 6 | 72 | Parcialmente controlado: queda la variable de entorno en claro |
 | **F-05** | Acceso indebido al crudo retenido (`raw_staging/` y Pub/Sub, 7 días) | Quien lo lea ve `usuario`, `imagen_usuario`, respuesta y texto sin sanitizar | La sanitización ocurre después de publicar el sobre crudo | TTL de 7 días en GCS y retención de 7 días en Pub/Sub; IAM por recurso (`voc-sa-sanitization`, `voc-sa-ingestion`); sin invocación pública | 5 | 2 | 5 | 50 | Monitorear; reducir si la ingesta deja de capturar usuario y respuesta |
 | **F-06** | `evidence/` y `.env` con datos sensibles fuera de control | Nombres y URL de avatares en respuestas crudas; el `.env` local contiene una passphrase y la sal | Artefactos de trabajo en el árbol del repositorio | `evidence/` y `.env` en `.gitignore`, `.dockerignore` y `.gcloudignore`; no se versionan | 5 | 2 | 4 | 40 | Monitorear; borrar `evidence/` al terminar el análisis |
 | **F-07** | La política real deja de coincidir con el compromiso del caso de uso | El caso de uso promete "sanitización del 100 % de PII" y un KPI de PII; el sistema cumple con regex local y no almacena la respuesta | Cambio de política (Cloud DLP pasó a opcional) sin actualizar el documento comprometido | Nota de revisión en `epic_4.md`, README del servicio, este análisis | 6 | 4 | 3 | 72 | Actualizar el objetivo 3 y el KPI del caso de uso con la redacción medible |
@@ -75,15 +75,17 @@ y el RPN a 60.
 ### F-04 `usuario_hash` y la sal
 
 `infra/__main__.py` usa `DEV_USER_HASH_SALT` cuando `bbva-voc-infra:user_hash_salt`
-no está configurado fuera de producción, y `Pulumi.dev.yaml` no la define. Esa
-constante es pública (`packages/voc-common/src/voc_common/config.py`), así que
-los hashes de `dev` se podrían reproducir. Además la sal llega a Cloud Run como
-variable de entorno en claro y no desde Secret Manager.
+no está configurado fuera de producción. Esa constante es pública
+(`packages/voc-common/src/voc_common/config.py`), así que los hashes se podrían
+reproducir. **Estado (2026-10-15):** la sal de `dev` está fijada como secreto de
+Pulumi. El stack usa Cloud KMS; con una passphrase vacía y `Pulumi.dev.yaml`
+versionado en un repositorio público el secreto habría sido descifrable por
+cualquiera, y se descartó antes de escribir la sal.
 
-**Acciones:** (1) configurar la sal como secreto de Pulumi **antes** de la fase 2,
-porque cambiarla después invalida los hashes ya escritos (los vuelve inconsistentes
-entre sí); (2) valorar Secret Manager para entornos que no sean sandbox.
-Con la sal secreta, O baja a 2 y el RPN a 72.
+**Residual:** la sal llega a Cloud Run como variable de entorno en claro y no
+desde Secret Manager, así que quien pueda leer el servicio la ve. Valorar Secret
+Manager para entornos que no sean sandbox. Cambiar la sal tras escribir datos
+deja hashes inconsistentes entre sí.
 
 ## Pendiente: EPIC-5 y EPIC-6
 
