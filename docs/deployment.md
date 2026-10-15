@@ -484,12 +484,64 @@ estado»), `gh` autenticado y el entorno `.venv` sincronizado.
    ejecución continúa el plan y se detiene en su presupuesto (1000
    solicitudes, 200 MB o 3480 s). Hay que relanzar hasta completarlo.
 
+### Logs estructurados y cómo consultarlos
+
+Ingesta y sanitización escriben **un evento JSON por unidad de trabajo, nunca
+por reseña**, con `run_id` para reconstruir una corrida. No llevan texto de
+reseñas, nombres ni cursores: el helper `voc_common.log_event` descarta esos
+campos (`FORBIDDEN_FIELDS`) aunque un llamador los pase.
+
+| Mensaje | Servicio | Campos útiles |
+| --- | --- | --- |
+| `Ingestion run started` / `finished` | ingestion-worker | presupuestos; estado, `reason`, páginas, reseñas, solicitudes, `elapsed_sec` |
+| `Play Store request` | ingestion-worker | `outcome` (`ok`, `rate_limited`, `transport_error`, `protocol_shape`), `latency_ms`, `rows`, `response_bytes`, `retries`, `status_code` |
+| `Page published` | ingestion-worker | `page_id`, `reviews`, `latency_ms` de Pub/Sub |
+| `Lease acquired` / `Lease lost` | ingestion-worker | `epoch`, motivo |
+| `Sanitization run started` / `finished` | sanitization-job | presupuestos, `execution` de Cloud Run; totales y `phase_seconds` |
+| `Microbatch finished` | sanitization-job | `batch_index`, `messages`, `batch_seconds`, `messages_per_second`, `phase_seconds`, `pages` |
+| `Page closed` | sanitization-job | `page_id`, `status` (`WARNING` con huecos), `missing` |
+
+```bash
+# Tiempo y rendimiento por microbatch, con el desglose de BigQuery.
+gcloud logging read 'resource.type="cloud_run_job" AND jsonPayload.message="Microbatch finished"' --freshness=6h --format='table(timestamp,jsonPayload.batch_index,jsonPayload.messages,jsonPayload.batch_seconds,jsonPayload.messages_per_second,jsonPayload.phase_seconds.bigquery_s,jsonPayload.phase_seconds.receipts_s)'
+# Latencia y resultado de las solicitudes a Google Play.
+gcloud logging read 'resource.type="cloud_run_revision" AND jsonPayload.message="Play Store request"' --freshness=6h --format='table(timestamp,jsonPayload.bank_id,jsonPayload.outcome,jsonPayload.latency_ms,jsonPayload.rows)'
+```
+
+Para analizar con SQL se puede enrutar a BigQuery con un *sink* de Cloud
+Logging filtrado por esos mensajes (no implementado en Pulumi; el costo es
+almacenamiento mínimo).
+
+### Reprocesar lo que filtró la versión anterior
+
+La primera corrida real (antes de retirar el filtro de 2 a 60 palabras)
+descartó 467 de 2000 reseñas y dejó recibos `FILTERED_LENGTH`. Tras
+desplegar la imagen nueva y **antes de que expiren las capturas** (7 días,
+hasta el 2026-10-22 para lo ingerido el 2026-10-15), borrar el ledger derivado
+de recibos y reproducir desde los manifiestos. El `MERGE` es idempotente, así
+que lo ya cargado se reescribe igual:
+
+```bash
+gcloud storage rm -r "gs://voc-datalake-project-7bafd424-a385-4c05-b5b/state/ingestion/receipts/"
+gcloud run jobs execute voc-sanitization-job --region us-central1 --args="--execution-mode=GCS_BACKFILL_MANIFESTS" --wait
+```
+
+No tocar `state/ingestion/manifests/`, `state/ingestion/ledgers/` ni
+`state/watermarks/`: son el estado de la ingesta. Comprobar después con
+`SELECT bank_id, COUNT(*), COUNTIF(conteo_palabras NOT BETWEEN 2 AND 60)
+FROM bbva_voc_tds.sanitized_reviews_tds GROUP BY bank_id`: debe haber filas
+fuera del rango.
+
 ### Capacidad: el cuello de botella es la sanitización
 
-* El Job de sanitización procesa como máximo **2000 mensajes por ejecución**
-  (`--max-messages`) y el Scheduler lo lanza **una vez al día**. El flujo
-  incremental normal cabe (BBVA ronda las 166 reseñas diarias), pero un
-  backfill de cientos de miles de reseñas tardaría meses a ese ritmo.
+* Medición real (2026-10-15, antes de optimizar): **2.5 mensajes/s**, 2000
+  mensajes en 805 s. A ese ritmo un full de ~2 M de eventos tomaría ~9 días,
+  más que la expiración de 7 días del crudo. Las optimizaciones (E/S del
+  ledger en paralelo, microbatch de 1000, tope por defecto de 20 000
+  mensajes) están en el código; el informe de cada corrida trae
+  `phase_seconds` para ver dónde se va el tiempo. El Scheduler lo lanza **una
+  vez al día**; el flujo incremental normal cabe (BBVA ronda las 166 reseñas
+  diarias).
 * El crudo en `raw_staging/` y los mensajes de Pub/Sub **expiran a los 7 días**.
   Un backfill que publica más de lo que se drena en ese plazo pierde páginas
   (cierre `STAGING_EXPIRED`). Por eso: lanzar el backfill por tramos y drenar
@@ -500,10 +552,13 @@ estado»), `gh` autenticado y el entorno `.venv` sincronizado.
     --args="--max-messages=20000" --wait
   ```
 
-* El rendimiento por ejecución **no está medido**. Medirlo en la primera
-  corrida real (mensajes procesados dentro de los 1500 s de presupuesto) antes
-  de planear el backfill; la cifra de `--max-messages` debe ajustarse a esa
-  medición. Los mocks no validan ni cuotas ni latencia de BigQuery.
+* El rendimiento **tras las optimizaciones** no está medido: comparar
+  `messages / elapsed_sec` de la próxima corrida contra los 2.5 de referencia
+  antes de planear el backfill. Los mocks no validan ni cuotas ni latencia de
+  BigQuery.
+* Antes de cualquier ingesta verificar que los IDs de aplicación existan en
+  Google Play: AZTECA y BANORTE fallaron con `protocol_shape` porque los IDs
+  originales eran incorrectos (corregidos el 2026-10-15).
 * El sondeo de la ingesta (`experiments/playstore/protocol_probe.py`) se ejecutó
   desde Colab. Cloud Run sale por otras IP de Google y no hay proxies
   configurados (`SCRAPER_PROXY_POOL_URLS` vacío): si Google Play responde con
