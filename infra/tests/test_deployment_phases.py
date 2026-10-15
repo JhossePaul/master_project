@@ -209,6 +209,19 @@ def test_cloud_build_publishes_sha_tagged_amd64_images() -> None:
     assert "--platform=linux/amd64" in args
     assert "--tag=${_IMAGE}:${_TAG}" in args
     assert build["images"] == ["${_IMAGE}:${_TAG}"]
+    assert (
+        "DOCKER_BUILDKIT=1"
+        in next(s for s in build["steps"] if s["id"] == "build")["env"]
+    )
+
+
+def test_cloud_build_upload_keeps_workspace_and_drops_sensitive_files() -> None:
+    rules = (REPO / ".gcloudignore").read_text().splitlines()
+    # Los Dockerfiles copian infra/pyproject.toml; evidence/ contiene PII.
+    assert {"infra/*", "!infra/pyproject.toml", "evidence/", ".env"} <= set(
+        rules
+    )
+    assert "infra/" not in rules
 
 
 def test_cd_workflow_never_runs_on_pull_requests() -> None:

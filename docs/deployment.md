@@ -68,23 +68,39 @@ propio PR; subirlas cuando haya otro revisor. El check `quality` debe haber
 corrido al menos una vez para aparecer como seleccionable en la interfaz.
 Equivalente en la UI: Settings → Rules → Rulesets → New branch ruleset.
 
-## Backend de estado recomendado
+## Backend de estado
 
-`pulumi login --local` guarda el estado en `~/.pulumi` de un solo equipo: sin
-respaldo, sin bloqueo compartido y sin acceso para CI. Para `dev` y `prod` se
-recomienda un bucket GCS dedicado, creado **fuera** del stack (si el stack lo
-gestionara, un `pulumi destroy` borraría su propio estado), con versionado para
-recuperar estados anteriores. Los comandos son orientativos; no cambian el
-backend actual hasta que se ejecuten de forma explícita.
+El estado de Pulumi vive en un bucket GCS dedicado, creado **fuera** del stack
+(si el stack lo gestionara, un `pulumi destroy` borraría su propio estado).
+`pulumi login --local` (`~/.pulumi` de un solo equipo, sin respaldo ni bloqueo
+compartido) ya no se usa.
+
+| Stack | Backend | Secretos |
+| --- | --- | --- |
+| `dev` | `gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b` | passphrase (`encryptionsalt` en `Pulumi.dev.yaml`) |
+| `prod` | pendiente: mismo patrón, bucket en el proyecto de prod | se recomienda `gcpkms://` |
+
+Bucket de `dev` (2026-10-15): `us-central1`, versionado activo, acceso uniforme
+a nivel de bucket y soft delete de 7 días. El stack `dev` se creó con
+`pulumi stack init dev` en ese backend y el preview se validó; aún no tiene
+recursos desplegados.
+
+Para operar el stack:
 
 ```bash
-export STATE_PROJECT=<proyecto-gcp>   # p. ej. el de dev o uno de plataforma
-export STATE_BUCKET=gs://voc-pulumi-state-${STATE_PROJECT}
-gcloud storage buckets create "$STATE_BUCKET" --project="$STATE_PROJECT" \
-  --location=us-central1 --uniform-bucket-level-access \
-  --public-access-prevention
-gcloud storage buckets update "$STATE_BUCKET" --versioning
-# Conservar solo las 10 versiones no actuales más recientes.
+gcloud auth application-default login       # credenciales para backend y proveedor
+pulumi login gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b
+cd infra && pulumi stack select dev
+export PULUMI_CONFIG_PASSPHRASE=...           # la del stack; nunca en archivos ni logs
+```
+
+Quien opere Pulumi necesita `roles/storage.objectAdmin` sobre el bucket; nadie
+necesita acceso público. Endurecimiento opcional del bucket existente:
+
+```bash
+export STATE_BUCKET=gs://pulumi-state-voc-project-7bafd424-a385-4c05-b5b
+gcloud storage buckets update "$STATE_BUCKET" --public-access-prevention
+# Conservar solo las 10 versiones no actuales más recientes del estado.
 cat > /tmp/state-lifecycle.json <<'EOF'
 {"rule": [{"action": {"type": "Delete"},
            "condition": {"isLive": false, "numNewerVersions": 10}}]}
@@ -93,24 +109,36 @@ gcloud storage buckets update "$STATE_BUCKET" \
   --lifecycle-file=/tmp/state-lifecycle.json
 ```
 
-Solo las identidades que operan Pulumi necesitan
-`roles/storage.objectAdmin` sobre ese bucket; nadie necesita acceso público.
+### Crear el backend de otro ambiente
 
-### Migrar desde `pulumi login --local`
+Mismo patrón para `prod` (o para recrear el de `dev`):
 
-Ejecutar desde `infra/` con credenciales `gcloud auth application-default login`
-válidas. El stack local no se borra hasta comprobar el remoto.
+```bash
+export STATE_PROJECT=<proyecto-gcp>
+export STATE_BUCKET=gs://pulumi-state-voc-${STATE_PROJECT}
+gcloud storage buckets create "$STATE_BUCKET" --project="$STATE_PROJECT" \
+  --location=us-central1 --uniform-bucket-level-access \
+  --public-access-prevention
+gcloud storage buckets update "$STATE_BUCKET" --versioning
+pulumi login "$STATE_BUCKET"
+cd infra && pulumi stack init prod          # opcional: --secrets-provider (abajo)
+```
+
+### Migrar un stack con estado entre backends
+
+Para `dev` bastó `pulumi login` + `pulumi stack init dev` porque el stack local
+no tenía recursos. Si un stack ya tiene estado (p. ej. tras `pulumi up`),
+exportarlo e importarlo; el stack de origen no se borra hasta comprobar el
+destino:
 
 ```bash
 cd infra
-pulumi login --local
+pulumi login <backend-origen>               # p. ej. --local
 pulumi stack select dev
 pulumi stack export --show-secrets --file /tmp/dev.state.json
-cp Pulumi.dev.yaml /tmp/Pulumi.dev.yaml.bak   # contiene encryptionsalt
 
 pulumi login "$STATE_BUCKET"
 pulumi stack init dev                       # mismo nombre de stack
-# Opcional en el mismo paso: --secrets-provider (ver abajo).
 pulumi stack import --file /tmp/dev.state.json
 pulumi stack export | jq '.deployment.resources | length'
 pulumi preview --stack dev --non-interactive  # no debe planear cambios nuevos
@@ -118,12 +146,10 @@ pulumi preview --stack dev --non-interactive  # no debe planear cambios nuevos
 rm /tmp/dev.state.json                      # contiene secretos en claro
 ```
 
-`stack init` reescribe la clave `encryptionsalt` (o `secretsprovider`) de
-`Pulumi.dev.yaml`; los valores de configuración se conservan. Si el stack local
-tenía secretos cifrados con passphrase, volver a fijarlos con
-`pulumi config set --secret` en el backend nuevo. Mientras el stack nunca se haya
-desplegado (estado vacío), basta con `pulumi login "$STATE_BUCKET"` y
-`pulumi stack init dev`. Para volver atrás: `pulumi login --local`.
+`stack init` puede reescribir `encryptionsalt` (o `secretsprovider`) en
+`Pulumi.<stack>.yaml`; los valores de configuración se conservan. Si había
+secretos cifrados con otra passphrase, volver a fijarlos con
+`pulumi config set --secret`.
 
 ### Secrets provider con Cloud KMS (opcional)
 
@@ -149,9 +175,9 @@ esa llave.
 
 ## Preparar stack y preview
 
-1. Autenticarse con el backend previsto (`pulumi login`); no crear un backend
-   alternativo solo para que pase el preview.
-2. Desde `infra/`, seleccionar el stack `dev` (o `pulumi stack init dev`).
+1. Autenticarse con el backend GCS del ambiente (ver «Backend de estado»); no
+   crear un backend alternativo solo para que pase el preview.
+2. Desde `infra/`, seleccionar el stack `dev` con `PULUMI_CONFIG_PASSPHRASE`.
 3. Revisar `Pulumi.dev.yaml`: proyecto/región reales, fase
    (`deploy_workloads`), imágenes por digest, perfiles HTTP/histórico, modo de
    operación y prefijos. Configurar los secretos con `pulumi config set
@@ -212,9 +238,14 @@ una Mac). El flujo es GitHub → Cloud Build → Artifact Registry:
   lo invoca por servicio al hacer merge a `main` (cambios en `services/`,
   `packages/`, lock o pipeline) o con `workflow_dispatch`, siempre desde `main`.
   No tiene disparador `pull_request`, así que las credenciales nunca llegan a
-  código no revisado. Omite servicios con Dockerfile vacío: hoy
-  `services/ingestion-worker/Dockerfile` (feature 3.5) aún no existe, por lo
-  que el workflow no construye nada hasta que se implemente.
+  código no revisado. Omite servicios con Dockerfile vacío: hoy solo construye
+  `ingestion-worker` (feature 3.5); `sanitization-pipeline` y `api-backend`
+  entran cuando tengan Dockerfile. `develop` no publica imágenes: se publican
+  al integrar en `main` por PR.
+- Solo se sube a Cloud Build lo que permite [`.gcloudignore`](../.gcloudignore)
+  (nunca `.env` ni `evidence/`), y el contexto Docker lo restringe
+  [`.dockerignore`](../.dockerignore); el build usa BuildKit
+  (`DOCKER_BUILDKIT=1`) por los montajes de caché del Dockerfile.
 - El repositorio tiene tags inmutables: un re-run del mismo commit reutiliza la
   imagen publicada. El resumen del job muestra el digest y el comando
   `pulumi config set` para la fase 2.
@@ -296,9 +327,9 @@ recursos condicionales, permisos y cuotas. El preview no ejecuta el extractor.
 
 1. Aplicar la fase 1 cuando se autorice (`pulumi up`) y configurar la identidad
    de CI.
-2. Implementar Dockerfile/entrypoint de EPIC-3 (feature 3.5,
-   `ingestion_worker.job`) y el pipeline de EPIC-4; el merge a `main` publica las
-   imágenes. La declaración IaC de una imagen no comprueba que su módulo arranque.
+2. Integrar en `main` la imagen de EPIC-3 (feature 3.5, ya en `develop`) y,
+   cuando exista, el pipeline de EPIC-4; el merge a `main` publica las imágenes.
+   La declaración IaC de una imagen no comprueba que su módulo arranque.
 3. Fijar las imágenes por digest, pasar a `deploy_workloads: true`, revisar el
    preview y desplegar la fase 2.
 4. Verificar acceso real a GCS y objetos cifrados si CMEK está activo, publicación

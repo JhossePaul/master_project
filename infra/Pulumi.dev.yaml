@@ -1,11 +1,11 @@
 config:
-  gcp:project: "bbva-voc-analyzer-dev"
+  gcp:project: "project-7bafd424-a385-4c05-b5b"
   gcp:region: "us-central1"
   bbva-voc-infra:environment: "dev"
-  bbva-voc-infra:free_tier_mode: true
-  bbva-voc-infra:enable_cmek: false
-  bbva-voc-infra:enable_vpc_sc: false
-  bbva-voc-infra:enable_dedicated_vertex_endpoints: false
+  bbva-voc-infra:free_tier_mode: "true"
+  bbva-voc-infra:enable_cmek: "false"
+  bbva-voc-infra:enable_vpc_sc: "false"
+  bbva-voc-infra:enable_dedicated_vertex_endpoints: "false"
   # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
   # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
   # por digest; ver docs/deployment.md. Requeridas en fase 2:
@@ -13,7 +13,7 @@ config:
   #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
   # Opcional (sin ella no se crea voc-api-backend):
   #   bbva-voc-infra:api_backend_image: "<registry>/api-backend:<sha>@sha256:<digest>"
-  bbva-voc-infra:deploy_workloads: false
+  bbva-voc-infra:deploy_workloads: "false"
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
   bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"
@@ -22,7 +22,7 @@ config:
   bbva-voc-infra:gcs_ingestion_ledgers_prefix: "state/ingestion/ledgers"
   bbva-voc-infra:gcs_processing_receipts_prefix: "state/ingestion/receipts"
   # Ingesta v2 se activa cuando imagen/entrypoint y API de EPIC-3 estén listos.
-  bbva-voc-infra:ingestion_v2_enabled: false
+  bbva-voc-infra:ingestion_v2_enabled: "false"
   bbva-voc-infra:ingestion_execution:
     ingestion_max_requests: 100
     ingestion_max_response_bytes: 20000000
@@ -43,3 +43,4 @@ config:
       ingestion_checkpoint_margin_sec: 120
       ingestion_lease_duration_sec: 120
       ingestion_heartbeat_interval_sec: 30
+encryptionsalt: v1:n1GtkP0Hbiw=:v1:12Bqr6gyphULOOAg:uYkQlrb+aDMohTFAuqjAEzfARQFE3w==

@@ -4,7 +4,7 @@
 #   gcloud builds submit --config cloudbuild.yaml \
 #     --substitutions=_SERVICE=ingestion-worker,_TAG="$(git rev-parse HEAD)" .
 # El contexto es la raíz del workspace uv para que el Dockerfile del servicio
-# pueda copiar packages/voc-common y uv.lock.
+# pueda copiar packages/voc-common y uv.lock; .dockerignore lo restringe.
 substitutions:
   _SERVICE: ""
   _TAG: ""
@@ -29,6 +29,9 @@ steps:
           || { echo "services/${_SERVICE}/Dockerfile vacío o ausente"; exit 1; }
   - id: build
     name: gcr.io/cloud-builders/docker
+    # Los Dockerfiles usan `# syntax=` y montajes de caché de BuildKit.
+    env:
+      - DOCKER_BUILDKIT=1
     args:
       - build
       - --platform=linux/amd64
