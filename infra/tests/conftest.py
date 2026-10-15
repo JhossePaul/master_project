@@ -4,6 +4,7 @@ from typing import Any
 
 import pulumi
 import pytest
+from pulumi.runtime import rpc
 from pulumi.runtime.mocks import MockMonitor
 
 
@@ -71,3 +72,40 @@ def pulumi_mocks() -> InfrastructureMonitor:
     )
     pulumi.runtime.set_all_config({"gcp:project": "test-voc-project"})
     return monitor
+
+
+def unwrap_outputs(value: Any) -> Any:
+    """Inspecciona outputs simulados propagados como secretos por Pulumi."""
+    if rpc.is_rpc_secret(value):
+        return unwrap_outputs(rpc.unwrap_rpc_secret(value))
+    if isinstance(value, dict):
+        return {k: unwrap_outputs(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [unwrap_outputs(v) for v in value]
+    return value
+
+
+def assert_acyclic(monitor: InfrastructureMonitor) -> None:
+    """El grafo completo debe poder ordenarse sin ciclos entre recursos."""
+    names = {
+        r.urn: r.urn.rsplit("::", 1)[-1] for r in monitor.resources.values()
+    }
+    graph = {
+        name: {names[urn] for urn in dependencies if urn in names}
+        for name, dependencies in monitor.dependencies.items()
+    }
+    visited: set[str] = set()
+    active: set[str] = set()
+
+    def visit(name: str) -> None:
+        assert name not in active, f"Dependencia circular en {name}"
+        if name in visited:
+            return
+        active.add(name)
+        for dependency in graph.get(name, set()):
+            visit(dependency)
+        active.remove(name)
+        visited.add(name)
+
+    for name in graph:
+        visit(name)

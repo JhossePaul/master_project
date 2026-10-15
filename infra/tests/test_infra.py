@@ -8,7 +8,11 @@ from typing import Any
 import pulumi
 import pytest
 
-from infra.tests.conftest import InfrastructureMonitor
+from infra.tests.conftest import (
+    InfrastructureMonitor,
+    assert_acyclic,
+    unwrap_outputs,
+)
 
 
 @pytest.fixture
@@ -30,26 +34,8 @@ def dev_stack(
     deploy()
     registrations = list(pulumi_mocks.resources.values())
     names = {r.urn: r.urn.rsplit("::", 1)[-1] for r in registrations}
-    graph = {
-        name: {names[urn] for urn in dependencies if urn in names}
-        for name, dependencies in pulumi_mocks.dependencies.items()
-    }
-    visited: set[str] = set()
-    active: set[str] = set()
-
-    def visit(name: str) -> None:
-        assert name not in active, f"Dependencia circular en {name}"
-        if name in visited:
-            return
-        active.add(name)
-        for dependency in graph.get(name, set()):
-            visit(dependency)
-        active.remove(name)
-        visited.add(name)
-
-    for name in graph:
-        visit(name)
-    return {names[r.urn]: r.state for r in registrations}
+    assert_acyclic(pulumi_mocks)
+    return {names[r.urn]: unwrap_outputs(r.state) for r in registrations}
 
 
 @pulumi.runtime.test
@@ -62,7 +48,7 @@ def test_bigquery_tables_privacy_and_partitioning(
     assert set(tables) == {
         "sanitized_reviews_tds",
         "delora_predictions",
-        "ingestion_watermarks_log",
+        "ingestion_runs_log_v2",
         "hitl_triage_audit_log",
     }
     for state in tables.values():

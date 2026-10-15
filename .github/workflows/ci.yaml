@@ -48,7 +48,12 @@ jobs:
           uv run --frozen pytest packages/voc-common/tests
           --cov=packages/voc-common/src --cov-fail-under=85
 
-      - name: Infrastructure tests and coverage
+      - name: Infrastructure contracts and deployment matrix
         run: >-
           uv run --frozen pytest infra/tests
           --cov=infra/modules --cov-fail-under=80
+
+      - name: Ingestion protocol, state, audit and durable publication
+        run: >-
+          uv run --frozen pytest services/ingestion-worker/tests
+          --cov=ingestion_worker --cov-fail-under=85

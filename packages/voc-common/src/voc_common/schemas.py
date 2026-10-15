@@ -9,22 +9,23 @@ Flujo de modelos:
         -> AnalyzedReviewPrediction -> IncidentAlertMessage
         -> HitlTriageAuditRecord
 
-``IngestionWatermarkState`` modela el checkpoint bidireccional persistido en
+``IngestionWatermarkState`` describe el estado v2 persistido en
 ``gs://<bucket>/state/watermarks/{bank_id}.json``.
 
 Todas las fechas se normalizan a UTC: las ``datetime`` *naive* se interpretan
 como UTC y las *aware* se convierten a UTC.
 """
 
+import hashlib
+import json
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import (
     AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
-    field_serializer,
     field_validator,
     model_validator,
 )
@@ -35,13 +36,21 @@ from voc_common.constants import (
     DEFAULT_PLAYSTORE_LANG,
     MAX_REVIEW_WORDS,
     MIN_REVIEW_WORDS,
-    PLAYSTORE_MAX_PAGE_SIZE,
+    PLAYSTORE_BANK_APPS,
+    PLAYSTORE_DEFAULT_PAGE_SIZE,
+    PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
     UNKNOWN_APP_VERSION,
-    WATERMARK_MAX_FRONTIER_IDS,
     ABSATopic,
     BankKey,
+    CoverageStatus,
     IngestionMode,
     PlayStoreSortOrder,
+    ProcessingStatus,
+    PublicationStatus,
+    RecoveryStatus,
+    RunAuditStatus,
+    SanitizationStatus,
+    ScanStatus,
     SentimentLabel,
 )
 from voc_common.text_utils import (
@@ -93,11 +102,6 @@ def _from_epoch_seconds(value: Any) -> datetime | None:
     return datetime.fromtimestamp(value, tz=UTC)
 
 
-def _add_bounded(ids: set[str], review_id: str) -> None:
-    if len(ids) < WATERMARK_MAX_FRONTIER_IDS:
-        ids.add(review_id)
-
-
 class _StrictModel(BaseModel):
     """Base común: rechaza campos no declarados en el contrato."""
 
@@ -128,7 +132,9 @@ class IngestionRequestPayload(_StrictModel):
     bank_id: BankKey
     mode: IngestionMode = IngestionMode.INCREMENTAL
     page_size: int = Field(
-        default=PLAYSTORE_MAX_PAGE_SIZE, ge=1, le=PLAYSTORE_MAX_PAGE_SIZE
+        default=PLAYSTORE_DEFAULT_PAGE_SIZE,
+        ge=1,
+        le=PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
     )
     max_reviews_per_run: int = Field(default=5000, ge=1, le=250000)
     # Si es True en FULL_BACKFILL, extrae por separado 1, 2, 3, 4 y 5 estrellas.
@@ -146,108 +152,6 @@ class SequentialBatchIngestionRequest(_StrictModel):
 
 # ---------------------------------------------------------------------------
 # Tarea 1.3.2: Watermark bidireccional
-# ---------------------------------------------------------------------------
-
-
-class IngestionWatermarkState(_StrictModel):
-    """Checkpoint bidireccional de extracción por banco.
-
-    Nota de uso (INCREMENTAL): el scraper recorre de la reseña más nueva a la
-    más antigua; ``should_stop_incremental`` debe evaluarse contra una copia
-    congelada del estado al inicio de la ejecución
-    (``state.model_copy(deep=True)``), porque ``update_bounds`` desplaza
-    ``max_review_timestamp`` en cuanto se procesa la primera reseña nueva.
-    """
-
-    bank_id: BankKey
-    app_id: str = Field(..., min_length=1)
-    max_review_timestamp: UtcDatetime | None = None
-    min_review_timestamp: UtcDatetime | None = None
-    recent_review_ids: set[str] = Field(
-        default_factory=set, max_length=WATERMARK_MAX_FRONTIER_IDS
-    )
-    oldest_review_ids: set[str] = Field(
-        default_factory=set, max_length=WATERMARK_MAX_FRONTIER_IDS
-    )
-    oldest_page_token: str | None = None
-    star_partition_tokens: dict[StarRating, str | None] = Field(
-        default_factory=dict
-    )
-    backfill_one_year_completed: bool = False
-    full_backfill_completed: bool = False
-    total_extracted_count: int = Field(default=0, ge=0)
-    updated_at: UtcDatetime = Field(default_factory=_utcnow)
-
-    @field_serializer("recent_review_ids", "oldest_review_ids")
-    def _serialize_id_sets(self, ids: set[str]) -> list[str]:
-        # Orden determinista para checkpoints JSON reproducibles.
-        return sorted(ids)
-
-    def should_stop_incremental(
-        self, review_id: str, review_date: datetime
-    ) -> bool:
-        """``True`` si la reseña ya fue extraída en una ejecución previa."""
-        review_date = ensure_utc(review_date)
-        if review_id in self.recent_review_ids:
-            return True
-        return (
-            self.max_review_timestamp is not None
-            and review_date < self.max_review_timestamp
-        )
-
-    def has_reached_one_year_backfill(
-        self, review_date: datetime, reference_now: datetime | None = None
-    ) -> bool:
-        """``True`` si la reseña cae en o antes del corte de 365 días."""
-        now = ensure_utc(reference_now) if reference_now else _utcnow()
-        cutoff = now - timedelta(days=BACKFILL_LOOKBACK_DAYS)
-        return ensure_utc(review_date) <= cutoff
-
-    def update_bounds(
-        self,
-        review_id: str,
-        review_date: datetime,
-        next_page_token: str | None = None,
-    ) -> None:
-        """Desplaza las fronteras superior/inferior con una reseña extraída."""
-        review_date = ensure_utc(review_date)
-
-        if (
-            self.max_review_timestamp is None
-            or review_date > self.max_review_timestamp
-        ):
-            self.max_review_timestamp = review_date
-            self.recent_review_ids = {review_id}
-        elif review_date == self.max_review_timestamp:
-            _add_bounded(self.recent_review_ids, review_id)
-
-        if (
-            self.min_review_timestamp is None
-            or review_date < self.min_review_timestamp
-        ):
-            self.min_review_timestamp = review_date
-            self.oldest_review_ids = {review_id}
-        elif review_date == self.min_review_timestamp:
-            _add_bounded(self.oldest_review_ids, review_id)
-
-        if next_page_token is not None:
-            self.oldest_page_token = next_page_token
-
-        self.total_extracted_count += 1
-        self.updated_at = _utcnow()
-
-    def update_star_partition_token(
-        self, star: int, next_page_token: str | None
-    ) -> None:
-        """Registra el token de continuación de una partición 1..5."""
-        if not 1 <= star <= 5:
-            raise ValueError(f"star debe estar en 1..5, se recibió {star}")
-        self.star_partition_tokens[star] = next_page_token
-        self.updated_at = _utcnow()
-
-
-# ---------------------------------------------------------------------------
-# Tarea 1.3.3: Carga cruda (pre-DLP)
 # ---------------------------------------------------------------------------
 
 
@@ -495,3 +399,560 @@ class HitlTriageAuditRecord(_StrictModel):
     reviewer_email_hash: str = Field(..., min_length=1)
     backlog_jira_ticket: str | None = None
     reviewed_at: UtcDatetime = Field(default_factory=_utcnow)
+
+
+# Feature 1.6: contratos v2. Reducer y GCS pertenecen a 1.7/EPIC-3.
+NonEmpty = Annotated[str, Field(min_length=1)]
+Digest = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+Counter = Annotated[int, Field(ge=0)]
+
+
+class _StateV2(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    schema_version: Literal[2] = 2
+
+
+class _BankStateV2(_StateV2):
+    bank_id: BankKey
+    app_id: NonEmpty
+
+    @model_validator(mode="after")
+    def _bank_app(self) -> Self:
+        if PLAYSTORE_BANK_APPS[self.bank_id] != self.app_id:
+            raise ValueError("app_id does not match bank_id")
+        return self
+
+
+class LedgerReference(_StateV2):
+    """Índice paginado completo; count no es una prueba de cobertura."""
+
+    uri: Annotated[str, Field(pattern=r"^gs://[^/]+/.+")]
+    generation: Annotated[int, Field(gt=0)]
+    entry_count: Counter
+    content_fingerprint: Digest
+
+
+class ScanContext(_StateV2):
+    app_id: NonEmpty
+    lang: NonEmpty = DEFAULT_PLAYSTORE_LANG
+    country: NonEmpty = DEFAULT_PLAYSTORE_COUNTRY
+    sort_order: PlayStoreSortOrder = PlayStoreSortOrder.NEWEST
+    star_filter: StarRating | None = None
+    device_filter: NonEmpty | None = None
+    page_size: Annotated[int, Field(gt=0)] = PLAYSTORE_DEFAULT_PAGE_SIZE
+    protocol_version: NonEmpty
+
+    @property
+    def fingerprint(self) -> str:
+        """Calcula el fingerprint del contexto completo."""
+        payload = json.dumps(
+            self.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        return hashlib.sha256(payload.encode()).hexdigest()
+
+
+class CompletionEvidence(_StateV2):
+    coverage: CoverageStatus = CoverageStatus.UNVERIFIED
+    checked_at: UtcDatetime
+    manifest_ids: tuple[NonEmpty, ...] = ()
+    boundary_ledger: LedgerReference | None = None
+    source_exhausted_observed: bool = False
+    continuity_checked: bool = False
+    gaps_detected: bool = False
+
+    @model_validator(mode="after")
+    def _evidence(self) -> Self:
+        if self.coverage == CoverageStatus.TRAVERSAL_OBSERVED and (
+            not self.manifest_ids
+            or not self.continuity_checked
+            or self.gaps_detected
+        ):
+            raise ValueError("observed traversal requires continuity evidence")
+        if (
+            self.coverage == CoverageStatus.GAPS_DETECTED
+            and not self.gaps_detected
+        ):
+            raise ValueError("gap coverage requires recorded gaps")
+        return self
+
+
+class PlanExtensionEvent(_StateV2):
+    event_id: NonEmpty
+    extended_at: UtcDatetime
+    previous_lower_at: UtcDatetime
+    requested_lower_at: None = None
+
+    @model_validator(mode="after")
+    def _dates(self) -> Self:
+        if self.previous_lower_at > self.extended_at:
+            raise ValueError("extension cannot precede its former lower bound")
+        return self
+
+
+class IncrementalProgress(_StateV2):
+    committed_high_at: UtcDatetime | None = None
+    frontier_ledger: LedgerReference | None = None
+    active_run_id: NonEmpty | None = None
+    baseline_high_at: UtcDatetime | None = None
+    candidate_high_at: UtcDatetime | None = None
+    replay_from_at: UtcDatetime | None = None
+    status: ScanStatus = ScanStatus.NOT_STARTED
+    stream_id: NonEmpty | None = None
+
+    @model_validator(mode="after")
+    def _frontier(self) -> Self:
+        if (self.committed_high_at is None) != (self.frontier_ledger is None):
+            raise ValueError("committed frontier requires timestamp and ledger")
+        if self.replay_from_at is not None and (
+            self.committed_high_at is None
+            or self.replay_from_at > self.committed_high_at
+        ):
+            raise ValueError(
+                "replay must start at or before committed frontier"
+            )
+        if self.candidate_high_at is not None and (
+            self.baseline_high_at is not None
+            and self.candidate_high_at < self.baseline_high_at
+        ):
+            raise ValueError("candidate cannot precede baseline")
+        if self.status == ScanStatus.RUNNING and (
+            self.active_run_id is None or self.stream_id is None
+        ):
+            raise ValueError("running incremental requires run and stream")
+        return self
+
+
+class HistoricalPlan(_BankStateV2):
+    plan_id: NonEmpty
+    started_at: UtcDatetime
+    upper_anchor_at: UtcDatetime
+    requested_lower_at: UtcDatetime | None
+    stream_ids: tuple[NonEmpty, ...] = ()
+    status: ScanStatus = ScanStatus.NOT_STARTED
+    completion_evidence: CompletionEvidence | None = None
+    extension_events: tuple[PlanExtensionEvent, ...] = ()
+
+    @model_validator(mode="after")
+    def _plan(self) -> Self:
+        if self.upper_anchor_at != self.started_at:
+            raise ValueError("upper anchor must be frozen at plan start")
+        cutoff = self.started_at - timedelta(days=BACKFILL_LOOKBACK_DAYS)
+        if self.requested_lower_at not in (None, cutoff):
+            raise ValueError("annual lower bound must equal T0 minus 365 days")
+        if len(set(self.stream_ids)) != len(self.stream_ids):
+            raise ValueError("duplicate stream references")
+        if self.extension_events:
+            if self.requested_lower_at is not None:
+                raise ValueError(
+                    "extended FULL plan cannot retain annual target"
+                )
+            for event in self.extension_events:
+                if (
+                    event.previous_lower_at != cutoff
+                    or event.extended_at < self.started_at
+                ):
+                    raise ValueError(
+                        "extension must preserve original annual cut"
+                    )
+        if self.status in (
+            ScanStatus.TARGET_REACHED,
+            ScanStatus.SOURCE_EXHAUSTED_OBSERVED,
+        ):
+            evidence = self.completion_evidence
+            if (
+                not self.stream_ids
+                or evidence is None
+                or evidence.coverage != CoverageStatus.TRAVERSAL_OBSERVED
+            ):
+                raise ValueError("completed plan requires traversal evidence")
+            if self.status == ScanStatus.TARGET_REACHED and (
+                self.requested_lower_at is None
+            ):
+                raise ValueError("FULL has no finite target")
+            if (
+                self.status == ScanStatus.SOURCE_EXHAUSTED_OBSERVED
+                and not evidence.source_exhausted_observed
+            ):
+                raise ValueError("source exhaustion requires explicit evidence")
+        return self
+
+
+class ScanStreamState(_BankStateV2):
+    stream_id: NonEmpty
+    plan_id: NonEmpty | None = None
+    context: ScanContext
+    chain_epoch: Counter = 0
+    status: ScanStatus = ScanStatus.NOT_STARTED
+    frontier_page_id: NonEmpty | None = None
+    frontier_oldest_at: UtcDatetime | None = None
+    anchor_page_id: NonEmpty | None = None
+    input_token: NonEmpty | None = Field(default=None, repr=False)
+    output_token: NonEmpty | None = Field(default=None, repr=False)
+    last_success_at: UtcDatetime | None = None
+    recovery_status: RecoveryStatus = RecoveryStatus.NONE
+    committed_pages: Counter = 0
+    committed_reviews: Counter = 0
+    frontier_ordinal: Counter | None = None
+
+    @model_validator(mode="after")
+    def _context(self) -> Self:
+        if self.context.app_id != self.app_id:
+            raise ValueError("stream and context apps differ")
+        if (self.frontier_page_id is None) != (self.frontier_oldest_at is None):
+            raise ValueError("frontier page and date must be paired")
+        if self.status == ScanStatus.NOT_STARTED and any(
+            x is not None
+            for x in (
+                self.frontier_page_id,
+                self.anchor_page_id,
+                self.input_token,
+                self.output_token,
+                self.last_success_at,
+            )
+        ):
+            raise ValueError("unstarted stream cannot have progress")
+        if self.status == ScanStatus.SOURCE_EXHAUSTED_OBSERVED and (
+            self.output_token is not None or self.last_success_at is None
+        ):
+            raise ValueError("observed EOF requires success and no next cursor")
+        return self
+
+
+class PageManifest(_BankStateV2):
+    """Versión inmutable; page_id no se deriva del token de paginación."""
+
+    page_id: NonEmpty
+    manifest_version: Annotated[int, Field(gt=0)] = 1
+    fetch_attempt_id: NonEmpty
+    run_id: NonEmpty
+    plan_id: NonEmpty | None = None
+    stream_id: NonEmpty
+    chain_epoch: Counter
+    ordinal: Counter
+    previous_page_id: NonEmpty | None = None
+    context: ScanContext
+    input_token: NonEmpty | None = Field(default=None, repr=False)
+    output_token: NonEmpty | None = Field(default=None, repr=False)
+    fetched_at: UtcDatetime
+    observed_min_at: UtcDatetime | None = None
+    observed_max_at: UtcDatetime | None = None
+    ledger: LedgerReference
+    discard_ledger: LedgerReference | None = None
+    raw_count: Counter
+    valid_count: Counter
+    discarded_count: Counter
+    published_count: Counter = 0
+    content_fingerprint: Digest
+    backup_uri: Annotated[str, Field(pattern=r"^gs://[^/]+/.+")]
+    backup_generation: Annotated[int, Field(gt=0)]
+    publication_status: PublicationStatus = PublicationStatus.PENDING
+    sanitization_status: SanitizationStatus = SanitizationStatus.PENDING
+    source_evidence: CompletionEvidence | None = None
+
+    @model_validator(mode="after")
+    def _page(self) -> Self:
+        if self.context.app_id != self.app_id:
+            raise ValueError("page and context apps differ")
+        if self.discard_ledger is not None and (
+            self.discard_ledger.entry_count != self.discarded_count
+        ):
+            raise ValueError("discard ledger must contain all discarded rows")
+        if self.raw_count != self.valid_count + self.discarded_count:
+            raise ValueError("raw count must equal valid plus discarded")
+        if self.ledger.entry_count != self.valid_count:
+            raise ValueError("ledger must contain all accepted revisions")
+        if self.published_count > self.valid_count:
+            raise ValueError("published exceeds valid count")
+        if self.publication_status == PublicationStatus.PUBLISHED and (
+            self.published_count != self.valid_count
+        ):
+            raise ValueError("publication incomplete")
+        if self.publication_status == PublicationStatus.PENDING and (
+            self.published_count != 0
+        ):
+            raise ValueError("pending publication cannot have confirmations")
+        if self.publication_status == PublicationStatus.PARTIAL and not (
+            0 < self.published_count < self.valid_count
+        ):
+            raise ValueError(
+                "partial publication requires partial confirmations"
+            )
+        if (self.observed_min_at is None) != (self.observed_max_at is None):
+            raise ValueError("page bounds must be paired")
+        if self.valid_count and self.observed_min_at is None:
+            raise ValueError("valid reviews require observed bounds")
+        if (
+            self.observed_min_at is not None
+            and self.observed_max_at is not None
+            and self.observed_min_at > self.observed_max_at
+        ):
+            raise ValueError("reversed page bounds")
+        return self
+
+
+class ProcessingReceipt(_BankStateV2):
+    receipt_id: NonEmpty
+    event_id: Digest
+    review_id: NonEmpty
+    source_revision: Digest
+    page_id: NonEmpty
+    status: ProcessingStatus
+    result_digest: Digest | None = None
+    bigquery_job_ids: tuple[NonEmpty, ...] = ()
+    error_code: NonEmpty | None = None
+    processed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _outcome(self) -> Self:
+        if self.event_id != compute_event_id(
+            self.bank_id,
+            self.review_id,
+            self.source_revision,
+        ):
+            raise ValueError("receipt event identity mismatch")
+        if self.status == ProcessingStatus.TDS_COMMITTED and (
+            self.result_digest is None or not self.bigquery_job_ids
+        ):
+            raise ValueError("TDS receipt requires durable result and job IDs")
+        if (
+            self.status
+            in (ProcessingStatus.QUARANTINED, ProcessingStatus.RETRYABLE_ERROR)
+            and self.error_code is None
+        ):
+            raise ValueError("failed outcome requires coded reason")
+        return self
+
+    @classmethod
+    def from_event(
+        cls,
+        event: "RawReviewEnvelope",
+        *,
+        receipt_id: str,
+        status: ProcessingStatus,
+        processed_at: datetime,
+        result_digest: str | None = None,
+        bigquery_job_ids: tuple[str, ...] = (),
+        error_code: str | None = None,
+    ) -> Self:
+        """Propaga la identidad, sin copiar textos ni usuarios al recibo."""
+        return cls(
+            receipt_id=receipt_id,
+            event_id=event.event_id,
+            bank_id=event.bank_id,
+            app_id=event.app_id,
+            review_id=event.review_id,
+            source_revision=event.source_revision,
+            page_id=event.page_id,
+            status=status,
+            processed_at=processed_at,
+            result_digest=result_digest,
+            bigquery_job_ids=bigquery_job_ids,
+            error_code=error_code,
+        )
+
+
+class IngestionWatermarkState(_BankStateV2):
+    """Raíz compacta del estado; el reducer avanza por página confirmada."""
+
+    revision: Counter = 0
+    updated_at: UtcDatetime = Field(default_factory=_utcnow)
+    observed_min_at: UtcDatetime | None = None
+    observed_max_at: UtcDatetime | None = None
+    incremental: IncrementalProgress = Field(
+        default_factory=IncrementalProgress
+    )
+    historical_plan_ids: tuple[NonEmpty, ...] = ()
+    stream_ids: tuple[NonEmpty, ...] = ()
+    manifest_ledger: LedgerReference | None = None
+    coverage: CoverageStatus = CoverageStatus.UNVERIFIED
+
+    @model_validator(mode="after")
+    def _bounds(self) -> Self:
+        if (self.observed_min_at is None) != (self.observed_max_at is None):
+            raise ValueError("observed bounds must be paired")
+        if (
+            self.observed_min_at is not None
+            and self.observed_max_at is not None
+            and self.observed_min_at > self.observed_max_at
+        ):
+            raise ValueError("reversed observed bounds")
+        if len(set(self.historical_plan_ids)) != len(
+            self.historical_plan_ids
+        ) or len(set(self.stream_ids)) != len(self.stream_ids):
+            raise ValueError("duplicate references")
+        if self.coverage != CoverageStatus.UNVERIFIED and (
+            self.manifest_ledger is None
+        ):
+            raise ValueError("coverage requires manifest evidence")
+        if (
+            self.incremental.stream_id is not None
+            and self.incremental.stream_id not in self.stream_ids
+        ):
+            raise ValueError("incremental stream missing from root references")
+        return self
+
+
+def _content_digest(value: Any) -> str:
+    canonical = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def compute_source_revision(raw: RawReviewEvent) -> str:
+    """Digest de contenido normalizado del origen, sin timestamp de captura."""
+    return _content_digest(raw.model_dump(mode="json", exclude={"ingested_at"}))
+
+
+def compute_event_id(
+    bank_id: BankKey,
+    review_id: str,
+    source_revision: str,
+) -> str:
+    """Identidad estable entre páginas, ejecuciones y redeliveries."""
+    return _content_digest([bank_id.value, review_id, source_revision])
+
+
+class RawReviewSnapshot(RawReviewEvent):
+    """Copia inmutable del contenido usado para calcular la identidad."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class _ReviewEnvelopeV2(_BankStateV2):
+    event_id: Digest
+    review_id: NonEmpty
+    source_revision: Digest
+    page_id: NonEmpty
+    plan_id: NonEmpty | None = None
+    stream_id: NonEmpty
+
+    @model_validator(mode="after")
+    def _event_identity(self) -> Self:
+        expected = compute_event_id(
+            self.bank_id,
+            self.review_id,
+            self.source_revision,
+        )
+        if self.event_id != expected:
+            raise ValueError("event_id does not match bank/review/revision")
+        return self
+
+
+class RawReviewEnvelope(_ReviewEnvelopeV2):
+    """Sobre pre-DLP v2; ingested_at y page_id no modifican su identidad."""
+
+    raw: RawReviewSnapshot = Field(repr=False)
+
+    @model_validator(mode="after")
+    def _source(self) -> Self:
+        if (self.raw.bank_id, self.raw.app_id, self.raw.id_resena) != (
+            self.bank_id,
+            self.app_id,
+            self.review_id,
+        ):
+            raise ValueError("raw payload identity differs from envelope")
+        if self.source_revision != compute_source_revision(self.raw):
+            raise ValueError("source_revision differs from raw content")
+        return self
+
+    @classmethod
+    def from_raw(
+        cls,
+        raw: RawReviewEvent,
+        *,
+        page_id: str,
+        stream_id: str,
+        plan_id: str | None = None,
+    ) -> Self:
+        revision = compute_source_revision(raw)
+        return cls(
+            bank_id=raw.bank_id,
+            app_id=raw.app_id,
+            review_id=raw.id_resena,
+            source_revision=revision,
+            event_id=compute_event_id(raw.bank_id, raw.id_resena, revision),
+            page_id=page_id,
+            stream_id=stream_id,
+            plan_id=plan_id,
+            raw=RawReviewSnapshot.model_validate(raw.model_dump()),
+        )
+
+
+class SanitizedReviewSnapshot(SanitizedReviewRecord):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class SanitizedReviewEnvelope(_ReviewEnvelopeV2):
+    """Resultado sanitizado con identidad de origen, sin payload crudo."""
+
+    record: SanitizedReviewSnapshot
+
+    @model_validator(mode="after")
+    def _record_identity(self) -> Self:
+        if (self.record.bank_id, self.record.app_id, self.record.id_resena) != (
+            self.bank_id,
+            self.app_id,
+            self.review_id,
+        ):
+            raise ValueError("sanitized identity differs from envelope")
+        return self
+
+    @classmethod
+    def from_event(
+        cls,
+        event: RawReviewEnvelope,
+        record: SanitizedReviewRecord,
+    ) -> Self:
+        for name in ("fecha", "estrellas", "votos_utilidad", "version_app"):
+            if getattr(record, name) != getattr(event.raw, name):
+                raise ValueError("sanitized source metadata changed")
+        return cls(
+            **event.model_dump(exclude={"raw"}),
+            record=SanitizedReviewSnapshot.model_validate(record.model_dump()),
+        )
+
+
+class IngestionRunAudit(_BankStateV2):
+    """Contrato de tabla ingestion_runs_log_v2 (aprovisionamiento en EPIC-2)."""
+
+    audit_event_id: NonEmpty
+    run_id: NonEmpty
+    mode_executed: IngestionMode
+    status: RunAuditStatus
+    updated_at: UtcDatetime
+    plan_id: NonEmpty | None = None
+    stream_id: NonEmpty | None = None
+    reason: NonEmpty | None = None
+    state_revision: Counter | None = None
+    committed_high_at: UtcDatetime | None = None
+    observed_min_at: UtcDatetime | None = None
+    observed_max_at: UtcDatetime | None = None
+    pages_committed: Counter | None = None
+    reviews_extracted: Counter | None = None
+    reviews_published: Counter | None = None
+    reviews_discarded: Counter | None = None
+    recovery_requests: Counter | None = None
+
+    @model_validator(mode="after")
+    def _audit_bounds(self) -> Self:
+        if (
+            self.observed_min_at is not None
+            and self.observed_max_at is not None
+            and self.observed_min_at > self.observed_max_at
+        ):
+            raise ValueError("reversed audit observations")
+        if self.reviews_extracted is not None:
+            outcomes = (self.reviews_published or 0) + (
+                self.reviews_discarded or 0
+            )
+            if outcomes > self.reviews_extracted:
+                raise ValueError("audit outcomes exceed extraction count")
+        return self

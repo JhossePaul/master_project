@@ -14,17 +14,15 @@ _PROJECT = "test-voc-project"
 _ROLES = {
     "voc-sa-ingestion": {
         "roles/pubsub.publisher",
-        "roles/storage.objectUser",
         "roles/bigquery.dataEditor",
     },
-    "voc-sa-scheduler": {"roles/run.invoker"},
+    "voc-sa-scheduler": set(),
     "voc-sa-sanitization": {
         "roles/pubsub.subscriber",
         "roles/pubsub.viewer",
         "roles/dlp.user",
         "roles/bigquery.dataEditor",
         "roles/bigquery.jobUser",
-        "roles/storage.objectAdmin",
     },
     "voc-sa-ml-backend": {
         "roles/bigquery.dataEditor",
@@ -69,7 +67,7 @@ def test_security_resources_and_dependencies(
     assert all(s["project"] == _PROJECT for s in accounts)
 
     memberships = [s for s in states if "member" in s]
-    assert len(memberships) == 15
+    assert len(memberships) == 12
     for account, roles in _ROLES.items():
         expected_member = (
             f"serviceAccount:{account}@{_PROJECT}.iam.gserviceaccount.com"

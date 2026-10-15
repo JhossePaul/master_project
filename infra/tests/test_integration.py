@@ -10,6 +10,7 @@ import pytest
 from voc_common import (
     AnalyzedReviewPrediction,
     HitlTriageAuditRecord,
+    IngestionRunAudit,
     SanitizedReviewRecord,
 )
 
@@ -122,13 +123,14 @@ def test_integration_contracts_and_cmek(
     assert set(tables) == {
         "sanitized_reviews_tds",
         "delora_predictions",
-        "ingestion_watermarks_log",
+        "ingestion_runs_log_v2",
         "hitl_triage_audit_log",
     }
     models = {
         "sanitized_reviews_tds": SanitizedReviewRecord,
         "delora_predictions": AnalyzedReviewPrediction,
         "hitl_triage_audit_log": HitlTriageAuditRecord,
+        "ingestion_runs_log_v2": IngestionRunAudit,
     }
     for name, table in tables.items():
         state = table.state
@@ -165,19 +167,6 @@ def test_integration_contracts_and_cmek(
     assert next(
         f for f in predictions_schema if f["name"] == "embedding_vector"
     ) == {"name": "embedding_vector", "type": "FLOAT", "mode": "REPEATED"}
-    watermark_schema = json.loads(
-        tables["ingestion_watermarks_log"].state["schema"]
-    )
-    assert {f["name"] for f in watermark_schema} == {
-        "bank_id",
-        "app_id",
-        "mode_executed",
-        "max_review_timestamp",
-        "min_review_timestamp",
-        "oldest_continuation_token",
-        "reviews_extracted_in_run",
-        "updated_at",
-    }
     grants = _resources(
         resources, "gcp:kms/cryptoKeyIAMMember:CryptoKeyIAMMember"
     )

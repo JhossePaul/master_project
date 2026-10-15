@@ -1,0 +1,45 @@
+{
+  "protocol_version": "ocpfdb-2026-10-15.1",
+  "reference_file": "experiments/playstore/protocol_probe.py",
+  "reference_sha256": "8cad0f2fdede64ba38b1a260ae6be6970b6dcf577d3723dd4422cc7b7e2540d5",
+  "reference_url": "https://github.com/JoMingyu/google-play-scraper/blob/master/google_play_scraper/constants/request.py",
+  "fixtures": [
+    {
+      "file": "observed_014.txt",
+      "source": "response_014.txt.gz",
+      "source_decompressed_sha256": "03c440d97b0148e8186c8d985456b1d80a8bc69f78d38fa64d3954e9b1650e2a",
+      "fixture_sha256": "4f909db5d3b89b5ee29cf86a1ef0611d273568e1c9586c886dd183b4342b9c54",
+      "original_rows": 199,
+      "projected_indices": [
+        0,
+        1,
+        2,
+        35
+      ]
+    },
+    {
+      "file": "observed_015.txt",
+      "source": "response_015.txt.gz",
+      "source_decompressed_sha256": "8fdf3b7342562af44a351cd70669711968952572f9b1bd34ca6b362de9403d70",
+      "fixture_sha256": "02d3979ee1a5a1cc33c116e8220a4f374f86d77ee4c0a6c43f89b13002b70f64",
+      "original_rows": 199,
+      "projected_indices": [
+        0,
+        1,
+        69
+      ]
+    },
+    {
+      "file": "observed_016.txt",
+      "source": "response_016.txt.gz",
+      "source_decompressed_sha256": "d8e23edbe9388f65af103bdf73c57ccd607519ed19cfc62b7ac9765828e2bce8",
+      "fixture_sha256": "86dc4d21f4566c70d37bb1ae3e7bc14955a7ad0f879bdff1b533bc4d2708d3fe",
+      "original_rows": 199,
+      "projected_indices": [
+        0,
+        1,
+        37
+      ]
+    }
+  ]
+}

@@ -114,7 +114,19 @@ Los hooks ejecutan Ruff (lint con correcciones y formato) y Bandit usando el
 mismo entorno de `uv` que CI. Los fallbacks de variables en CI son exclusivos
 de pruebas; la sal real de producción se configura por separado.
 
+### Contratos de ingesta v2 (Épica 1)
+
+`voc-common` incluye eventos versionados, IDs de revisión estables, manifiestos,
+recibos y reducer por página con un único contrato de estado.
+La configuración v2 queda desactivada por defecto hasta aprovisionar sus recursos.
+Consultar [contratos, configuración y activación](docs/contracts/ingestion_v2.md)
+para los defaults, fixtures y orden de activación con las épicas 2–4.
+
 ### Infraestructura Pulumi (Épica 2 implementada)
+
+La suite integrada y el orden del primer despliegue se documentan en
+[activación y preview](docs/deployment.md). El preview con proveedor sigue
+pendiente de configurar el stack/backend y credenciales reales.
 
 `infra` forma parte del workspace. Sincroniza desde la raíz con
 `uv sync --all-packages --locked` antes de ejecutar Pulumi; el runtime utiliza

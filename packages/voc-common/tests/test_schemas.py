@@ -9,7 +9,6 @@ import pytest
 from pydantic import ValidationError
 from voc_common.constants import (
     PLAYSTORE_BANK_APPS,
-    WATERMARK_MAX_FRONTIER_IDS,
     ABSATopic,
     BankKey,
     IngestionMode,
@@ -21,7 +20,6 @@ from voc_common.schemas import (
     HitlTriageAuditRecord,
     IncidentAlertMessage,
     IngestionRequestPayload,
-    IngestionWatermarkState,
     PlayStoreRpcCursor,
     RawReviewEvent,
     SanitizedReviewRecord,
@@ -138,93 +136,6 @@ def test_sequential_batch_request_defaults() -> None:
         SequentialBatchIngestionRequest(inter_bank_delay_sec=0.5)
     with pytest.raises(ValidationError):
         SequentialBatchIngestionRequest(banks=["HSBC"])
-
-
-# ---------------------------------------------------------------------------
-# Tarea 1.3.2
-# ---------------------------------------------------------------------------
-
-
-def test_watermark_bidirectional_incremental_and_backfill() -> None:
-    state = IngestionWatermarkState(bank_id=BankKey.BBVA, app_id=APP_ID)
-    assert not state.should_stop_incremental("r0", T0)
-
-    cursor_b64 = "CpEBCo4BKmsKaRIAWaZ0b2tlbg=="
-    state.update_bounds("r1", T0, next_page_token=cursor_b64)
-    state.update_bounds("r2", T0 - timedelta(days=3))
-    state.update_bounds("r3", T0 + timedelta(hours=1))
-
-    assert state.max_review_timestamp == T0 + timedelta(hours=1)
-    assert state.min_review_timestamp == T0 - timedelta(days=3)
-    assert state.recent_review_ids == {"r3"}
-    assert state.oldest_review_ids == {"r2"}
-    assert state.oldest_page_token == cursor_b64
-    assert state.total_extracted_count == 3
-
-    # Frontera superior: duplicado por ID o fecha anterior al máximo.
-    assert state.should_stop_incremental("r3", T0 + timedelta(days=9))
-    assert state.should_stop_incremental("nuevo", T0)
-    assert not state.should_stop_incremental("nuevo", T0 + timedelta(hours=2))
-    naive_newer = (T0 + timedelta(hours=2)).replace(tzinfo=None)
-    assert not state.should_stop_incremental("nuevo", naive_newer)
-
-    # Corte exacto de 365 días.
-    now = datetime(2026, 10, 14, tzinfo=UTC)
-    cutoff = now - timedelta(days=365)
-    assert state.has_reached_one_year_backfill(cutoff, reference_now=now)
-    assert not state.has_reached_one_year_backfill(
-        cutoff + timedelta(seconds=1), reference_now=now
-    )
-    assert state.has_reached_one_year_backfill(datetime(2020, 1, 1, tzinfo=UTC))
-
-
-def test_watermark_frontier_ties_and_bound() -> None:
-    state = IngestionWatermarkState(bank_id=BankKey.BBVA, app_id=APP_ID)
-    state.update_bounds("a", T0)
-    state.update_bounds("b", T0)
-    assert state.recent_review_ids == {"a", "b"}
-    assert state.oldest_review_ids == {"a", "b"}
-
-    for i in range(WATERMARK_MAX_FRONTIER_IDS + 50):
-        state.update_bounds(f"x{i}", T0)
-    assert len(state.recent_review_ids) == WATERMARK_MAX_FRONTIER_IDS
-    assert len(state.oldest_review_ids) == WATERMARK_MAX_FRONTIER_IDS
-
-
-def test_watermark_json_roundtrip_and_star_tokens() -> None:
-    state = IngestionWatermarkState(bank_id=BankKey.SANTANDER, app_id="x.y")
-    state.update_bounds("b", T0)
-    state.update_bounds("a", T0)
-    state.update_star_partition_token(1, "dG9rZW4x")
-    state.update_star_partition_token(5, None)
-    with pytest.raises(ValueError, match="1..5"):
-        state.update_star_partition_token(6, "x")
-
-    raw_json = state.model_dump_json()
-    assert json.loads(raw_json)["recent_review_ids"] == ["a", "b"]
-
-    restored = IngestionWatermarkState.model_validate_json(raw_json)
-    assert restored == state
-    assert restored.star_partition_tokens == {1: "dG9rZW4x", 5: None}
-
-    with pytest.raises(ValidationError):
-        IngestionWatermarkState(
-            bank_id=BankKey.BBVA, app_id=APP_ID, star_partition_tokens={0: "x"}
-        )
-
-
-@pytest.mark.parametrize("frontier", ["recent_review_ids", "oldest_review_ids"])
-def test_watermark_rejects_oversized_checkpoint(frontier: str) -> None:
-    checkpoint = {
-        "bank_id": "BBVA",
-        "app_id": APP_ID,
-        frontier: [f"r{i}" for i in range(WATERMARK_MAX_FRONTIER_IDS)],
-    }
-    state = IngestionWatermarkState.model_validate_json(json.dumps(checkpoint))
-    assert len(getattr(state, frontier)) == WATERMARK_MAX_FRONTIER_IDS
-    checkpoint[frontier].append("overflow")
-    with pytest.raises(ValidationError):
-        IngestionWatermarkState.model_validate_json(json.dumps(checkpoint))
 
 
 # ---------------------------------------------------------------------------

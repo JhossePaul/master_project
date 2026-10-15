@@ -4,11 +4,9 @@ import base64
 import json
 import runpy
 from pathlib import Path
-from typing import Any
 
 import pulumi
 import pytest
-from pulumi.runtime import rpc
 from voc_common import (
     BankKey,
     IngestionRequestPayload,
@@ -17,17 +15,12 @@ from voc_common import (
 from voc_common.config import DEV_USER_HASH_SALT
 
 from infra.modules.cloud_run import _validate_hash_salt
-from infra.tests.conftest import InfrastructureMonitor
-
-
-def _unwrap(value: Any) -> Any:
-    if rpc.is_rpc_secret(value):
-        return _unwrap(rpc.unwrap_rpc_secret(value))
-    if isinstance(value, dict):
-        return {k: _unwrap(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_unwrap(v) for v in value]
-    return value
+from infra.tests.conftest import (
+    InfrastructureMonitor,
+)
+from infra.tests.conftest import (
+    unwrap_outputs as _unwrap,
+)
 
 
 @pytest.mark.parametrize("free_tier", [True, False])

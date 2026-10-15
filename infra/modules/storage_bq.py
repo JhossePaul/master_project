@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import pulumi
 import pulumi_gcp as gcp
+from voc_common.config import IngestionStorageLayout
 
 
 @dataclass
@@ -13,8 +14,9 @@ class StorageAndBqResources:
     dataset: gcp.bigquery.Dataset
     sanitized_reviews_tds: gcp.bigquery.Table
     delora_predictions: gcp.bigquery.Table
-    ingestion_watermarks_log: gcp.bigquery.Table
+    ingestion_runs_log: gcp.bigquery.Table
     hitl_triage_audit_log: gcp.bigquery.Table
+    storage_layout: IngestionStorageLayout
 
 
 def _schema(
@@ -63,15 +65,27 @@ _PREDICTIONS = (
     ("requires_hitl", "BOOLEAN", "REQUIRED"),
     ("embedding_vector", "FLOAT", "REPEATED"),
 )
-_WATERMARKS = (
+_INGESTION_RUNS = (
+    ("audit_event_id", "STRING", "REQUIRED"),
+    ("schema_version", "INTEGER", "REQUIRED"),
     ("bank_id", "STRING", "REQUIRED"),
     ("app_id", "STRING", "REQUIRED"),
+    ("run_id", "STRING", "REQUIRED"),
     ("mode_executed", "STRING", "REQUIRED"),
-    ("max_review_timestamp", "TIMESTAMP", "NULLABLE"),
-    ("min_review_timestamp", "TIMESTAMP", "NULLABLE"),
-    ("oldest_continuation_token", "STRING", "NULLABLE"),
-    ("reviews_extracted_in_run", "INTEGER", "REQUIRED"),
+    ("status", "STRING", "REQUIRED"),
     ("updated_at", "TIMESTAMP", "REQUIRED"),
+    ("plan_id", "STRING", "NULLABLE"),
+    ("stream_id", "STRING", "NULLABLE"),
+    ("reason", "STRING", "NULLABLE"),
+    ("state_revision", "INTEGER", "NULLABLE"),
+    ("committed_high_at", "TIMESTAMP", "NULLABLE"),
+    ("observed_min_at", "TIMESTAMP", "NULLABLE"),
+    ("observed_max_at", "TIMESTAMP", "NULLABLE"),
+    ("pages_committed", "INTEGER", "NULLABLE"),
+    ("reviews_extracted", "INTEGER", "NULLABLE"),
+    ("reviews_published", "INTEGER", "NULLABLE"),
+    ("reviews_discarded", "INTEGER", "NULLABLE"),
+    ("recovery_requests", "INTEGER", "NULLABLE"),
 )
 _AUDIT = (
     ("audit_id", "STRING", "REQUIRED"),
@@ -94,8 +108,10 @@ def create_storage_and_bq_resources(
     api_deps: list[pulumi.Resource],
     *,
     environment: str = "dev",
+    storage_layout: IngestionStorageLayout | None = None,
 ) -> StorageAndBqResources:
     """Aprovisiona staging con caducidad y cuatro tablas curadas/auditoría."""
+    layout = storage_layout or IngestionStorageLayout()
     is_dev = environment.strip().lower() == "dev"
     bucket_deps = list(api_deps)
     bq_deps = list(api_deps)
@@ -137,7 +153,10 @@ def create_storage_and_bq_resources(
                 "action": {"type": "Delete"},
                 "condition": {
                     "age": 7,
-                    "matches_prefixes": ["raw_staging/", "temp_beam/"],
+                    "matches_prefixes": [
+                        layout.gcs_raw_staging_prefix + "/",
+                        "temp_beam/",
+                    ],
                 },
             }
         ],
@@ -159,6 +178,7 @@ def create_storage_and_bq_resources(
         name: str,
         fields: tuple[tuple[str, str, str], ...],
         clustering: list[str] | None = None,
+        partition_field: str | None = None,
     ) -> gcp.bigquery.Table:
         return gcp.bigquery.Table(
             name,
@@ -168,7 +188,9 @@ def create_storage_and_bq_resources(
             schema=_schema(fields),
             deletion_protection=not is_dev,
             time_partitioning=(
-                {"type": "DAY", "field": "fecha"} if clustering else None
+                {"type": "DAY", "field": partition_field}
+                if partition_field
+                else None
             ),
             clusterings=clustering,
             encryption_configuration=(
@@ -180,12 +202,24 @@ def create_storage_and_bq_resources(
     return StorageAndBqResources(
         bucket,
         dataset,
-        table("sanitized_reviews_tds", _SANITIZED, ["bank_id", "version_app"]),
+        table(
+            "sanitized_reviews_tds",
+            _SANITIZED,
+            ["bank_id", "version_app"],
+            "fecha",
+        ),
         table(
             "delora_predictions",
             _PREDICTIONS,
             ["bank_id", "topico", "tnss_score"],
+            "fecha",
         ),
-        table("ingestion_watermarks_log", _WATERMARKS),
+        table(
+            "ingestion_runs_log_v2",
+            _INGESTION_RUNS,
+            ["bank_id", "run_id", "status"],
+            "updated_at",
+        ),
         table("hitl_triage_audit_log", _AUDIT),
+        layout,
     )

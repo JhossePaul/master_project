@@ -65,7 +65,7 @@ def create_scheduler_jobs(
                 f"{minute % 60} {8 + minute // 60} * * *",
                 "/api/v1/ingest",
                 IngestionRequestPayload(
-                    bank_id=bank, page_size=199, max_reviews_per_run=2000
+                    bank_id=bank, max_reviews_per_run=2000
                 ).model_dump_json(),
             )
     jobs.append(

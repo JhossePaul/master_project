@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "bank_id": "BBVA",
+  "app_id": "com.bancomer.mbanking",
+  "audit_event_id": "fixture-audit",
+  "run_id": "fixture-run",
+  "mode_executed": "BACKFILL",
+  "status": "COMPLETED",
+  "updated_at": "2026-10-15T00:00:00Z",
+  "plan_id": "fixture-plan",
+  "stream_id": "fixture-stream",
+  "reason": null,
+  "state_revision": 1,
+  "committed_high_at": null,
+  "observed_min_at": "2026-10-14T00:00:00Z",
+  "observed_max_at": "2026-10-14T00:00:00Z",
+  "pages_committed": 1,
+  "reviews_extracted": 1,
+  "reviews_published": 1,
+  "reviews_discarded": 0,
+  "recovery_requests": 0
+}

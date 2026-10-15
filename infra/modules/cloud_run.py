@@ -1,15 +1,44 @@
 """Servicios Gen2 y sanitización efímera con identidad dedicada."""
 
 from dataclasses import dataclass
+from typing import Annotated
 
 import pulumi
 import pulumi_gcp as gcp
-from voc_common.config import DEV_USER_HASH_SALT
+from pydantic import BaseModel, ConfigDict, Field
+from voc_common.config import DEV_USER_HASH_SALT, IngestionExecutionConfig
 
 from infra.modules.dlp import DlpTemplates
-from infra.modules.kms_iam import SecurityResources
+from infra.modules.kms_iam import (
+    SecurityResources,
+    create_historical_job_access,
+)
 from infra.modules.pubsub import PubSubResources
 from infra.modules.storage_bq import StorageAndBqResources
+
+
+class HistoricalExecutionConfig(IngestionExecutionConfig):
+    """Los overrides parciales mantienen defaults del histórico, no del HTTP."""
+
+    ingestion_max_requests: int = Field(default=1000, gt=0)
+    ingestion_max_response_bytes: int = Field(default=200_000_000, gt=0)
+    ingestion_max_runtime_sec: int = Field(default=3480, gt=0)
+    ingestion_container_timeout_sec: int = Field(default=3600, gt=0)
+    ingestion_checkpoint_margin_sec: int = Field(default=120, gt=0)
+
+
+class HistoricalJobConfig(BaseModel):
+    """Perfil histórico independiente del presupuesto HTTP."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    execution: HistoricalExecutionConfig = Field(
+        default_factory=HistoricalExecutionConfig,
+    )
+    command: tuple[Annotated[str, Field(min_length=1)], ...] = Field(
+        default=("python", "-m", "ingestion_worker.job"),
+        min_length=1,
+    )
+    max_retries: int = Field(default=1, ge=0, le=10)
 
 
 @dataclass
@@ -20,6 +49,9 @@ class CloudRunResources:
     api_backend: gcp.cloudrunv2.Service
     ingestion_invoker: gcp.cloudrunv2.ServiceIamMember
     sanitization_invoker: gcp.cloudrunv2.JobIamMember
+    historical_job: gcp.cloudrunv2.Job
+    historical_invoker: gcp.cloudrunv2.JobIamMember
+    historical_job_name: pulumi.Output[str]
 
 
 def _validate_hash_salt(value: str, environment: str) -> str:
@@ -50,8 +82,18 @@ def create_cloud_run_resources(
     free_tier_mode: bool = True,
     enable_vertex: bool = False,
     scraper_proxy_pool_urls: pulumi.Output[str] | None = None,
+    ingestion_execution: IngestionExecutionConfig | None = None,
+    historical_config: HistoricalJobConfig | None = None,
+    historical_job_image: str | None = None,
+    ingestion_v2_enabled: bool = False,
 ) -> CloudRunResources:
     """Define contenedores y permisos; no ejecuta jobs ni publica imágenes."""
+    execution = ingestion_execution or IngestionExecutionConfig()
+    history = historical_config or HistoricalJobConfig()
+    if execution.ingestion_container_timeout_sec > 3600:
+        raise ValueError("HTTP timeout cannot exceed 3600 seconds")
+    if history.execution.ingestion_container_timeout_sec > 604800:
+        raise ValueError("historical task timeout cannot exceed seven days")
     user_hash_salt = user_hash_salt.apply(
         lambda value: _validate_hash_salt(value, environment)
     )
@@ -65,16 +107,19 @@ def create_cloud_run_resources(
     )
     common: dict[str, pulumi.Input[str]] = {
         "ENVIRONMENT": environment,
+        "USER_HASH_SALT": user_hash_salt,
         "FREE_TIER_MODE": str(free_tier_mode).lower(),
         "GCP_PROJECT_ID": project_id,
         "GCP_REGION": region,
         "GCS_RAW_DATALAKE_BUCKET": storage_bq.datalake_bucket.name,
-        "GCS_WATERMARK_PREFIX": "state/watermarks",
-        "GCS_RAW_STAGING_PREFIX": "raw_staging",
+        **{
+            name.upper(): value
+            for name, value in storage_bq.storage_layout.model_dump().items()
+        },
         "BQ_DATASET_ID": storage_bq.dataset.dataset_id,
         "BQ_SANITIZED_TDS_TABLE": storage_bq.sanitized_reviews_tds.table_id,
         "BQ_PREDICTIONS_TABLE": storage_bq.delora_predictions.table_id,
-        "BQ_WATERMARKS_LOG_TABLE": storage_bq.ingestion_watermarks_log.table_id,
+        "BQ_INGESTION_RUNS_LOG_TABLE": storage_bq.ingestion_runs_log.table_id,
         "BQ_HITL_AUDIT_TABLE": storage_bq.hitl_triage_audit_log.table_id,
         "PUBSUB_RAW_REVIEWS_TOPIC": pubsub.raw_topic.name,
         "PUBSUB_RAW_SUBSCRIPTION": pubsub.raw_subscription.name,
@@ -88,17 +133,84 @@ def create_cloud_run_resources(
         *[
             storage_bq.sanitized_reviews_tds,
             storage_bq.delora_predictions,
-            storage_bq.ingestion_watermarks_log,
+            storage_bq.ingestion_runs_log,
             storage_bq.hitl_triage_audit_log,
         ],
     ]
     opts = pulumi.ResourceOptions(depends_on=deps)
+
+    def execution_env(
+        profile: IngestionExecutionConfig,
+    ) -> dict[str, pulumi.Input[str]]:
+        return {
+            **{
+                key.upper(): str(value)
+                for key, value in profile.model_dump().items()
+            },
+            "INGESTION_V2_ENABLED": str(ingestion_v2_enabled).lower(),
+            "SCRAPER_PROXY_POOL_URLS": (
+                scraper_proxy_pool_urls
+                if scraper_proxy_pool_urls is not None
+                else "[]"
+            ),
+        }
+
+    historical = gcp.cloudrunv2.Job(
+        "voc-ingestion-history-job",
+        name="voc-ingestion-history-job",
+        project=project_id,
+        location=region,
+        template={
+            "task_count": 1,
+            "parallelism": 1,
+            "template": {
+                "service_account": security.sa_ingestion_worker.email,
+                "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
+                "timeout": (
+                    f"{history.execution.ingestion_container_timeout_sec}s"
+                ),
+                "max_retries": history.max_retries,
+                "containers": [
+                    {
+                        "name": "historical-ingestion",
+                        "image": historical_job_image or ingestion_worker_image,
+                        "commands": list(history.command),
+                        "resources": {"limits": {"cpu": "1", "memory": "1Gi"}},
+                        "envs": [
+                            {"name": key, "value": value}
+                            for key, value in {
+                                **common,
+                                **execution_env(history.execution),
+                            }.items()
+                        ],
+                    }
+                ],
+            },
+        },
+        opts=opts,
+    )
+    history_access = create_historical_job_access(
+        historical,
+        security.sa_ingestion_worker,
+        project_id,
+        region,
+    )
+    history_name = pulumi.Output.concat(
+        "projects/",
+        project_id,
+        "/locations/",
+        region,
+        "/jobs/",
+        historical.name,
+    )
 
     def service(
         name: str,
         image: str,
         account: pulumi.Output[str],
         env: dict[str, pulumi.Input[str]],
+        timeout_sec: int = 900,
+        wait_for: list[pulumi.Resource] | None = None,
     ) -> gcp.cloudrunv2.Service:
         return gcp.cloudrunv2.Service(
             name,
@@ -109,7 +221,7 @@ def create_cloud_run_resources(
                 "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
                 "service_account": account,
                 "scaling": {"min_instance_count": 0, "max_instance_count": 2},
-                "timeout": "900s",
+                "timeout": f"{timeout_sec}s",
                 "containers": [
                     {
                         "image": image,
@@ -123,7 +235,7 @@ def create_cloud_run_resources(
                     }
                 ],
             },
-            opts=opts,
+            opts=pulumi.ResourceOptions(depends_on=[*deps, *(wait_for or [])]),
         )
 
     ingestion = service(
@@ -132,18 +244,11 @@ def create_cloud_run_resources(
         security.sa_ingestion_worker.email,
         {
             **common,
-            "SCRAPER_PAGE_SIZE": "199",
-            "SCRAPER_BASE_DELAY_SEC": "1.5",
-            "SCRAPER_MAX_JITTER_SEC": "2.0",
-            "SCRAPER_MAX_RETRIES": "5",
-            "SCRAPER_TIMEOUT_SEC": "30.0",
-            "SCRAPER_ROTATE_PROXY_EVERY_N_BATCHES": "5",
-            "SCRAPER_PROXY_POOL_URLS": (
-                scraper_proxy_pool_urls
-                if scraper_proxy_pool_urls is not None
-                else "[]"
-            ),
+            **execution_env(execution),
+            "INGESTION_HISTORY_JOB_NAME": history_name,
         },
+        timeout_sec=execution.ingestion_container_timeout_sec,
+        wait_for=[historical, history_access],
     )
     sanitization = gcp.cloudrunv2.Job(
         "voc-sanitization-job",
@@ -172,7 +277,6 @@ def create_cloud_run_resources(
                                 "DLP_DEIDENTIFY_TEMPLATE_ID": (
                                     dlp.deidentify_template.id
                                 ),
-                                "USER_HASH_SALT": user_hash_salt,
                                 "BEAM_RUNNER": "DirectRunner",
                             }.items()
                         ],
@@ -216,4 +320,7 @@ def create_cloud_run_resources(
         backend,
         ingestion_invoker,
         sanitization_invoker,
+        historical,
+        history_access,
+        history_name,
     )

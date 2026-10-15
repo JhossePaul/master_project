@@ -1,6 +1,6 @@
 # EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC con Pulumi)
 
-* **Estado:** Base IMPLEMENTADA — Features 2.1–2.6 verificadas con mocks. Ajustes de compatibilidad con el estado de ingesta v2 pendientes (ver sección siguiente). Preview real de GCP pendiente.
+* **Estado:** IMPLEMENTADO — Features 2.1–2.10 verificadas localmente con mocks. Contrato único de estado/auditoría. Preview con proveedor y despliegue pendientes de stack/backend y credenciales reales.
 * **Semanas Objetivo:** Semanas 1 - 2
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/src/voc_common/config.py` (Ampliación de variables para Scraper Propio y Flags de Infraestructura)
@@ -23,70 +23,20 @@
 
 ---
 
-## Ajuste pendiente: infraestructura compatible con el estado de ingesta v2
+## Base actual sin compatibilidad de despliegues anteriores
 
-La base implementada conserva contratos v1 en `voc-common` y en la tabla de
-auditoría. Esta sección especifica trabajo pendiente; no declara recursos nuevos
-ya desplegados. EPIC-3 es la fuente de verdad del modelo y del reducer de estado.
+No existe despliegue ni datos de una versión anterior. El contrato actual es la
+base del primer despliegue: no implementar escritura dual, tablas legado ni
+migraciones preventivas. La versión del schema sigue siendo útil para evoluciones
+futuras, pero no obliga a conservar diseños descartados.
 
-### Persistencia, concurrencia y recuperación
+## Ampliación para watermark v2
 
-* Mantener el bucket actual: `state/watermarks/{bank_id}.json` contiene la raíz
-  compacta v2 y referencias a objetos bajo `state/ingestion/{bank_id}/` para planes,
-  streams, versiones inmutables de manifiestos, ledgers y recibos. No guardar todo
-  el corpus en un único JSON ni usar el token como identificador de página.
-* La raíz separa límites observados, progreso incremental comprometido y planes
-  históricos. Cada stream conserva contexto completo, página ancla, cursores de
-  entrada/salida y estado de recuperación. Anual -> FULL amplía el mismo plan sin
-  recalcular su fecha inicial; el incremental no mueve el cursor histórico.
-* Implementar CAS en el repositorio de EPIC-3: creación con generación 0,
-  actualización con la generación leída, lease por banco y fencing epoch.
-  Un conflicto requiere reconciliar o abandonar; no sobrescribir a ciegas.
-  Los permisos actuales `roles/storage.objectUser` cubren las operaciones de
-  objetos: no hace falta crear una base de datos o un recurso Pulumi de lock.
-  La concurrencia debe probarse con fallos en el repositorio, además de mocks IaC.
-* Publicar manifiestos inmutables antes de referenciarlos desde la raíz. GCS no
-  ofrece una transacción entre todos estos objetos: detectar/reconciliar huérfanos
-  e intentos repetidos. Los recibos de sanitización no se confunden con publicación.
-* Preservar los prefijos `state/` de las reglas de caducidad de crudos. Los
-  respaldos de página con texto permanecen en `raw_staging/`, sujetos a su TTL
-  actual de 7 días; guardar su URI/generación no extiende esa disponibilidad.
-  Si caducan antes de sanitizar, registrar el hueco y activar recuperación, sin
-  declarar cobertura TDS completa. Definir limpieza de metadatos obsoletos por
-  referencias/planes activos; no aplicarles una caducidad ciega de 7 días.
-* Migrar v1 conservando fechas como observaciones y tokens como candidatos;
-  cobertura inicial `UNVERIFIED`. No traducir los booleanos de backfill a prueba
-  de completitud. Implementar esto en `voc-common` y EPIC-3, no en Pulumi.
-
-### Auditoría y ejecución
-
-* Crear `ingestion_runs_log_v2` en `storage_bq.py`, manteniendo la tabla v1
-  durante la transición. Campos requeridos: `audit_event_id`, `schema_version`,
-  `bank_id`, `app_id`, `run_id`, `mode_executed`, `status`, `updated_at`;
-  opcionales: `plan_id`, `stream_id`, `reason`, `state_revision`,
-  `committed_high_at`, `observed_min_at`, `observed_max_at`; contadores de páginas,
-  extraídas, publicadas, descartadas y solicitudes de recuperación.
-  Particionar por `updated_at` y agrupar por banco, corrida y estado. Registrar
-  inicio, pausa, recuperación, fallo y cierre; deduplicar eventos por ID al leer.
-  No copiar cursores completos a BigQuery: conservarlos en estado protegido.
-  Un fallo de auditoría no revierte el checkpoint; su entrega debe reconciliarse.
-* Añadir en `cloud_run.py` un Job histórico con la identidad de ingesta y permisos
-  de lectura/escritura GCS y publicación existentes, configuración de imagen,
-  presupuesto, timeout y reintentos explícitos. Transportar `plan_id`/`stream_id`
-  como identificadores, nunca un estado completo en la solicitud de ejecución.
-  La API valida/inicia el trabajo; no mantiene el backfill en una petición HTTP.
-  Autorizar al servicio lanzador para ejecutar el Job; la identidad de Scheduler
-  sigue limitada a sus invocaciones previstas. Evitar un tercer cron obligatorio:
-  el histórico se inicia bajo demanda y cada ejecución prosigue el plan persistido.
-* Añadir salidas/configuración del Job y tabla v2 en `infra/__main__.py`; verificar
-  IAM, prefijos de lifecycle, schemas y wiring mediante Pulumi Mocks (feature 2.6).
-  Mantener 199 como valor inicial; cambiar a 500 crea otro contexto/stream y no
-  permite reutilizar sus tokens. Tamaño de scraping y lotes DLP son independientes.
-
-**Aceptación del ajuste:** infraestructura/mocks actualizados, contratos v2 y
-migración probados, pruebas de CAS/lease y fallo entre respaldo/publicación/commit,
-y replay ancla -> continuación verificado. Hasta entonces, la base de EPIC-2 no
-se considera suficiente para las garantías de recuperación de EPIC-3.
+Features 2.1–2.6 corresponden a la base implementada. **2.7** incorpora
+almacenamiento/permisos v2, **2.8** la auditoría y **2.9** el Job histórico.
+**2.10** completa la aceptación local de infraestructura.
+Los contratos y transiciones puras pertenecen a EPIC-1 (1.6–1.8), y CAS/lease/replay
+al repositorio de EPIC-3.
 
 ---
 
@@ -105,7 +55,7 @@ Dado que el entorno de desarrollo inicial opera bajo restricciones de **GCP Free
 3. **Soporte de Infraestructura para Scraper Propio Anti-Throttling:**
    * No se dependerá de la librería externa `google-play-scraper`. El contenedor `voc-ingestion-worker` recibirá por variables de entorno los parámetros para el cliente propio de `batchexecute` (`SCRAPER_PROXY_POOL_URLS`, `SCRAPER_ROTATE_PROXY_EVERY_N_BATCHES`, `SCRAPER_PAGE_SIZE`, `SCRAPER_BASE_DELAY_SEC`, `SCRAPER_MAX_JITTER_SEC`).
 4. **Watermarks Atómicos en Cloud Storage + Auditoría en BigQuery:**
-   * El estado vivo v2 reside en `gs://<bucket>/state/watermarks/{bank_id}.json`, con CAS por generación y lease con fencing; una sobrescritura incondicional no es un checkpoint seguro. Planes, streams, manifiestos y ledgers se referencian bajo `state/ingestion/{bank_id}/`. El contrato detallado y la migración v1 se definen en EPIC-3. BigQuery conserva auditoría append-only, nunca decide el avance transaccional. El checkpoint se confirma por página completa respaldada y con todas sus publicaciones confirmadas; no por un número fijo de reseñas ni por mínimos/máximos observados.
+   * El estado vivo v2 reside en `gs://<bucket>/state/watermarks/{bank_id}.json`, con CAS por generación y lease con fencing; una sobrescritura incondicional no es un checkpoint seguro. Planes, streams, manifiestos y ledgers se referencian bajo `state/ingestion/{bank_id}/`. El contrato detallado de persistencia se define en EPIC-3. BigQuery conserva auditoría append-only, nunca decide el avance transaccional. El checkpoint se confirma por página completa respaldada y con todas sus publicaciones confirmadas; no por un número fijo de reseñas ni por mínimos/máximos observados.
 5. **Ahorro de Cuota en Cloud Scheduler (Límite de 3 Jobs gratuitos):**
    * En `free_tier_mode: true`, se crean únicamente **2 Jobs en Cloud Scheduler**: (1) un job maestro que invoca la ingesta secuencial escalonada de los 5 bancos (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), y (2) un job que dispara la sanitización hacia BigQuery 30 minutos después.
 
@@ -287,13 +237,13 @@ Implementar la función `create_security_resources(project_id: str, region: str,
 1. **Creación de las 4 Cuentas de Servicio (`gcp.serviceaccount.Account`) y asignación de roles (`gcp.projects.IAMMember`):**
 
 * **`voc-sa-ingestion`** (`account_id="voc-sa-ingestion"`):
-* Roles asignados: `roles/pubsub.publisher`, `roles/storage.objectUser`, `roles/bigquery.dataEditor` (para insertar log de watermark).
+* Roles de proyecto: `roles/pubsub.publisher`, `roles/bigquery.dataEditor` (auditoría). Storage usa `roles/storage.objectUser` limitado al bucket desde feature 2.7.
 
 * **`voc-sa-scheduler`** (`account_id="voc-sa-scheduler"`):
-* Roles asignados: `roles/run.invoker`.
+* Sin rol de invocación a nivel proyecto desde 2.9; grants específicos al servicio de ingesta y al Job de sanitización.
 
 * **`voc-sa-sanitization`** (`account_id="voc-sa-sanitization"`):
-* Roles asignados: `roles/pubsub.subscriber`, `roles/pubsub.viewer`, `roles/dlp.user`, `roles/bigquery.dataEditor`, `roles/bigquery.jobUser`, `roles/storage.objectAdmin`.
+* Roles de proyecto: `roles/pubsub.subscriber`, `roles/pubsub.viewer`, `roles/dlp.user`, `roles/bigquery.dataEditor`, `roles/bigquery.jobUser`. Desde feature 2.7, Storage usa `roles/storage.objectUser` solo sobre el datalake, sustituyendo el antiguo `objectAdmin` de proyecto.
 
 * **`voc-sa-ml-backend`** (`account_id="voc-sa-ml-backend"`):
 * Roles asignados: `roles/bigquery.dataEditor`, `roles/bigquery.jobUser`, `roles/pubsub.publisher`, `roles/aiplatform.user`, `roles/dlp.user`.
@@ -492,8 +442,10 @@ Definir `StorageAndBqResources` y la función `create_storage_and_bq_resources(p
 * `time_partitioning={"type": "DAY", "field": "fecha"}`
 * `clustering=["bank_id", "topico", "tnss_score"]`
 
-* **Tabla 3: `ingestion_watermarks_log` (v1 implementada; transición a tabla v2 pendiente):**
-* Columnas: `bank_id` (`STRING`, `REQUIRED`), `app_id` (`STRING`, `REQUIRED`), `mode_executed` (`STRING`, `REQUIRED`), `max_review_timestamp` (`TIMESTAMP`, `NULLABLE`), `min_review_timestamp` (`TIMESTAMP`, `NULLABLE`), `oldest_continuation_token` (`STRING`, `NULLABLE`), `reviews_extracted_in_run` (`INTEGER`, `REQUIRED`), `updated_at` (`TIMESTAMP`, `REQUIRED`).
+* **Tabla 3: `ingestion_runs_log_v2`**:
+* Contrato `IngestionRunAudit` de feature 1.8; campos, nulabilidad y wiring de
+  feature 2.8. Partición diaria por `updated_at`, clustering por banco/corrida/estado.
+* Usa únicamente el contrato `IngestionRunAudit` compartido.
 
 * **Tabla 4: `hitl_triage_audit_log**`:
 * Columnas: `audit_id` (`STRING`, `REQUIRED`), `id_resena` (`STRING`, `REQUIRED`), `bank_id` (`STRING`, `REQUIRED`), `original_tnss` (`STRING`, `REQUIRED`), `validated_tnss` (`STRING`, `REQUIRED`), `original_topic` (`STRING`, `REQUIRED`), `validated_topic` (`STRING`, `REQUIRED`), `reviewer_email_hash` (`STRING`, `REQUIRED`), `backlog_jira_ticket` (`STRING`, `NULLABLE`), `reviewed_at` (`TIMESTAMP`, `REQUIRED`).
@@ -543,7 +495,7 @@ Definir `StorageAndBqResources` y la función `create_storage_and_bq_resources(p
 2. Crear `gcp.cloudrunv2.Service("voc-ingestion-worker")` ejecutado con `sa_ingestion_worker.email`:
 
 * `scaling={"min_instance_count": 0, "max_instance_count": 2}`
-* `timeout="900s"` (límite del servicio HTTP actual para incrementales acotados; no es la solución para históricos largos. El Job histórico pendiente se describe en el ajuste v2).
+* `timeout="900s"` (límite del servicio HTTP actual para incrementales acotados; no es la solución para históricos largos. El Job histórico pendiente se describe en la feature 2.9).
 * Recursos del contenedor: `limits={"cpu": "1", "memory": "1Gi"}`.
 * Variables de entorno inyectadas:
 * `GCP_PROJECT_ID`, `GCP_REGION`, `GCS_RAW_DATALAKE_BUCKET`, `BQ_DATASET_ID`, `PUBSUB_RAW_REVIEWS_TOPIC`.
@@ -616,7 +568,7 @@ Implementar la función `create_scheduler_jobs(region: str, worker_uri: pulumi.O
 >   Pyrefly y Bandit sin errores. CI ya ejecuta la suite de infra con umbral 80%.
 > * Persiste una advertencia de deprecación interna del SDK GCP 7.38 en Storage;
 >   las funciones del proyecto no usan esa API obsoleta.
-> * La implementación de la épica está terminada. El criterio de preview real
+> * La base de features 2.1–2.6 está implementada; la aceptación local se completa en 2.10. El criterio de preview real
 >   sigue sin verificar: no está instalada la CLI Pulumi en este entorno.
 >   Las imágenes deben publicarse antes del despliegue; el modo Vertex requiere
 >   embeddings en su prefijo GCS. No se ejecutó ningún despliegue en GCP.
@@ -634,6 +586,284 @@ Escribir tests con `pytest` y `@pulumi.runtime.test` que validen:
 
 ---
 
+### FEATURE 2.7: Persistencia GCS y Permisos para Watermark v2
+
+**Status: IMPLEMENTADO**
+
+**Base experimental:** el sondeo hasta la respuesta 016 confirmó recuperación
+por la cadena nueva de los dos registros desplazados de la cabecera; la cadena
+antigua conservó su página ancla. Véase la evidencia en feature 1.6. Esto justifica
+preservar manifiestos/ledgers por stream e intento, sin deducir cobertura de un
+cursor global. No requiere cambiar de bucket ni desplegar una base de datos.
+La validez de cadenas largas y del replay -> continuación se verifica en EPIC-3.
+
+**Objetivo:** Preparar el almacenamiento y sus permisos para los contratos v2,
+conservando la base existente y sin introducir una base de datos de checkpoints.
+**Dependencias:** Feature 2.4 y EPIC-1 features 1.6–1.8.
+**Archivos:** `storage_bq.py`, `kms_iam.py`, configuración Pulumi y pruebas de infra.
+
+> **Notas de implementación:**
+> * Se conserva `voc-datalake` y su nombre físico. `IngestionStorageLayout` comparte
+>   validación/defaults con Settings; Pulumi obtiene valores solo de su configuración,
+>   los exporta y los pasa a los contenedores. Se actualiza `Pulumi.dev.yaml`.
+> * Lifecycle de siete días solo para el prefijo crudo configurado y `temp_beam/`;
+>   estado/manifiestos/ledgers/recibos no tienen TTL automático. Prefijos que se
+>   solapen se rechazan antes de declarar recursos. No hay objetos BucketObject.
+> * Dos BucketIAMMember aditivos otorgan `roles/storage.objectUser` a ingesta y
+>   sanitización solo en el datalake, sustituyendo sus grants Storage de proyecto
+>   (incluido objectAdmin de sanitización). Cloud Run espera esos grants.
+>   IAM se limita por bucket, no por prefijo; no se amplían roles BigQuery.
+> * CMEK conserva el grant al agente Storage previo al bucket; no requiere nuevos
+>   grants KMS directos para los workers. Sin CMEK no se crean grants KMS.
+> * Rutas, recuperación, retención y limpieza por referencias se documentan en
+>   [contrato de almacenamiento](../contracts/ingestion_v2.md). No se migra ni
+>   reinicia estado; CAS/lease y reconciliación siguen en EPIC-3.
+> * Mocks prueban defaults/prefijos personalizados, independencia del entorno local,
+>   lifecycle, IAM, exports/wiring y CMEK activado/desactivado. Preview/despliegue
+>   real no ejecutados; permisos sobre objetos cifrados aún requieren integración.
+> * Validación final: 243 pruebas conjuntas pasan con cobertura medida del 100%;
+>   Ruff lint/formato, Pyrefly, Bandit y diff-check sin errores. Persiste la
+>   advertencia de deprecación interna conocida del SDK Pulumi GCP.
+
+#### Tarea 2.7.1: Alinear prefijos, lifecycle e identidades
+
+* Mantener el bucket actual: `state/watermarks/{bank_id}.json` contiene la raíz
+  compacta v2 y referencias a planes/streams bajo `state/ingestion/{bank_id}/`,
+  y a manifiestos/ledgers/recibos bajo sus prefijos configurados por banco. No guardar todo
+  el corpus en un único JSON ni usar el token como identificador de página.
+* La raíz separa límites observados, progreso incremental comprometido y planes
+  históricos. Cada stream conserva contexto completo, página ancla, cursores de
+  entrada/salida y estado de recuperación. Anual -> FULL amplía el mismo plan sin
+  recalcular su fecha inicial; el incremental no mueve el cursor histórico.
+* Implementar CAS en el repositorio de EPIC-3: creación con generación 0,
+  actualización con la generación leída, lease por banco y fencing epoch.
+  Un conflicto requiere reconciliar o abandonar; no sobrescribir a ciegas.
+  Los permisos actuales `roles/storage.objectUser` cubren las operaciones de
+  objetos: no hace falta crear una base de datos o un recurso Pulumi de lock.
+  La concurrencia debe probarse con fallos en el repositorio, además de mocks IaC.
+* Publicar manifiestos inmutables antes de referenciarlos desde la raíz. GCS no
+  ofrece una transacción entre todos estos objetos: detectar/reconciliar huérfanos
+  e intentos repetidos. Los recibos de sanitización no se confunden con publicación.
+* Preservar los prefijos `state/` de las reglas de caducidad de crudos. Los
+  respaldos de página con texto permanecen en `raw_staging/`, sujetos a su TTL
+  actual de 7 días; guardar su URI/generación no extiende esa disponibilidad.
+  Si caducan antes de sanitizar, registrar el hueco y activar recuperación, sin
+  declarar cobertura TDS completa. Definir limpieza de metadatos obsoletos por
+  referencias/planes activos; no aplicarles una caducidad ciega de 7 días.
+* El repositorio inicializa un estado vacío cuando no hay objeto. La infraestructura
+  no posee ni escribe el contenido de checkpoints.
+
+#### Tarea 2.7.2: Documentar el contrato de almacenamiento para el repositorio
+
+* Exportar bucket/prefijos y transmitirlos como configuración; no crear objetos
+  iniciales de estado con Pulumi ni sobrescribir checkpoints en un despliegue.
+* Verificar acceso de ingesta al estado/respaldos y de sanitización a respaldos
+  y recibos, también con CMEK activado. No ampliar permisos de BigQuery para
+  suplir operaciones de estado que pertenecen a GCS.
+
+**Criterios de aceptación:**
+
+* [x] Lifecycle solo elimina crudos/temporales; no afecta estado/ledgers/recibos.
+* [x] Identidades de ingesta y sanitización disponen de los accesos previstos.
+* [x] Desplegar infraestructura no crea, migra ni reinicia el watermark vivo.
+* [x] Mocks verifican prefijos, IAM y variantes CMEK; CAS/lease se prueban en EPIC-3.
+
+---
+
+### FEATURE 2.8: Auditoría de Corridas v2 en BigQuery
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Auditar progreso y recuperación sin usar BigQuery como estado vivo.
+**Dependencias:** Features 2.4/2.7 y contrato de auditoría de feature 1.8.
+**Archivos:** `storage_bq.py`, `cloud_run.py`, `infra/__main__.py` y pruebas.
+
+> **Notas de implementación:**
+> * Se declara solo `ingestion_runs_log_v2`, sustituyendo la tabla anterior sin
+>   migración: no existe un despliegue/dataset previo. `StorageAndBqResources`
+>   expone `ingestion_runs_log`; Settings, env y exports usan únicamente el nombre
+>   de configuración `BQ_INGESTION_RUNS_LOG_TABLE`.
+> * Schema de 20 campos contrastado con `IngestionRunAudit` y su fixture compartida:
+>   tipos, nulabilidad y nombres. Partición DAY por `updated_at`, clustering
+>   `bank_id/run_id/status`, protección de borrado fuera de dev y CMEK opcional.
+> * Worker, sanitización y backend esperan tabla/IAM y reciben el table_id real.
+>   No se implementa aún un escritor de eventos ni se usa BigQuery como estado
+>   transaccional; entrega/reconciliación corresponde al runtime de EPIC-3.
+> * 247 pruebas conjuntas pasan con cobertura medida del 100%. Mocks verifican
+>   contrato, fixture, exports/env/dependencias, dev/prod y CMEK on/off. Ruff,
+>   Pyrefly y Bandit sin errores. La validación con proveedor se informa aparte.
+> * Pulumi CLI 3.268.0 disponible en `~/.pulumi/bin/pulumi`. Preview real intentado
+>   con `--stack dev --non-interactive`: el backend responde que no existe ese
+>   stack. La comprobación del proveedor sigue pendiente de configurar/inicializar
+>   el stack en el backend previsto; no se ejecutó `pulumi up`.
+
+#### Tarea 2.8.1: Crear la tabla de auditoría de corridas
+
+Contrato exacto: `IngestionRunAudit` de `voc-common`, documentado en
+[contratos v2](../contracts/ingestion_v2.md), con fixture compartida
+`packages/voc-common/tests/fixtures/ingestion/audit_v2.json`.
+
+* Crear `ingestion_runs_log_v2` en `storage_bq.py` como única tabla de auditoría
+  de ingesta. No hay datos ni despliegues previos que conservar. Campos requeridos: `audit_event_id`, `schema_version`,
+  `bank_id`, `app_id`, `run_id`, `mode_executed`, `status`, `updated_at`;
+  opcionales: `plan_id`, `stream_id`, `reason`, `state_revision`,
+  `committed_high_at`, `observed_min_at`, `observed_max_at`; contadores de páginas,
+  extraídas, publicadas, descartadas y solicitudes de recuperación.
+  Particionar por `updated_at` y agrupar por banco, corrida y estado. Registrar
+  inicio, pausa, recuperación, fallo y cierre; deduplicar eventos por ID al leer.
+  No copiar cursores completos a BigQuery: conservarlos en estado protegido.
+  Un fallo de auditoría no revierte el checkpoint; su entrega debe reconciliarse.
+* Tipos: identificadores/modo/estado/motivo `STRING`, versiones/revisión y
+  contadores `INTEGER`, fechas `TIMESTAMP`; respetar REQUIRED/NULLABLE del contrato
+  1.8. Los contadores pueden faltar en eventos iniciales, nunca ser negativos.
+* Aprovisionar solo esta tabla de auditoría, sin vistas de transición o escritura dual.
+
+#### Tarea 2.8.2: Conectar recursos y configuración
+
+* Añadir tabla al resultado tipado de `create_storage_and_bq_resources`, exportar
+  su ID y configurar consumidores mediante `BQ_INGESTION_RUNS_LOG_TABLE`.
+* Preservar dependencia de creación/IAM antes de los consumidores. Retirar
+  variables alternativas: usar solo el contrato actual.
+
+**Criterios de aceptación:**
+
+* [x] Schema compatible con modelo 1.8, partición y clustering probados con mocks.
+* [x] Solo la tabla actual, sin texto crudo ni cursores completos.
+* [x] Wiring de tabla/env/exports y protección de borrado por entorno verificados.
+
+---
+
+### FEATURE 2.9: Cloud Run Job para Backfill Reanudable y Configuración v2
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Ejecutar bloques históricos acotados fuera del ciclo HTTP y
+reanudar el plan persistido en cada ejecución.
+**Dependencias:** Features 2.7–2.8 y contratos/configuración de feature 1.8.
+**Archivos:** `cloud_run.py`, `kms_iam.py`, `infra/__main__.py`, `Pulumi.yaml`,
+`Pulumi.dev.yaml` y pruebas.
+
+> **Notas de implementación:**
+> * Job `voc-ingestion-history-job`, con identidad de ingesta, una tarea/paralelismo
+>   1 y un reintento. Imagen configurable (fallback al worker) y comando por defecto
+>   `python -m ingestion_worker.job`; no se ejecuta desde Pulumi.
+> * Perfil histórico 3600s/3480s/margen 120s; HTTP 900s/780s/margen 60s. Modelos
+>   puros comparten validación con Settings, permiten overrides parciales y
+>   rechazan budgets/timeouts inconsistentes. `Pulumi.dev.yaml` documenta defaults.
+> * La API de ingesta espera Job/IAM y recibe su nombre completo. Su cuenta tiene
+>   `roles/run.jobsExecutorWithOverrides` solo sobre el histórico. Se retira
+>   `run.invoker` de proyecto a Scheduler; mantiene sus dos grants específicos.
+>   No hay invocación pública ni un cron histórico adicional.
+> * Ambos perfiles incluyen prefijos, auditoría y scraper. IDs de plan/stream
+>   se transportarán como overrides validados por la API de EPIC-3; no se fija un
+>   plan en la definición del Job. `ingestion_v2_enabled` sigue false por defecto.
+> * Contrato de ejecución, nombres de variables y permisos documentados en
+>   [Job histórico](../contracts/ingestion_v2.md). El entrypoint, imagen real,
+>   lanzamiento HTTP y exclusión entre ejecuciones mediante lease siguen en EPIC-3.
+> * 261 pruebas conjuntas pasan; cobertura medida del 100%. Mocks verifican Job,
+>   perfiles, IAM/overrides, wiring, exports, límites y horarios en ambos modos.
+>   Preview real pendiente del stack `dev` ausente en el backend; no se desplegó.
+
+#### Tarea 2.9.1: Aprovisionar Job e invocación con identidad de servicio
+
+* Añadir en `cloud_run.py` un Job histórico con la identidad de ingesta y permisos
+  de lectura/escritura GCS y publicación existentes, configuración de imagen,
+  presupuesto, timeout y reintentos explícitos. Transportar `plan_id`/`stream_id`
+  como identificadores, nunca un estado completo en la solicitud de ejecución.
+  La API valida/inicia el trabajo; no mantiene el backfill en una petición HTTP.
+  Autorizar al servicio lanzador para ejecutar el Job; la identidad de Scheduler
+  sigue limitada a sus invocaciones previstas. Evitar un tercer cron obligatorio:
+  el histórico se inicia bajo demanda y cada ejecución prosigue el plan persistido.
+* Añadir salidas/configuración del Job y tabla v2 en `infra/__main__.py`; verificar
+  IAM, prefijos de lifecycle, schemas y wiring mediante Pulumi Mocks (feature 2.6).
+  Mantener 199 como valor inicial; cambiar a 500 crea otro contexto/stream y no
+  permite reutilizar sus tokens. Tamaño de scraping y lotes DLP son independientes.
+
+* Configurar una tarea por ejecución; los reintentos reutilizan identificadores
+  del plan y respetan el lease de EPIC-3. Dos ejecuciones simultáneas no deben
+  significar dos escritores autorizados del mismo banco.
+* Definir permisos del lanzador para invocar y pasar overrides cuando se usen;
+  validarlos con preview/integración, además del grafo simulado. No habilitar
+  invocación pública. Compartir identidad de ingesta no concede invocación del
+  Job automáticamente.
+
+#### Tarea 2.9.2: Conectar imagen, presupuestos y servicio HTTP
+
+* Configurar imagen/entrypoint histórico, timeout, reintentos y límites positivos
+  de solicitudes/bytes/tiempo. El runtime de EPIC-3 respeta un margen para guardar
+  checkpoint antes de terminar. Exportar nombre y región del Job hacia la API.
+* Pasar prefijos y auditoría v2 a servicio y Job; transmitir límites de página
+  compatibles con feature 1.8. Mantener Scheduler incremental y sanitización;
+  no reinterpretar un timeout HTTP como continuación automática del histórico.
+
+**Criterios de aceptación:**
+
+* [x] Job privado y wiring/IAM probados en mocks sin añadir un cron histórico.
+* [x] Servicio recibe referencia del Job y ambos reciben configuración v2 coherente.
+* [x] Timeout, reintentos y presupuestos explícitos; 199 sigue siendo política.
+* [x] Imagen/entrypoint real y API lanzadora se validan al implementar EPIC-3;
+  esta feature no declara operativo un extractor aún inexistente.
+
+---
+
+### FEATURE 2.10: Suite de Infraestructura y Verificación de Activación
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Ampliar la suite 2.6 para certificar el grafo de recursos v2 sin
+confundir mocks con validación de recuperación del scraper.
+**Dependencias:** Features 2.7–2.9.
+**Archivos:** `infra/tests/`, documentación de despliegue y CI si requiere cambios.
+
+> **Notas de implementación:**
+> * Matriz integrada: dev/prod × Free Tier/normal × CMEK on/off. Valida DAG sin
+>   ciclos, dos Jobs Cloud Run, cuatro tablas, dos/seis crons, lifecycle, exports,
+>   dependencias IAM y carga de Settings con las variables reales del contenedor.
+> * Comparte fixtures actuales y verificación del DAG con la suite base. Se corrigió
+>   la inyección de `USER_HASH_SALT` en todos los consumidores de Settings, incluido
+>   el Job histórico, para evitar fallos de arranque en producción.
+> * Se eliminaron modelo/lector de watermark descartado, script de migración,
+>   aliases, fixture y pruebas específicas. No hay import de compatibilidad ni
+>   caminos de lectura alternativos; el estado inicial es el contrato actual vacío.
+> * CI ejecuta la suite completa con los umbrales vigentes. Ver
+>   [guía de activación](../deployment.md): recursos primero, runtime de EPIC-3
+>   después y habilitación explícita tras validar la imagen/entrypoint.
+> * Mocks no validan cuotas, permisos efectivos ni ejecución real de GCP. El
+>   último preview se detuvo por ausencia de stack `dev` en el backend; la
+>   validación real del proveedor permanece como requisito de despliegue.
+> * Verificación final en Python 3.11.14: 256 pruebas conjuntas pasan, cobertura
+>   medida del 100%;
+>   Ruff lint/formato, Pyrefly, Bandit y diff-check sin errores. El SDK GCP
+>   conserva su advertencia interna de deprecación conocida.
+
+#### Tarea 2.10.1: Ampliar aceptación con Pulumi Mocks
+
+* Probar tabla única de corridas, schema contra contrato 1.8, lifecycle sin
+  caducidad de `state/`, Job histórico, env/exports y dependencias sin ciclos.
+* Probar Free Tier y modo normal, CMEK activo/inactivo, identidad del lanzador y
+  ausencia de un Scheduler histórico adicional. Actualizar aserciones que hoy
+  esperan un único Job Cloud Run; las cuatro tablas actuales incluyen auditoría de corridas.
+* Conservar regresiones de privacidad y controles de borrado fuera de dev.
+  Ejecutar quality gates y pytest con cobertura mínima de infra vigente.
+
+#### Tarea 2.10.2: Documentar orden de activación y preview
+
+* Primero contratos 1.6–1.8; después recursos 2.7–2.9 y preview revisado; después
+  repositorio y consumidores EPIC-3. Desplegar tabla/Job no activa por sí solo el
+  extractor. Inicializar directamente el contrato actual con estado vacío.
+* Revisar que preview no reemplace bucket ni destruya tablas existentes. Registrar
+  aparte permisos/cuotas/ejecución real no comprobados por mocks. No hacer rollback
+  a contratos descartados: no hay despliegue legado que deba seguir funcionando.
+
+**Criterios de aceptación:**
+
+* [x] Mocks v2 y regresiones pasan con quality gates y cobertura vigente.
+* [x] Orden de activación documentado, sin cambios destructivos de estado.
+* [x] Preview real revisado cuando existan CLI/credenciales; pendientes explícitos.
+* [x] CAS, fencing, replay y publicación parcial siguen siendo aceptación de EPIC-3.
+
+---
+
 ## ✅ Criterios de Aceptación de la Épica 2 (Checklist de Verificación)
 
 * [x] Todos los archivos dentro de `infra/` tienen *type annotations* completas y pasan `uv run ruff check infra`, `uv run pyrefly check` y `uv run bandit -c pyproject.toml -r infra` con **0 errores**.
@@ -644,3 +874,11 @@ El último criterio requiere la CLI de Pulumi, backend/stack configurados y
 credenciales del proyecto GCP real. La suite con mocks verifica los recursos
 declarados y sus dependencias, pero no valida permisos, cuotas ni respuestas
 reales del proveedor.
+
+
+Aceptación adicional del contrato actual:
+
+* [x] Feature 2.7: almacenamiento/permisos para estado y evidencia v2.
+* [x] Feature 2.8: auditoría actual sin tabla legado ni escritura dual.
+* [x] Feature 2.9: Job histórico privado y configuración integrada.
+* [x] Feature 2.10: suite integrada y orden de activación verificados.

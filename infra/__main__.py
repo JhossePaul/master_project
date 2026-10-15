@@ -3,13 +3,23 @@
 import json
 
 import pulumi
-from voc_common.config import DEV_USER_HASH_SALT
+from voc_common.config import (
+    DEV_USER_HASH_SALT,
+    IngestionExecutionConfig,
+    IngestionStorageLayout,
+)
 
 from infra.modules.apis import enable_project_apis
-from infra.modules.cloud_run import create_cloud_run_resources
+from infra.modules.cloud_run import (
+    HistoricalJobConfig,
+    create_cloud_run_resources,
+)
 from infra.modules.cloud_scheduler import create_scheduler_jobs
 from infra.modules.dlp import create_dlp_templates
-from infra.modules.kms_iam import create_security_resources
+from infra.modules.kms_iam import (
+    create_datalake_access,
+    create_security_resources,
+)
 from infra.modules.pubsub import create_pubsub_resources
 from infra.modules.storage_bq import create_storage_and_bq_resources
 from infra.modules.vertex_ai import create_vertex_resources
@@ -30,6 +40,14 @@ if user_hash_salt is None:
     else:
         user_hash_salt = pulumi.Output.secret(DEV_USER_HASH_SALT)
 proxies = config.get_secret_object("scraper_proxy_pool_urls")
+# Leer solo Pulumi: los prefijos no dependen de .env ni variables del host.
+storage_layout = IngestionStorageLayout.model_validate(
+    {
+        name: value
+        for name in IngestionStorageLayout.model_fields
+        if (value := config.get(name)) is not None
+    }
+)
 
 project_apis = enable_project_apis(
     project_id, enable_cmek=enable_cmek, enable_vertex=enable_vertex
@@ -54,8 +72,20 @@ storage_bq = create_storage_and_bq_resources(
     security.kms_crypto_key_id,
     list(project_apis.values()),
     environment=environment,
+    storage_layout=storage_layout,
+)
+storage_access = create_datalake_access(
+    storage_bq.datalake_bucket,
+    security,
+    list(project_apis.values()),
 )
 image_prefix = f"{region}-docker.pkg.dev/{project_id}/voc-containers-repo"
+ingestion_execution = IngestionExecutionConfig.model_validate(
+    config.get_object("ingestion_execution") or {}
+)
+historical_config = HistoricalJobConfig.model_validate(
+    config.get_object("historical_ingestion") or {}
+)
 cloud_run = create_cloud_run_resources(
     project_id,
     region,
@@ -63,7 +93,11 @@ cloud_run = create_cloud_run_resources(
     pubsub,
     storage_bq,
     dlp_templates,
-    list(project_apis.values()),
+    [*project_apis.values(), *storage_access],
+    ingestion_execution=ingestion_execution,
+    historical_config=historical_config,
+    historical_job_image=config.get("historical_job_image"),
+    ingestion_v2_enabled=config.get_bool("ingestion_v2_enabled") or False,
     ingestion_worker_image=(
         config.get("ingestion_worker_image")
         or f"{image_prefix}/ingestion-worker:latest"
@@ -118,6 +152,8 @@ pulumi.export(
     "dlp_deidentify_template_id", dlp_templates.deidentify_template.id
 )
 pulumi.export("gcs_raw_datalake_bucket", storage_bq.datalake_bucket.name)
+for prefix_name, prefix_value in storage_layout.model_dump().items():
+    pulumi.export(prefix_name, prefix_value)
 pulumi.export("bq_dataset_id", storage_bq.dataset.dataset_id)
 pulumi.export("pubsub_raw_reviews_topic", pubsub.raw_topic.id)
 pulumi.export("pubsub_raw_subscription", pubsub.raw_subscription.id)
@@ -130,13 +166,16 @@ pulumi.export(
 )
 pulumi.export("bq_predictions_table", storage_bq.delora_predictions.table_id)
 pulumi.export(
-    "bq_watermarks_log_table", storage_bq.ingestion_watermarks_log.table_id
+    "bq_ingestion_runs_log_table", storage_bq.ingestion_runs_log.table_id
 )
 pulumi.export("bq_hitl_audit_table", storage_bq.hitl_triage_audit_log.table_id)
 pulumi.export("artifact_registry_id", cloud_run.repository.id)
 pulumi.export("ingestion_worker_uri", cloud_run.ingestion_worker.uri)
 pulumi.export("api_backend_uri", cloud_run.api_backend.uri)
 pulumi.export("sanitization_job_id", cloud_run.sanitization_job.id)
+pulumi.export("ingestion_history_job_id", cloud_run.historical_job.id)
+pulumi.export("ingestion_history_job_name", cloud_run.historical_job_name)
+pulumi.export("ingestion_history_job_region", region)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])
 pulumi.export(
     "vertex_endpoint_id", vertex.endpoint.id if vertex.endpoint else None

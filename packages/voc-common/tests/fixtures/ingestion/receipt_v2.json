@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "bank_id": "BBVA",
+  "app_id": "com.bancomer.mbanking",
+  "receipt_id": "fixture-receipt",
+  "event_id": "f2ae17798ebd64aa2e9bdfb66e2dd9de47df90e947b0a17b07a954af3976a163",
+  "review_id": "fixture-r1",
+  "source_revision": "e55aa4d5cd52fdc03e526c0ca0f1c83565b765440152d929ad8160d94ab68b27",
+  "page_id": "fixture-page",
+  "status": "TDS_COMMITTED",
+  "result_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "bigquery_job_ids": [
+    "fixture-merge-job"
+  ],
+  "error_code": null,
+  "processed_at": "2026-10-15T00:00:00Z"
+}

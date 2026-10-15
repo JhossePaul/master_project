@@ -18,10 +18,9 @@ dev = [
 [tool.uv.workspace]
 members = ["packages/*", "services/*", "infra"]
 # TEMPORAL: miembros con pyproject.toml aun vacio/ausente. Retirar cada
-# entrada al implementar su epica (ingestion-worker -> EPIC-3).
+# entrada al implementar el paquete correspondiente.
 exclude = [
     "services/api-backend",
-    "services/ingestion-worker",
     "services/ml-delora",
     "services/sanitization-pipeline",
 ]
@@ -60,7 +59,7 @@ exclude = ["**/*.md"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --cov-report=term-missing"
+addopts = "-ra -q --import-mode=importlib --cov-report=term-missing"
 testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
 
 [tool.bandit]

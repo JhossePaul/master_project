@@ -1,6 +1,6 @@
 # EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
 
-* **Estado:** Base v1 IMPLEMENTADA — Features 1.1 a 1.5 verificadas localmente. Migración de contratos v2 pendiente para EPIC-3/EPIC-4; ver ajuste siguiente.
+* **Estado:** IMPLEMENTADO — Features 1.1–1.8 completadas y verificadas localmente. Contratos, eventos, reducer, configuración v2 disponibles; activación de recursos/consumidores corresponde a EPIC-2/EPIC-3/EPIC-4.
 * **Semanas Objetivo:** Semana 1
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/pyproject.toml`
@@ -11,6 +11,12 @@
   * `packages/voc-common/src/voc_common/config.py`
   * `packages/voc-common/tests/__init__.py`
   * `packages/voc-common/tests/test_schemas.py`
+  * `packages/voc-common/src/voc_common/ingestion_state.py`
+  * `packages/voc-common/tests/test_ingestion_contracts.py`
+  * `packages/voc-common/tests/test_ingestion_state.py`
+  * `packages/voc-common/tests/test_versioned_events.py`
+  * `packages/voc-common/tests/fixtures/ingestion/`
+  * `docs/contracts/ingestion_v2.md`
   * `.env.example`
   * `.pre-commit-config.yaml`
   * `.github/workflows/ci.yaml`
@@ -18,73 +24,12 @@
 
 ---
 
-## Ajuste pendiente: contratos compartidos v2 para ingesta reanudable
+## Ampliación implementada para watermark v2
 
-Esta sección amplía la base implementada; no declara cambios de código ya hechos.
-EPIC-3 define los campos y transiciones de ingesta; EPIC-4 define resultados de
-sanitización; EPIC-2 aprovisiona persistencia, auditoría y ejecución. Los modelos
-compartidos de ambas deben implementarse aquí antes de sus consumidores.
-
-### Modelos, invariantes y migración
-
-* Incorporar modelos estrictos (`extra="forbid"`, fechas UTC, `schema_version=2`):
-  `IngestionWatermarkState`, `IncrementalProgress`, `HistoricalPlan`, `ScanContext`,
-  `ScanStreamState`, `PageManifest` y `ProcessingReceipt`, según EPIC-3/EPIC-4.
-  La raíz conserva revisión y referencias; ledgers paginados contienen los IDs,
-  sin cargar todo el corpus ni textos/usuarios en el watermark.
-* Separar `observed_min_at`/`observed_max_at` de `committed_high_at`. Los límites
-  observados no demuestran cobertura; un máximo no descarta publicaciones tardías.
-  Mantener baseline incremental congelado, frontera completa y reconciliación.
-  Un ID conocido aislado no cierra el scan. No truncar a 500 los IDs necesarios
-  como evidencia: usar referencias al ledger cuando superen la caché.
-* `HistoricalPlan` fija T0 y corte anual T0-365 días. Anual -> FULL elimina la cota
-  inferior del mismo plan y registra la extensión; conserva ancla, páginas y T0.
-  Guardar completa la página que cruza el corte. No recalcularlo al reanudar.
-* `ScanContext` incluye app, idioma, país, orden, filtros, tamaño y versión de
-  protocolo; su fingerprint delimita el stream. Cambiar contexto crea otro stream,
-  sin heredar tokens. `None` de cursor no distingue inicio de EOF: usar estado
-  explícito. El replay recupera el nuevo cursor de salida de la página ancla.
-* Versionar manifiestos inmutables con cursores de entrada/salida, fingerprint de
-  contenido, respaldo URI/generación y fases de publicación/sanitización separadas.
-  Identificar páginas independientemente del token: se observó distinto token de
-  continuación con idénticos IDs. `SOURCE_EXHAUSTED_OBSERVED` no certifica que el
-  origen exponga todo su histórico.
-* Sustituir avance por reseña (`update_bounds`) por un reducer puro de páginas
-  confirmadas, probado de forma independiente. El repositorio de EPIC-3 realiza
-  CAS/lease y efectos externos; Pydantic no proporciona atomicidad de almacenamiento.
-* Migrar v1 explícitamente: fechas como observaciones, tokens como candidatos y
-  cobertura `UNVERIFIED`. No convertir booleanos de backfill o contadores v1 en
-  evidencia v2. Despachar por versión en la migración; no relajar modelos con
-  `extra="ignore"` para aceptar silenciosamente estados incompatibles.
-* Añadir un sobre de evento con `event_id`, `page_id`, `plan_id`, `stream_id`,
-  banco, ID y `source_revision`, más `RawReviewEvent`. Derivar revisión del contenido
-  del origen (incluidos cambios de votos/respuesta), nunca de `ingested_at`.
-  Propagar identidad/revisión al resultado sanitizado y `ProcessingReceipt` según
-  EPIC-4. Repetir la misma revisión es idempotente; cambiar contenido produce otra.
-* Definir modelo de auditoría separado para `ingestion_runs_log_v2` de EPIC-2,
-  sin cursores completos ni texto crudo. Publicación confirmada y resultado TDS
-  son estados distintos; recibos de filtrado/cuarentena no equivalen a fila TDS.
-
-### Configuración y aceptación de la migración
-
-* `PLAYSTORE_MAX_PAGE_SIZE=199` y el `le=199` de los contratos actuales son límites
-  de política v1, no evidencia del máximo del endpoint. Separar nombre/valor por
-  defecto y límite permitido al migrar; mantener 199 inicialmente. Antes de
-  habilitar 500, validar paginación y actualizar conjuntamente `Settings`, payloads,
-  pruebas y configuración de EPIC-2. Los lotes DLP tienen límites independientes.
-* Añadir configuración de prefijos de manifiestos/ledgers, tabla de auditoría v2,
-  referencia del Job histórico y presupuestos de tiempo/solicitudes/bytes. Definir
-  propietario de cada parámetro y defaults compatibles con EPIC-2/EPIC-3; conservar
-  lectura de estados v1 durante la transición. No desplegar consumidores v2 sobre
-  tablas v1 ni activar un Job no aprovisionado.
-* Pruebas pendientes: serialización estricta y dispatch por versión; migración
-  sin cobertura inventada; anual -> FULL con T0 fijo; fronteras con más de 500 IDs;
-  cambio de contexto; inicio/pausa/EOF distintos; borrado explícito de cursor;
-  reducer sin avance ante publicación parcial; revisiones estables e idempotentes;
-  recibos con resultados TDS, filtrado y cuarentena diferenciados.
-* Las pruebas de regresión v1 siguen documentando la base actual; no certifican
-  recuperación v2. CAS/lease y fallos externos se verifican en EPIC-3, IAM/recursos
-  con Pulumi Mocks en EPIC-2. Ejecutar los quality gates al implementar código.
+Las features 1.1–1.8 implementan los contratos compartidos actuales.
+La feature **1.7** implementa reducer por página; **1.8** entrega eventos,
+configuración y fixtures. La persistencia CAS se implementará en EPIC-3.
+Los detalles de ejecución y recuperación se mantienen en EPIC-3.
 
 ---
 
@@ -99,7 +44,7 @@ El Agente IA **DEBE** implementar las siguientes 5 directrices de diseño en `vo
    * Los contratos deben modelar el protocolo interno de Google Play (`/_/PlayStoreUi/data/batchexecute`, RPC ID `oCPfdb`), con tamaño inicial de página **199 como política conservadora**, no máximo del origen: el sondeo devolvió 500 registros únicos en una petición. El token (`page_token`) es un `str` opaco serializable en JSON; no se decodifica ni se presupone formato Base64, TTL o estabilidad.
 2. **Tres Modos de Ingesta y Watermark Bidireccional en Cloud Storage:**
    * Soportar los modos `INCREMENTAL` (delta diario), `BACKFILL` (ventana histórica de 1 año / 365 días hacia atrás) y `FULL_BACKFILL` (recorrido hasta agotamiento observado del origen; particionamiento por calificación de 1 a 5 estrellas como estrategia experimental, sin promesa de recuperar todo el histórico).
-   * El esquema v2 separa observaciones, progreso incremental comprometido, planes históricos y streams contextualizados. El estado raíz reside en `gs://<bucket>/state/watermarks/{bank_id}.json`; el repositorio de EPIC-3 aplica CAS y lease. Una página descargada aún no autoriza el avance: requiere respaldo y confirmación de todas sus publicaciones. El modelo bidireccional v1 queda como contrato de migración.
+   * El esquema v2 separa observaciones, progreso incremental comprometido, planes históricos y streams contextualizados. El estado raíz reside en `gs://<bucket>/state/watermarks/{bank_id}.json`; el repositorio de EPIC-3 aplica CAS y lease. Una página descargada aún no autoriza el avance: requiere respaldo y confirmación de todas sus publicaciones.
 3. **Separación Estricta entre Carga Cruda (Pre-DLP) y Tabla TDS (Post-DLP):**
    * `RawReviewEvent` modela el evento en tránsito hacia `Cloud Pub/Sub` y el staging efímero en `Cloud Storage` (conservando `texto` y `usuario` crudos para que sean inspeccionados por Cloud DLP).
    * `SanitizedReviewRecord` modela el registro post-DLP que persiste en `BigQuery (Trusted Data Source - TDS)`, donde `usuario` fue transformado irreversiblemente en `usuario_hash` (SHA-256 con sal), `imagen_usuario` fue eliminada, el PII textual fue reemplazado por tokens semánticos (`[PERSON_NAME]`, `[MX_CLABE_BANCARIA]`, etc.) preservando códigos técnicos como `ref: 3702`, y el conteo de palabras cumple el umbral del EDA (2 a 60 palabras).
@@ -200,7 +145,8 @@ BACKFILL_LOOKBACK_DAYS: int = 365
 # Constantes del Protocolo Interno Google Play (batchexecute RPC)
 PLAYSTORE_BATCHEXECUTE_URL: str = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 PLAYSTORE_REVIEWS_RPC_ID: str = "oCPfdb"
-PLAYSTORE_MAX_PAGE_SIZE: int = 199
+PLAYSTORE_DEFAULT_PAGE_SIZE: int = 199
+PLAYSTORE_PAGE_SIZE_POLICY_LIMIT: int = 199
 DEFAULT_PLAYSTORE_LANG: str = "es"
 DEFAULT_PLAYSTORE_COUNTRY: str = "mx"
 
@@ -278,9 +224,9 @@ def hash_username_pii(username: str, salt: str) -> str:
 
 > **Notas de implementación:**
 > * Todos los modelos usan `extra="forbid"`; todas las `datetime` se normalizan a UTC (las *naive* se asumen UTC) vía `ensure_utc`.
-> * `recent_review_ids` / `oldest_review_ids` guardan los IDs con fecha **igual** a la frontera respectiva, acotados por `WATERMARK_MAX_FRONTIER_IDS = 500`, y se serializan como listas ordenadas.
-> * En v1, `should_stop_incremental` usa una copia congelada del watermark. Este comportamiento no basta para v2: un ID conocido o una fecha anterior al máximo no autorizan por sí solos el cierre del scan.
-> * Se añadió `update_star_partition_token(star, token)` para gestionar `star_partition_tokens`.
+> * El watermark separa observaciones, progreso incremental y planes históricos;
+>   los cursores pertenecen a streams con contexto completo y las fronteras se
+>   respaldan mediante referencias a ledgers, sin truncamiento de IDs.
 > * `SanitizedReviewRecord` valida además que `conteo_palabras` coincida con `texto_limpio`. `AnalyzedReviewPrediction.is_obligatory_5_star_bias` siempre se recalcula.
 
 **Objetivo:** Definir todos los modelos de transferencia de datos entre capas en `packages/voc-common/src/voc_common/schemas.py`.
@@ -300,7 +246,7 @@ def hash_username_pii(username: str, salt: str) -> str:
 
 * `bank_id: BankKey`
 * `mode: IngestionMode = IngestionMode.INCREMENTAL`
-* `page_size: int = Field(default=PLAYSTORE_MAX_PAGE_SIZE, ge=1, le=PLAYSTORE_MAX_PAGE_SIZE)`
+* `page_size: int = Field(default=PLAYSTORE_DEFAULT_PAGE_SIZE, ge=1, le=PLAYSTORE_PAGE_SIZE_POLICY_LIMIT)`
 * `max_reviews_per_run: int = Field(default=5000, ge=1, le=250000)`
 * `partition_by_stars: bool = False` (Si es `True` en `FULL_BACKFILL`, extrae por separado 1, 2, 3, 4 y 5 estrellas).
 
@@ -312,40 +258,13 @@ def hash_username_pii(username: str, salt: str) -> str:
 * `max_reviews_per_bank: int = Field(default=1000, ge=1, le=50000)`
 * `inter_bank_delay_sec: float = Field(default=15.0, ge=1.0, le=120.0)`
 
-#### Tarea 1.3.2: Esquema de Watermark Bidireccional v1 (`IngestionWatermarkState`)
+#### Tarea 1.3.2: Contratos de estado de ingesta
 
-**Contrato legado implementado, pendiente de migración.** Los campos y métodos
-siguientes describen v1; no son criterios de cierre válidos para el extractor v2.
-El archivo raíz y los eventos de auditoría BigQuery tendrán contratos distintos.
-La sustitución obligatoria se especifica en el ajuste v2 de esta épica y EPIC-3:
-
-* `bank_id: BankKey`
-* `app_id: str`
-* `max_review_timestamp: datetime | None = None` (Fecha UTC de la reseña más nueva ya extraída).
-* `min_review_timestamp: datetime | None = None` (Fecha UTC de la reseña más antigua ya extraída).
-* `recent_review_ids: set[str] = Field(default_factory=set)` (IDs en la frontera `max_review_timestamp`, con límite v1 de 500; no representa una prueba completa de continuidad).
-* `oldest_review_ids: set[str] = Field(default_factory=set)` (IDs en la frontera `min_review_timestamp`).
-* `oldest_page_token: str | None = None` (Cursor global candidato de v1; debe validarse mediante replay antes de reutilizarse. No garantiza reanudación ni reemplaza contexto/página ancla).
-* `star_partition_tokens: dict[int, str | None] = Field(default_factory=dict)` (Tokens de continuación por calificación `1..5` cuando se usa particionamiento en `FULL_BACKFILL`).
-* `backfill_one_year_completed: bool = False`
-* `full_backfill_completed: bool = False`
-* `total_extracted_count: int = Field(default=0, ge=0)`
-* `updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))`
-* **Métodos de negocio obligatorios en `IngestionWatermarkState`:**
-
-1. `should_stop_incremental(self, review_id: str, review_date: datetime) -> bool`:
-
-* Asegura que `review_date` tenga zona horaria UTC.
-* Retorna `True` si `review_id in self.recent_review_ids` o si `self.max_review_timestamp is not None and review_date < self.max_review_timestamp`.
-
-1. `has_reached_one_year_backfill(self, review_date: datetime, reference_now: datetime | None = None) -> bool`:
-
-* Calcula `cutoff = (reference_now or datetime.now(timezone.utc)) - timedelta(days=BACKFILL_LOOKBACK_DAYS)`.
-* Retorna `True` si `review_date <= cutoff`.
-
-1. `update_bounds(self, review_id: str, review_date: datetime, next_page_token: str | None = None) -> None`:
-
-* Actualiza dinámicamente `max_review_timestamp`, `min_review_timestamp`, `recent_review_ids`, `oldest_review_ids`, `oldest_page_token` e incrementa `total_extracted_count`.
+El único contrato de estado es `IngestionWatermarkState` con `schema_version=2`.
+Contiene identidad, revisión, fechas observadas, progreso incremental y referencias
+a planes, streams y ledgers. El avance se aplica por página confirmada, nunca
+por una reseña conocida o por un mínimo/máximo aislado. Ver features 1.6–1.7.
+El primer despliegue empieza con un estado vacío; IaC no crea esos objetos.
 
 #### Tarea 1.3.3: Esquema de Carga Cruda (`RawReviewEvent`) — Pre-DLP
 
@@ -457,7 +376,7 @@ Modela el registro limpio en la tabla `sanitized_reviews_tds`:
 > * Se exporta la API pública mediante `__all__`. Se requiere
 >   `pydantic-settings>=2.7.0` por el uso de `NoDecode`.
 > * Los nombres coinciden con la especificación de la Épica 2; la integración
->   real con Pulumi sigue pendiente porque sus módulos aún están vacíos.
+>   con Pulumi se verifica en EPIC-2 (2.7–2.10).
 > * La revisión de Features 1.1–1.3 añade validación del límite de 500 IDs al
 >   cargar checkpoints. La cobertura ahora mide solo código de `voc-common`.
 > * Validación local con Python 3.11.14 y 3.12.10: 89 pruebas pasan, cobertura del código
@@ -495,7 +414,7 @@ class Settings(BaseSettings):
     bq_dataset_id: str = "bbva_voc_tds"
     bq_sanitized_tds_table: str = "sanitized_reviews_tds"
     bq_predictions_table: str = "delora_predictions"
-    bq_watermarks_log_table: str = "ingestion_watermarks_log"
+    bq_ingestion_runs_log_table: str = "ingestion_runs_log_v2"
     bq_hitl_audit_table: str = "hitl_triage_audit_log"
 
     # Cloud Pub/Sub
@@ -583,28 +502,231 @@ Escribir mínimo 10 pruebas unitarias que validen:
 1. **`test_limpiar_texto_bancario_preserves_error_codes_and_emojis`**: Comprobar que el texto real del notebook `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi. noooo sirveee 😡 http://spam.com @bbva #asco"` se convierta en `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi. noo sirvee 😡"`.
 2. **`test_raw_review_from_playstore_dict`**: Verificar mapeo exacto de columnas del notebook, eliminación de `appVersion` e inyección de `titulo=None`.
 3. **`test_sanitized_review_record_word_count_bounds`**: Comprobar que una reseña de 1 palabra (`"excelente"`) o de 61 palabras dispare `ValidationError`, mientras que una de 2 a 60 palabras se construya correctamente y genere un `usuario_hash` SHA-256 de 64 caracteres hexadecimales.
-4. **`test_watermark_bidirectional_incremental_and_backfill` (regresión v1, no aceptación v2)**:
-
-* Verificar que `should_stop_incremental` retorne `True` por ID duplicado en la frontera o por `review_date < max_review_timestamp`.
-* Verificar que `has_reached_one_year_backfill` detecte con exactitud el corte de 365 días.
-* Verificar que `update_bounds` actualice `max_review_timestamp`, `min_review_timestamp` y `oldest_page_token` (string opaco).
+4. **Contratos y transiciones del estado de ingesta:** validar round-trip UTC,
+fronteras mediante ledger, idempotencia por página, fallo de publicación y
+anual -> FULL con T0 fijo, según las suites de features 1.6–1.7.
 
 1. **`test_obligatory_5_star_label_noise_detection`**: Comprobar que `AnalyzedReviewPrediction` marque `is_obligatory_5_star_bias=True` cuando `estrellas=5` y `tnss_score=SentimentLabel.NEG`.
+
+---
+
+### FEATURE 1.6: Contratos de Estado v2, Planes Históricos y Streams de Paginación
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Definir contratos capaces de describir avance
+incremental, histórico y recuperación sin confundir cursor con cobertura.
+**Dependencias:** Features 1.1–1.5. Contrato funcional coordinado con EPIC-3.
+**Archivos:** `schemas.py`, `constants.py`, `__init__.py` y `tests/test_schemas.py` y `tests/test_ingestion_contracts.py`
+del paquete `voc-common`.
+
+> **Notas de implementación:**
+> * `IngestionWatermarkState` es el único contrato raíz y usa schema_version=2.
+> * Los modelos v2 son inmutables, estrictos ante campos extra, normalizan UTC y
+>   usan referencias de ledger; tokens opacos se conservan pero se ocultan en repr.
+> * El fingerprint incluye el contexto completo; las validaciones locales cubren
+>   identidad banco/app, fechas, contadores y evidencia de cierre. Las relaciones
+>   entre objetos no cargados se comprobarán en el reducer/repositorio de 1.7/3.2.
+> * Se incluyen recibos tipados; generar eventos/revisiones e integrar destinos
+>   se implementa en 1.8. La feature 1.6 no incluye CAS ni acceso GCP.
+> * Verificación: 177 pruebas conjuntas (voc-common + infra), cobertura del 100%
+>   del código medido; Ruff lint/formato, Pyrefly y Bandit sin errores. Persiste
+>   la advertencia de deprecación interna del SDK Pulumi GCP Storage.
+
+#### Tarea 1.6.1: Implementar y exportar contratos v2
+
+* Incorporar modelos estrictos (`extra="forbid"`, fechas UTC, `schema_version=2`):
+  `IngestionWatermarkState`, `IncrementalProgress`, `HistoricalPlan`, `ScanContext`,
+  `ScanStreamState`, `PageManifest` y `ProcessingReceipt`, según EPIC-3/EPIC-4.
+  La raíz conserva revisión y referencias; ledgers paginados contienen los IDs,
+  sin cargar todo el corpus ni textos/usuarios en el watermark.
+* Separar `observed_min_at`/`observed_max_at` de `committed_high_at`. Los límites
+  observados no demuestran cobertura; un máximo no descarta publicaciones tardías.
+  Mantener baseline incremental congelado, frontera completa y reconciliación.
+  Un ID conocido aislado no cierra el scan. No truncar a 500 los IDs necesarios
+  como evidencia: usar referencias al ledger cuando superen la caché.
+* `HistoricalPlan` fija T0 y corte anual T0-365 días. Anual -> FULL elimina la cota
+  inferior del mismo plan y registra la extensión; conserva ancla, páginas y T0.
+  Guardar completa la página que cruza el corte. No recalcularlo al reanudar.
+* `ScanContext` incluye app, idioma, país, orden, filtros, tamaño y versión de
+  protocolo; su fingerprint delimita el stream. Cambiar contexto crea otro stream,
+  sin heredar tokens. `None` de cursor no distingue inicio de EOF: usar estado
+  explícito. El replay recupera el nuevo cursor de salida de la página ancla.
+* Versionar manifiestos inmutables con cursores de entrada/salida, fingerprint de
+  contenido, respaldo URI/generación y fases de publicación/sanitización separadas.
+  Identificar páginas independientemente del token: se observó distinto token de
+  continuación con idénticos IDs. `SOURCE_EXHAUSTED_OBSERVED` no certifica que el
+  origen exponga todo su histórico.
+
+#### Evidencia experimental y consecuencias para el contrato (2026-10-15 UTC)
+
+El sondeo de BBVA, contexto es/mx/NEWEST/global y páginas de 199, registró:
+
+* La cabecera incorporó dos IDs nuevos; el cursor de entrada guardado para la
+  página 2 devolvió los mismos 199 IDs, mismo orden, unos 30 minutos después.
+* Seguir el cursor de la cabecera nueva devolvió primero los dos IDs desplazados
+  de la cabecera original y después los primeros 197 de la página 2 original.
+  No hubo solapamiento con la cabecera nueva. La respuesta 016 coincide con los
+  IDs de `report (3).json` y recupera ambos registros de frontera.
+* La unión cabecera nueva + página 2 antigua omite esos dos IDs si no se conservó
+  la cabecera original. Por tanto, no mezclar cadenas/contextos ni descartar
+  evidencia anterior al reconciliar. Los IDs ya respaldados siguen disponibles.
+* Distintos tokens de salida devolvieron páginas con iguales IDs: separar identidad
+  lógica de página, fingerprint de contenido y token físico. No deducir offsets,
+  snapshots, caducidad global ni exhaustividad a partir de este sondeo.
+
+Esta evidencia basta para fijar los contratos v2; la continuación desde el token
+reproducido antiguo, cadenas de 500, recuperación tras expiración y otros bancos
+siguen como aceptación experimental de EPIC-3, no como bloqueos de estos modelos.
+
+#### Tarea 1.6.2: Definir estados y validar referencias
+
+* Tipar estados de plan/stream, fases por página y evidencia de cierre. Distinguir
+  `NOT_STARTED`, `RUNNING`, `PAUSED`, `RECOVERY_REQUIRED`, `TARGET_REACHED`,
+  `SOURCE_EXHAUSTED_OBSERVED` y `BLOCKED`, según las transiciones de EPIC-3.
+* Validar identidad banco/app/contexto entre plan, stream y página; rechazar
+  fechas y contadores contradictorios. Los checks entre objetos referenciados
+  corresponden al reducer/repositorio, no a un modelo que no los haya cargado.
+
+**Criterios de aceptación:**
+
+* [x] Modelos/exportaciones v2 y round-trip JSON estrictos, con fechas UTC.
+* [x] Anual y FULL se representan con el mismo plan; incremental independiente.
+* [x] Contexto distinto no reutiliza stream/token; EOF no se deduce de `None`.
+* [x] Fronteras de más de 500 IDs se representan mediante ledger sin truncamiento.
+
+---
+
+### FEATURE 1.7: Transiciones por Página y Recuperación Verificable
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Aplicar avance lógico puro por páginas completas, con checks de
+identidad/contexto/revisión y sin confundir respaldo/publicación con resultado TDS.
+**Dependencias:** Feature 1.6.
+**Archivos:** `ingestion_state.py`, pruebas y exports de `voc-common`.
+
+#### Tarea 1.7.1: Reducer de páginas y reanudación
+
+* `commit_page` valida stream/contexto/epoch, secuencia, revisión esperada y
+  publicación completa. El repositorio suministra manifiestos/ledgers verificados.
+* Repetir un commit no incrementa contadores; un commit contradictorio se rechaza.
+* Pausa/recuperación son explícitas. El replay de ancla con contenido inalterado
+  renueva la continuación sin contar dos veces la página y conserva cada intento
+  en su manifiesto. Cambios de contenido exigen reconciliación.
+* Cursores nulos se pueden borrar explícitamente sin inferir EOF. No mezclar
+  cabeceras nuevas con páginas de otra cadena ni usar caches truncadas como prueba.
+
+#### Tarea 1.7.2: Planes e incremental independientes
+
+* Extender anual -> FULL conserva plan, T0, streams, páginas y evidencia anterior.
+  Mantener completa la página que cruza el corte; no recalcular el año al reanudar.
+* Baseline incremental congelado, candidato y frontera comprometida distintos.
+  El cierre requiere evidencia/ledger completos; respaldos y publicación parcial
+  no comprometen el máximo. El cierre histórico exige todos los streams del plan.
+* Reducer sin I/O. El repositorio de EPIC-3 verifica objetos/publicaciones y aplica
+  CAS/lease; las validaciones locales no proporcionan transacciones entre objetos.
+
+**Criterios de aceptación:**
+
+* [x] Commit/extensión idempotentes y publicación parcial sin avance.
+* [x] T0 fijo, fronteras >500 IDs mediante ledger y cursor terminal probados.
+* [x] Fixture de cabecera mutable detecta huecos por mezcla de cadenas.
+* [x] Tokens distintos con mismo contenido no duplican avance; intentos auditables.
+* [x] Un único contrato y estado inicial vacío, sin lectores alternativos.
+
+---
+
+### FEATURE 1.8: Eventos Versionados, Configuración y Pruebas de Contratos
+
+**Status: IMPLEMENTADO**
+
+**Objetivo:** Entregar a EPIC-2/EPIC-3 contratos y configuración coherentes para
+publicar, auditar y procesar páginas de forma idempotente.
+**Dependencias:** Features 1.6–1.7; contratos de destino acordados con EPIC-4.
+**Archivos:** `schemas.py`, `config.py`, `constants.py`, `__init__.py`, pruebas del
+paquete, `.env.example` y documentación de configuración.
+
+> **Notas de implementación:**
+> * Sobres `RawReviewEnvelope`/`SanitizedReviewEnvelope` con snapshots inmutables,
+>   identidad determinista y propagación a `ProcessingReceipt.from_event`.
+>   `compute_source_revision` excluye `ingested_at`; `compute_event_id` no incluye
+>   página/stream/plan. Payload y digest contradictorios se rechazan.
+> * `IngestionRunAudit` define el contrato separado de auditoría v2. No se crea
+>   su tabla en esta feature; EPIC-2 2.8 aprovisiona solo la tabla actual.
+> * Settings y payloads usan default/límite de política separados (ambos 199);
+>   Cloud Run y Scheduler consumen esos defaults
+>   compartidos. No se habilitaron páginas de 500 sin validar sus cadenas.
+> * Settings valida prefijos persistentes separados de staging, budgets positivos,
+>   margen de checkpoint y heartbeat/lease. V2 está desactivado por defecto; el
+>   preflight histórico exige la referencia del Job que exportará Pulumi 2.9.
+> * `.env.example` cubre todos los campos. Fixtures sintéticas de eventos, recibos,
+>   auditoría y estado inicial quedan en `packages/voc-common/tests/fixtures/ingestion/`.
+> * Algoritmo, variables y orden de activación documentados en
+>   [contratos de ingesta v2](../contracts/ingestion_v2.md). Esta feature completa
+>   EPIC-1; recursos 2.7–2.10, consumidores y CAS/leases siguen en sus épicas.
+> * Verificación final: 234 pruebas conjuntas (voc-common + infra) y cobertura
+>   medida del 100%; Ruff lint/formato, Pyrefly, Bandit y diff-check pasan.
+>   Persiste la advertencia de deprecación interna conocida del SDK Pulumi GCP.
+
+#### Tarea 1.8.1: Implementar identidad de revisión, sobre y recibos
+
+* Añadir un sobre de evento con `event_id`, `page_id`, `plan_id`, `stream_id`,
+  banco, ID y `source_revision`, más `RawReviewEvent`. Derivar revisión del contenido
+  del origen (incluidos cambios de votos/respuesta), nunca de `ingested_at`.
+  Propagar identidad/revisión al resultado sanitizado y `ProcessingReceipt` según
+  EPIC-4. Repetir la misma revisión es idempotente; cambiar contenido produce otra.
+* Definir modelo de auditoría separado para `ingestion_runs_log_v2` de EPIC-2,
+  sin cursores completos ni texto crudo. Publicación confirmada y resultado TDS
+  son estados distintos; recibos de filtrado/cuarentena no equivalen a fila TDS.
+
+
+#### Tarea 1.8.2: Actualizar configuración y límites de política
+
+* Default y límite de política son constantes separadas; ambos valen 199
+  inicialmente, sin afirmar un máximo nativo del endpoint. Antes de
+  habilitar 500, validar paginación y actualizar conjuntamente `Settings`, payloads,
+  pruebas y configuración de EPIC-2. Los lotes DLP tienen límites independientes.
+* Añadir configuración de prefijos de manifiestos/ledgers, tabla de auditoría v2,
+  referencia del Job histórico y presupuestos de tiempo/solicitudes/bytes. Definir
+  propietario de cada parámetro y defaults compatibles con EPIC-2/EPIC-3; conservar
+  el contrato único de estado. No activar consumidores antes de aprovisionar sus
+  tablas y Jobs.
+* Exponer prefijo de estado `state/watermarks`, prefijo de metadatos
+  `state/ingestion` y tabla `ingestion_runs_log_v2`. El nombre del Job se obtiene
+  del recurso Pulumi, sin un nombre físico supuesto. Presupuestos positivos y
+  configuración de lease/heartbeat deben validarse; los valores de ejecución
+  deben dejar margen de checkpoint antes del timeout del contenedor.
+
+#### Tarea 1.8.3: Verificar contratos públicos y regresiones
+
+* Mantener fixtures del contrato actual compartidas con las
+  pruebas del extractor y de infraestructura. Actualizar consumidores y exports
+  que supongan el esquema anterior; no limitarse a añadir clases sin integrarlas.
+* Ejecutar Ruff, Pyrefly, Bandit y pytest con el umbral de cobertura del paquete.
+  Las pruebas CAS/lease y del endpoint real pertenecen a EPIC-3, no a estos tests.
+
+**Criterios de aceptación:**
+
+* [x] Misma revisión genera mismo ID; cambios de contenido generan nueva revisión.
+* [x] Recibos distinguen TDS, filtrado, cuarentena y errores; publicación no es TDS.
+* [x] Settings/payloads/defaults coinciden; 199 no se documenta como máximo nativo.
+* [x] Configuración y fixtures v2 disponibles; quality gates y regresiones pasan.
 
 ---
 
 ## ✅ Criterios de Aceptación de la Épica 1 (Checklist de Verificación)
 
 * [x] `voc-common` no depende de `google-play-scraper` y modela los tokens de paginación como `str` opacos compatibles con el RPC `oCPfdb` de `batchexecute`.
-* [x] Existen los 3 modos en `IngestionMode` (`INCREMENTAL`, `BACKFILL`, `FULL_BACKFILL`) y `IngestionWatermarkState` gestiona fechas máxima/mínima y tokens por partición de estrellas.
+* [x] Los tres modos de `IngestionMode` comparten contratos de planes/streams y progreso incremental independientes.
 * [x] `SanitizedReviewRecord` garantiza 0% de almacenamiento de `usuario` o `imagen_usuario` en texto plano y preserva códigos de error `ref: 3702`.
 * [x] Los 4 Quality Gates (`ruff`, `pyrefly`, `bandit`, `pytest`) pasan sin errores con cobertura $\ge 85\%$.
 
 
-Criterios adicionales de migración (pendientes):
+Criterios adicionales de contratos y transiciones:
 
-* [ ] Modelos v2, eventos/revisiones y recibos compartidos implementados y exportados.
-* [ ] Migración v1 preserva observaciones sin declarar cobertura verificada.
-* [ ] Reducer por página, T0 fijo y fronteras completas probados.
-* [ ] Configuración/contratos coordinados con infraestructura y consumidores v2.
-* [ ] Quality gates y pruebas de migración pasan antes de activar EPIC-3/EPIC-4.
+* [x] Modelos v2, eventos/revisiones y recibos compartidos implementados y exportados.
+* [x] Estado inicial vacío con cobertura `UNVERIFIED`, sin datos inferidos.
+* [x] Reducer por página, T0 fijo y referencias a fronteras completas probados.
+* [x] Configuración/contratos y fixtures definidos para recursos y consumidores v2; su activación queda en EPIC-2/EPIC-3/EPIC-4.
+* [x] Quality gates y pruebas del contrato pasan; activación de consumidores aún pendiente en sus épicas.

@@ -9,21 +9,143 @@ import json
 from functools import lru_cache
 from typing import Annotated, Any, Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-from voc_common.constants import PLAYSTORE_MAX_PAGE_SIZE
+from voc_common.constants import (
+    PLAYSTORE_DEFAULT_PAGE_SIZE,
+    PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
+)
 
 DEV_USER_HASH_SALT = "dev-only-salt-override-in-prod"
 PRODUCTION_ENVIRONMENTS = frozenset({"prod", "production"})
 
 
-class Settings(BaseSettings):
+class IngestionStorageLayout(BaseModel):
+    """Prefijos de IaC/runtime, sin leer .env ni variables del host."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Almacenamiento (Cloud Storage Data Lake & Watermarks)
+    gcs_watermark_prefix: str = "state/watermarks"
+    gcs_raw_staging_prefix: str = "raw_staging"
+    gcs_ingestion_state_prefix: str = "state/ingestion"
+    gcs_ingestion_manifests_prefix: str = "state/ingestion/manifests"
+    gcs_ingestion_ledgers_prefix: str = "state/ingestion/ledgers"
+    gcs_processing_receipts_prefix: str = "state/ingestion/receipts"
+
+    @field_validator(
+        "gcs_watermark_prefix",
+        "gcs_raw_staging_prefix",
+        "gcs_ingestion_state_prefix",
+        "gcs_ingestion_manifests_prefix",
+        "gcs_ingestion_ledgers_prefix",
+        "gcs_processing_receipts_prefix",
+    )
+    @classmethod
+    def _relative_prefix(cls, value: str) -> str:
+        if any(part in ("", ".", "..") for part in value.split("/")) or (
+            value != value.strip() or ":" in value
+        ):
+            raise ValueError("GCS prefixes must be canonical relative paths")
+        return value
+
+    @model_validator(mode="after")
+    def _storage_layout(self) -> Self:
+        children = (
+            self.gcs_ingestion_manifests_prefix,
+            self.gcs_ingestion_ledgers_prefix,
+            self.gcs_processing_receipts_prefix,
+        )
+        for prefix in children:
+            if not prefix.startswith(self.gcs_ingestion_state_prefix + "/"):
+                raise ValueError(
+                    "metadata prefixes must be under ingestion state"
+                )
+
+        def overlaps(a: str, b: str) -> bool:
+            return a == b or a.startswith(b + "/") or b.startswith(a + "/")
+
+        for index, prefix in enumerate(children):
+            if any(overlaps(prefix, other) for other in children[index + 1 :]):
+                raise ValueError("manifest/ledger/receipt prefixes overlap")
+        if overlaps(self.gcs_watermark_prefix, self.gcs_ingestion_state_prefix):
+            raise ValueError(
+                "watermark and ingestion metadata prefixes overlap"
+            )
+        for prefix in (
+            self.gcs_watermark_prefix,
+            self.gcs_ingestion_state_prefix,
+        ):
+            if any(
+                overlaps(prefix, ephemeral)
+                for ephemeral in (
+                    self.gcs_raw_staging_prefix,
+                    "temp_beam",
+                )
+            ):
+                raise ValueError("durable state overlaps ephemeral lifecycle")
+        return self
+
+
+class IngestionExecutionConfig(BaseModel):
+    """Perfil de ejecución puro, compartido por Settings y Pulumi."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False)
+
+    scraper_rotate_proxy_every_n_batches: int = Field(default=5, ge=1)
+    scraper_page_size: int = Field(
+        default=PLAYSTORE_DEFAULT_PAGE_SIZE,
+        ge=1,
+        le=PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
+    )
+    scraper_base_delay_sec: float = Field(default=1.5, ge=0.0)
+    scraper_max_jitter_sec: float = Field(default=2.0, ge=0.0)
+    scraper_max_retries: int = Field(default=5, ge=0)
+    scraper_timeout_sec: float = Field(default=30.0, gt=0.0)
+
+    # Presupuestos por ejecución, independientes del límite lógico de reseñas.
+    ingestion_max_requests: int = Field(default=100, gt=0)
+    ingestion_max_response_bytes: int = Field(default=20_000_000, gt=0)
+    ingestion_max_runtime_sec: int = Field(default=780, gt=0)
+    ingestion_container_timeout_sec: int = Field(default=900, gt=0)
+    ingestion_checkpoint_margin_sec: int = Field(default=60, gt=0)
+    ingestion_lease_duration_sec: int = Field(default=120, gt=0)
+    ingestion_heartbeat_interval_sec: int = Field(default=30, gt=0)
+
+    @model_validator(mode="after")
+    def _ingestion_limits(self) -> Self:
+        if (
+            self.ingestion_max_runtime_sec
+            + self.ingestion_checkpoint_margin_sec
+            > (self.ingestion_container_timeout_sec)
+        ):
+            raise ValueError("execution budget must leave checkpoint margin")
+        if self.ingestion_checkpoint_margin_sec < self.scraper_timeout_sec:
+            raise ValueError(
+                "checkpoint margin must cover an in-flight request"
+            )
+        if (
+            self.ingestion_heartbeat_interval_sec
+            >= self.ingestion_lease_duration_sec
+        ):
+            raise ValueError("heartbeat must precede lease expiration")
+        return self
+
+
+class Settings(BaseSettings, IngestionStorageLayout, IngestionExecutionConfig):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
         allow_inf_nan=False,
+        frozen=False,
     )
 
     # Entorno y Proyecto GCP
@@ -32,16 +154,15 @@ class Settings(BaseSettings):
     gcp_project_id: str = "bbva-voc-analyzer-dev"
     gcp_region: str = "us-central1"
 
-    # Almacenamiento (Cloud Storage Data Lake & Watermarks)
     gcs_raw_datalake_bucket: str = "voc-datalake-bbva-voc-analyzer-dev"
-    gcs_watermark_prefix: str = "state/watermarks"
-    gcs_raw_staging_prefix: str = "raw_staging"
 
     # BigQuery (Trusted Data Source - TDS)
     bq_dataset_id: str = "bbva_voc_tds"
     bq_sanitized_tds_table: str = "sanitized_reviews_tds"
     bq_predictions_table: str = "delora_predictions"
-    bq_watermarks_log_table: str = "ingestion_watermarks_log"
+    bq_ingestion_runs_log_table: str = Field(
+        default="ingestion_runs_log_v2", pattern=r"^[A-Za-z_][A-Za-z0-9_]*$"
+    )
     bq_hitl_audit_table: str = "hitl_triage_audit_log"
 
     # Cloud Pub/Sub
@@ -60,21 +181,18 @@ class Settings(BaseSettings):
     scraper_proxy_pool_urls: Annotated[list[str], NoDecode] = Field(
         default_factory=list
     )
-    scraper_rotate_proxy_every_n_batches: int = Field(default=5, ge=1)
-    scraper_page_size: int = Field(
-        default=PLAYSTORE_MAX_PAGE_SIZE, ge=1, le=PLAYSTORE_MAX_PAGE_SIZE
-    )
-    scraper_base_delay_sec: float = Field(default=1.5, ge=0.0)
-    scraper_max_jitter_sec: float = Field(default=2.0, ge=0.0)
-    scraper_max_retries: int = Field(default=5, ge=0)
-    scraper_timeout_sec: float = Field(default=30.0, gt=0.0)
-
+    # Recursos v2: activar solo después de aprovisionar EPIC-2 (2.7–2.9).
+    ingestion_v2_enabled: bool = False
+    ingestion_history_job_name: str | None = Field(default=None, min_length=1)
     # Parámetros MLOps y HITL
     hitl_entropy_threshold: float = Field(default=0.65, ge=0.0, le=1.0)
     enable_dedicated_vertex_endpoints: bool = False
 
     @field_validator(
-        "dlp_inspect_template_id", "dlp_deidentify_template_id", mode="before"
+        "dlp_inspect_template_id",
+        "dlp_deidentify_template_id",
+        "ingestion_history_job_name",
+        mode="before",
     )
     @classmethod
     def _blank_to_none(cls, value: Any) -> Any:
@@ -93,6 +211,15 @@ class Settings(BaseSettings):
         if stripped.startswith("["):
             return json.loads(stripped)
         return [url.strip() for url in stripped.split(",") if url.strip()]
+
+    def require_ingestion_v2(self, *, historical: bool = False) -> None:
+        """Preflight local; no comprueba existencia de recursos en GCP."""
+        if not self.ingestion_v2_enabled:
+            raise ValueError("ingestion v2 is not enabled")
+        if historical and self.ingestion_history_job_name is None:
+            raise ValueError(
+                "historical ingestion requires the Pulumi Job output"
+            )
 
     @property
     def is_production(self) -> bool:

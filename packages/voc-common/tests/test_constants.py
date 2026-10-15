@@ -10,7 +10,7 @@ from voc_common.constants import (
     MIN_REVIEW_WORDS,
     PLAYSTORE_BANK_APPS,
     PLAYSTORE_BATCHEXECUTE_URL,
-    PLAYSTORE_MAX_PAGE_SIZE,
+    PLAYSTORE_DEFAULT_PAGE_SIZE,
     PLAYSTORE_REVIEWS_RPC_ID,
     SENTIMENT_DISPLAY_MAP,
     ABSATopic,
@@ -71,7 +71,7 @@ def test_eda_and_rpc_constants() -> None:
         "https://play.google.com/_/PlayStoreUi/data/batchexecute"
     )
     assert PLAYSTORE_REVIEWS_RPC_ID == "oCPfdb"
-    assert PLAYSTORE_MAX_PAGE_SIZE == 199
+    assert PLAYSTORE_DEFAULT_PAGE_SIZE == 199
 
 
 def test_user_agents_pool() -> None:

@@ -83,8 +83,7 @@ MIN_REVIEW_WORDS: int = 2
 MAX_REVIEW_WORDS: int = 60
 BACKFILL_LOOKBACK_DAYS: int = 365
 
-# Constantes del Watermark y normalización de reseñas
-WATERMARK_MAX_FRONTIER_IDS: int = 500
+# Normalización de reseñas
 UNKNOWN_APP_VERSION: str = "UNKNOWN"
 
 # Constantes del Protocolo Interno Google Play (batchexecute RPC)
@@ -92,7 +91,9 @@ PLAYSTORE_BATCHEXECUTE_URL: str = (
     "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 )
 PLAYSTORE_REVIEWS_RPC_ID: str = "oCPfdb"
-PLAYSTORE_MAX_PAGE_SIZE: int = 199
+# Política local conservadora; no describe un máximo nativo del endpoint.
+PLAYSTORE_DEFAULT_PAGE_SIZE: int = 199
+PLAYSTORE_PAGE_SIZE_POLICY_LIMIT: int = 199
 DEFAULT_PLAYSTORE_LANG: str = "es"
 DEFAULT_PLAYSTORE_COUNTRY: str = "mx"
 
@@ -107,3 +108,63 @@ DEFAULT_USER_AGENTS: tuple[str, ...] = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:129.0) "
     "Gecko/20100101 Firefox/129.0",
 )
+
+
+class ScanStatus(StrEnum):
+    """Estado explícito: un cursor nulo no expresa inicio ni agotamiento."""
+
+    NOT_STARTED = "NOT_STARTED"
+    RUNNING = "RUNNING"
+    PAUSED = "PAUSED"
+    RECOVERY_REQUIRED = "RECOVERY_REQUIRED"
+    TARGET_REACHED = "TARGET_REACHED"
+    SOURCE_EXHAUSTED_OBSERVED = "SOURCE_EXHAUSTED_OBSERVED"
+    BLOCKED = "BLOCKED"
+
+
+class CoverageStatus(StrEnum):
+    """Evidencia observada, nunca garantía de exhaustividad del origen."""
+
+    UNVERIFIED = "UNVERIFIED"
+    TRAVERSAL_OBSERVED = "TRAVERSAL_OBSERVED"
+    GAPS_DETECTED = "GAPS_DETECTED"
+
+
+class RecoveryStatus(StrEnum):
+    NONE = "NONE"
+    ANCHOR_REPLAY = "ANCHOR_REPLAY"
+    EARLIER_ANCHOR = "EARLIER_ANCHOR"
+    HEAD_RESCAN = "HEAD_RESCAN"
+    BLOCKED = "BLOCKED"
+
+
+class PublicationStatus(StrEnum):
+    PENDING = "PENDING"
+    PARTIAL = "PARTIAL"
+    PUBLISHED = "PUBLISHED"
+
+
+class ProcessingStatus(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    TDS_COMMITTED = "TDS_COMMITTED"
+    FILTERED_LENGTH = "FILTERED_LENGTH"
+    QUARANTINED = "QUARANTINED"
+    RETRYABLE_ERROR = "RETRYABLE_ERROR"
+
+
+class SanitizationStatus(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    RESOLVED = "RESOLVED"
+    GAPS_DETECTED = "GAPS_DETECTED"
+
+
+class RunAuditStatus(StrEnum):
+    """Eventos de auditoría; no sustituyen los estados transaccionales GCS."""
+
+    STARTED = "STARTED"
+    PAUSED = "PAUSED"
+    RECOVERY_REQUIRED = "RECOVERY_REQUIRED"
+    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"

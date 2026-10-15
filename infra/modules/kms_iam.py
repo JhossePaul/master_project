@@ -52,11 +52,10 @@ def create_security_resources(
         "voc-sa-ingestion",
         (
             "roles/pubsub.publisher",
-            "roles/storage.objectUser",
             "roles/bigquery.dataEditor",
         ),
     )
-    scheduler = create_account("voc-sa-scheduler", ("roles/run.invoker",))
+    scheduler = create_account("voc-sa-scheduler", ())
     sanitization = create_account(
         "voc-sa-sanitization",
         (
@@ -65,7 +64,6 @@ def create_security_resources(
             "roles/dlp.user",
             "roles/bigquery.dataEditor",
             "roles/bigquery.jobUser",
-            "roles/storage.objectAdmin",
         ),
     )
     ml_backend = create_account(
@@ -108,4 +106,47 @@ def create_security_resources(
         sa_ml_and_backend=ml_backend,
         kms_crypto_key_id=kms_crypto_key_id,
         iam_members=iam_members,
+    )
+
+
+def create_datalake_access(
+    bucket: gcp.storage.Bucket,
+    security: SecurityResources,
+    api_deps: list[pulumi.Resource],
+) -> list[gcp.storage.BucketIAMMember]:
+    """Grants aditivos de objetos solo en el bucket, sin administrar su IAM."""
+    grants = []
+    for label, account in (
+        ("ingestion", security.sa_ingestion_worker),
+        ("sanitization", security.sa_sanitization_worker),
+    ):
+        grants.append(
+            gcp.storage.BucketIAMMember(
+                f"voc-datalake-{label}-objects",
+                bucket=bucket.name,
+                role="roles/storage.objectUser",
+                member=account.email.apply(
+                    lambda email: f"serviceAccount:{email}"
+                ),
+                opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
+            )
+        )
+    return grants
+
+
+def create_historical_job_access(
+    job: gcp.cloudrunv2.Job,
+    launcher: gcp.serviceaccount.Account,
+    project_id: str,
+    region: str,
+) -> gcp.cloudrunv2.JobIamMember:
+    """Permite a la API de ingesta ejecutar solo este Job con overrides."""
+    return gcp.cloudrunv2.JobIamMember(
+        "voc-history-ingestion-executor",
+        project=project_id,
+        location=region,
+        name=job.name,
+        role="roles/run.jobsExecutorWithOverrides",
+        member=launcher.email.apply(lambda email: f"serviceAccount:{email}"),
+        opts=pulumi.ResourceOptions(depends_on=[job, launcher]),
     )

@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "bank_id": "BBVA",
+  "app_id": "com.bancomer.mbanking",
+  "revision": 0,
+  "updated_at": "2026-10-14T00:00:00Z",
+  "observed_min_at": null,
+  "observed_max_at": null,
+  "incremental": {
+    "schema_version": 2,
+    "committed_high_at": null,
+    "frontier_ledger": null,
+    "active_run_id": null,
+    "baseline_high_at": null,
+    "candidate_high_at": null,
+    "replay_from_at": null,
+    "status": "NOT_STARTED",
+    "stream_id": null
+  },
+  "historical_plan_ids": [],
+  "stream_ids": [],
+  "manifest_ledger": null,
+  "coverage": "UNVERIFIED"
+}

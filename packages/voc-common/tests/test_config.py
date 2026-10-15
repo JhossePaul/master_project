@@ -201,7 +201,13 @@ def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_public_api_reexports_every_module() -> None:
-    modules = ("constants", "text_utils", "schemas", "config")
+    modules = (
+        "constants",
+        "text_utils",
+        "schemas",
+        "config",
+        "ingestion_state",
+    )
     for module_name in modules:
         module = importlib.import_module(f"voc_common.{module_name}")
         public = {
@@ -212,3 +218,83 @@ def test_public_api_reexports_every_module() -> None:
         }
         missing = public - set(voc_common.__all__)
         assert not missing, f"{module_name} sin exportar: {sorted(missing)}"
+
+
+def test_v2_settings_defaults_payloads_and_policy_are_coherent() -> None:
+    settings = Settings()
+    payload = voc_common.IngestionRequestPayload(
+        bank_id=voc_common.BankKey.BBVA
+    )
+    assert settings.scraper_page_size == payload.page_size
+    assert payload.page_size == voc_common.PLAYSTORE_DEFAULT_PAGE_SIZE == 199
+    assert settings.ingestion_v2_enabled is False
+    assert settings.ingestion_history_job_name is None
+    assert settings.bq_ingestion_runs_log_table == "ingestion_runs_log_v2"
+    assert (
+        settings.ingestion_max_runtime_sec
+        + (settings.ingestion_checkpoint_margin_sec)
+        <= settings.ingestion_container_timeout_sec
+    )
+    with pytest.raises(ValueError, match="not enabled"):
+        settings.require_ingestion_v2()
+    incremental = Settings(ingestion_v2_enabled=True)
+    incremental.require_ingestion_v2()
+    with pytest.raises(ValueError, match="Pulumi Job output"):
+        incremental.require_ingestion_v2(historical=True)
+    historical = Settings(
+        ingestion_v2_enabled=True,
+        ingestion_history_job_name="projects/fixture/locations/us/jobs/history",
+    )
+    historical.require_ingestion_v2(historical=True)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"ingestion_max_requests": 0},
+        {"ingestion_max_response_bytes": -1},
+        {"ingestion_max_runtime_sec": 0},
+        {"ingestion_container_timeout_sec": 0},
+        {"ingestion_checkpoint_margin_sec": 0},
+        {"ingestion_lease_duration_sec": 0},
+        {"ingestion_heartbeat_interval_sec": 0},
+        {"ingestion_max_runtime_sec": 850},
+        {"ingestion_heartbeat_interval_sec": 120},
+        {"scraper_timeout_sec": 61},
+        {"gcs_watermark_prefix": "/state/watermarks"},
+        {"gcs_ingestion_state_prefix": "state//ingestion"},
+        {"gcs_ingestion_ledgers_prefix": "state/ingestion/../ledger"},
+        {"gcs_ingestion_manifests_prefix": "outside/manifests"},
+        {"gcs_processing_receipts_prefix": "state/ingestion/ledgers/receipts"},
+        {"gcs_watermark_prefix": "state"},
+        {"gcs_raw_staging_prefix": "state"},
+        {"bq_ingestion_runs_log_table": "dataset.table"},
+    ],
+)
+def test_v2_invalid_config_rejected(changes: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**changes)
+
+
+def test_v2_environment_overrides_and_custom_prefixes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for key, value in {
+        "INGESTION_V2_ENABLED": "true",
+        "INGESTION_HISTORY_JOB_NAME": "from-pulumi-output",
+        "INGESTION_MAX_REQUESTS": "50",
+        "INGESTION_MAX_RESPONSE_BYTES": "10000000",
+        "BQ_INGESTION_RUNS_LOG_TABLE": "custom_runs_v2",
+    }.items():
+        monkeypatch.setenv(key, value)
+    settings = Settings(
+        gcs_watermark_prefix="metadata/watermarks",
+        gcs_ingestion_state_prefix="metadata/ingestion",
+        gcs_ingestion_manifests_prefix="metadata/ingestion/manifests",
+        gcs_ingestion_ledgers_prefix="metadata/ingestion/ledgers",
+        gcs_processing_receipts_prefix="metadata/ingestion/receipts",
+    )
+    settings.require_ingestion_v2(historical=True)
+    assert settings.ingestion_max_requests == 50
+    assert settings.ingestion_max_response_bytes == 10000000
+    assert settings.bq_ingestion_runs_log_table == "custom_runs_v2"

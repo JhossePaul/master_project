@@ -1,7 +1,7 @@
 # EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** Pendiente. Especificación revisada el 2026-10-14; falta validación experimental del protocolo.
-* **Dependencias:** EPIC-1 y EPIC-2. Los cambios de contratos y de despliegue descritos aquí son trabajo pendiente, no capacidades ya implementadas.
+* **Estado:** En implementación. Features 3.1–3.3 implementadas; features 3.4–3.5 pendientes. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
+* **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La integración del worker con ellos corresponde a las siguientes features.
 * **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
 ## Objetivo y límites de la garantía
@@ -21,11 +21,11 @@ observado con cobertura continua, ni un cursor guardado con una snapshot.
 
 ## Modelo de estado: progreso lógico y cursor físico son diferentes
 
-### Tarea preparatoria: contratos v2 y migración en `voc-common`
+### Contratos compartidos de `voc-common` disponibles
 
 Implementar modelos Pydantic con `extra="forbid"`, UTC y `schema_version=2`.
-Estos contratos deben incorporarse antes de escribir el extractor; el watermark
-v1 no permite expresar las garantías siguientes.
+Estos contratos ya están implementados en EPIC-1. El extractor debe consumirlos
+directamente e inicializar estado vacío cuando no exista objeto persistido.
 
 | Contrato | Campos y significado obligatorio |
 | --- | --- |
@@ -53,12 +53,8 @@ v1 no permite expresar las garantías siguientes.
 * Un `None` de cursor no representa simultáneamente «no iniciado» y «terminado»:
   `status` distingue `NOT_STARTED`, `RUNNING`, `PAUSED`, `RECOVERY_REQUIRED`,
   `TARGET_REACHED`, `SOURCE_EXHAUSTED_OBSERVED` y `BLOCKED`.
-* Migración v1: conservar sus campos como observaciones y cursores candidatos,
-  marcar cobertura `UNVERIFIED` y validar/reconciliar la frontera. No convertir
-  `backfill_one_year_completed`, `full_backfill_completed` o un máximo v1 en
-  evidencia v2. `oldest_page_token` global queda obsoleto como fuente de verdad.
 * El avance se realiza por página mediante un reducer validado, no con llamadas
-  por reseña a `update_bounds`. Permitir borrar explícitamente un cursor terminal.
+  por reseña. Permitir borrar explícitamente un cursor terminal.
 
 ### BACKFILL anual seguido de FULL_BACKFILL
 
@@ -96,10 +92,10 @@ las cadenas entre `<...>` son referencias, no cursores reales):
     "upper_anchor_at": "2026-10-14T08:00:00Z",
     "requested_lower_at": "2025-10-14T08:00:00Z",
     "status": "TARGET_REACHED",
-    "stream_ids": ["bbva-es-mx-newest-global-v1"]
+    "stream_ids": ["bbva-es-mx-newest-global-probe"]
   },
   "historical_stream": {
-    "stream_id": "bbva-es-mx-newest-global-v1",
+    "stream_id": "bbva-es-mx-newest-global-probe",
     "chain_epoch": 1,
     "frontier_oldest_at": "2025-10-12T07:00:00Z",
     "anchor_page_id": "<pagina-completa-que-cruzo-el-ano>",
@@ -143,14 +139,30 @@ anclas reduce riesgo y puede reducir coste, pero no elimina ese peor caso.
 
 ## FEATURE 3.1: Paquete y adaptación del protocolo
 
+**Estado: IMPLEMENTADA.** Paquete integrado al workspace y lockfile; adaptador
+`ocpfdb-2026-10-15.1`, cliente HTTP asíncrono de una página y pruebas locales.
+Fixtures estructurales derivadas de respuestas 014–016, con datos sustituidos
+y hashes de procedencia en `tests/fixtures/provenance.json`.
+Ver `services/ingestion-worker/README.md` para uso y límites.
+El bloque auxiliar observado `[[None, [[1800], None, [72000]]]]` ocupa
+`inner[2]`; una forma desconocida falla explícitamente.
+No se ha observado una respuesta terminal ni un error de cursor del servidor:
+`InvalidCursorError` valida entrada local; ningún HTTP 400 demuestra expiración.
+Las formas terminales de los tests son sintéticas y no habilitan EOF confirmado.
+Validación: 76 tests del worker y 332 tests conjuntos con contratos/infra,
+100% de cobertura de líneas en los módulos medidos; Ruff, Pyrefly y Bandit
+aprobados. Las tres respuestas originales completas también se parsearon
+localmente: 199 reseñas válidas por respuesta. Sin nuevas peticiones al origen.
+
 ### Dependencias y archivos
 
 Workspace `ingestion-worker`, Python >=3.11, hatchling, `voc-common` desde
 workspace. Dependencias: FastAPI, uvicorn, `httpx[socks]`, tenacity, clientes GCP
 Pub/Sub, Storage y BigQuery y Pydantic v2. Mantener rangos compatibles probados
 al implementar y resolver con uv; no instalar `google-play-scraper` en producción.
-Archivos: `playstore_protocol.py`, `extractor.py`, `watermark_store.py`,
-`publisher.py`, `main.py`, `job.py`, Dockerfile y tests de cada módulo.
+Implementados: `playstore_protocol.py`, `extractor.py` y tests del adaptador/HTTP.
+`watermark_store.py`, `publisher.py`, `main.py`, `job.py` y Dockerfile se
+completan en las features 3.2–3.5 con sus respectivos tests.
 
 ### Serialización estructural, no concatenación de f-strings
 
@@ -201,11 +213,28 @@ explícitos, cursor, `protocol_version`, evidencia y clasificación. Separar
 
 ## FEATURE 3.2: Repositorio de estado, leases y auditoría
 
-`WatermarkRepository` implementa lectura v2, reducer de páginas, migración,
+**Estado: IMPLEMENTADA.** `watermark_store.py` aplica el reducer compartido,
+CAS y fencing en la misma generación raíz; snapshots inmutables de planes,
+streams, catálogo e índice de páginas, ledgers completos y recibos inmutables.
+`audit.py` entrega una cola durable de `IngestionRunAudit` a la tabla configurada,
+con IDs estables y comprobación de errores por fila. `main.py` expone el GET
+de progreso mediante clientes diferidos o repositorio inyectado.
+Ver [diseño concreto de persistencia](../contracts/ingestion_v2.md#repositorio-de-epic-3-feature-32).
+La producción de eventos/métricas y el heartbeat periódico corresponden al
+ejecutor de 3.4; publicación y su confirmación real corresponden a 3.3.
+Validación: 102 tests del worker (95.76% de cobertura de líneas),
+358 tests conjuntos con contratos/infra aprobados; Ruff, Pyrefly y Bandit
+sin errores. Integración real con GCS/BigQuery/IAM pendiente de despliegue.
+
+
+`WatermarkRepository` implementa lectura del contrato actual, reducer de páginas,
 ledger, adquisición/renovación/liberación de lease y CAS por generación GCS.
 
-* Estado actual: `state/watermarks/{bank_id}.json`; manifiestos y planes bajo
-  `state/ingestion/{bank_id}/`. Leer datos y generación consistentemente.
+* Estado actual: `state/watermarks/{bank_id}.json`; planes/streams bajo
+  `state/ingestion/{bank_id}/`; manifiestos, ledgers y recibos bajo sus prefijos
+  configurados por banco. Usar el layout compartido y las rutas del
+  [contrato de almacenamiento](../contracts/ingestion_v2.md), no un prefijo único
+  literal. Leer datos y generación consistentemente.
 * `if_generation_match=0` al crear; generación leída al actualizar. Un 412 no
   permite sobrescribir: releer, comprobar dueño/epoch y reconciliar o abandonar.
 * Lease por banco con `owner_run_id`, vencimiento, heartbeat y fencing epoch;
@@ -217,20 +246,38 @@ ledger, adquisición/renovación/liberación de lease y CAS por generación GCS.
   no reconstruir progreso usando únicamente contadores o timestamps.
 * La auditoría conserva `run_id`, `plan_id`, stream, estado, motivo, páginas,
   conteos extraídos/publicados/descartados, solicitudes de recuperación y tiempos.
-  **Migración de infra pendiente:** crear `ingestion_runs_log_v2` según el ajuste
-  de EPIC-2, conservando `ingestion_watermarks_log` v1 durante la transición.
-  La tabla actual no incluye `status`/`run_id`; no enviar eventos v2 a su schema.
+  **Infra disponible (feature 2.8):** `ingestion_runs_log_v2` usa el contrato
+  `IngestionRunAudit`. Es la única tabla de auditoría de ingesta; no hay tabla
+  legado ni migración de datos. Usar `BQ_INGESTION_RUNS_LOG_TABLE`.
   BigQuery no es almacenamiento transaccional del estado vivo.
 * Exponer `GET /api/v1/watermarks/{bank_id}` como progreso y cobertura observados,
   con huecos e incertidumbre. No devolver porcentaje ficticio de completitud.
 
 ## FEATURE 3.3: Página duradera y publicación al menos una vez
 
+**Estado: IMPLEMENTADA.** `publisher.py` prepara capturas JSONL.gz reproducibles,
+registra manifiesto pendiente en el catálogo bajo CAS y publica sobres v2
+con atributos estables. Comprueba cada future con un presupuesto compartido de
+espera, conserva estados parciales y solo compromete progreso tras PUBLISHED.
+El catálogo permite reanudar por page_id sin repetir la petición al origen.
+Los descartes NO_TEXT tienen ledger durable sin texto; páginas con filas crudas,
+sin texto y con cursor pueden avanzar sin afirmar EOF.
+Las versiones de manifiesto son crecientes (pueden tener saltos para distinguir
+intentos huérfanos); el page_id y los event_id permanecen estables al reintentar.
+El GET de progreso incluye páginas pendientes, fetched_at y sus conteos para
+vigilar su antigüedad antes del TTL.
+Validación: 118 tests del worker aprobados (94.40% de cobertura de líneas);
+374 tests conjuntos con contratos/infra aprobados. Ruff, formato, Pyrefly y
+Bandit sin errores. No se ejecutaron solicitudes reales a Pub/Sub/GCS ni se
+desplegó el servicio.
+
+
 `RawReviewBatchPublisher` opera con un `PageManifest`, no con un UUID nuevo por
 cada reintento. `page_id` determinista por stream, epoch, input cursor y fingerprint
 observado; la misma captura conserva su ID. Un replay cambiado es otra captura.
 
-1. Persistir página completa JSONL.gz en `raw_staging/{bank_id}/{date}/{page_id}`
+1. Persistir página completa JSONL.gz con el layout compartido en
+   `{GCS_RAW_STAGING_PREFIX}/{bank_id}/{run_id}/{page_id}/{fetch_attempt_id}.jsonl.gz`
    con creación condicional y verificar generación/fingerprint. Si ya existe,
    reutilizar solo si coincide; no sobrescribir una captura diferente.
 2. Publicar registros con `event_id`, `page_id`, `source_revision`, banco y modo.
@@ -310,9 +357,10 @@ fronteras observadas/confirmadas y recuperación. Estados al menos:
   Run Job, con plan/stream y presupuesto. No usar FastAPI BackgroundTasks como
   persistencia. El servicio HTTP actual tiene timeout 900s y CPU bajo demanda:
   no da continuidad a un histórico largo después de responder o de un 504.
-* Cambios de infra pendientes: declarar Job de ingesta histórica, imágenes y
-  permisos de invocación propios, tiempo de tarea acotado, flags/entorno y saltos
-  de versión de estado. No activar históricos masivos con cron diario por defecto.
+* Infra declarada en EPIC-2 2.9: Job histórico, perfiles y permiso de ejecución
+  con overrides para la API de ingesta. Implementar el módulo `ingestion_worker.job`,
+  la API lanzadora y el lease; publicar/verificar la imagen antes de activar v2.
+  Usar los IDs/variables del contrato compartido; no activar históricos con cron.
 * Docker multi-stage con uv workspace y usuario no root. Ajustar pyproject root
   y CI al incorporar el servicio; pruebas y cobertura >=85% del código del worker.
 
@@ -345,7 +393,7 @@ de revisar los resultados; si no validan la hipótesis, versionar el protocolo.
 
 ## Checklist
 
-* [ ] Contratos v2/migración y auditoría de infra implementados.
+* [ ] Contratos actuales y auditoría de infraestructura implementados.
 * [ ] Adaptador validado con fixtures reales y sondeo opt-in; 199 documentado como política.
 * [ ] Anual -> FULL conserva páginas/contexto y reconoce recuperación cara cuando toca.
 * [ ] Lease + CAS, ledger y publicación al menos una vez probados por inyección de fallos.

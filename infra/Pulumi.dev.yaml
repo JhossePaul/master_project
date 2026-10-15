@@ -9,3 +9,32 @@ config:
   bbva-voc-infra:ingestion_worker_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/ingestion-worker:latest"
   bbva-voc-infra:sanitization_job_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/sanitization-pipeline:latest"
   bbva-voc-infra:api_backend_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/api-backend:latest"
+  # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
+  bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
+  bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"
+  bbva-voc-infra:gcs_ingestion_state_prefix: "state/ingestion"
+  bbva-voc-infra:gcs_ingestion_manifests_prefix: "state/ingestion/manifests"
+  bbva-voc-infra:gcs_ingestion_ledgers_prefix: "state/ingestion/ledgers"
+  bbva-voc-infra:gcs_processing_receipts_prefix: "state/ingestion/receipts"
+  # Ingesta v2 se activa cuando imagen/entrypoint y API de EPIC-3 estén listos.
+  bbva-voc-infra:ingestion_v2_enabled: false
+  bbva-voc-infra:ingestion_execution:
+    ingestion_max_requests: 100
+    ingestion_max_response_bytes: 20000000
+    ingestion_max_runtime_sec: 780
+    ingestion_container_timeout_sec: 900
+    ingestion_checkpoint_margin_sec: 60
+    ingestion_lease_duration_sec: 120
+    ingestion_heartbeat_interval_sec: 30
+  # Imagen opcional: historical_job_image; por defecto usa ingestion_worker_image.
+  bbva-voc-infra:historical_ingestion:
+    command: ["python", "-m", "ingestion_worker.job"]
+    max_retries: 1
+    execution:
+      ingestion_max_requests: 1000
+      ingestion_max_response_bytes: 200000000
+      ingestion_max_runtime_sec: 3480
+      ingestion_container_timeout_sec: 3600
+      ingestion_checkpoint_margin_sec: 120
+      ingestion_lease_duration_sec: 120
+      ingestion_heartbeat_interval_sec: 30
