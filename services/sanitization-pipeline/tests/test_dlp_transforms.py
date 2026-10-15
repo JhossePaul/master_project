@@ -377,7 +377,7 @@ def test_misaligned_response_emits_no_sanitized_rows(change):
     setattr(client, change, True)
     batch = [envelope("falla al pagar servicio", rid=f"r{i}") for i in range(3)]
     result = sanitizer(client).sanitize(batch)
-    assert not result.valid and not result.filtered
+    assert not result.valid
     assert {r.error_code for r in result.retryable} == {dt.DLP_MISALIGNED}
     assert {r.status for r in result.retryable} == {
         ProcessingStatus.RETRYABLE_ERROR
@@ -449,19 +449,14 @@ def test_deidentifier_validates_templates_and_policy():
 
 
 # -------------------------------------------------- EDA and contracts
-@pytest.mark.parametrize(
-    ("words", "valid"), [(1, False), (2, True), (60, True), (61, False)]
-)
-def test_eda_word_bounds_after_sanitization(words, valid):
+@pytest.mark.parametrize("words", [1, 2, 60, 61, 300])
+def test_every_length_is_kept_after_sanitization(words):
+    """Ningún largo se descarta; se filtra al analizar con `conteo_palabras`."""
     text = " ".join(["falla"] * words)
     result = sanitizer().sanitize([envelope(text)])
-    assert bool(result.valid) is valid
-    assert bool(result.filtered) is not valid
-    if not valid:
-        (receipt,) = result.filtered
-        assert receipt.status == ProcessingStatus.FILTERED_LENGTH
-        assert receipt.receipt_id == receipt.event_id
-        assert receipt.error_code is None
+    (clean,) = result.valid
+    assert clean.record.conteo_palabras == words
+    assert not result.quarantined and not result.retryable
 
 
 def test_contract_violations_are_quarantined(monkeypatch):
@@ -519,7 +514,6 @@ def test_do_fn_routes_tagged_outputs_in_test_pipeline(monkeypatch):
             pipeline
             | beam.Create([batch])
             | beam.ParDo(do_fn()).with_outputs(
-                dt.OUTPUT_TAG_FILTERED_LENGTH,
                 dt.OUTPUT_TAG_QUARANTINED,
                 dt.OUTPUT_TAG_RETRYABLE_ERROR,
                 main=dt.OUTPUT_TAG_SANITIZED_VALID,
@@ -527,11 +521,8 @@ def test_do_fn_routes_tagged_outputs_in_test_pipeline(monkeypatch):
         )
         assert_that(
             results[dt.OUTPUT_TAG_SANITIZED_VALID],
-            ids(["valid", "titled"]),
+            ids(["valid", "short", "titled"]),
             label="v",
-        )
-        assert_that(
-            results[dt.OUTPUT_TAG_FILTERED_LENGTH], ids(["short"]), label="f"
         )
         assert_that(results[dt.OUTPUT_TAG_QUARANTINED], ids([]), label="q")
         assert_that(results[dt.OUTPUT_TAG_RETRYABLE_ERROR], ids([]), label="r")

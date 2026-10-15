@@ -13,6 +13,7 @@ ingesta solo se lee con `WatermarkRepository`, sin lease ni escrituras.
 
 import re
 from collections.abc import Callable, Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Annotated, Self, TypeVar
 
@@ -46,6 +47,11 @@ _SAFE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}")
 _DIGEST = re.compile(r"[0-9a-f]{64}")
 Counter = Annotated[int, Field(ge=0)]
 Model = TypeVar("Model", bound=BaseModel)
+T = TypeVar("T")
+R = TypeVar("R")
+# Hilos de E/S hacia GCS por repositorio. El cliente usa un pool HTTP de 10
+# conexiones por host; más hilos que eso solo hacen cola.
+DEFAULT_IO_WORKERS = 8
 
 
 class LedgerError(RuntimeError):
@@ -139,10 +145,12 @@ class ProcessingLedgerRepository:
         *,
         layout: IngestionStorageLayout | None = None,
         timeout_sec: float = 30.0,
+        io_workers: int = DEFAULT_IO_WORKERS,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
-        if not bucket or "/" in bucket or timeout_sec <= 0:
-            raise ValueError("invalid receipts bucket or timeout")
+        if not bucket or "/" in bucket or timeout_sec <= 0 or io_workers < 1:
+            raise ValueError("invalid receipts bucket, timeout or workers")
+        self.io_workers = io_workers
         self.bucket = client.bucket(bucket)
         self.ingestion = ingestion
         self.prefix = (
@@ -150,6 +158,19 @@ class ProcessingLedgerRepository:
         ).gcs_processing_receipts_prefix
         self.timeout_sec = timeout_sec
         self.clock = clock
+
+    def _map(self, fn: Callable[[T], R], items: Iterable[T]) -> list[R]:
+        """Aplica `fn` con hilos acotados conservando el orden de entrada.
+
+        Las lecturas y las creaciones condicionales son independientes e
+        idempotentes (primer escritor gana), así que se pueden solapar.
+        """
+        batch = list(items)
+        workers = min(self.io_workers, len(batch))
+        if workers <= 1:
+            return [fn(item) for item in batch]
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            return list(pool.map(fn, batch))
 
     # ------------------------------------------------------------- paths
     def receipt_path(self, bank: BankKey, page_id: str, event_id: str) -> str:
@@ -200,33 +221,39 @@ class ProcessingLedgerRepository:
     def write_event_receipts(
         self, receipts: Iterable[ProcessingReceipt]
     ) -> list[ProcessingReceipt]:
-        stored: list[ProcessingReceipt] = []
-        for receipt in receipts:
+        pending = list(receipts)
+        for receipt in pending:
             if receipt.status not in TERMINAL:
                 raise ValueError("only terminal receipts are persisted")
             if receipt.receipt_id != receipt.event_id:
                 raise ValueError("receipt_id must be the event_id")
-            # Primero el recibo de la página; el índice lo vuelve visible.
-            kept = self._create_or_keep(
-                self.receipt_path(
-                    receipt.bank_id, receipt.page_id, receipt.event_id
-                ),
-                receipt,
-            )
-            self._create_or_keep(
-                self.event_index_path(receipt.bank_id, receipt.event_id), kept
-            )
-            stored.append(kept)
-        return stored
+        return self._map(self._store_receipt, pending)
+
+    def _store_receipt(self, receipt: ProcessingReceipt) -> ProcessingReceipt:
+        # Primero el recibo de la página; el índice lo vuelve visible.
+        kept = self._create_or_keep(
+            self.receipt_path(
+                receipt.bank_id, receipt.page_id, receipt.event_id
+            ),
+            receipt,
+        )
+        self._create_or_keep(
+            self.event_index_path(receipt.bank_id, receipt.event_id), kept
+        )
+        return kept
 
     def find_already_processed_event_ids(
         self, bank: BankKey, event_ids: Iterable[str]
     ) -> dict[str, ProcessingReceipt]:
         found: dict[str, ProcessingReceipt] = {}
-        for event_id in sorted(set(event_ids)):
-            receipt = self._read(
+        unique = sorted(set(event_ids))
+        receipts = self._map(
+            lambda event_id: self._read(
                 self.event_index_path(bank, event_id), ProcessingReceipt
-            )
+            ),
+            unique,
+        )
+        for event_id, receipt in zip(unique, receipts, strict=True):
             if receipt is None:
                 continue
             if (receipt.bank_id, receipt.event_id) != (bank, event_id) or (
@@ -290,17 +317,28 @@ class ProcessingLedgerRepository:
         counts = {status: 0 for status in TERMINAL}
         quarantined: list[str] = []
         missing: list[str] = []
-        for raw in self.ingestion.iter_ledger(manifest.ledger):
-            event_id = ReviewLedgerEntry.model_validate(raw).event_id
-            receipt = self.page_receipt(bank, page_id, event_id)
-            if receipt is None:
-                missing.append(event_id)
-                continue
-            counts[receipt.status] += 1
-            if receipt.status == ProcessingStatus.QUARANTINED:
-                quarantined.append(event_id)
-        if missing and not staging_expired:
-            return SanitizationStatus.PENDING
+        event_ids = [
+            ReviewLedgerEntry.model_validate(raw).event_id
+            for raw in self.ingestion.iter_ledger(manifest.ledger)
+        ]
+        # Lecturas en bloques paralelos; una página con pendientes (lo común
+        # mientras se drena) se descarta en el primer bloque sin leerla toda.
+        block = max(self.io_workers * 2, 1)
+        for start in range(0, len(event_ids), block):
+            chunk = event_ids[start : start + block]
+            receipts = self._map(
+                lambda event_id: self.page_receipt(bank, page_id, event_id),
+                chunk,
+            )
+            for event_id, receipt in zip(chunk, receipts, strict=True):
+                if receipt is None:
+                    missing.append(event_id)
+                    continue
+                counts[receipt.status] += 1
+                if receipt.status == ProcessingStatus.QUARANTINED:
+                    quarantined.append(event_id)
+            if missing and not staging_expired:
+                return SanitizationStatus.PENDING
         reason = (
             STAGING_EXPIRED if missing else QUARANTINED if quarantined else None
         )

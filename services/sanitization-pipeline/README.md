@@ -6,7 +6,7 @@ procesamiento en GCS. Especificación y límites en
 [EPIC-4](../../docs/backlog/epic_4.md).
 
 Estado: features 4.1 (paquete, configuración, preflight y CLI), 4.2
-(desidentificación DLP, segunda barrera regex, conteo de hallazgos, filtro EDA
+(desidentificación DLP, segunda barrera regex, conteo de hallazgos
 y `DoFn`), 4.3 (upsert TDS, recibos y cierre de página) y 4.4 (orquestador,
 renovación de ack, replay desde manifiestos e imagen).
 
@@ -37,8 +37,8 @@ producción. Precedencia: default < variable `SANITIZATION_<CAMPO>` < flag.
 | Campo / flag | Default | Regla |
 | --- | --- | --- |
 | `--execution-mode` | `BATCH_PULL_SERVERLESS` | `GCS_BACKFILL_MANIFESTS`; `DATAFLOW_MANAGED` se rechaza sin Dataflow aprovisionado |
-| `--max-messages` | 2000 | Presupuesto por corrida |
-| `--microbatch-size` | 200 | `<= max_messages` |
+| `--max-messages` | 20000 | Tope de mensajes por corrida; el límite real es `--max-runtime-sec` (un microbatch nuevo solo arranca si el anterior, con margen de 1.25x, cabe en el presupuesto) |
+| `--microbatch-size` | 1000 | `<= max_messages`, máximo 1000 (límite de `pull` de Pub/Sub) |
 | `--max-runtime-sec` / `--checkpoint-margin-sec` | 1500 / 300 | Suma `<= --container-timeout-sec` (1800, igual al Job) |
 | `--ack-deadline-sec` / `--ack-renew-interval-sec` | 600 / 180 | Renovación antes del vencimiento; máximo de Pub/Sub 600 |
 | `--dlp-max-rows` / `--dlp-max-bytes` | 250 / 400000 | Bytes por debajo del límite DLP de 524288 |
@@ -115,10 +115,55 @@ result = BatchSanitizer(
   (`DLP_ROW_TOO_LARGE`).
 * `pii_findings_count` = tokens `[<INFO_TYPE>]` introducidos (los literales que
   el usuario ya escribió no cuentan).
-* Fuera de [2, 60] palabras tras limpiar: recibo `FILTERED_LENGTH`.
+* **Sin filtro de longitud.** Toda reseña con texto llega al TDS; el rango del EDA (2 a 60 palabras) se aplica al analizar con `conteo_palabras`. `FILTERED_LENGTH` es un estado heredado que ya no se emite.
 * Modo Cloud DLP: DLP caído o respuesta desalineada producen recibos
   `RETRYABLE_ERROR` y ningún sobre válido; errores de permisos/plantillas
   detienen la corrida.
+
+## Política de datos: sin filtros destructivos
+
+La ingesta y el TDS **no descartan reseñas por sus características**: el
+filtrado es analítico y se hace después, con SQL sobre datos ya ingeridos. Las
+únicas columnas que no se conservan se omiten por privacidad (`usuario`,
+`imagen_usuario`, `titulo` y la respuesta de la entidad), nunca por un criterio
+analítico. Hasta el 2026-10-15 el sanitizador descartaba lo que quedaba fuera
+de 2 a 60 palabras (23 % de la primera corrida); se retiró.
+
+Las únicas filas que la ingesta no convierte en evento son las que Google Play
+devuelve sin texto (`RowDiscard NO_TEXT`), y quedan contadas en
+`reviews_discarded` de la auditoría. En 3 158 filas reales de BBVA fueron 0:
+el endpoint solo devuelve reseñas con texto.
+
+**Reproceso de lo filtrado.** Los eventos que la versión anterior marcó
+`FILTERED_LENGTH` tienen un recibo terminal que impide reprocesarlos. Con la
+imagen nueva desplegada, y mientras las capturas de `raw_staging/` sigan
+vigentes (7 días), se recuperan borrando el ledger derivado y reproduciendo
+desde los manifiestos; el `MERGE` es idempotente:
+
+```bash
+gcloud storage rm -r "gs://<bucket>/state/ingestion/receipts/"
+gcloud run jobs execute voc-sanitization-job --region us-central1 --args="--execution-mode=GCS_BACKFILL_MANIFESTS" --wait
+```
+
+No borrar `state/ingestion/manifests/`, `ledgers/` ni `state/watermarks/`.
+
+## Rendimiento (medido y optimizado)
+
+Primera corrida real (2026-10-15, antes de optimizar): 2000 mensajes en 804.7 s,
+**2.5 mensajes/s** (0.40 s por mensaje), con microbatches de 200 y E/S
+secuencial hacia GCS (~800–1000 llamadas por microbatch). A ese ritmo, un full
+de ~2 M de eventos tomaría ~9 días; el crudo y Pub/Sub expiran a los 7.
+
+Optimizaciones: E/S del ledger con hilos acotados (`io_workers`, 8), lectura
+de recibos en bloques con salida temprana al cerrar páginas pendientes, y
+microbatch de 1000. `RunReport.phase_seconds` desglosa el tiempo en `pull_s`,
+`ledger_lookup_s`, `sanitize_s`, `bigquery_s`, `receipts_s`, `ack_s` y
+`reconcile_s`; aparece en el informe «Sanitization run finished» y, por
+microbatch, en `Microbatch finished` (con `run_id`, `batch_seconds`,
+`messages_per_second` y `pages`); cada cierre de página registra `Page closed`.
+Consultas en [deployment.md](../../docs/deployment.md#logs-estructurados-y-cómo-consultarlos). La mejora
+real **no está medida**: comparar `messages / elapsed_sec` de la siguiente
+corrida con los 2.5 de referencia.
 
 ## Persistencia y recibos (4.3)
 

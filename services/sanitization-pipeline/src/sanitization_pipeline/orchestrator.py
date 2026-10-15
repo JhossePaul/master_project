@@ -7,7 +7,7 @@ terminales → `nack` de reintentables → cierre de páginas tocadas. Ningún
 `ack` precede a la persistencia en BigQuery y GCS.
 """
 
-import json
+import os
 import threading
 import time
 import uuid
@@ -31,7 +31,9 @@ from voc_common import (
     PageManifest,
     ProcessingReceipt,
     RawReviewEnvelope,
+    SanitizationStatus,
     Settings,
+    log_event,
 )
 
 from sanitization_pipeline.bq_writer import (
@@ -43,7 +45,6 @@ from sanitization_pipeline.config import (
     in_process_runner,
 )
 from sanitization_pipeline.dlp_transforms import (
-    OUTPUT_TAG_FILTERED_LENGTH,
     OUTPUT_TAG_QUARANTINED,
     OUTPUT_TAG_RETRYABLE_ERROR,
     OUTPUT_TAG_SANITIZED_VALID,
@@ -61,20 +62,25 @@ EX_OK = 0
 EX_USAGE = 64
 EX_TEMPFAIL = 75
 PULL_TIMEOUT_SEC = 60.0
+# Un microbatch nuevo solo arranca si el anterior (con este margen) cabe en el
+# presupuesto de tiempo; así no se corta a media escritura por el timeout.
+BATCH_TIME_MARGIN = 1.25
 # Fallos que no confirman nada: los mensajes vuelven a entregarse.
 TRANSIENT = (LedgerError, IntegrityError, GoogleAPICallError, TimeoutError)
 
 
 def log_json(severity: str, message: str, **fields: object) -> None:
-    # Cloud Logging interpreta JSON de una línea; nunca textos ni PII.
-    print(
-        json.dumps(
-            {"severity": severity, "message": message, **fields},
-            default=str,
-            ensure_ascii=False,
-        ),
-        flush=True,
-    )
+    # Cloud Logging interpreta JSON de una línea; nunca textos ni PII (el
+    # helper compartido descarta campos prohibidos).
+    log_event(severity, message, **fields)
+
+
+def _execution() -> dict[str, str | None]:
+    """Identifica la ejecución del Job de Cloud Run para correlacionar logs."""
+    return {
+        "execution": os.environ.get("CLOUD_RUN_EXECUTION"),
+        "task_attempt": os.environ.get("CLOUD_RUN_TASK_ATTEMPT"),
+    }
 
 
 # ------------------------------------------------------------ Beam run
@@ -93,7 +99,6 @@ def run_do_fn(
     """Ejecuta el DoFn sobre un microbatch con el FnApiRunner en proceso."""
     tags = (
         OUTPUT_TAG_SANITIZED_VALID,
-        OUTPUT_TAG_FILTERED_LENGTH,
         OUTPUT_TAG_QUARANTINED,
         OUTPUT_TAG_RETRYABLE_ERROR,
     )
@@ -108,7 +113,6 @@ def run_do_fn(
                 | "Microbatch" >> beam.Create([list(envelopes)])
                 | "Sanitize"
                 >> beam.ParDo(do_fn).with_outputs(
-                    OUTPUT_TAG_FILTERED_LENGTH,
                     OUTPUT_TAG_QUARANTINED,
                     OUTPUT_TAG_RETRYABLE_ERROR,
                     main=OUTPUT_TAG_SANITIZED_VALID,
@@ -118,7 +122,6 @@ def run_do_fn(
                 _ = outputs[tag] | f"Collect-{tag}" >> beam.Map(_collect, key)
         return SanitizedBatch(
             valid=list(_SINK[keys[OUTPUT_TAG_SANITIZED_VALID]]),
-            filtered=list(_SINK[keys[OUTPUT_TAG_FILTERED_LENGTH]]),
             quarantined=list(_SINK[keys[OUTPUT_TAG_QUARANTINED]]),
             retryable=list(_SINK[keys[OUTPUT_TAG_RETRYABLE_ERROR]]),
         )
@@ -138,9 +141,13 @@ class MicrobatchOutcome:
     pages: set[PageKey] = field(default_factory=set)
     already_processed: int = 0
     tds_committed: int = 0
-    filtered_length: int = 0
     quarantined: int = 0
     bigquery_jobs: list[str] = field(default_factory=list)
+    # Segundos por fase del microbatch (ver `PHASES`).
+    phase_seconds: dict[str, float] = field(default_factory=dict)
+
+    def add_time(self, phase: str, seconds: float) -> None:
+        self.phase_seconds[phase] = self.phase_seconds.get(phase, 0.0) + seconds
 
 
 class MicrobatchProcessor:
@@ -150,11 +157,13 @@ class MicrobatchProcessor:
         upsert: BigQueryTdsUpsertManager,
         sanitize: Callable[[Sequence[RawReviewEnvelope]], SanitizedBatch],
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+        timer: Callable[[], float] = time.monotonic,
     ) -> None:
         self.ledger = ledger
         self.upsert = upsert
         self.sanitize = sanitize
         self.clock = clock
+        self.timer = timer
 
     def process(
         self, envelopes: Iterable[RawReviewEnvelope]
@@ -174,8 +183,10 @@ class MicrobatchProcessor:
         by_bank: dict[BankKey, list[str]] = {}
         for event_id, pages in by_event.items():
             by_bank.setdefault(pages[0].bank_id, []).append(event_id)
+        started = self.timer()
         for bank, ids in by_bank.items():
             processed |= self.ledger.find_already_processed_event_ids(bank, ids)
+        out.add_time("ledger_lookup_s", self.timer() - started)
         receipts: list[ProcessingReceipt] = []
         for event_id, receipt in processed.items():
             # Redelivery o el mismo evento desde otra página: sin DLP ni BQ.
@@ -188,9 +199,12 @@ class MicrobatchProcessor:
             pages[0] for eid, pages in by_event.items() if eid not in processed
         ]
         if fresh:
+            started = self.timer()
             batch = self.sanitize(fresh)
+            out.add_time("sanitize_s", self.timer() - started)
             committed: list[ProcessingReceipt] = []
             if batch.valid:
+                started = self.timer()
                 try:
                     commit = self.upsert.upsert_sanitized_batch(batch.valid)
                     committed = tds_committed_receipts(
@@ -200,7 +214,8 @@ class MicrobatchProcessor:
                 except TdsWriteError:
                     # Sin MERGE no hay recibo ni ack: reintento seguro.
                     out.retryable.update(e.event_id for e in batch.valid)
-            terminal = [*committed, *batch.filtered, *batch.quarantined]
+                out.add_time("bigquery_s", self.timer() - started)
+            terminal = [*committed, *batch.quarantined]
             for receipt in terminal:
                 receipts.append(receipt)
                 receipts.extend(
@@ -209,9 +224,10 @@ class MicrobatchProcessor:
                 )
             out.retryable.update(r.event_id for r in batch.retryable)
             out.tds_committed = len(committed)
-            out.filtered_length = len(batch.filtered)
             out.quarantined = len(batch.quarantined)
+        started = self.timer()
         stored = self.ledger.write_event_receipts(receipts)
+        out.add_time("receipts_s", self.timer() - started)
         out.terminal = {r.event_id for r in stored} - out.retryable
         # Lo que no quedó terminal nunca se confirma.
         out.retryable |= set(by_event) - out.terminal
@@ -227,8 +243,32 @@ class MicrobatchProcessor:
                 status_name = "ERROR"
             else:
                 status_name = status.value
+                if status != SanitizationStatus.PENDING:
+                    self._log_closure(bank, stream_id, page_id, status)
             counts[status_name] = counts.get(status_name, 0) + 1
         return counts
+
+    def _log_closure(
+        self,
+        bank: BankKey,
+        stream_id: str,
+        page_id: str,
+        status: SanitizationStatus,
+    ) -> None:
+        closure = self.ledger.page_closure(bank, page_id)
+        gaps = status == SanitizationStatus.GAPS_DETECTED and closure
+        log_json(
+            "WARNING" if gaps else "INFO",
+            "Page closed",
+            bank_id=bank.value,
+            stream_id=stream_id,
+            page_id=page_id,
+            status=status.value,
+            reason=closure.reason if closure else None,
+            tds_committed=closure.tds_committed if closure else None,
+            quarantined=closure.quarantined if closure else None,
+            missing=closure.missing if closure else None,
+        )
 
 
 # ------------------------------------------------------------ ack lease
@@ -283,6 +323,7 @@ class AckDeadlineRenewer:
 @dataclass
 class RunReport:
     mode: str
+    run_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     messages: int = 0
     poison: int = 0
     # Entregas repetidas del mismo evento en un microbatch (mismo ack final).
@@ -291,7 +332,6 @@ class RunReport:
     events_retryable: int = 0
     already_processed: int = 0
     tds_committed: int = 0
-    filtered_length: int = 0
     quarantined: int = 0
     pages: dict[str, int] = field(default_factory=dict)
     expired_captures: int = 0
@@ -299,13 +339,20 @@ class RunReport:
     stop_reason: str = "drained"
     transient_failure: bool = False
     elapsed_sec: float = 0.0
+    # Segundos acumulados por fase; permite ver dónde se va el tiempo.
+    phase_seconds: dict[str, float] = field(default_factory=dict)
+
+    def add_time(self, phase: str, seconds: float) -> None:
+        total = self.phase_seconds.get(phase, 0.0) + seconds
+        self.phase_seconds[phase] = round(total, 3)
 
     def add(self, outcome: MicrobatchOutcome) -> None:
+        for phase, seconds in outcome.phase_seconds.items():
+            self.add_time(phase, seconds)
         self.events_terminal += len(outcome.terminal)
         self.events_retryable += len(outcome.retryable)
         self.already_processed += outcome.already_processed
         self.tds_committed += outcome.tds_committed
-        self.filtered_length += outcome.filtered_length
         self.quarantined += outcome.quarantined
         self.bigquery_jobs += len(outcome.bigquery_jobs)
 
@@ -379,6 +426,18 @@ class PubSubDrainer:
 
     def run(self) -> RunReport:
         report = RunReport(mode="BATCH_PULL_SERVERLESS")
+        log_json(
+            "INFO",
+            "Sanitization run started",
+            run_id=report.run_id,
+            mode=report.mode,
+            max_messages=self.config.max_messages,
+            microbatch_size=self.config.microbatch_size,
+            max_runtime_sec=self.config.max_runtime_sec,
+            io_workers=getattr(self.processor.ledger, "io_workers", None),
+            use_cloud_dlp_api=self.config.use_cloud_dlp_api,
+            **_execution(),
+        )
         started = self.monotonic()
         try:
             self._drain(report, started)
@@ -387,8 +446,14 @@ class PubSubDrainer:
         return report
 
     def _drain(self, report: RunReport, started: float) -> None:
+        last_batch_sec = 0.0
+        batch_index = 0
         while report.messages < self.config.max_messages:
-            if self.monotonic() - started >= self.config.max_runtime_sec:
+            batch_started = self.monotonic()
+            projected = (
+                batch_started - started + last_batch_sec * BATCH_TIME_MARGIN
+            )
+            if projected >= self.config.max_runtime_sec:
                 report.stop_reason = "runtime_budget"
                 break
             size = min(
@@ -402,6 +467,8 @@ class PubSubDrainer:
                 },
                 timeout=PULL_TIMEOUT_SEC,
             )
+            pull_s = self.monotonic() - batch_started
+            report.add_time("pull_s", pull_s)
             received = list(response.received_messages)
             if not received:
                 break
@@ -443,10 +510,43 @@ class PubSubDrainer:
             except BaseException:
                 self._nack(ack_ids)
                 raise
+            phase_started = self.monotonic()
             self._ack([a for e in outcome.terminal for a in acks.get(e, [])])
             self._nack([a for e in outcome.retryable for a in acks.get(e, [])])
+            ack_s = self.monotonic() - phase_started
+            report.add_time("ack_s", ack_s)
             report.add(outcome)
-            report.add_pages(self.processor.reconcile(outcome.pages))
+            phase_started = self.monotonic()
+            pages = self.processor.reconcile(outcome.pages)
+            report.add_pages(pages)
+            reconcile_s = self.monotonic() - phase_started
+            report.add_time("reconcile_s", reconcile_s)
+            last_batch_sec = self.monotonic() - batch_started
+            batch_index += 1
+            phases = dict(outcome.phase_seconds)
+            phases |= {"pull_s": pull_s, "ack_s": ack_s}
+            phases["reconcile_s"] = reconcile_s
+            log_json(
+                "INFO",
+                "Microbatch finished",
+                run_id=report.run_id,
+                batch_index=batch_index,
+                messages=len(received),
+                unique_events=len(acks),
+                duplicates=len(ack_ids) - len(acks),
+                poison=len(poison),
+                already_processed=outcome.already_processed,
+                tds_committed=outcome.tds_committed,
+                quarantined=outcome.quarantined,
+                retryable=len(outcome.retryable),
+                bigquery_jobs=len(outcome.bigquery_jobs),
+                pages=pages,
+                batch_seconds=round(last_batch_sec, 3),
+                messages_per_second=round(len(received) / last_batch_sec, 2)
+                if last_batch_sec > 0
+                else None,
+                phase_seconds={k: round(v, 3) for k, v in phases.items()},
+            )
         else:
             report.stop_reason = "message_budget"
 
@@ -492,6 +592,16 @@ class ManifestBackfill:
 
     def run(self) -> RunReport:
         report = RunReport(mode="GCS_BACKFILL_MANIFESTS")
+        log_json(
+            "INFO",
+            "Sanitization run started",
+            run_id=report.run_id,
+            mode=report.mode,
+            max_messages=self.config.max_messages,
+            microbatch_size=self.config.microbatch_size,
+            max_runtime_sec=self.config.max_runtime_sec,
+            **_execution(),
+        )
         started = self.monotonic()
         try:
             self._replay(report, started)

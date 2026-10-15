@@ -21,7 +21,7 @@ def test_defaults_are_valid_for_the_job_without_arguments():
     config = load_config([], {})
     assert config == SanitizationExecutionConfig()
     assert config.execution_mode == ExecutionMode.BATCH_PULL_SERVERLESS
-    assert (config.max_messages, config.microbatch_size) == (2000, 200)
+    assert (config.max_messages, config.microbatch_size) == (20_000, 1000)
     assert config.max_runtime_sec + config.checkpoint_margin_sec == 1800
     assert config.ack_renew_interval_sec < config.ack_deadline_sec == 600
     assert config.dlp_max_bytes < DLP_REQUEST_LIMIT_BYTES
@@ -59,7 +59,8 @@ def test_environment_and_flags_precedence():
     "changes",
     [
         {"max_messages": 0},
-        {"microbatch_size": 3000},
+        {"microbatch_size": 1001},
+        {"max_messages": 100, "microbatch_size": 101},
         {"max_runtime_sec": 1600},
         {"ack_deadline_sec": 601},
         {"ack_renew_interval_sec": 600},

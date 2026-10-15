@@ -406,9 +406,9 @@ def test_drain_persists_before_ack_and_closes_the_page():
     assert report.exit_code() == orch.EX_OK
     assert sorted(subscriber.acked) == ["a0", "a1", "a2", "dup0"]
     assert not subscriber.nacked
-    assert env.bq.merges == 1 and len(env.bq.rows) == 2
+    assert env.bq.merges == 1 and len(env.bq.rows) == 3
     assert DLP_CALLS == [3]
-    assert (report.tds_committed, report.filtered_length) == (2, 1)
+    assert report.tds_committed == 3
     assert report.pages == {"RESOLVED": 1}
     assert (report.messages, report.duplicate_messages) == (4, 1)
     assert report.elapsed_sec >= 0
@@ -471,8 +471,9 @@ def test_bigquery_failure_nacks_valid_events_only():
     env = Env()
     env.bq.fail = True
     report, subscriber = env.drain([env.messages()])
-    assert subscriber.acked == ["a1"]  # FILTERED_LENGTH no depende de BQ.
-    assert sorted(subscriber.nacked) == ["a0", "a2"]
+    # Sin filtro de longitud, todo evento depende del MERGE para confirmarse.
+    assert not subscriber.acked
+    assert sorted(subscriber.nacked) == ["a0", "a1", "a2"]
     assert report.exit_code() == orch.EX_TEMPFAIL
     assert env.ledger.page_closure(BANK, env.page_id) is None
 
@@ -484,7 +485,7 @@ def test_local_regex_default_drains_without_calling_dlp():
     assert report.exit_code() == orch.EX_OK
     assert sorted(subscriber.acked) == ["a0", "a1", "a2"]
     assert not subscriber.nacked and not DLP_CALLS
-    assert env.bq.merges == 1 and report.tds_committed == 2
+    assert env.bq.merges == 1 and report.tds_committed == 3
     assert all(
         row["texto_respuesta_sanitizado"] is None and row["titulo"] is None
         for row in env.bq.rows
@@ -692,7 +693,7 @@ def test_main_runs_registered_modes_end_to_end(monkeypatch, capsys, settings):
     assert pipeline.main([], {}, settings_factory=settings) == orch.EX_OK
     log = last_log(capsys)
     assert log["message"] == "Sanitization run finished"
-    assert log["tds_committed"] == 2 and "Juan" not in json.dumps(log)
+    assert log["tds_committed"] == 3 and "Juan" not in json.dumps(log)
     assert {"duplicate_messages", "elapsed_sec", "stop_reason"} <= set(log)
     code = orch.run_manifest_backfill(
         SanitizationExecutionConfig(),
@@ -728,3 +729,116 @@ def test_run_do_fn_cleans_its_sink():
     env = Env()
     result = orch.run_do_fn(env.do_fn(), [])
     assert not result.valid and not orch._SINK
+
+
+# -------------------------------------------- cronómetros y presupuesto
+def test_report_breaks_down_time_by_phase():
+    env = Env()
+    ticks = itertools.count(step=0.5)
+    processor = orch.MicrobatchProcessor(
+        env.ledger,
+        env.upsert,
+        lambda batch: orch.run_do_fn(env.do_fn(), batch),
+        timer=lambda: next(ticks),
+    )
+    subscriber = FakeSubscriber([env.messages()])
+    report = orch.PubSubDrainer(
+        subscriber,
+        SUBSCRIPTION,
+        processor,
+        SanitizationExecutionConfig(),
+        monotonic=lambda: next(ticks),
+    ).run()
+    assert set(report.phase_seconds) == {
+        "pull_s",
+        "ledger_lookup_s",
+        "sanitize_s",
+        "bigquery_s",
+        "receipts_s",
+        "ack_s",
+        "reconcile_s",
+    }
+    assert all(seconds > 0 for seconds in report.phase_seconds.values())
+    assert vars(report)["phase_seconds"] == report.phase_seconds
+
+
+def test_next_microbatch_is_skipped_when_it_would_not_fit():
+    env = Env()
+    now = [0.0]
+
+    def slow_sanitize(batch):
+        now[0] += 900.0  # el microbatch consume 900 s del presupuesto
+        return orch.run_do_fn(env.do_fn(), batch)
+
+    processor = orch.MicrobatchProcessor(env.ledger, env.upsert, slow_sanitize)
+    subscriber = FakeSubscriber([env.messages(), env.messages(prefix="b")])
+    report = orch.PubSubDrainer(
+        subscriber,
+        SUBSCRIPTION,
+        processor,
+        SanitizationExecutionConfig(),
+        monotonic=lambda: now[0],
+    ).run()
+    # 900 s ya gastados + 900 s x 1.25 proyectados superan los 1500 s.
+    assert report.stop_reason == "runtime_budget"
+    assert len(subscriber.requests) == 1
+    assert report.messages == 3
+
+
+# ------------------------------------------------ logs estructurados
+def _events(capsys) -> list[dict[str, Any]]:
+    lines = capsys.readouterr().out.splitlines()
+    return [json.loads(line) for line in lines if line.startswith("{")]
+
+
+def test_run_emits_structured_events_without_review_text(capsys):
+    env = Env()
+    report, _ = env.drain([env.messages()])
+    events = _events(capsys)
+    by_message = {e["message"]: e for e in events}
+    started = by_message["Sanitization run started"]
+    assert started["run_id"] == report.run_id
+    assert started["max_messages"] == 20_000 and started["io_workers"] == 8
+    batch = by_message["Microbatch finished"]
+    assert batch["run_id"] == report.run_id and batch["batch_index"] == 1
+    assert batch["messages"] == 3 and batch["tds_committed"] == 3
+    assert batch["batch_seconds"] >= 0
+    assert set(batch["phase_seconds"]) == {
+        "pull_s",
+        "ledger_lookup_s",
+        "sanitize_s",
+        "bigquery_s",
+        "receipts_s",
+        "ack_s",
+        "reconcile_s",
+    }
+    closed = by_message["Page closed"]
+    assert closed["status"] == "RESOLVED" and closed["page_id"] == env.page_id
+    # Un evento por microbatch y por página, nunca por reseña.
+    assert len(events) <= 4
+    dumped = json.dumps(events, ensure_ascii=False)
+    for data, _attrs in env.published:
+        text = json.loads(data)["raw"]["texto"]
+        if len(text) > 5:  # los textos de 2 letras coincidirían por azar
+            assert text not in dumped
+
+
+def test_each_microbatch_gets_its_own_event(capsys):
+    env = Env()
+    messages = env.messages()
+    env.drain([messages[:2], messages[2:]], microbatch_size=2)
+    batches = [
+        e for e in _events(capsys) if e["message"] == "Microbatch finished"
+    ]
+    assert [b["batch_index"] for b in batches] == [1, 2]
+    assert [b["messages"] for b in batches] == [2, 1]
+
+
+def test_pending_pages_are_counted_but_not_logged_as_closed(capsys):
+    env = Env()
+    env.bq.fail = True
+    env.drain([env.messages()])
+    events = _events(capsys)
+    assert not [e for e in events if e["message"] == "Page closed"]
+    batch = next(e for e in events if e["message"] == "Microbatch finished")
+    assert batch["pages"] == {"PENDING": 1} and batch["retryable"] == 3
