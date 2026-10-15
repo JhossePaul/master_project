@@ -1,245 +1,333 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** Pendiente. Especificación revisada el 2026-10-14.
-* **Dependencias:** EPIC-1, EPIC-2 y contratos v2/manifestación de páginas de EPIC-3.
-* **Directorios:** `services/sanitization-pipeline/`, `packages/voc-common/`, `infra/`.
-* **Archivos:** pyproject, Dockerfile, `dlp_transforms.py`, `bq_writer.py`,
-  `pipeline.py`, `processing_ledger.py` y tests de transformación/persistencia/acks.
+* **Estado:** Pendiente. Especificación actualizada y sincronizada con contratos v2 (EPIC-1), IAM/Tablas (EPIC-2) y Publisher/Watermarks (EPIC-3).
+* **Semanas Objetivo:** Semanas 3 - 4
+* **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.3 implementadas: `RawReviewEnvelope`, `PageManifest` y `IngestionStorageLayout`).
+* **Directorios Afectados:**
+  * `services/sanitization-pipeline/pyproject.toml`
+  * `services/sanitization-pipeline/Dockerfile`
+  * `services/sanitization-pipeline/src/sanitization_pipeline/__init__.py`
+  * `services/sanitization-pipeline/src/sanitization_pipeline/dlp_transforms.py`
+  * `services/sanitization-pipeline/src/sanitization_pipeline/bq_writer.py`
+  * `services/sanitization-pipeline/src/sanitization_pipeline/processing_ledger.py`
+  * `services/sanitization-pipeline/src/sanitization_pipeline/pipeline.py`
+  * `services/sanitization-pipeline/tests/__init__.py`
+  * `services/sanitization-pipeline/tests/test_dlp_transforms.py`
+  * `services/sanitization-pipeline/tests/test_bq_writer_and_ledger.py`
+  * `services/sanitization-pipeline/tests/test_pipeline.py`
 
-## Objetivo y límites
+---
 
-Consumir páginas/eventos duraderos de EPIC-3, sanitizar antes de escribir en TDS,
-filtrar el rango EDA 2–60 palabras, conservar revisiones y confirmar exactamente
-qué eventos terminaron en TDS, fueron filtrados o quedaron pendientes/cuarentenados.
-No existe tabla BigQuery de texto crudo. El nombre TDS describe el destino técnico:
-no implica certificación corporativa automática.
+## 🎯 Objetivo y Límites de la Garantía
 
-«Cero fugas en el corpus de prueba» es un criterio de aceptación medible; ningún
-NER/regex demuestra detección del 100% de PII real. Medir recall por tipo, corpus
-anotado y fallos adversariales. El modo de regex local no sustituye NER en producción.
-La ejecución serverless reduce cómputo ocioso; no garantiza costo cero. Medir bytes
-DLP, solicitudes, almacenamiento, bytes de consultas/MERGE y reintentos.
+Consumir los sobres versionados (`RawReviewEnvelope`) y respaldos de página duraderos emitidos por `EPIC-3`, desidentificar datos personales (PII) mediante **Cloud DLP + Regex de respaldo** antes de tocar BigQuery, aplicar el filtro del EDA (2 a 60 palabras inclusive), persistir de forma idempotente el estado vigente en `bbva_voc_tds.sanitized_reviews_tds` y emitir recibos inmutables (`ProcessingReceipt`) en Cloud Storage para reconciliar qué páginas pasaron de `PUBLISHED` a `SANITIZED_COMMITTED`.
 
-## Contratos y estados compartidos con EPIC-3
+* **Cero PII en BigQuery:** No existe tabla de texto crudo en BigQuery. Toda tabla temporal de staging para operaciones `MERGE` solo recibe registros **ya sanitizados** (`SanitizedReviewRecord`).
+* **Criterio medible de privacidad:** «Cero fugas en el corpus de prueba» es un criterio de aceptación determinista; ningún modelo NER/regex demuestra detección del 100% de PII en lenguaje natural abierto. El modo de regex local (`LocalRegexFallbackSanitizer`) actúa como segunda barrera (*Defense in Depth*) después de Cloud DLP en producción o como herramienta explícita para pruebas offline (`use_cloud_dlp_api=False`); **en producción el sistema es *fail-closed*: si Cloud DLP falla o no está disponible, no se escribe en TDS usando solo regex**.
 
-* Mensajes: `event_id`, `page_id`, `plan_id`, `stream_id`, banco, ID de reseña y
-  `source_revision`, más `RawReviewEvent`. La revisión se deriva del contenido
-  del origen, no de `ingested_at`; todas las fechas UTC.
-* `ProcessingReceipt`: identificador, revisión, estado, página, digest del resultado,
-  referencias de job BQ, error codificado, `processed_at`; sin contenido crudo.
-* Estados: `PENDING`, `PROCESSING`, `TDS_COMMITTED`, `FILTERED_LENGTH`,
-  `QUARANTINED`, `RETRYABLE_ERROR`. `ACKED` es confirmación de transporte posterior,
-  no sinónimo de escritura exitosa. Contadores por página deben reconciliarse.
-* Una página `PUBLISHED` no cierra cobertura TDS. Emitir recepción de destino
-  idempotente solo cuando todas sus revisiones tienen resultado duradero.
-  Cuarentena se informa como hueco de calidad, no como dato exitoso en TDS.
-* La cobertura histórica y la revisión incremental comparten clave estable y
-  ledger. FULL reutiliza las revisiones ya procesadas del BACKFILL anual.
-* Cambios de infra/contratos pendientes: ledger de eventos/recepciones y dataset
-  de trabajo con expiración de tablas sanitizadas; modelo de revisiones (abajo).
-  No implementar contra tablas/campos que todavía no se hayan aprovisionado.
+---
 
-## FEATURE 4.1: Paquete, runners y presupuestos
+## 🔗 Alineación Estricta con Contratos e Infraestructura Existente (EPIC-1, EPIC-2 y EPIC-3)
 
-Workspace `sanitization-pipeline`, Python >=3.11, hatchling y `voc-common` de
-workspace. Dependencias Apache Beam GCP, google-cloud-dlp/pubsub/bigquery/storage
-y Pydantic v2, con versiones resueltas/probadas mediante uv. El lock común debe
-verificar compatibilidad Beam/Pulumi/protobuf; si hay conflicto, aislar entornos
-por grupo/servicio de forma explícita en CI y Docker, no ignorar el resolver.
+El Agente IA **DEBE** respetar las siguientes 5 restricciones de acoplamiento con lo ya implementado en el monorepo:
 
-CLI:
+1. **Uso Exclusivo de Sobres y Recibos de `voc-common` (Feature 1.8):**
+   * **Prohibido crear modelos duplicados.** Importar directamente desde `voc_common`: `RawReviewEnvelope`, `SanitizedReviewEnvelope`, `SanitizedReviewRecord`, `ProcessingReceipt` (usando `ProcessingReceipt.from_event(...)`), `compute_source_revision` y `compute_event_id`.
+2. **Alineación con las 16 Columnas de `sanitized_reviews_tds` (Feature 2.4 / 2.10):**
+   * La tabla `bbva_voc_tds.sanitized_reviews_tds` en BigQuery tiene un esquema fijo de **16 columnas** (`id_resena`, `bank_id`, `app_id`, `usuario_hash`, `titulo`, `texto_sanitizado`, `texto_limpio`, `conteo_palabras`, `pii_findings_count`, `estrellas`, `votos_utilidad`, `version_app`, `fecha`, `texto_respuesta_sanitizado`, `fecha_respuesta`, `sanitized_at`).
+   * **No agregar columnas no aprovisionadas al insert de BigQuery.** La trazabilidad de versión y transporte (`event_id`, `source_revision`, `page_id`, `plan_id`, `stream_id`, `processed_at` y digest del resultado) se persiste de forma duradera en los archivos de recibos (`ProcessingReceipt`) y sobres (`SanitizedReviewEnvelope`) dentro de Cloud Storage bajo los prefijos de `IngestionStorageLayout`.
+3. **Cálculo Exacto de `pii_findings_count: int` por Fila (`INTEGER REQUIRED`):**
+   * En `SanitizedReviewRecord` y en BigQuery, `pii_findings_count` es un entero obligatorio (`>= 0`, no nulo).
+   * Dado que la plantilla `voc-dlp-deidentify-template` (Feature 2.3) fue configurada con `replace_config` para insertar tokens explícitos con corchetes (`[PERSON_NAME]`, `[EMAIL_ADDRESS]`, `[PHONE_NUMBER]`, `[CREDIT_CARD_NUMBER]`, `[MEXICO_CURP_NUMBER]`, `[MX_CLABE_BANCARIA]`, `[MX_RFC_TAX_ID]`, `[BBVA_ACCOUNT_NUMBER]`), el conteo exacto de hallazgos por reseña se calcula contando las apariciones de dichos tokens semánticos en las celdas desidentificadas de esa fila más cualquier reemplazo adicional del `LocalRegexFallbackSanitizer`.
+4. **Tablas Temporales de Staging para `MERGE` dentro de `bbva_voc_tds`:**
+   * En `EPIC-2` existe un único dataset (`bbva_voc_tds`) y la cuenta `voc-sa-sanitization` posee `roles/bigquery.dataEditor` y `roles/bigquery.jobUser`.
+   * Para ejecutar el `MERGE` idempotente sin usar *Streaming Inserts*, `bq_writer.py` creará tablas de trabajo efímeras dentro del mismo dataset `bbva_voc_tds` con prefijo `_staging_sanitized_{batch_id}` y expiración automática (`table.expires = utcnow() + timedelta(hours=1)`), cargará allí únicamente filas **ya sanitizadas** mediante `load_table_from_json` (`FILE_LOADS`), ejecutará el `MERGE` hacia `sanitized_reviews_tds` y eliminará la tabla temporal al finalizar.
+5. **Manejo de Cuarentena y DLQ acorde a Permisos IAM de `voc-sa-sanitization`:**
+   * En `EPIC-2` (Feature 2.2 y 2.7), `voc-sa-sanitization` tiene `roles/pubsub.subscriber`, `roles/pubsub.viewer` y `roles/storage.objectUser` en el bucket `voc-datalake`, pero **no tiene `roles/pubsub.publisher`**.
+   * Por tanto, ante un error permanente (`QUARANTINED`), el pipeline **no** publica manualmente en un tópico de Pub/Sub: persiste el recibo `ProcessingReceipt(status="QUARANTINED", ...)` y la referencia de diagnóstico en Cloud Storage bajo el prefijo de recibos/cuarentena del `voc-datalake` y confirma (`ack`) el mensaje en Pub/Sub para no ciclar la cola. Para errores transitorios (`RETRYABLE_ERROR`), no envía `ack` (o aplica `modify_ack_deadline(0)`), permitiendo que el agente nativo de Pub/Sub gestione los reintentos y el envío automático a `voc-raw-reviews-dlq` tras 5 intentos.
 
-* `--execution-mode`: `BATCH_PULL_SERVERLESS` (default), `GCS_BACKFILL_FILES`,
-  `DATAFLOW_MANAGED`.
-* `--max-messages=5000` es presupuesto, no instrucción de cargar todo en memoria.
-  Añadir límites de bytes, microbatch, tiempo y concurrencia; salir antes de 1800s.
-* `--gcs-input-pattern` requiere selección de manifiestos/generaciones, no solo
-  glob que reprocesa indefinidamente todo el staging.
-* DirectRunner se ejecuta dentro del Job; Dataflow es un modo posterior opt-in.
-  Migración de infra pendiente: identidad/roles Dataflow, APIs y staging separados.
-  El flag de Vertex actual no es la interfaz correcta para activar Dataflow.
-* `BEAM_RUNNER=DirectRunner` y CLI/default deben ser consistentes con infra. Un
-  Runner no transforma por sí solo una fuente streaming en un pipeline acotado.
+---
 
-## FEATURE 4.2: DLP tabular, diagnóstico técnico y fail-closed
+## 📦 Desglose de Features e Historias Técnicas
 
-### Sanitizador local
+### FEATURE 4.1: Configuración del Paquete `sanitization-pipeline`, Runners y Presupuestos
 
-`LocalRegexFallbackSanitizer.sanitize(text) -> tuple[str, int]` cubre CLABE,
-cuentas, tarjetas, RFC, CURP, correos y teléfonos; nombres libres requieren NER.
-Probar separadores, Unicode y bordes RE2/Python; no asumir que sus `\b` son
-idénticos. Proteger tokens ya sanitizados para evitar reemplazos anidados.
+**Objetivo:** Integrar `sanitization-pipeline` al workspace de `uv` asegurando compatibilidad de dependencias en `uv.lock` y definir la interfaz CLI con presupuestos acotados.
 
-La protección de códigos `ref: 3702:65c5:9xhchi` usa una tabla de placeholders
-por celda, con nonce/colisión comprobada, o la regla DLP validada. Solo se excluye
-el fragmento diagnóstico reconocido, no el resto de la oración. Restaurar después
-de DLP/fallback y comprobar que PII adyacente no queda excluida. No permitir que
-texto parecido a un placeholder o a un token sintético evite la inspección.
+#### Tarea 4.1.1: Configurar `services/sanitization-pipeline/pyproject.toml`
 
-Regex local es doble barrera después de DLP o herramienta offline explícita.
-Si DLP no está disponible en producción, **no escribir éxito TDS usando solo
-regex**. Reintentar/acotar/cuarentenar de forma duradera según tipo de fallo.
+Escribir `services/sanitization-pipeline/pyproject.toml` y sincronizar el workspace verificando que no existan conflictos de resolución con `pulumi-gcp` ni `protobuf`:
 
-### `BatchCloudDlpDeidentifyDoFn`
+```toml
+[project]
+name = "sanitization-pipeline"
+version = "0.1.0"
+description = "Pipeline Apache Beam / Cloud DLP para sanitizacion activa de PII, cobertura TDS y emision de recibos v2"
+requires-python = ">=3.11"
+dependencies = [
+    "apache-beam[gcp]>=2.55.0,<3.0.0",
+    "google-cloud-dlp>=3.16.0,<4.0.0",
+    "google-cloud-pubsub>=2.21.0,<3.0.0",
+    "google-cloud-bigquery>=3.20.0,<4.0.0",
+    "google-cloud-storage>=2.16.0,<3.0.0",
+    "tenacity>=8.2.3,<10.0.0",
+    "pydantic>=2.6.0,<3.0.0",
+    "voc-common",
+]
 
-Cliente creado una vez en `setup`; modelos Pydantic compartidos. Salidas
-`sanitized_valid`, `filtered_heavy_tail`, `dlq_error` tipadas con referencias de evento.
+[tool.uv.sources]
+voc-common = { workspace = true }
 
-1. BatchElements propone lotes, pero un empaquetador final limita **filas y bytes**:
-   hasta 250 filas y presupuesto configurable por debajo de 0.5 MB (p.ej. 400 KB),
-   medido serializando el request protobuf completo con plantillas y overhead.
-   Aceptar lotes menores de 50 en el último tramo; dividir/reintentar por tamaño.
-2. La tabla enviada a DLP contiene columnas de contenido `texto`,
-   `texto_respuesta` y `titulo` cuando exista. **No enviar `id_resena` a un
-   transformador de todos los campos**. Mantener un sidecar posicional con IDs;
-   validar número de filas, columnas y alineación al recibir la respuesta.
-3. Plantillas regionales de EPIC-2, `include_quote=False`, tokens `[INFO_TYPE]`
-   mediante los reemplazos explícitos existentes. Proteger diagnósticos y aplicar
-   regex adicional sobre todas las celdas textuales que puedan persistir.
-4. Hash del usuario con sal secreta versionada; no persistir usuario/imagen.
-   Sanitizar también título/respuesta; ampliar `from_raw_and_dlp` para recibir
-   título sanitizado o fijarlo a None en Google Play. No copiar campos crudos.
-5. `pii_findings_count` por reseña requiere correspondencia comprobable de
-   transformación/celda. Los summaries globales del lote **no** se reparten como
-   si fueran un conteo por fila. Si la API no da esa correspondencia, definir
-   explícitamente `None`/métrica agregada y migrar contrato/esquema, o implementar
-   una atribución validada; no hacer RPC por fila solo para fabricar ese conteo.
-6. Aplicar limpieza y filtrar 2–60 palabras después de sanitizar. Emitir recepción
-   `FILTERED_LENGTH` con ID, conteo y motivo, sin texto crudo. Es resultado terminal
-   para esa revisión, no error de transporte ni garantía de retención del 77.4%.
-7. Timeout/429/503 DLP => reintento con backoff y presupuesto; credenciales,
-   configuración, respuesta desalineada o resultado incompleto => fallo explícito.
-   No emitir registros de éxito cuando el resultado no esté íntegro.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-## FEATURE 4.3: BigQuery idempotente, revisiones y ledger
+```
 
-### Identidad y política de cambios
+#### Tarea 4.1.2: Parámetros de Ejecución y Presupuestos Acotados
 
-* `record_to_bq_row` usa UTC, enums serializables y schemas versionados.
-* Clave de reseña `(bank_id, id_resena)`; clave de revisión
-  `(bank_id, id_resena, source_revision)`. Duplicado de transporte != edición.
-* Persistir revisiones sanitizadas append-only en una tabla versionada y exponer
-  estado vigente mediante vista/tabla materializada controlada. Incorporar
-  `source_revision`, `first_seen_at`, `last_seen_at`, `sanitizer_version`,
-  `salt_version` y `processing_receipt` mediante migración de infra antes de usar.
-* `fecha` del review no se presume timestamp de edición fiable. Para resolver el
-  vigente usar observación del origen/orden de captures y criterio documentado;
-  replays viejos no deben revertir una revisión reciente. Si es ambiguo,
-  conservar ambas observaciones y marcar conflicto, no inventar temporalidad.
-* Reprocesar una revisión para mejorar sanitización es otra versión de proceso,
-  no nueva revisión del origen; gestionar correcciones/borrado de PII de forma
-  explícita. No llamar «inmutable» a una tabla que debe corregir privacidad.
+El CLI en `pipeline.py` debe soportar:
 
-### Carga y MERGE
+* `--execution-mode`: `BATCH_PULL_SERVERLESS` (default ejecutado por `voc-sanitization-job` en Cloud Run con `DirectRunner`), `GCS_BACKFILL_MANIFESTS` (procesamiento de páginas pendientes seleccionadas por manifiesto/generación en GCS, no mediante un glob ciego que reprocese todo `raw_staging/`), y `DATAFLOW_MANAGED` (modo opt-in posterior).
 
-`BigQueryTdsUpsertManager` recibe un microbatch y devuelve resultados confirmados
-por evento. La entrada llega desde el runner mediante una fase/sink implementada:
-una `PCollection` no es una lista iterable disponible después de cerrar el pipeline.
+* `--max-messages`: `int = 2000` (Presupuesto máximo por corrida, drenado en microbatches acotados para jamás cargar miles de textos simultáneamente en RAM).
 
-1. Cargar únicamente filas **sanitizadas** en tabla de trabajo con expiración;
-   `job_id` determinista por lote/tipo/revisión de proceso y reconciliación de
-   jobs ya creados. `load_table_from_json`/FILE_LOADS no equivalen a escritura final.
-2. Deduplicar fuente por clave de revisión con `ROW_NUMBER` y criterio estable
-   antes del MERGE. Evitar dos escritores concurrentes para las mismas claves:
-   lease/fencing de procesamiento y serialización de la fase de publicación TDS.
-3. MERGE idempotente de revisiones/recepciones. Leer `.result()` y comprobar
-   errores del job. Después confirmar ledger; si ledger falla tras BQ, el replay
-   verifica la fila/revisión y repara la recepción sin duplicar ni revertir.
-4. Si un lote falla no declarar éxito ni enviar ack. No asumir deduplicación
-   permanente por `insertId` ni por una ventana Beam.
-5. `DATAFLOW_MANAGED` escribe FILE_LOADS a **staging sanitizado**, nunca
-   `WRITE_APPEND` directo a TDS. Una fase acotada de commit/merge/dedupe confirma
-   destino y recepciones. Hasta implementarla, ese modo no se declara listo.
-6. Medir bytes de consulta de MERGE, particiones tocadas y coste. Cargas batch
-   evitan cargos de inserción streaming clásicos, pero consultas/almacenamiento
-   pueden facturarse. No describir un MERGE o FILE_LOADS como gratis sin límites.
+* `--microbatch-size`: `int = 200` (Máximo de sobres procesados por iteración de pull/beam).
+* `--max-runtime-sec`: `int = 1500` (Presupuesto de tiempo con margen de seguridad de 300s antes del timeout de `1800s` del `voc-sanitization-job` en Cloud Run).
 
-## FEATURE 4.4: Orquestación, leases de ack y replay desde GCS
+---
 
-### Pull acotado
+### FEATURE 4.2: Desidentificación Tabular en Cloud DLP, Protección de Diagnósticos y *Fail-Closed* (`dlp_transforms.py`)
 
-1. Drenar microbatches con límites de cantidad/bytes/tiempo y backpressure. Un Pull
-   vacío es evidencia temporal de cola sin mensajes entregados, no certeza de
-   que no quedan mensajes en vuelo o backlog. No acumular 5000 textos por default.
-2. Mantener/renovar ack deadline durante DLP/Beam/BQ. La suscripción tiene 600s y
-   el Job puede durar 1800s: usar lease management o `modify_ack_deadline` periódico.
-   Si se pierde el lease, aceptar redelivery y resolver por event_id/ledger.
-3. Deduplicar por clave de evento, manteniendo **todos** los ack_ids de redeliveries
-   de ese evento; `beam.Distinct()` sobre modelos completos no implementa esto.
-4. Ejecutar microbatch como grafo acotado, con empaquetado por bytes, sidecar y
-   salidas tipadas. Mantener receipts fuera de memoria efímera para reintentos.
-5. Ack solo para eventos `TDS_COMMITTED` o `FILTERED_LENGTH` duraderos.
-   En errores transitorios no ack; en permanentes enviar cuarentena controlada
-   y confirmar su persistencia antes de ack. No republicar crudos en alertas.
-6. Cuarentena debe ser accesible para recuperación, con TTL explícito y metadata
-   separada del cuerpo. Alinear esto con la DLQ de EPIC-2 y sus permisos; la tabla
-   de auditoría no lleva cuerpo crudo. Si vence el cuerpo pendiente, abrir hueco.
-7. Una página finaliza cuando sus eventos/revisiones tienen receipts duraderos.
-   Consumidor escribe un receipt de página; ingesta reconcilia el estado raíz
-   usando CAS/lease propio. Sanitización no sobrescribe el watermark del scraper.
-8. Acks exitosos no se confunden con persistencia: si ack falla tras BQ, redelivery
-   consulta receipts y repite ack, sin repetir una transformación innecesaria.
+**Objetivo:** Implementar el sanitizador local de respaldo y el `DoFn` de Apache Beam que empaqueta lotes respetando límites de filas y bytes de Cloud DLP, protege códigos `ref: 3702`, calcula `pii_findings_count` por fila y aplica el filtro de 2 a 60 palabras del EDA.
 
-### GCS histórico y deduplicación entre vías
+#### Tarea 4.2.1: Implementar `LocalRegexFallbackSanitizer` en `dlp_transforms.py`
 
-* Seleccionar archivos por manifiesto/generación y usar las mismas claves que
-  Pub/Sub. El mismo registro llegado por ambas vías produce una sola revisión
-  confirmada; comprobarlo en tests de recuperación.
-* JSONL.gz se procesa en lotes acotados; un archivo ya expirado es error observable,
-  no «página vacía». No enumerar todo raw_staging cada día como mecanismo de progreso.
-* Supervisar edad de eventos/archivos pendientes, backlogs y tiempo de vaciado.
-  El TTL actual es siete días: garantizar operación antes de expirar con alertas,
-  o cambiar conscientemente retención/presupuesto mediante infra. No conservar
-  crudos indefinidamente para reducir coste de recuperación.
+1. **Tokens Oficiales Reconocidos (`DLP_INFO_TYPE_TOKENS`):**
 
-### Docker y configuración
+* Tupla constante con los 8 tokens exactos configurados en `infra/modules/dlp.py` (Feature 2.3): `("[PERSON_NAME]", "[EMAIL_ADDRESS]", "[PHONE_NUMBER]", "[CREDIT_CARD_NUMBER]", "[MEXICO_CURP_NUMBER]", "[MX_CLABE_BANCARIA]", "[MX_RFC_TAX_ID]", "[BBVA_ACCOUNT_NUMBER]")`.
 
-Multi-stage uv, usuario no root, ENTRYPOINT `python -m sanitization_pipeline.pipeline`.
-CLI, `BEAM_RUNNER`, plantillas DLP, sal versionada y Pub/Sub/GCS deben ser consistentes
-con Cloud Run. Entorno offline requiere `use_cloud_dlp_api=False` explícito y no
-puede mezclarse con el destino TDS de producción. No registrar texto/sal en errores.
+1. **Protección de Códigos Técnicos (`ref: 3702:65c5:9xhchi`) y Tokens Existentes:**
 
-## FEATURE 4.5: Pruebas y observabilidad
+* Antes de evaluar expresiones regulares locales (o antes de enviar a DLP si se usa pre-enmascarado con nonce único por lote), identificar exclusivamente el fragmento que coincida con `r"ref\s*:\s*\d{4}\s*:\s*[a-zA-Z0-9]+\s*:\s*[a-zA-Z0-9]+"` y sustituirlo temporalmente por un placeholder con *nonce* criptográfico por ejecución (`__VOC_DIAG_{nonce}_{idx}__`) que no pueda ser inyectado adversarialmente por un usuario.
 
-Pruebas deterministas con pytest y Beam TestPipeline; fixtures sintéticas,
-respuestas DLP simuladas y tests de integración reales opt-in separados de CI.
+* Proteger igualmente tokens `[<INFO_TYPE>]` ya emitidos por Cloud DLP para evitar reemplazos anidados.
 
-1. Corpus anotado: nombres, CLABE, tarjetas, RFC/CURP, emails, teléfonos, Unicode,
-   título/respuesta y texto; medir recall por tipo y verificar cero fugas en fixtures.
-2. Códigos ref con PII adyacente y placeholders adversariales; no hay exclusión
-   amplia que oculte cuentas verdaderas fuera del diagnóstico.
-3. Batch >400 KB/250 filas, lote final pequeño, registro individual demasiado
-   grande, fallo DLP/desalineación. IDs nunca son transformados por DLP.
-4. Longitudes 1/2/60/61, duplicados con distintos ack_ids y clave por revisión.
-5. BQ falla => no ack; BQ éxito + ack falla => replay no duplica; ledger falla
-   después de BQ => reconciliación; dos escritores => fencing efectivo.
-6. Pub/Sub + GCS entregan la misma revisión; cambio de texto/votos/estrellas
-   conserva nueva revisión; replay viejo no revierte el vigente.
-7. Lease de ack renovado por >600s, SIGTERM, deadline de tarea, cuarentena
-   duradera/expirada y receipts de página con eventos filtrados.
-8. DirectRunner y la fase de merge operan sin extraer una PCollection en el host;
-   Dataflow no escribe directamente append-only a TDS.
-9. Receipts TDS permiten reutilizar datos del anual al extender a FULL; contar
-   solicitudes repetidas del origen separadamente de transformaciones evitadas.
+1. **Reglas Regex de Segunda Barrera:**
 
-Métricas: bytes/requests DLP, latencia, lotes divididos, recall por tipo, filas
-válidas/filtradas/cuarentenadas, redeliveries, revisiones nuevas, duplicados
-suprimidos, MERGE bytes, edad de backlog, páginas pendientes y huecos de cobertura.
+* Reemplazar CLABE (18 dígitos) $\rightarrow$ `[MX_CLABE_BANCARIA]`.
 
-## Checklist
+* Reemplazar Tarjeta (16 dígitos con o sin espacios/guiones) $\rightarrow$ `[CREDIT_CARD_NUMBER]`.
 
-* [ ] Contratos/revisiones/receipts y migraciones de infra implementados.
-* [ ] DirectRunner acotado; filas/bytes y deadline de tarea probados.
-* [ ] Fail-closed ante DLP/configuración inválidos; privacidad medida, sin garantía universal.
-* [ ] FILE_LOADS/staging + fuente deduplicada + MERGE y escritor coordinado en todos los modos.
-* [ ] Ack leases y outcomes terminales, redelivery y replay GCS sin doble procesamiento final.
-* [ ] Cobertura TDS reconciliada por página; expiración cruda genera hueco explícito.
-* [ ] Ruff, formato, Pyrefly, Bandit y pytest >=85% pasan.
+* Reemplazar Cuenta BBVA (10 dígitos aislados) $\rightarrow$ `[BBVA_ACCOUNT_NUMBER]`.
 
-## Referencias técnicas (consulta 2026-10-14)
+* Reemplazar RFC (`\b[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}\b`, case-insensitive) $\rightarrow$ `[MX_RFC_TAX_ID]`.
 
-* [Límites DLP](https://docs.cloud.google.com/sensitive-data-protection/limits).
-* [Precios DLP](https://cloud.google.com/sensitive-data-protection/pricing).
-* [Lease management Pub/Sub](https://docs.cloud.google.com/pubsub/docs/lease-management).
-* [MERGE en BigQuery](https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax).
-* [Lifecycle GCS](https://docs.cloud.google.com/storage/docs/lifecycle).
+* Reemplazar CURP (18 caracteres alfanuméricos formato oficial) $\rightarrow$ `[MEXICO_CURP_NUMBER]`.
+
+* Reemplazar Email $\rightarrow$ `[EMAIL_ADDRESS]` y Teléfonos de 10 dígitos $\rightarrow$ `[PHONE_NUMBER]`.
+
+* Restaurar los placeholders diagnósticos `ref: 3702...`.
+
+1. **Conteo Exacto de Hallazgos por Fila (`count_pii_tokens_in_row`):**
+
+* Función determinista que cuenta el total de ocurrencias de `DLP_INFO_TYPE_TOKENS` en `titulo_sanitizado`, `texto_sanitizado` y `texto_respuesta_sanitizado` para poblar `pii_findings_count: int` en `SanitizedReviewRecord`.
+
+#### Tarea 4.2.2: Empaquetador por Filas y Bytes (`DlpRowBatchPacker`) y `BatchCloudDlpDeidentifyDoFn`
+
+1. **Límite Dual de Lote (Filas $\le 250$ y Payload Serializado $\le 400\text{ KB}$):**
+
+* Cloud DLP impone un límite estricto de `524,288 bytes` (0.5 MB) por request de `deidentify_content`.
+
+* Implementar un empaquetador que divida cualquier lote de `RawReviewEnvelope` en sub-lotes que no superen **250 filas** ni **400 KB** de bytes UTF-8 acumulados, aceptando lotes menores en el último tramo.
+
+1. **Alineación Posicional Sidecar (Prohibido enviar `id_resena` o `event_id` como celda transformable a DLP):**
+
+* La `dlp_v2.Table` enviada a `dlp_client.deidentify_content` debe contener **únicamente las 3 columnas de texto libre**: `["titulo", "texto", "texto_respuesta"]`.
+
+* Los identificadores (`event_id`, `id_resena`, `source_revision`) se conservan en una lista *sidecar* en memoria indexada por posición `0..N-1`.
+
+* Al recibir `response.item.table.rows`, validar estrictamente que `len(response.item.table.rows) == len(sidecar)` y que cada fila tenga exactamente 3 celdas; si hay desalineación, lanzar error explícito (*fail-closed*).
+
+1. **Política *Fail-Closed* y Reintentos en Cloud DLP:**
+
+* En producción (`use_cloud_dlp_api=True`), si `dlp_inspect_template_id` o `dlp_deidentify_template_id` son `None` o inválidos, fallar inmediatamente en `setup()`.
+
+* Ante errores transitorios de DLP (`429 ResourceExhausted`, `503 ServiceUnavailable`, `504 DeadlineExceeded`), reintentar con backoff exponencial acotado (`tenacity`). Si el lote falla tras agotar reintentos, emitir los eventos por la salida `OUTPUT_TAG_RETRYABLE_ERROR` para que **no** se haga `ack` en Pub/Sub ni se escriba en BigQuery.
+
+1. **Construcción de `SanitizedReviewEnvelope` y Salidas Tipadas (`TaggedOutputs`):**
+
+* Tras obtener las celdas sanitizadas por Cloud DLP y pasar la segunda barrera de `LocalRegexFallbackSanitizer`:
+
+* Limpiar el texto con `limpiar_texto_bancario(texto_sanitizado)` y evaluar `cumple_umbral_palabras(texto_limpio)` (rango `[2, 60]` palabras de Feature 1.2).
+
+* **Si está fuera del rango `[2, 60]` palabras:** Emitir en `OUTPUT_TAG_FILTERED_LENGTH` un `ProcessingReceipt.from_event(envelope, status="FILTERED_LENGTH", ...)` (sin cuerpo crudo).
+
+* **Si cumple el rango `[2, 60]` palabras:** Construir `SanitizedReviewRecord.from_raw_and_dlp(...)` (que hashea `usuario` con `user_hash_salt`, descarta `imagen_usuario` y verifica `conteo_palabras`), envolverlo en `SanitizedReviewEnvelope` conservando `event_id`, `page_id`, `plan_id`, `stream_id` y `source_revision`, y emitirlo en la salida principal `OUTPUT_TAG_SANITIZED_VALID`.
+
+* **Si el registro de entrada viola contratos de forma irrecuperable:** Emitir `ProcessingReceipt.from_event(envelope, status="QUARANTINED", ...)` en `OUTPUT_TAG_QUARANTINED`.
+
+---
+
+### FEATURE 4.3: Persistencia Idempotente en BigQuery TDS y Ledger de Recibos (`bq_writer.py`, `processing_ledger.py`)
+
+**Objetivo:** Persistir los lotes de `SanitizedReviewEnvelope` en `bbva_voc_tds.sanitized_reviews_tds` mediante cargas batch y `MERGE` determinista, y escribir los recibos `ProcessingReceipt` en Cloud Storage respetando el layout de `EPIC-2`/`EPIC-3`.
+
+#### Tarea 4.3.1: Implementar `BigQueryTdsUpsertManager` en `bq_writer.py`
+
+1. **Serialización Estricta de las 16 Columnas (`record_to_bq_row`):**
+
+* Convierte `envelope.record` (`SanitizedReviewRecord`) a diccionario JSON compatible con las 16 columnas de `bbva_voc_tds.sanitized_reviews_tds`, formateando `fecha`, `fecha_respuesta` y `sanitized_at` en UTC ISO-8601.
+
+1. **Deduplicación en Lote y Tabla Efímera con Expiración:**
+
+* Antes de subir a BigQuery, deduplicar en memoria por `(bank_id, id_resena)` conservando la observación más reciente en caso de que el mismo microbatch traiga dos entregas del mismo registro.
+
+* Crear una tabla temporal `bbva_voc_tds._staging_sanitized_{run_id}_{batch_seq}` con el mismo `schema` de 16 columnas y `expires = datetime.now(timezone.utc) + timedelta(hours=1)`.
+
+* Cargar el lote sanitizado mediante `bq_client.load_table_from_json(..., job_id=f"voc_load_{deterministic_batch_hash}")` y esperar `.result()`.
+
+1. **Sentencia `MERGE` Idempotente sin Reversión Temporal:**
+
+* Ejecutar `MERGE INTO` hacia `bbva_voc_tds.sanitized_reviews_tds` (`target`) desde la tabla temporal (`source`) con clave `ON target.bank_id = source.bank_id AND target.id_resena = source.id_resena`:
+* `WHEN MATCHED AND source.fecha >= target.fecha THEN UPDATE SET ...` (protege contra replays antiguos para que nunca sobrescriban una edición más reciente de la reseña).
+
+* `WHEN NOT MATCHED THEN INSERT ...`
+
+* Esperar `query_job.result()`, verificar `query_job.errors is None`, eliminar la tabla temporal en un bloque `finally` y devolver el `query_job.job_id` para estamparlo en los `ProcessingReceipt` (`TDS_COMMITTED`).
+
+#### Tarea 4.3.2: Implementar `ProcessingLedgerRepository` en `processing_ledger.py`
+
+Utilizar `IngestionStorageLayout` y los modelos de `voc_common` (Features 1.6–1.8 y 2.7):
+
+1. **`write_event_receipts(self, receipts: list[ProcessingReceipt]) -> None`**:
+
+* Persiste en Cloud Storage los recibos terminales (`TDS_COMMITTED`, `FILTERED_LENGTH`, `QUARANTINED`) bajo el prefijo de recibos configurado en `Settings`.
+
+1. **`find_already_processed_event_ids(self, event_ids: set[str]) -> dict[str, ProcessingReceipt]`**:
+
+* Permite que al recibir un *redelivery* de Pub/Sub (por ejemplo, si falló el `ack` en una corrida previa después de haber hecho commit en BigQuery), el orquestador detecte que el `event_id` ya tiene un recibo terminal `TDS_COMMITTED` o `FILTERED_LENGTH` y haga `ack` inmediato sin volver a invocar Cloud DLP ni BigQuery.
+
+1. **`reconcile_page_sanitization_status(self, bank_id: BankKey, page_id: str) -> bool`**:
+
+* Comprueba contra el `PageManifest` escrito por `EPIC-3` (Feature 3.3) si todos los `event_id` válidos de esa página ya cuentan con un recibo terminal (`TDS_COMMITTED` o `FILTERED_LENGTH`).
+
+* Cuando la página está completa, emite el recibo de cierre de página para que el estado pase de `PUBLISHED` a `SANITIZED_COMMITTED` sin sobrescribir el watermark del scraper. Si existen eventos en `QUARANTINED` o el archivo en `raw_staging/` expiró tras los 7 días de TTL antes de procesarse, registra explícitamente el hueco de calidad/cobertura.
+
+---
+
+### FEATURE 4.4: Orquestador del Pipeline, Renovación de Lease de Ack y Replay desde GCS (`pipeline.py`, `Dockerfile`)
+
+**Objetivo:** Coordinar el ciclo completo de drenado por microbatches desde Pub/Sub (o desde manifiestos en GCS), manteniendo vivo el *ack deadline* durante la ejecución de DLP + BigQuery y confirmando mensajes únicamente tras persistencia duradera.
+
+#### Tarea 4.4.1: Implementar `services/sanitization-pipeline/src/sanitization_pipeline/pipeline.py`
+
+1. **Drenado Acotado y Agrupación de `ack_ids` por `event_id`:**
+
+* En modo `BATCH_PULL_SERVERLESS`, solicitar hasta `--microbatch-size` mensajes de `voc-raw-reviews-sub`.
+
+* Parsear cada mensaje como `RawReviewEnvelope`.
+
+* **Deduplicación con preservación de `ack_ids`:** Si el mismo `event_id` llega duplicado en el lote de Pub/Sub (por reintento de publicación o redelivery), agrupar en un diccionario `ack_ids_by_event_id: dict[str, list[str]]` para que al terminar el procesamiento de ese único `RawReviewEnvelope`, se envíe `acknowledge()` a **todos** los `ack_id` asociados a ese `event_id`.
+
+* Consultar primero `ledger.find_already_processed_event_ids(...)`: si algún `event_id` ya fue procesado en una corrida previa, hacer `ack` inmediato de sus `ack_ids` y excluirlo del lote de Cloud DLP.
+
+1. **Renovación Periódica de Lease de Ack (`AckDeadlineRenewer`):**
+
+* La suscripción `voc-raw-reviews-sub` tiene `ack_deadline_seconds=600` y el Job puede correr hasta `1800s`.
+
+* Iniciar un hilo/tarea de background mientras dura el procesamiento del microbatch que invoque `subscriber.modify_ack_deadline(subscription=..., ack_ids=active_ack_ids, ack_deadline_seconds=600)` cada 180 segundos hasta que el lote termine.
+
+1. **Ejecución del Grafo Apache Beam (`DirectRunner`) y Orden de Confirmación:**
+
+* Ejecutar el pipeline sobre el microbatch con `BatchCloudDlpDeidentifyDoFn`.
+
+* **Orden transaccional estricto post-Beam:**
+
+1. Ejecutar `bq_writer.upsert_sanitized_batch(sanitized_valid_envelopes)` hacia `bbva_voc_tds.sanitized_reviews_tds`.
+
+2. Construir los `ProcessingReceipt` para `TDS_COMMITTED`, `FILTERED_LENGTH` y `QUARANTINED` y persistirlos en GCS con `ledger.write_event_receipts(...)`.
+
+3. Reconciliar el estado de las páginas tocadas (`ledger.reconcile_page_sanitization_status`).
+
+4. **Solo si los pasos 1 y 2 tuvieron éxito**, enviar `subscriber.acknowledge()` para los `ack_ids` de los eventos con estado terminal (`TDS_COMMITTED`, `FILTERED_LENGTH`, `QUARANTINED`).
+
+5. Para cualquier evento en `RETRYABLE_ERROR` (o si falló BigQuery/DLP), **no enviar `ack**`, liberando los mensajes para reintento seguro.
+
+6. **Modo Replay desde Manifiestos en GCS (`GCS_BACKFILL_MANIFESTS`):**
+
+* En lugar de hacer glob ciego sobre `raw_staging/`, lee los `PageManifest` en estado `PUBLISHED` cuyos eventos aún no tengan recibo terminal en `processing_ledger`, verifica la generación del archivo `.jsonl.gz` en `raw_staging/{bank_id}/{run_id}/{page_id}/{fetch_attempt_id}.jsonl.gz` (Feature 3.3), y los procesa por la misma tubería de DLP + BigQuery + Recibos. Si el objeto `.jsonl.gz` ya fue eliminado por la regla de Lifecycle de 7 días antes de sanitizarse, marca explícitamente el hueco en el ledger de la página (`STAGING_EXPIRED_GAP`).
+
+#### Tarea 4.4.2: Implementar `services/sanitization-pipeline/Dockerfile`
+
+Construir un `Dockerfile` multi-stage con `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`, usuario no-root (`appuser`), instalando `voc-common` y `sanitization-pipeline` desde `uv.lock` y definiendo `ENTRYPOINT ["python", "-m", "sanitization_pipeline.pipeline"]`.
+
+---
+
+### FEATURE 4.5: Suite de Pruebas Deterministas y Observabilidad (`tests/`)
+
+**Objetivo:** Validar con `pytest` y `apache_beam.testing.test_pipeline.TestPipeline` (sin red ni credenciales GCP en CI) todos los invariantes de privacidad, empaquetado DLP, idempotencia en BigQuery y manejo de leases de Pub/Sub.
+
+#### Tarea 4.5.1: Implementar `test_dlp_transforms.py`, `test_bq_writer_and_ledger.py` y `test_pipeline.py`
+
+La suite de pruebas debe cubrir obligatoriamente estos 9 escenarios:
+
+1. **Cero Fugas en Corpus Bancario Anotado y Conteo Exacto de Hallazgos:**
+
+* Inyectar reseñas con nombres propios, CLABE (18 dígitos), tarjetas (16 dígitos), cuentas BBVA (10 dígitos), RFC, CURP, correos, teléfonos y emojis en `titulo`, `texto` y `texto_respuesta`.
+
+* Verificar que `SanitizedReviewRecord` no contenga ningún PII original, que `usuario_hash` sea un SHA-256 de 64 caracteres, y que `pii_findings_count` coincida exactamente con el número de tokens `[<INFO_TYPE>]` insertados en la fila.
+
+1. **Preservación de Diagnósticos `ref: 3702` con PII Adyacente e Inyección Adversarial:**
+
+* Probar `"mi cuenta 0123456789 marca error ref: 3702:65c5:9xhchi al llamar al 5512345678"`. Comprobar que `0123456789` y `5512345678` se enmascaran como `[BBVA_ACCOUNT_NUMBER]` y `[PHONE_NUMBER]`, mientras que `ref: 3702:65c5:9xhchi` permanece intacto en `texto_limpio`. Comprobar que si un usuario escribe un falso placeholder en su reseña, no logra evadir la sanitización.
+
+1. **Empaquetado Dual (>250 filas y >400 KB) y Protección Sidecar de IDs:**
+
+* Verificar que un lote que supere 400 KB o 250 filas se divida automáticamente en múltiples llamadas a `deidentify_content`, y que `id_resena` y `event_id` jamás se envíen dentro de `dlp_v2.Table`.
+
+1. **Política *Fail-Closed* ante Error o Desalineación de Cloud DLP:**
+
+* Simular que Cloud DLP devuelve menos filas que el sidecar o lanza `PermissionDenied`/`ServiceUnavailable`. Verificar que no se emita ningún `SanitizedReviewEnvelope` usando solo regex cuando `use_cloud_dlp_api=True`.
+
+1. **Bordes Exactos del EDA (1, 2, 60 y 61 palabras) post-sanitización:**
+
+* Comprobar que longitudes de 1 y 61 palabras tras la sanitización generen `ProcessingReceipt(status="FILTERED_LENGTH")` y que longitudes de 2 y 60 palabras generen `SanitizedReviewEnvelope` válidos.
+
+1. **Agrupación de `ack_ids` en Redeliveries e Idempotencia por Recibo Previo:**
+
+* Simular que el mismo `RawReviewEnvelope` (`event_id="evt_1"`) llega 2 veces en el mismo Pull con `ack_id="a1"` y `ack_id="a2"`. Verificar que se procesa una sola vez en DLP/BigQuery y que al confirmar se hace `ack` de `["a1", "a2"]`.
+
+* Simular que `evt_1` llega de nuevo en una corrida posterior cuando ya existe su `ProcessingReceipt(status="TDS_COMMITTED")` en GCS: verificar que se hace `ack` inmediato sin llamar a DLP ni a BigQuery.
+
+1. **Atomicidad BigQuery $\rightarrow$ Ledger $\rightarrow$ Ack:**
+
+* Si falla el `MERGE` en BigQuery, verificar que **no** se llame a `subscriber.acknowledge()`.
+
+* Verificar que la tabla temporal `_staging_sanitized_*` siempre se elimine en el bloque `finally` y que el `MERGE` no sobrescriba una fila existente si el replay trae una `fecha` más antigua.
+
+1. **Renovación de Lease de Ack (>600s):**
+
+* Verificar mediante mock de reloj/timer que `AckDeadlineRenewer` invoca `modify_ack_deadline` periódicamente mientras el microbatch sigue en ejecución.
+
+1. **Reconciliación de Página (`PUBLISHED` $\rightarrow$ `SANITIZED_COMMITTED`) y Detección de Expiración de Staging:**
+
+* Verificar que cuando todos los eventos de un `PageManifest` tienen recibos `TDS_COMMITTED` o `FILTERED_LENGTH`, la página se marca como completada en el ledger de procesamiento; y si un archivo `.jsonl.gz` en `raw_staging/` ya expiró (404 NotFound tras 7 días), se registra el hueco explícito `STAGING_EXPIRED_GAP`.
+
+---
+
+## ✅ Checklist de Aceptación de la Épica 4
+
+* [ ] Consume `RawReviewEnvelope` y emite `SanitizedReviewEnvelope` y `ProcessingReceipt` de `voc-common` sin duplicar contratos ni alterar las 16 columnas de `bbva_voc_tds.sanitized_reviews_tds`.
+
+* [ ] Calcula `pii_findings_count: int` (`>= 0`) contando los tokens `[<INFO_TYPE>]` por fila, cumpliendo el contrato `INTEGER REQUIRED` de BigQuery.
+
+* [ ] Empaqueta peticiones tabulares a Cloud DLP respetando simultáneamente $\le 250$ filas y $\le 400\text{ KB}$, manteniendo `id_resena` en un sidecar fuera de la tabla DLP.
+
+* [ ] Opera en modo *fail-closed* en producción (`use_cloud_dlp_api=True`): jamás escribe en TDS usando solo regex si Cloud DLP falla.
+
+* [ ] Carga lotes sanitizados en tablas temporales con TTL de 1 hora dentro de `bbva_voc_tds` y ejecuta `MERGE` idempotente sin usar *Streaming Inserts*.
+
+* [ ] Gestiona cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), renueva leases de ack y confirma mensajes en Pub/Sub únicamente después de persistir en BigQuery y en el ledger de recibos.
+
+* [ ] Los comandos `uv run ruff check services/sanitization-pipeline`, `uv run ruff format --check services/sanitization-pipeline`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/sanitization-pipeline` y `uv run pytest services/sanitization-pipeline/tests --cov=services/sanitization-pipeline/src --cov-fail-under=85` pasan con **0 errores**.

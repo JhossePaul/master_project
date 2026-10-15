@@ -5,100 +5,97 @@ desplegar el motor analítico de NLP en Google Cloud Platform (GCP), diseñado
 para corregir el *Label Noise Bias (LNB)* (sesgo de *Obligatory 5-Star*),
 recalibrar la satisfacción hacia el **True Net Satisfaction Score (TNSS)** y
 automatizar el triaje del backlog de ingeniería bajo lineamientos de *Ethics by
-Design* y *Human-In-The-Loop (HITL)*.
+Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 
 ---
 
-## Resumen de Épicas y Cronograma
+## Resumen de Épicas, Estado y Cronograma
 
-| ID | Nombre de la Épica | Semanas | Directorios Principales Afectados | Archivo de Detalle |
-| :--- | :--- | :---: | :--- | :--- |
-| **EPIC-1** | Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates | Sem 1 | `packages/voc-common/`, `.github/` | `epic_1.md` |
-| **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | Sem 1 - 2 | `infra/` | `epic_2.md` |
-| **EPIC-3** | Ingesta Paralela Multibanco desde Google Play Store | Sem 2 | `services/ingestion-worker/` | `epic_3.md` |
-| **EPIC-4** | Pipeline de Sanitización PII (*Ethics by Design*) y Data Warehouse | Sem 3 - 4 | `services/sanitization-pipeline/` | `epic_4.md` |
-| **EPIC-5** | Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA | Sem 4 - 6 | `services/ml-delora/` | `epic_5.md` |
-| **EPIC-6** | Exposición, Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | Sem 7 - 8 | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/` | `epic_6.md` |
+| ID | Nombre de la Épica | Estado Actual | Semanas | Directorios Principales Afectados | Archivo de Detalle |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| **EPIC-1** | Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates | **IMPLEMENTADO** [Features 1.1–1.8](cite: 23) | Sem 1[cite: 23, 27] | `packages/voc-common/`, `docs/contracts/`, `.github/`[cite: 23] | `epic_1.md`[cite: 27] |
+| **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | **IMPLEMENTADO** [Features 2.1–2.10 en Mocks](cite: 24) | Sem 1 - 2[cite: 24, 27] | `infra/`[cite: 24, 27] | `epic_2.md`[cite: 27] |
+| **EPIC-3** | Ingesta Multibanco Reanudable desde Google Play (`batchexecute`) | **EN PROGRESO** [3.1–3.3 listas; 3.4–3.5 pend.](cite: 25) | Sem 2[cite: 27] | `services/ingestion-worker/`, `experiments/playstore/`[cite: 25] | `epic_3.md`[cite: 27] |
+| **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **PENDIENTE** [Especificación v2 lista](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
+| **EPIC-5** | Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA | **PENDIENTE** (Especificación v2 lista) | Sem 4 - 6[cite: 27] | `services/ml-delora/`[cite: 27] | `epic_5.md`[cite: 27] |
+| **EPIC-6** | Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | **PENDIENTE** (Especificación v2 lista) | Sem 7 - 8[cite: 14, 27] | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/`[cite: 27] | `epic_6.md`[cite: 27] |
 
 ---
 
-## Descripción Detallada de las Épicas
+## Descripción Detallada de las Épicas (Sincronizada con Arquitectura v2)
 
-### EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
+### EPIC-1: Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates
 
-* **Objetivo Técnico:** Establecer la columna vertebral de tipado y validación
-  del proyecto antes de escribir lógica de negocio o infraestructura. Configurar
-  la tubería de integración continua (CI) que forzará la calidad del código.
-* **Alcance y Componentes:**
-  * Definición del catálogo de instituciones objetivo (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`) y sus respectivos `app_id` de Google Play Store en `constants.py`.
-  * Implementación de esquemas estrictos en **Pydantic v2** (`schemas.py`) que modelen el ciclo de vida completo del dato:
-    1. `RawReviewEvent`: Dato extraído de Google Play Store (`id` hash, `texto`, `estrellas` 1-5, `votos_utilidad`, `version_app`, `fecha`, `bank_id`).
-    2. `SanitizedReviewRecord`: Registro procesado tras la desidentificación de PII por Cloud DLP, listo para persistir en BigQuery (*Trusted Data Source*).
-    3. `AnalyzedReviewPrediction`: Salida del motor analítico conteniendo el **TNSS** (polaridad real libre de ruido), bandera de sesgo *Obligatory 5-Star*, **Tópico ABSA**, puntaje de severidad ponderado por votos de utilidad, vector de *embeddings* y nivel de entropía para disparo del protocolo HITL.
-    4. `IncidentAlertMessage`: Esquema de alerta crítica para enrutamiento por Pub/Sub.
-  * Configuración de `.pre-commit-config.yaml` y GitHub Actions / Cloud Build ejecutando `Ruff`, `Pyrefly`, `Bandit` y `Pytest`.
-* **Entregable Clave:** Paquete `voc-common` instalable en todo el workspace con 100% de cobertura en pruebas de validación de esquemas y pipelines de CI activos.
+* **Estado:** **IMPLEMENTADO** [Features 1.1 a 1.8 verificadas localmente con cobertura del 100%](cite: 23).
+* **Objetivo Técnico:** Establecer la columna vertebral de tipado, contratos inmutables (`extra="forbid"`, normalización UTC), reducer de estado por página y tubería de integración continua (CI) antes de acoplar servicios o infraestructura[cite: 23, 27].
+* **Alcance y Componentes Implementados:**
+  * **Catálogo y Constantes (`constants.py`):** Definición de instituciones (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), modos de ingesta (`INCREMENTAL`, `BACKFILL` anual, `FULL_BACKFILL`), tópicos `ABSATopic`, parámetros del protocolo interno `batchexecute` (RPC `oCPfdb`, tamaño inicial de política `199`) y umbrales del EDA [2 a 60 palabras](cite: 23).
+  * **Utilidades de Limpieza y Privacidad (`text_utils.py`):** Limpieza determinista de textos bancarios preservando emojis y códigos diagnósticos (`ref: 3702:65c5:9xhchi`), conteo de palabras y anonimización irreversible `hash_username_pii` [SHA-256 con sal](cite: 23).
+  * **Contratos de Datos y Sobres Versionados (`schemas.py`):**
+    1. `RawReviewEvent` y `RawReviewEnvelope`: Evento crudo en tránsito con identidad determinista (`event_id`, `source_revision` derivado del contenido, nunca de `ingested_at`)[cite: 23].
+    2. `SanitizedReviewRecord` y `SanitizedReviewEnvelope`: Registro post-DLP con 0% de `usuario` o `imagen_usuario` en texto plano, listo para las 16 columnas de BigQuery [*Trusted Data Source - TDS*](cite: 23, 24).
+    3. `IngestionWatermarkState` (v2), `IncrementalProgress`, `HistoricalPlan`, `ScanContext`, `ScanStreamState`, `PageManifest` y `ProcessingReceipt`: Separación estricta entre límites observados, progreso incremental comprometido, planes históricos con ancla $T_0$ fija y recibos de procesamiento por fase[cite: 23, 25].
+    4. `AnalyzedReviewPrediction`, `IncidentAlertMessage`, `HitlTriageAuditRecord` e `IngestionRunAudit`[cite: 23].
+  * **Reducer Puro y Quality Gates (`ingestion_state.py`, `.github/workflows/ci.yaml`):** Transiciones verificables por página confirmada y validación automatizada con `Ruff`, `Pyrefly`, `Bandit` y `Pytest`[cite: 23].
 
 ---
 
 ### EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC)
 
-* **Objetivo Técnico:** Codificar en **Pulumi (Python)** el despliegue automatizado, reproducible y de mínimo privilegio de toda la arquitectura en Google Cloud Platform.
-* **Alcance y Componentes:**
-  * **Seguridad e IAM (`iam.py`):** Creación de *Service Accounts* dedicadas por capa (Ingesta, Dataflow/DLP, Vertex AI, Backend API) bajo el principio de mínimo privilegio y llaves KMS/CMEK para cifrado AES-256 en reposo.
-  * **Mensajería (`pubsub.py`):** Tópicos y suscripciones de Cloud Pub/Sub para: (a) cola de ingesta de reseñas crudas (`voc-raw-reviews-topic`) con *Dead Letter Queue (DLQ)*, y (b) canal de alertas críticas de incidencias y *Model Drift* (`voc-incident-alerts-topic`).
-  * **Almacenamiento (`storage_bq.py`):** Buckets en Cloud Storage (staging de Dataflow, artefactos de modelos y crudos) y Dataset/Tablas particionadas por fecha y clusterizadas por banco/versión en **BigQuery** generadas a partir de los esquemas de `voc-common`.
-  * **Privacidad (`dlp.py`):** Plantillas de inspección (*Inspect Templates*) y desidentificación (*Deidentify Templates*) en **Cloud DLP** combinando detectores nativos (NER para nombres, teléfonos, correos) y expresiones regulares (REGEX) de dominio bancario mexicano (tarjetas de 16 dígitos, CLABE de 18 dígitos, números de cuenta/contrato, RFC/CURP).
-  * **Cómputo y Orquestación (`cloud_run.py`, `cloud_scheduler.py`, `vertex_ai.py`):** Definición de Artifact Registry, servicios/jobs de Cloud Run, los 5 *cron jobs* paralelos en Cloud Scheduler (uno por banco) e índices de Vertex AI Vector Search.
-* **Entregable Clave:** Ejecución limpia de `pulumi preview` y `pulumi up` que aprovisiona la infraestructura completa en GCP y exporta los identificadores de recursos para los servicios.
+* **Estado:** **IMPLEMENTADO** [Features 2.1 a 2.10 verificadas localmente con Pulumi Mocks; preview/despliegue real sujeto a inicialización del stack en GCP](cite: 24).
+* **Objetivo Técnico:** Codificar en **Pulumi (Python)** el despliegue reproducible, de mínimo privilegio y compatible con **GCP Free Tier** de las 5 capas de la solución[cite: 24, 27].
+* **Alcance y Componentes Implementados:**
+  * **Seguridad e IAM (`kms_iam.py`):** 4 *Service Accounts* dedicadas (`voc-sa-ingestion`, `voc-sa-scheduler`, `voc-sa-sanitization`, `voc-sa-ml-backend`) con permisos acotados por recurso (`roles/storage.objectUser` a nivel bucket, `roles/run.jobsExecutorWithOverrides` sobre el Job histórico) y soporte condicional para llaves KMS/CMEK (`enable_cmek`)[cite: 24].
+  * **Privacidad por Diseño (`dlp.py`):** Plantillas regionales de inspección y desidentificación en **Cloud DLP** con 5 detectores NER nativos, 3 detectores REGEX bancarios mexicanos (`MX_CLABE_BANCARIA`, `MX_RFC_TAX_ID`, `BBVA_ACCOUNT_NUMBER`), reemplazo explícito por tokens entre corchetes (`[<INFO_TYPE>]`) y regla de exclusión parcial (`ExclusionRule`) para preservar códigos técnicos `ref: 3702`[cite: 24].
+  * **Mensajería y Almacenamiento (`pubsub.py`, `storage_bq.py`):**
+    * Tópicos y suscripciones Pull en Cloud Pub/Sub (`voc-raw-reviews-topic`, `voc-raw-reviews-dlq` con 5 intentos, `voc-incident-alerts-topic`)[cite: 24].
+    * Bucket `voc-datalake-{project_id}` con `IngestionStorageLayout` que aplica TTL de 7 días exclusivamente a `raw_staging/` y `temp_beam/`, preservando indefinidamente `state/watermarks/` y `state/ingestion/` [manifiestos, ledgers y recibos](cite: 24).
+    * Dataset `bbva_voc_tds` en **BigQuery** sin tablas de texto crudo, aprovisionando 4 tablas estrictas particionadas y clusterizadas: `sanitized_reviews_tds` (16 columnas), `delora_predictions` (15 columnas incluyendo `embedding_vector` `FLOAT REPEATED`), `ingestion_runs_log_v2` (20 columnas) y `hitl_triage_audit_log` [10 columnas](cite: 24).
+  * **Cómputo Serverless y Orquestación (`cloud_run.py`, `cloud_scheduler.py`, `vertex_ai.py`):** Servicios *scale-to-zero* (`voc-ingestion-worker`, `voc-api-backend`), 2 Cloud Run Jobs privados (`voc-sanitization-job` y `voc-ingestion-history-job` para backfills largos fuera del ciclo HTTP), programación en Cloud Scheduler optimizada a 2 jobs en modo *Free Tier* (o 6 en modo normal) y recursos de Vertex AI condicionales (`enable_dedicated_vertex_endpoints`)[cite: 24].
 
 ---
 
-### EPIC-3: Ingesta Paralela Multibanco desde Google Play Store
+### EPIC-3: Ingesta Multibanco Reanudable desde Google Play (`batchexecute`)
 
-* **Objetivo Técnico:** Construir el *worker* contenerizado en `services/ingestion-worker/` capaz de extraer diariamente las reseñas públicas de Google Play Store para BBVA México y sus 4 competidores, validarlas y publicarlas asíncronamente en Pub/Sub.
+* **Estado:** **EN IMPLEMENTACIÓN** [Features 3.1, 3.2 y 3.3 completadas; Features 3.4 y 3.5 en desarrollo](cite: 25).
+* **Objetivo Técnico:** Construir el servicio y Job contenerizado en `services/ingestion-worker/` capaz de extraer reseñas públicas de Google Play Store mediante un cliente propio sobre el protocolo interno `batchexecute` (`oCPfdb`), con respaldo duradero por página, control de concurrencia CAS/lease y recuperación verificable[cite: 25, 27].
 * **Alcance y Componentes:**
-  * Cliente de extracción parametrizado por `BANK_KEY` y `APP_ID` con manejo de paginación, reintentos exponenciales (*exponential backoff*) y filtrado inicial (reseñas textuales válidas, control de duplicados mediante generación de `id` hash determinista).
-  * Validación estricta en memoria mediante `RawReviewEvent` de `voc-common`.
-  * Publicador asíncrono en lotes (*batching*) hacia **Cloud Pub/Sub** con inyección de metadatos en los atributos del mensaje.
-  * Exposición de punto de entrada HTTP/Job compatible con invocaciones de **Cloud Scheduler** sobre **Cloud Run**.
-* **Entregable Clave:** Imagen Docker del *worker* construida y probada unitariamente con mocks de Google Play y Pub/Sub, superando el 80% de cobertura.
+  * **Adaptador de Protocolo (`playstore_protocol.py` — Implementado):** Serialización estructural de peticiones `batchexecute`, parser posicional validado contra respuestas reales de BBVA (`ocpfdb-2026-10-15.1`) y clasificación estricta de estados y errores (`PAGE_WITH_CURSOR`, `END_CANDIDATE`, `EMPTY_WITH_CURSOR`, `RateLimitedError`, `ProtocolError`)[cite: 25].
+  * **Repositorio de Estado y Auditoría (`watermark_store.py`, `audit.py` — Implementado):** Persistencia en GCS con precondiciones `if_generation_match` (CAS), lease por banco con *fencing epoch*, snapshots de planes/streams/manifiestos/ledgers y entrega durable de `IngestionRunAudit` hacia `ingestion_runs_log_v2`[cite: 25].
+  * **Publicación Duradera por Página (`publisher.py` — Implementado):** Escritura condicional de capturas reproducibles `.jsonl.gz` en `raw_staging/`, registro de `PageManifest` pendiente y emisión de sobres `RawReviewEnvelope` a Pub/Sub verificando cada `future.result()` antes de avanzar el estado a `PUBLISHED`[cite: 25].
+  * **Motor de Extracción, Políticas de Recuperación, API y Job Histórico (`extractor.py`, `main.py`, `job.py` — Features 3.4 y 3.5):** Ejecución de modos `INCREMENTAL`, `BACKFILL` (anual con $T_0$ fijo) y `FULL_BACKFILL` (extensión del mismo plan y replay de página ancla), escalera de recuperación de coste creciente, control de presupuestos y exposición de endpoints HTTP más CLI para `voc-ingestion-history-job`[cite: 24, 25].
 
 ---
 
-### EPIC-4: Pipeline de Sanitización PII (*Ethics by Design*) y Data Warehouse
+### EPIC-4: Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS
 
-* **Objetivo Técnico:** Desarrollar el pipeline de procesamiento en **Apache Beam / Cloud Dataflow** (`services/sanitization-pipeline/`) que consume los mensajes de Pub/Sub, aplica desidentificación activa del 100% de PII mediante **Cloud DLP** antes de cualquier persistencia o vectorización, y escribe los datos curados en **BigQuery**.
+* **Estado:** **PENDIENTE** [Especificación técnica actualizada a contratos v2](cite: 26).
+* **Objetivo Técnico:** Desarrollar el pipeline en **Apache Beam** (`services/sanitization-pipeline/`) ejecutable con `DirectRunner` dentro de `voc-sanitization-job` (y compatible con `DataflowRunner`) que drena los sobres `RawReviewEnvelope`, desidentifica PII mediante **Cloud DLP + Regex de segunda barrera**, filtra el umbral de 2 a 60 palabras del EDA, actualiza `bbva_voc_tds.sanitized_reviews_tds` de forma idempotente y emite recibos `ProcessingReceipt` para cerrar la cobertura TDS por página[cite: 24, 26, 27].
 * **Alcance y Componentes:**
-  * Transformación `DoFn` en Apache Beam con agrupación en micro-lotes (*batching*) para optimizar cuotas y latencia en las llamadas a la API de `projects.content.deidentify` de Cloud DLP.
-  * Enmascaramiento de entidades sensibles reemplazándolas por tokens semánticos (ej. `[NOMBRE_PII]`, `[CUENTA_BANCARIA]`, `[CLABE_PII]`, `[TELEFONO_PII]`) que preserven la estructura sintáctica de la oración para no degradar el modelo NLP posterior.
-  * Limpieza de colas pesadas (filtro de longitud de 2 a 60 palabras según hallazgos del EDA y normalización básica de texto).
-  * Escritura en tablas certificadas como *Trusted Data Source (TDS)* en BigQuery y manejo de errores hacia tabla de cuarentena.
-* **Entregable Clave:** Pipeline de Apache Beam ejecutable tanto en `DirectRunner` (para pruebas unitarias/locales) como en `DataflowRunner` en GCP, garantizando 0% de fuga de PII en pruebas sintéticas con datos bancarios.
+  * **Transformación DLP Tabular y *Fail-Closed* (`dlp_transforms.py`):** Empaquetador dual ($\le 250$ filas y $\le 400\text{ KB}$) con *sidecar* posicional para no enviar IDs a DLP, protección de códigos diagnósticos `ref: 3702` mediante nonce, segunda barrera `LocalRegexFallbackSanitizer`, conteo exacto de tokens `[<INFO_TYPE>]` por fila (`pii_findings_count: int`) y política *fail-closed* en producción[cite: 24, 26].
+  * **Upsert Idempotente en BigQuery (`bq_writer.py`):** Carga de lotes sanitizados en tablas temporales con expiración de 1 hora dentro de `bbva_voc_tds` mediante `FILE_LOADS` (`load_table_from_json`) seguida de `MERGE` determinista hacia las 16 columnas de `sanitized_reviews_tds` sin usar *Streaming Inserts* y sin revertir revisiones más recientes[cite: 24, 26].
+  * **Ledger de Procesamiento y Leases de Ack (`processing_ledger.py`, `pipeline.py`):** Renovación periódica de `ack_deadline` (>600s), deduplicación preservando todos los `ack_ids` de redeliveries, gestión de cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), confirmación (`ack`) exclusiva tras persistencia en BigQuery + GCS, y reconciliación de páginas de `PUBLISHED` a `SANITIZED_COMMITTED`[cite: 24, 25, 26].
 
 ---
 
 ### EPIC-5: Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA
 
-* **Objetivo Técnico:** Implementar el motor de Aprendizaje Automático en `services/ml-delora/` sobre **PyTorch** y **Vertex AI** para desacoplar el ruido de etiquetado (*Label Noise Bias*), calcular el **TNSS**, clasificar tópicos de fallos (**ABSA**) y generar *embeddings* semánticos.
+* **Estado:** **PENDIENTE** (Especificación técnica actualizada a contratos v2).
+* **Objetivo Técnico:** Implementar el motor de Aprendizaje Automático en `services/ml-delora/` sobre **PyTorch**, **Transformers** y **PEFT** para cuantificar el baseline (**RoBERTa**), desacoplar el ruido de etiquetado (*Obligatory 5-Star*) mediante **Dual LoRA (*Delora*)**, calcular el **TNSS** continuo y categórico, clasificar los 8 tópicos de **ABSA**, generar *embeddings* de **768 dimensiones** y emitir alertas de picos operativos hacia Pub/Sub[cite: 1, 8, 13, 23, 27].
 * **Alcance y Componentes:**
-  * **Baseline NLP:** Implementación del evaluador base con RoBERTa en español para cuantificar la brecha entre estrellas otorgadas y polaridad textual.
-  * **Arquitectura Dual LoRA (*Delora*):** Implementación en PyTorch/HuggingFace PEFT de los dos adaptadores de bajo rango sobre el modelo fundacional: una rama limpia (*Clean Adapter*) para aprender la polaridad real del texto (**TNSS**) y una rama de ruido (*Noisy Adapter*) condicionada a las estrellas (1-5) para absorber y aislar el patrón *Obligatory 5-Star*.
-  * **Pipeline ABSA y Severidad:** Clasificador por aspectos (biometría, transferencias SPEI, crashes post-release, bloqueo de cuenta, etc.) y fórmula de priorización ponderada por `votos_utilidad` y `version_app`.
-  * **Inferencia, Embeddings y Alertamiento:** Generación de vectores para **Vertex AI Vector Search**, escritura de predicciones en BigQuery y emisión automática de alertas vía Pub/Sub cuando se detecten picos de fallos críticos respaldados por alta tracción comunitaria (votos de utilidad) o alta entropía.
-* **Entregable Clave:** Scripts de entrenamiento, evaluación (métricas de *Negative Recall*, eficacia de desacoplamiento y paridad dialectal en español mexicano) y contenedor de inferencia desplegable en Vertex AI Endpoints.
+  * **Baseline y Extracción de Embeddings (`baseline_roberta.py`):** Evaluador con `pysentimiento/robertuito-sentiment-analysis` que genera la predicción base `sentimiento_roberta` y extrae el vector normalizado de 768 dimensiones para `embedding_vector`[cite: 2, 9, 23, 24].
+  * **Arquitectura Dual LoRA y Calibración (`model.py`, `scoring_and_entropy.py`):** Doble adaptador LoRA ($\Delta\theta_{\text{clean}}$ sólo sobre texto para predecir `tnss_score` y $\Delta\theta_{\text{noisy}}$ condicionado a `estrellas` para absorber el sesgo), score continuo `tnss_numeric_calibrated` ($[1.0, 5.0]$), entropía de Shannon normalizada ($[0.0, 1.0]$) para disparo de `requires_hitl` ($\ge 0.65$) y `priority_weight_score` ponderado por `votos_utilidad`[cite: 8, 10, 14, 17, 23, 27].
+  * **Clasificador ABSA y Suite EDD de Gobernanza (`absa_classifier.py`, `evaluate.py`):** Clasificación híbrida hacia los 8 tópicos de `ABSATopic` (aprovechando códigos `ref: 3702` y tokens DLP como `[MX_CLABE_BANCARIA]`) y evaluación automatizada de *Negative Recall*, *Eficacia de Desacoplamiento de Ruido* y *Paridad Dialectal* en modismos mexicanos[cite: 14, 15, 23, 27].
+  * **Inferencia Incremental y Alertas (`inference_pipeline.py`):** Selección incremental de reseñas en `sanitized_reviews_tds` sin predicción vigente, upsert mediante tabla temporal + `MERGE` hacia las 15 columnas de `delora_predictions` y publicación de `IncidentAlertMessage` en `voc-incident-alerts-topic`[cite: 13, 23, 24].
 
 ---
 
-### EPIC-6: Exposición, Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps
+### EPIC-6: Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps
 
-* **Objetivo Técnico:** Construir la capa de consumo e interpretabilidad (`services/api-backend/` y `web/hitl-portal/`) para que Product Owners y Program Managers ejecuten el protocolo **Human-In-The-Loop (HITL)**, junto con el monitoreo de *Drift* y la documentación normativa de BBVA.
+* **Estado:** **PENDIENTE** (Especificación técnica actualizada a contratos v2).
+* **Objetivo Técnico:** Construir la capa de exposición e interpretabilidad (`services/api-backend/` y `web/hitl-portal/`) para consulta del *Satisfaction Gap*, búsqueda vectorial de causa raíz, explicabilidad local (**SHAP / LIME**) y ejecución del protocolo **Human-In-The-Loop (HITL)**, junto con el monitoreo estadístico de *Drift* y los artefactos normativos de BBVA[cite: 8, 11, 16, 17, 18, 27].
 * **Alcance y Componentes:**
-  * **Backend FastAPI (`services/api-backend/`):** Endpoints RESTful para:
-    * Consulta del *Satisfaction Gap* (Rating Oficial vs. TNSS) por versión de app y comparativa frente a competidores (Nubank, Santander, Azteca, Banorte).
-    * Búsqueda semántica de causa raíz conectada a **Vertex AI Vector Search**.
-    * Servicio de explicabilidad local (**SHAP / LIME**) que devuelve mapas de atribución de tokens sobre reseñas individuales.
-    * Gestión de la cola de triaje HITL (aprobar, reclasificar o escalar incidencias de alta entropía al backlog de ingeniería).
-  * **Frontend React SPA (`web/hitl-portal/`):** Dashboard interactivo con visualización de series de tiempo de *Concept Drift* entre versiones, explorador vectorial de quejas, visor de atribuciones SHAP/LIME y bandeja de validación humana HITL.
-  * **MLOps y Gobernanza (`drift_monitor.py` y `docs/governance/`):** Configuración de **Vertex AI Model Monitoring** para detección de *Data Drift* y *Concept Drift* (con disparo de *Fallback Plan* vía Pub/Sub), y redacción completa de la **Data Card**, **Model Card** y **Matriz Ethical FMEA**.
-* **Entregable Clave:** API en FastAPI y SPA en React contenerizadas y desplegadas en Cloud Run, monitoreo activo de *Drift* y artefactos de gobernanza listos para auditoría de QA y Compliance.
+  * **API Backend y Búsqueda Vectorial (`services/api-backend/`):** Endpoints RESTful en FastAPI conectados a BigQuery para métricas del *Satisfaction Gap* (BBVA vs. `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), series de tiempo de quejas por `version_app`, ranking de backlog y búsqueda semántica por distancia coseno sobre `embedding_vector` (768-d) en BigQuery [con soporte condicional para Vertex AI Vector Search](cite: 5, 8, 10, 11, 24, 27).
+  * **Explicabilidad Local y Bitácora HITL (`explainability.py`, `hitl_service.py`):** Motor ligero de atribución por perturbación/oclusión de tokens (LIME / SHAP contrastivo compatible con `1 vCPU / 1 GiB RAM` en Cloud Run) y servicio de validación humana que persiste decisiones inmutables `HitlTriageAuditRecord` en `bbva_voc_tds.hitl_triage_audit_log` hasheando el correo del revisor con SHA-256[cite: 8, 17, 20, 23, 24, 27].
+  * **Portal Interactivo React SPA (`web/hitl-portal/`):** Interfaz con paleta institucional (`#002D72`, `#215347`, `#7A1A37`, `#B9975B`) integrada por `SatisfactionGapDashboard`, `VectorRootCauseExplorer` (con visor de calor de atribuciones por palabra) y `HitlTriageQueue`[cite: 2, 8, 11, 27].
+  * **Monitoreo de Drift y Gobernanza (`drift_monitor.py`, `docs/governance/`):** Cálculo de *Data Drift* (PSI/JSD) y *Concept Drift* entre versiones de la app con alerta hacia `voc-incident-alerts-topic` para activar el *Fallback Plan*, y entrega formal de la **Data Card**, **Model Card** y **Matriz Ethical FMEA**[cite: 8, 14, 15, 16, 17, 18, 27].
