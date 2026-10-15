@@ -10,7 +10,11 @@ import pulumi
 import pytest
 from voc_common import IngestionRunAudit, Settings
 
-from infra.tests.conftest import InfrastructureMonitor, unwrap_outputs
+from infra.tests.conftest import (
+    WORKLOAD_CONFIG,
+    InfrastructureMonitor,
+    unwrap_outputs,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -37,6 +41,7 @@ def test_ingestion_audit_schema_storage_and_consumer_wiring(
                 "bbva-voc-infra:environment": environment,
                 "bbva-voc-infra:enable_cmek": str(cmek).lower(),
                 "bbva-voc-infra:user_hash_salt": "fixture-only-salt-1234567890",
+                **WORKLOAD_CONFIG,
             }
         )
         with patch("pulumi.export", side_effect=capture):

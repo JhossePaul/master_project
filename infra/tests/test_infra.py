@@ -9,6 +9,7 @@ import pulumi
 import pytest
 
 from infra.tests.conftest import (
+    WORKLOAD_CONFIG,
     InfrastructureMonitor,
     assert_acyclic,
     unwrap_outputs,
@@ -26,6 +27,7 @@ def dev_stack(
                 "gcp:project": "test-voc-project",
                 "gcp:region": "us-central1",
                 "bbva-voc-infra:environment": "dev",
+                **WORKLOAD_CONFIG,
                 # Se omiten flags: la aceptación verifica defaults Free Tier.
             }
         )

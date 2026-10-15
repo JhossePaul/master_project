@@ -1,0 +1,16 @@
+# Contexto subido por `gcloud builds submit` (ver cloudbuild.yaml).
+.git
+.gitignore
+.github/
+.venv/
+**/__pycache__/
+**/.pytest_cache/
+.ruff_cache/
+.coverage
+web/node_modules/
+infra/
+docs/
+experiments/
+.env
+.env.*
+!.env.example

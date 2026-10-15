@@ -6,9 +6,14 @@ config:
   bbva-voc-infra:enable_cmek: false
   bbva-voc-infra:enable_vpc_sc: false
   bbva-voc-infra:enable_dedicated_vertex_endpoints: false
-  bbva-voc-infra:ingestion_worker_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/ingestion-worker:latest"
-  bbva-voc-infra:sanitization_job_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/sanitization-pipeline:latest"
-  bbva-voc-infra:api_backend_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/api-backend:latest"
+  # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
+  # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
+  # por digest; ver docs/deployment.md. Requeridas en fase 2:
+  #   bbva-voc-infra:ingestion_worker_image: "<registry>/ingestion-worker:<sha>@sha256:<digest>"
+  #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
+  # Opcional (sin ella no se crea voc-api-backend):
+  #   bbva-voc-infra:api_backend_image: "<registry>/api-backend:<sha>@sha256:<digest>"
+  bbva-voc-infra:deploy_workloads: false
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
   bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"

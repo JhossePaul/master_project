@@ -21,7 +21,11 @@ def create_scheduler_jobs(
     project_id: str | None = None,
     api_deps: list[pulumi.Resource] | None = None,
 ) -> list[gcp.cloudscheduler.Job]:
-    """Crea dos jobs en Free Tier; fuera de él cinco bancos y sanitización."""
+    """Crea dos jobs en Free Tier; fuera de él cinco bancos y sanitización.
+
+    Solo se invoca en la fase 2 (``deploy_workloads``): sin Cloud Run no hay
+    destino que invocar y los crons fallarían en cada disparo.
+    """
     project = project_id or pulumi.Config("gcp").require("project")
     opts = pulumi.ResourceOptions(depends_on=api_deps or [])
     jobs: list[gcp.cloudscheduler.Job] = []

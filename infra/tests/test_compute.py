@@ -16,6 +16,10 @@ from voc_common.config import DEV_USER_HASH_SALT
 
 from infra.modules.cloud_run import _validate_hash_salt
 from infra.tests.conftest import (
+    API_BACKEND_IMAGE,
+    INGESTION_IMAGE,
+    SANITIZATION_IMAGE,
+    WORKLOAD_CONFIG,
     InfrastructureMonitor,
 )
 from infra.tests.conftest import (
@@ -38,11 +42,7 @@ def test_compute_and_scheduler_modes(
                 "bbva-voc-infra:enable_dedicated_vertex_endpoints": str(
                     vertex
                 ).lower(),
-                "bbva-voc-infra:ingestion_worker_image": "example/ingestion:v1",
-                "bbva-voc-infra:sanitization_job_image": (
-                    "example/sanitization:v1"
-                ),
-                "bbva-voc-infra:api_backend_image": "example/backend:v1",
+                **WORKLOAD_CONFIG,
                 "bbva-voc-infra:scraper_proxy_pool_urls": '["http://proxy:8080"]',
                 "bbva-voc-infra:user_hash_salt": "test-salt-1234567890",
             },
@@ -58,8 +58,8 @@ def test_compute_and_scheduler_modes(
     by_name = {r.urn.rsplit("::", 1)[-1]: r for r in registrations}
     states = {name: _unwrap(r.state) for name, r in by_name.items()}
     for name, account, image in (
-        ("voc-ingestion-worker", "voc-sa-ingestion", "example/ingestion:v1"),
-        ("voc-api-backend", "voc-sa-ml-backend", "example/backend:v1"),
+        ("voc-ingestion-worker", "voc-sa-ingestion", INGESTION_IMAGE),
+        ("voc-api-backend", "voc-sa-ml-backend", API_BACKEND_IMAGE),
     ):
         template = states[name]["template"]
         assert template["executionEnvironment"] == "EXECUTION_ENVIRONMENT_GEN2"
@@ -103,7 +103,7 @@ def test_compute_and_scheduler_modes(
         == "voc-sa-sanitization@test-voc-project.iam.gserviceaccount.com"
     )
     sanitizer = task["containers"][0]
-    assert sanitizer["image"] == "example/sanitization:v1"
+    assert sanitizer["image"] == SANITIZATION_IMAGE
     env = {e["name"]: e["value"] for e in sanitizer["envs"]}
     assert env["USER_HASH_SALT"] == "test-salt-1234567890"
     assert env["BEAM_RUNNER"] == "DirectRunner"
