@@ -704,16 +704,39 @@ def test_main_runs_registered_modes_end_to_end(monkeypatch, capsys, settings):
     assert code == orch.EX_OK
 
 
-def test_build_services_uses_settings(monkeypatch, settings):
-    from google.cloud import bigquery, pubsub_v1, storage
+def anonymous_gcs(monkeypatch):
+    """Cliente de GCS falso sin credenciales reales; captura su sesión HTTP."""
+    import google.auth
+    from google.auth.credentials import AnonymousCredentials
+    from google.cloud import storage
 
-    monkeypatch.setattr(storage, "Client", lambda **_: FakeStorage())
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(
+        google.auth, "default", lambda **_: (AnonymousCredentials(), "p")
+    )
+
+    class FakeClient:
+        SCOPE = storage.Client.SCOPE
+
+        def __new__(cls, **kwargs):
+            captured.update(kwargs)
+            return FakeStorage()
+
+    monkeypatch.setattr(storage, "Client", FakeClient)
+    return captured
+
+
+def test_build_services_uses_settings(monkeypatch, settings):
+    from google.cloud import bigquery, pubsub_v1
+
+    anonymous_gcs(monkeypatch)
     monkeypatch.setattr(bigquery, "Client", lambda **_: Mock())
     monkeypatch.setattr(pubsub_v1, "SubscriberClient", Mock)
     loaded = settings(bq_sanitized_tds_table="custom_tds")
     services = orch.build_services(
         loaded, SanitizationExecutionConfig(), PARENT
     )
+    assert services.ledger.io_workers == 16
     assert services.subscription == (
         "projects/test-project/subscriptions/voc-raw-reviews-sub"
     )
@@ -871,3 +894,28 @@ def test_replay_skips_a_bank_with_unreadable_state_and_flags_the_run(
         e for e in _events(capsys) if e["message"].startswith("Bank state")
     ]
     assert errors[0]["bank_id"] == "AZTECA" and errors[0]["severity"] == "ERROR"
+
+
+def test_gcs_pool_follows_the_io_workers(monkeypatch, settings):
+    from google.cloud import bigquery, pubsub_v1
+
+    captured = anonymous_gcs(monkeypatch)
+    monkeypatch.setattr(bigquery, "Client", lambda **_: Mock())
+    monkeypatch.setattr(pubsub_v1, "SubscriberClient", Mock)
+    services = orch.build_services(
+        settings(), SanitizationExecutionConfig(io_workers=32), PARENT
+    )
+    assert services.ledger.io_workers == 32
+    adapter = captured["_http"].get_adapter("https://storage.googleapis.com")
+    # Los hilos más un margen; el defecto de la biblioteca serían 10.
+    assert adapter._pool_maxsize == adapter._pool_connections == 36
+    assert captured["project"] == "test-project"
+
+
+@pytest.mark.parametrize(
+    ("workers", "pool"), [(1, 10), (6, 10), (8, 12), (16, 20), (64, 68)]
+)
+def test_pool_never_drops_below_the_library_default(workers, pool):
+    from sanitization_pipeline.config import gcs_pool_size
+
+    assert gcs_pool_size(workers) == pool

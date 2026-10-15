@@ -22,6 +22,17 @@ DLP_REQUEST_LIMIT_BYTES = 524_288
 PUBSUB_MAX_ACK_DEADLINE_SEC = 600
 # Máximo de mensajes por solicitud `pull`.
 PUBSUB_MAX_PULL_MESSAGES = 1000
+# Tope de hilos de E/S: con 1 vCPU, más hilos solo añaden cambios de contexto.
+MAX_IO_WORKERS = 64
+# El pool HTTP nunca baja de las 10 conexiones por host de la biblioteca.
+MIN_GCS_POOL_SIZE = 10
+# Margen sobre los hilos para el heartbeat y las llamadas fuera del ledger.
+GCS_POOL_HEADROOM = 4
+
+
+def gcs_pool_size(io_workers: int) -> int:
+    """Conexiones HTTP por host para que ningún hilo espere una conexión."""
+    return max(MIN_GCS_POOL_SIZE, io_workers + GCS_POOL_HEADROOM)
 
 
 class ExecutionMode(StrEnum):
@@ -54,6 +65,10 @@ class SanitizationExecutionConfig(BaseModel):
         default=600, ge=10, le=PUBSUB_MAX_ACK_DEADLINE_SEC
     )
     ack_renew_interval_sec: int = Field(default=180, gt=0)
+    # Hilos de E/S hacia GCS para el ledger. El pool HTTP del cliente se
+    # dimensiona a partir de este valor (ver `gcs_pool_size`). Medido con 8: la
+    # E/S del ledger fue el 68 % del tiempo (3 771 mensajes en 231 s).
+    io_workers: int = Field(default=16, ge=1, le=MAX_IO_WORKERS)
     dlp_max_rows: int = Field(default=250, gt=0)
     dlp_max_bytes: int = Field(
         default=400_000, gt=0, lt=DLP_REQUEST_LIMIT_BYTES

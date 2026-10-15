@@ -26,6 +26,7 @@ def test_defaults_are_valid_for_the_job_without_arguments():
     assert config.ack_renew_interval_sec < config.ack_deadline_sec == 600
     assert config.dlp_max_bytes < DLP_REQUEST_LIMIT_BYTES
     assert config.use_cloud_dlp_api is False
+    assert config.io_workers == 16
 
 
 def test_container_timeout_matches_pulumi_job():
@@ -39,11 +40,14 @@ def test_environment_and_flags_precedence():
     environ = {
         "SANITIZATION_MAX_MESSAGES": "500",
         "SANITIZATION_MICROBATCH_SIZE": "100",
+        "SANITIZATION_IO_WORKERS": "32",
         "SANITIZATION_USE_CLOUD_DLP_API": "false",
         "SANITIZATION_EXECUTION_MODE": " ",
         "UNRELATED": "x",
     }
     config = load_config(["--microbatch-size", "50"], environ)
+    assert config.io_workers == 32
+    assert load_config(["--io-workers", "24"], environ).io_workers == 24
     assert config.max_messages == 500
     assert config.microbatch_size == 50
     assert config.use_cloud_dlp_api is False
@@ -60,6 +64,8 @@ def test_environment_and_flags_precedence():
     [
         {"max_messages": 0},
         {"microbatch_size": 1001},
+        {"io_workers": 0},
+        {"io_workers": 65},
         {"max_messages": 100, "microbatch_size": 101},
         {"max_runtime_sec": 1600},
         {"ack_deadline_sec": 601},

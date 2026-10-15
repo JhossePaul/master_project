@@ -42,6 +42,7 @@ from sanitization_pipeline.bq_writer import (
 )
 from sanitization_pipeline.config import (
     SanitizationExecutionConfig,
+    gcs_pool_size,
     in_process_runner,
 )
 from sanitization_pipeline.dlp_transforms import (
@@ -688,12 +689,36 @@ def subscription_path(settings: Settings) -> str:
     return f"projects/{settings.gcp_project_id}/subscriptions/{name}"
 
 
+def gcs_client(project: str, pool_size: int) -> Any:
+    """Cliente de GCS con un pool HTTP del tamaño que piden los hilos.
+
+    Por defecto la biblioteca usa 10 conexiones por host: con más hilos, las
+    conexiones sobrantes se abren y se descartan en cada solicitud.
+    """
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+    from google.cloud import storage
+    from requests.adapters import HTTPAdapter
+
+    credentials, _ = google.auth.default(scopes=storage.Client.SCOPE)
+    session = AuthorizedSession(credentials)
+    session.mount(
+        "https://",
+        HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size),
+    )
+    return storage.Client(
+        project=project, credentials=credentials, _http=session
+    )
+
+
 def build_services(
     settings: Settings, config: SanitizationExecutionConfig, parent: str
 ) -> Services:
-    from google.cloud import bigquery, pubsub_v1, storage
+    from google.cloud import bigquery, pubsub_v1
 
-    client = storage.Client(project=settings.gcp_project_id)
+    client = gcs_client(
+        settings.gcp_project_id, gcs_pool_size(config.io_workers)
+    )
     layout = IngestionStorageLayout.model_validate(
         {k: getattr(settings, k) for k in IngestionStorageLayout.model_fields}
     )
@@ -701,7 +726,11 @@ def build_services(
         client, settings.gcs_raw_datalake_bucket, layout=layout
     )
     ledger = ProcessingLedgerRepository(
-        client, settings.gcs_raw_datalake_bucket, ingestion, layout=layout
+        client,
+        settings.gcs_raw_datalake_bucket,
+        ingestion,
+        layout=layout,
+        io_workers=config.io_workers,
     )
     upsert = BigQueryTdsUpsertManager(
         bigquery.Client(project=settings.gcp_project_id),

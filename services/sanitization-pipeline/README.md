@@ -38,6 +38,7 @@ producción. Precedencia: default < variable `SANITIZATION_<CAMPO>` < flag.
 | --- | --- | --- |
 | `--execution-mode` | `BATCH_PULL_SERVERLESS` | `GCS_BACKFILL_MANIFESTS`; `DATAFLOW_MANAGED` se rechaza sin Dataflow aprovisionado |
 | `--max-messages` | 20000 | Tope de mensajes por corrida; el límite real es `--max-runtime-sec` (un microbatch nuevo solo arranca si el anterior, con margen de 1.25x, cabe en el presupuesto) |
+| `--io-workers` | 16 | Hilos de E/S hacia GCS para el ledger (1 a 64); el pool HTTP del cliente se dimensiona como `max(10, hilos + 4)` |
 | `--microbatch-size` | 1000 | `<= max_messages`, máximo 1000 (límite de `pull` de Pub/Sub) |
 | `--max-runtime-sec` / `--checkpoint-margin-sec` | 1500 / 300 | Suma `<= --container-timeout-sec` (1800, igual al Job) |
 | `--ack-deadline-sec` / `--ack-renew-interval-sec` | 600 / 180 | Renovación antes del vencimiento; máximo de Pub/Sub 600 |
