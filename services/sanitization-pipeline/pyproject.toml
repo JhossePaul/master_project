@@ -1,0 +1,29 @@
+[project]
+name = "sanitization-pipeline"
+version = "0.1.0"
+description = "Pipeline Apache Beam / Cloud DLP para sanitizacion activa de PII, cobertura TDS y emision de recibos v2"
+requires-python = ">=3.11"
+dependencies = [
+    # Núcleo: DirectRunner y TestPipeline (decisión D3 de EPIC-4).
+    "apache-beam>=2.55,<3",
+    "google-cloud-dlp>=3.16,<4",
+    "google-cloud-pubsub>=2.23,<3",
+    "google-cloud-bigquery>=3.27,<4",
+    "google-cloud-storage>=2.19,<4",
+    "tenacity>=9,<10",
+    "pydantic>=2.6,<3",
+    "voc-common",
+    # Solo lectura del estado de ingesta (decisión D2 de EPIC-4).
+    "ingestion-worker",
+]
+
+# Sin extra [gcp]: uv resuelve todos los extras en uv.lock y ese extra cambia
+# versiones compartidas. Se añadirá al aprovisionar Dataflow (DATAFLOW_MANAGED).
+
+[tool.uv.sources]
+voc-common = { workspace = true }
+ingestion-worker = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,6 +1,6 @@
 # EPIC-4: Sanitización PII, Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** Pendiente. Especificación revisada el 2026-10-15 contra el código de EPIC-1–3 y la infraestructura de EPIC-2; decisiones D1–D3 resueltas; lista para implementar la feature 4.1.
+* **Estado:** En implementación. Feature 4.1 implementada; features 4.2–4.5 pendientes. Especificación revisada el 2026-10-15 contra EPIC-1–3 y EPIC-2; decisiones D1–D3 resueltas.
 * **Semanas Objetivo:** Semanas 3 - 4
 * **Dependencias:** `EPIC-1` (Features 1.1–1.8 implementadas), `EPIC-2` (Features 2.1–2.10 implementadas) y `EPIC-3` (Features 3.1–3.5 implementadas: `RawReviewEnvelope`, `PageManifest`, capturas JSONL.gz en `raw_staging/`, `WatermarkRepository`, `BacklogSignal` e imagen del worker).
 * **Directorios Afectados:**
@@ -15,7 +15,7 @@
   * `services/sanitization-pipeline/src/sanitization_pipeline/processing_ledger.py`
   * `services/sanitization-pipeline/src/sanitization_pipeline/pipeline.py`
   * `services/sanitization-pipeline/tests/__init__.py`
-  * `services/sanitization-pipeline/tests/test_config.py`
+  * `services/sanitization-pipeline/tests/test_execution_config.py` y `conftest.py`
   * `services/sanitization-pipeline/tests/test_dlp_transforms.py`
   * `services/sanitization-pipeline/tests/test_bq_writer_and_ledger.py`
   * `services/sanitization-pipeline/tests/test_pipeline.py`
@@ -71,6 +71,22 @@ El Agente IA **DEBE** respetar las siguientes restricciones de acoplamiento con 
 
 **Objetivo:** Integrar `sanitization-pipeline` al workspace de `uv` sin alterar versiones compartidas, definir la configuración de ejecución validada y la interfaz CLI con presupuestos acotados, y dejar CI y la imagen preparados para las features siguientes.
 
+**Estado: IMPLEMENTADA.** Paquete en el workspace; `uv.lock` añade 18 paquetes
+(Apache Beam 2.77.0 núcleo, `google-cloud-dlp` y sus dependencias) **sin cambiar
+ninguna versión compartida**. `config.py` define `SanitizationExecutionConfig`,
+`load_config` (default < `SANITIZATION_*` < flag) y `preflight` (*fail-closed*);
+`pipeline.py` es el entrypoint con códigos de salida 0/64/70/75 y un registro
+de modos vacío hasta 4.4, de modo que el Job termina con 70 sin hacer pull ni
+escribir. CI ejecuta la suite con cobertura >=85% y `.dockerignore` admite las
+rutas del servicio. La imagen de ingesta se volvió a construir con el nuevo
+miembro del workspace.
+Desviación: el extra `dataflow = ["apache-beam[gcp]"]` **no** se declara. uv
+resuelve todos los extras en `uv.lock`, y declararlo añadía 57 paquetes y bajaba
+`tenacity` 9.2.1 → 9.1.4 aunque no se instale. Se añadirá con el
+aprovisionamiento de Dataflow.
+Validación: 26 tests del paquete (100% de cobertura de líneas); Ruff, formato,
+Pyrefly y Bandit sin errores. Sin llamadas reales a DLP, Pub/Sub ni BigQuery.
+
 **Evidencia de resolución (sondeo local del 2026-10-15 sobre una copia del workspace, sin modificar `uv.lock`):**
 
 | Variante | Paquetes nuevos | Cambios en versiones compartidas |
@@ -103,9 +119,8 @@ dependencies = [
     "ingestion-worker",
 ]
 
-[project.optional-dependencies]
-# Solo para DATAFLOW_MANAGED; no se instala en la imagen del Job.
-dataflow = ["apache-beam[gcp]>=2.55,<3"]
+# Sin extra [gcp]: uv lo resolvería en uv.lock y cambiaría versiones
+# compartidas. Se añadirá al aprovisionar Dataflow (DATAFLOW_MANAGED).
 
 [tool.uv.sources]
 voc-common = { workspace = true }
@@ -296,7 +311,7 @@ La suite debe cubrir obligatoriamente estos escenarios:
 
 * **D1 — Orden de revisiones en el `MERGE`: columna `source_observed_at` añadida ya.** `SanitizedReviewRecord` (voc-common), el esquema `_SANITIZED` de `infra/modules/storage_bq.py`, la fixture `sanitized_envelope_v2.json` y las pruebas de ambos paquetes se actualizaron antes del primer despliegue (no hay datos que migrar). El `MERGE` ordena por `(fecha, source_observed_at)`.
 * **D2 — Lectura del estado de la ingesta: dependencia de `ingestion-worker` solo para lectura.** Sin lease ni escrituras en la raíz o en manifiestos; la única modificación en ese paquete es exponer la lectura pública de capturas (4.4).
-* **D3 — Beam en el Job: núcleo de `apache-beam` con `DirectRunner`.** El extra `[gcp]` queda en `[project.optional-dependencies].dataflow` para `DATAFLOW_MANAGED`, que permanece deshabilitado hasta aprovisionar Dataflow.
+* **D3 — Beam en el Job: núcleo de `apache-beam` con `DirectRunner`.** El extra `[gcp]` no se declara todavía (ver estado de 4.1); `DATAFLOW_MANAGED` permanece rechazado por el preflight hasta aprovisionar Dataflow.
 
 ---
 

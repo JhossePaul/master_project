@@ -65,6 +65,11 @@ jobs:
           uv run --frozen pytest services/ingestion-worker/tests
           --cov=ingestion_worker --cov-fail-under=85
 
+      - name: Sanitization pipeline
+        run: >-
+          uv run --frozen pytest services/sanitization-pipeline/tests
+          --cov=sanitization_pipeline --cov-fail-under=85
+
   ingestion-image:
     # Valida que la imagen del worker construye; la publicación es del CD.
     runs-on: ubuntu-latest
