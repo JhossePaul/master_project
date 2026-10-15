@@ -124,8 +124,10 @@ def test_complete_infrastructure_matrix(
             env["BQ_INGESTION_RUNS_LOG_TABLE"]
             == resolved["bq_ingestion_runs_log_table"]
         )
+        # El preflight del Job de sanitización exige el flag (lee el estado de
+        # la ingesta); sin él termina con código 64.
+        assert env["INGESTION_V2_ENABLED"] == "false"
         if name != "voc-sanitization-job":
-            assert env["INGESTION_V2_ENABLED"] == "false"
             settings = Settings(
                 _env_file=None, **{k.lower(): v for k, v in env.items()}
             )
