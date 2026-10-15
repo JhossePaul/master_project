@@ -1501,3 +1501,89 @@ def test_prepare_plan_and_stream_selection_guards():
         ExtractionStatus.RECOVERY_REQUIRED,
         "no_open_plan",
     )
+
+
+# ------------------------------------------------ logs estructurados
+def _events(capsys) -> list[dict[str, Any]]:
+    lines = capsys.readouterr().out.splitlines()
+    return [json.loads(line) for line in lines if line.startswith("{")]
+
+
+def test_successful_run_logs_lifecycle_requests_and_publication(capsys):
+    h = Harness(ten_days())
+    result = h.run()
+    events = _events(capsys)
+    messages = [e["message"] for e in events]
+    assert messages[0] == "Ingestion run started"
+    assert messages[-1] == "Ingestion run finished"
+    assert "Lease acquired" in messages
+    for event in events:
+        assert event["run_id"] == result.run_id
+        assert event["bank_id"] == "BBVA" and event["mode"] == "INCREMENTAL"
+    requests = [e for e in events if e["message"] == "Play Store request"]
+    assert len(requests) == result.requests == 5
+    assert [r["request_number"] for r in requests] == [1, 2, 3, 4, 5]
+    assert all(r["outcome"] == "ok" and r["latency_ms"] >= 0 for r in requests)
+    assert all(r["rows"] > 0 and r["response_bytes"] > 0 for r in requests)
+    published = [e for e in events if e["message"] == "Page published"]
+    assert len(published) == result.pages_committed
+    assert sum(p["reviews"] for p in published) == result.reviews_published
+    finished = events[-1]
+    assert finished["severity"] == "INFO"
+    assert finished["status"] == "TARGET_REACHED"
+    assert finished["requests"] == 5 and finished["audit_recorded"] is True
+
+
+def test_logs_never_carry_review_text_or_cursors(capsys):
+    marked = [
+        Review(r.id, r.ts, r.score, "Ana Pérez no puede entrar")
+        for r in ten_days()
+    ]
+    h = Harness(marked)
+    result = h.run()
+    assert result.requests > 1  # hubo cursores de paginación en juego
+    dumped = capsys.readouterr().out
+    assert dumped
+    assert "Ana" not in dumped and "Pérez" not in dumped
+    assert "tok-" not in dumped
+
+
+@pytest.mark.parametrize(
+    ("errors", "outcome", "severity"),
+    [
+        ([RateLimitedError(7.0), None], "rate_limited", "WARNING"),
+        ([TransportError("busy", 503), None], "transport_error", "WARNING"),
+        ([ProtocolError("html")], "protocol_shape", "ERROR"),
+    ],
+)
+def test_failed_requests_are_logged_with_their_outcome(
+    capsys, errors, outcome, severity
+):
+    h = Harness(year_and_half())
+    h.source.errors = list(errors)
+    h.run(IngestionMode.FULL_BACKFILL)
+    events = _events(capsys)
+    failed = [
+        e
+        for e in events
+        if e["message"] == "Play Store request" and e["outcome"] == outcome
+    ]
+    assert failed and failed[0]["severity"] == severity
+    if outcome == "rate_limited":
+        assert failed[0]["retry_after_sec"] == 7.0
+    if outcome == "transport_error":
+        assert failed[0]["status_code"] == 503
+    if outcome == "protocol_shape":
+        assert events[-1]["severity"] == "WARNING"
+        assert events[-1]["reason"] == "protocol_shape"
+
+
+def test_lease_conflict_is_logged_as_warning(capsys):
+    h = Harness(ten_days())
+    h.repo.acquire_lease(BANK, "other-run")
+    result = h.run()
+    events = _events(capsys)
+    assert result.status == ExtractionStatus.LEASE_CONFLICT
+    assert events[-1]["message"] == "Ingestion run finished"
+    assert events[-1]["severity"] == "WARNING"
+    assert events[-1]["status"] == "LEASE_CONFLICT"
