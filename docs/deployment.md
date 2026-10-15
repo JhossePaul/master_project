@@ -484,6 +484,25 @@ estado»), `gh` autenticado y el entorno `.venv` sincronizado.
    ejecución continúa el plan y se detiene en su presupuesto (1000
    solicitudes, 200 MB o 3480 s). Hay que relanzar hasta completarlo.
 
+### Corregir el ID de aplicación de un banco
+
+El estado de cada banco guarda el `app_id` con el que se creó, y al leerlo se
+valida contra `PLAYSTORE_BANK_APPS`. Si se corrige un ID, el estado anterior
+queda inválido (`app_id does not match bank_id`) y rompe cualquier lectura de
+ese banco. Si el banco aún no ingirió datos (0 capturas en `raw_staging/`),
+basta borrar su estado; de lo contrario hay que migrarlo con cuidado. Ejemplo
+para AZTECA, tras comprobar con `gcloud storage ls -r` que no hay capturas:
+
+```bash
+B=gs://voc-datalake-project-7bafd424-a385-4c05-b5b
+gcloud storage rm -r "$B/state/ingestion/AZTECA/" "$B/state/ingestion/ledgers/AZTECA/" "$B/state/watermarks/AZTECA.json"
+```
+
+Un banco con estado ilegible ya no frena a los demás: `/api/v1/ingest/all`
+sigue con el resto y responde 500 (`status: ERROR` por banco), y el replay de
+sanitización lo omite, lo registra como `Bank state unreadable` y termina con
+código 75.
+
 ### Logs estructurados y cómo consultarlos
 
 Ingesta y sanitización escriben **un evento JSON por unidad de trabajo, nunca

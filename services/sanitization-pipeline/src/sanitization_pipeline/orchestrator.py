@@ -338,6 +338,8 @@ class RunReport:
     bigquery_jobs: int = 0
     stop_reason: str = "drained"
     transient_failure: bool = False
+    # Bancos cuyo estado de ingesta no se pudo leer en el replay.
+    bank_errors: dict[str, str] = field(default_factory=dict)
     elapsed_sec: float = 0.0
     # Segundos acumulados por fase; permite ver dónde se va el tiempo.
     phase_seconds: dict[str, float] = field(default_factory=dict)
@@ -361,7 +363,9 @@ class RunReport:
             self.pages[status] = self.pages.get(status, 0) + count
 
     def exit_code(self) -> int:
-        failed = self.transient_failure or self.events_retryable
+        failed = (
+            self.transient_failure or self.events_retryable or self.bank_errors
+        )
         return EX_TEMPFAIL if failed else EX_OK
 
 
@@ -612,7 +616,20 @@ class ManifestBackfill:
     def _replay(self, report: RunReport, started: float) -> None:
         ledger = self.processor.ledger
         for bank in self.banks:
-            for manifest in _latest_manifests(self.ingestion, bank):
+            try:
+                manifests = _latest_manifests(self.ingestion, bank)
+            except (ValueError, IntegrityError, LedgerError) as exc:
+                # El estado ilegible de un banco no debe frenar a los demás.
+                report.bank_errors[bank.value] = type(exc).__name__
+                log_json(
+                    "ERROR",
+                    "Bank state unreadable; skipping bank",
+                    run_id=report.run_id,
+                    bank_id=bank.value,
+                    error=type(exc).__name__,
+                )
+                continue
+            for manifest in manifests:
                 if report.messages >= self.config.max_messages:
                     report.stop_reason = "message_budget"
                     return

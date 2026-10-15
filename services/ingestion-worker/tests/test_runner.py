@@ -1587,3 +1587,40 @@ def test_lease_conflict_is_logged_as_warning(capsys):
     assert events[-1]["message"] == "Ingestion run finished"
     assert events[-1]["severity"] == "WARNING"
     assert events[-1]["status"] == "LEASE_CONFLICT"
+
+
+def test_sequential_endpoint_isolates_a_bank_with_unreadable_state(
+    monkeypatch, capsys
+):
+    from ingestion_worker import main
+
+    h = Harness(ten_days())
+    app, _ = api(h)
+    original = main._incremental
+
+    async def flaky(rt, bank, *args, **kwargs):
+        if bank.value == "NUBANK":
+            raise ValueError("app_id does not match bank_id")
+        return await original(rt, bank, *args, **kwargs)
+
+    monkeypatch.setattr(main, "_incremental", flaky)
+    response = call(
+        app,
+        "POST",
+        "/api/v1/ingest/all",
+        {"banks": ["NUBANK", "BBVA"], "inter_bank_delay_sec": 1},
+    )
+    # El cron ve el fallo (500) pero BBVA corrió después del banco roto.
+    assert response.status_code == 500
+    first, second = response.json()["results"]
+    assert first == {
+        "bank_id": "NUBANK",
+        "status": "ERROR",
+        "error": "ValueError",
+    }
+    assert second["bank_id"] == "BBVA" and second["status"] == "TARGET_REACHED"
+    failure = [e for e in _events(capsys) if e["message"] == "Bank run failed"]
+    assert (
+        failure[0]["bank_id"] == "NUBANK" and failure[0]["severity"] == "ERROR"
+    )
+    assert "app_id" not in json.dumps(failure)  # solo el tipo de error
