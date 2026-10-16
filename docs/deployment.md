@@ -593,6 +593,36 @@ página en lugar de un recibo por evento.
   limitación (`RateLimitedError`) o con una página distinta, la primera corrida
   lo mostrará en los logs y en la auditoría.
 
+## Desplegar nuevas imágenes de los workers
+
+Las dos imágenes (`ingestion-worker` y `sanitization-pipeline`) comparten
+código (`ingestion_worker` va dentro de la de sanitización), así que **siempre
+se despliegan juntas y con el mismo SHA**. El 2026-10-16 se actualizó solo la de
+ingesta y las páginas finales de los cinco bancos se cerraron con hueco (F-08).
+`tools/deploy_images.py` lo hace en un paso y se niega a mezclar versiones:
+
+```bash
+uv run python tools/deploy_images.py --project <proyecto>            # preview
+uv run python tools/deploy_images.py --project <proyecto> --apply    # + pulumi up
+uv run python tools/deploy_images.py --project <proyecto> --sha <40 hex>
+```
+
+1. Lee en Artifact Registry las dos imágenes y elige el SHA más reciente que
+   existe en **ambas** (o el de `--sha`; falla si falta en alguna). Solo cuentan
+   digests `sha256:` y tags de 40 hex; `latest` se ignora.
+2. Fija `ingestion_worker_image` y `sanitization_job_image` con
+   `<registro>/<imagen>:<sha>@<digest>` (`pulumi config set`; esto modifica
+   `infra/Pulumi.dev.yaml` aunque no uses `--apply`).
+3. Muestra `pulumi preview --diff`. Con `--apply` ejecuta `pulumi up` solo si el
+   preview no borra ni reemplaza recursos; si lo hace, se detiene.
+4. No hace commit: versiona `infra/Pulumi.dev.yaml` en un commit aparte
+   ("Actualiza las imágenes desplegadas a <sha>").
+
+Se fija por digest y no por `latest` porque Pulumi despliega por diferencias:
+un tag mutable no cambia en el texto y no dispara una revisión nueva (el código
+de `infra/modules/cloud_run.py` lo rechaza), y el digest deja trazable qué
+código produjo cada dato.
+
 ## Orden de activación (resumen y verificaciones)
 
 1. Aplicar la fase 1 y configurar la identidad de CI.
