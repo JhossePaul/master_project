@@ -13,7 +13,7 @@ config:
   #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
   # Opcional (sin ella no se crea voc-api-backend):
   #   bbva-voc-infra:api_backend_image: "<registry>/api-backend:<sha>@sha256:<digest>"
-  bbva-voc-infra:deploy_workloads: "false"
+  bbva-voc-infra:deploy_workloads: "true"
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
   bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"
@@ -22,7 +22,7 @@ config:
   bbva-voc-infra:gcs_ingestion_ledgers_prefix: "state/ingestion/ledgers"
   bbva-voc-infra:gcs_processing_receipts_prefix: "state/ingestion/receipts"
   # Ingesta v2 se activa cuando imagen/entrypoint y API de EPIC-3 estén listos.
-  bbva-voc-infra:ingestion_v2_enabled: "false"
+  bbva-voc-infra:ingestion_v2_enabled: "true"
   bbva-voc-infra:ingestion_execution:
     ingestion_max_requests: 100
     ingestion_max_response_bytes: 20000000
@@ -47,5 +47,7 @@ config:
     secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
   gcp:userProjectOverride: "true"
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
+  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:2d65425541d60c8b92abeb48086fbbd46e16baac@sha256:c00497f432a148186d2390021794e83b8dae062db6adbc2711cd96d4fa56a139
+  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:2d65425541d60c8b92abeb48086fbbd46e16baac@sha256:9169a771d75ec14a3ae0de9ace741f67def5b916d0f3c1c1cb013f9b922d019b
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=
