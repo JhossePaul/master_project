@@ -19,7 +19,11 @@ from typing import Any
 
 import apache_beam as beam
 from google.api_core.exceptions import GoogleAPICallError
-from ingestion_worker.publisher import BackupUnavailable, read_committed_capture
+from ingestion_worker.publisher import (
+    BackupUnavailable,
+    CaptureUnreadable,
+    read_committed_capture,
+)
 from ingestion_worker.watermark_store import (
     IntegrityError,
     ObjectReference,
@@ -652,6 +656,17 @@ class ManifestBackfill:
                 key = (bank, manifest.stream_id, manifest.page_id)
                 try:
                     envelopes = read_committed_capture(self.ingestion, manifest)
+                except CaptureUnreadable:
+                    # Existe pero no se entiende: no cerrar como expirada.
+                    report.events_retryable += max(manifest.valid_count, 1)
+                    log_json(
+                        "ERROR",
+                        "Capture unreadable; page stays open",
+                        run_id=report.run_id,
+                        bank_id=bank.value,
+                        page_id=manifest.page_id,
+                    )
+                    continue
                 except BackupUnavailable:
                     report.expired_captures += 1
                     status = ledger.reconcile_page(*key, staging_expired=True)

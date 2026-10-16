@@ -72,6 +72,41 @@ Notas:
   esa última página y cierra el plan en `SOURCE_EXHAUSTED_OBSERVED`. El evento
   `protocol_shape` ahora trae `detail` con el motivo.
 
+## Resultado de la carga al TDS (2026-10-16)
+
+El replay rápido cargó **2 649 047 filas**, todas únicas por `(bank_id, id_resena)`:
+
+| Banco | Filas | Más antigua | Más reciente |
+| --- | ---: | --- | --- |
+| BBVA | 787 875 | 2011-04-01 | 2026-10-14 |
+| NUBANK | 128 204 | 2015-08-17 | 2026-10-14 |
+| SANTANDER | 623 594 | 2012-03-23 | 2026-10-14 |
+| AZTECA | 590 981 | 2017-03-30 | 2026-10-14 |
+| BANORTE | 518 393 | 2012-03-21 | 2026-10-14 |
+
+- **Ritmo del replay:** 351–573 msg/s en cuatro ejecuciones de 1 500 s
+  (865 k, 639 k, 590 k y 502 k mensajes). El ritmo bajó a lo largo de la carga;
+  causa sin determinar. Un replay sin trabajo (o con 5 páginas) tarda ~6 min solo
+  en leer manifiestos y cierres de los cinco bancos.
+- **Las páginas finales** (1 645 filas) se cerraron la primera vez como
+  `GAPS_DETECTED / STAGING_EXPIRED` sin estar expiradas: la imagen de
+  sanitización empaqueta `ingestion_worker` y seguía con el parser anterior,
+  que rechaza la página sin bloque de paginación. El cierre es irreversible (el
+  primero gana), así que hubo que desplegar la imagen nueva, **borrar esos cinco
+  objetos** `receipts/<BANCO>/_pages/<page_id>.json` y repetir el replay (1 645
+  filas, 5 páginas `RESOLVED`). **Lección:** al cambiar el parser de ingesta hay
+  que desplegar también la imagen de sanitización. Desde entonces una captura
+  que existe pero no se interpreta (`CaptureUnreadable`) deja la página abierta
+  y el Job sale con error, en vez de cerrarla como expirada.
+- **PII y vacíos:** 16 hallazgos de PII en total y 8 textos vacíos tras sanear;
+  sin revisar a fondo.
+- **NUBANK:** 5 reseñas de 2015, 20 de 2016, 12 de 2017, 23 de 2018 y 115 de
+  2019 anteceden al lanzamiento de Nu en México (~2019–2020). Son ~175 de 128 mil;
+  decidir en EPIC-5 si se filtran por fecha y confirmar el ID de aplicación y el
+  país (`hl`/`gl`) del banco.
+- **La reseña más reciente** de cada banco es del 2026-10-14 (la carga corrió
+  el 2026-10-15): el retraso de ~24 h sigue sin explicarse.
+
 ## Estimación (previa a la ingesta; ver resultados arriba)
 
 | | BBVA (788 k) | Total (~2.0 M) | Estado |
@@ -274,11 +309,24 @@ verificados, descartar el backlog moviendo la suscripción al presente:
 gcloud pubsub subscriptions seek voc-raw-reviews-sub --time="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --project project-7bafd424-a385-4c05-b5b
 ```
 
-**Esto descarta mensajes sin procesarlos: probarlo antes en dev** y hacerlo solo
-cuando el TDS contenga todas las páginas (comprobar con `drain` en modo normal
-que no queda nada nuevo que valga la pena, o con los conteos por banco). Es un
-paso **no verificado** de este plan. Si se hace con la ingesta todavía en curso,
-lo publicado después del `seek` sigue entrando a la cola normalmente.
+**Esto descarta mensajes sin procesarlos** y es un paso **no verificado**
+(el proyecto `dev` es el único entorno). Hacerlo solo cuando el TDS contenga
+todas las páginas. Lo publicado después del `seek` entra a la cola con
+normalidad.
+
+Procedimiento:
+
+1. *Antes:* la cola debe coincidir con lo ingerido. El 2026-10-16 tenía
+   **2 649 045** mensajes sin entregar y la DLQ 0 (métrica
+   `pubsub.googleapis.com/subscription/num_undelivered_messages`, filtrada por
+   `subscription_id`; solo lectura, **no** extraer mensajes: son crudos).
+2. `seek` a la hora actual (comando de arriba). Los mensajes publicados antes de
+   esa hora se marcan como entregados.
+3. *Después* (la métrica se actualiza en 1–2 min): `voc-raw-reviews-sub` en 0 y
+   la DLQ en 0. Si no baja, no reintentar a ciegas: revisar la suscripción.
+4. Hasta hacerlo, **no dejar activo** `voc-trigger-sanitization-daily`: drenaría
+   la cola por la ruta lenta, con recibos por evento. (El 2026-10-16 ambos
+   Schedulers seguían activos; los próximos disparos eran 14:00Z y 14:30Z).
 
 ## Etapa 4b: cerrar la ingesta tras el cambio del parser
 
@@ -293,6 +341,14 @@ Repetir con NUBANK, SANTANDER, AZTECA y BANORTE. Cada uno debe terminar en
 `SOURCE_EXHAUSTED_OBSERVED` con unas pocas filas (441, 204, 111, 481, 408). Antes
 de la cola y del replay, **pausar los Schedulers** `voc-trigger-sanitization-daily`
 y `voc-ingest-daily-sequential-all` hasta cerrar la carga.
+
+## Etapa 4c: permisos temporales
+
+Al terminar las invocaciones manuales, quitar los permisos concedidos para la
+carga: `roles/run.invoker` de las cuentas de usuario sobre `voc-ingestion-worker`
+y `roles/iam.serviceAccountTokenCreator` sobre `voc-sa-scheduler`. El binding de
+la propia `voc-sa-scheduler` queda. Luego `pulumi preview` para ver si esos
+cambios manuales producen deriva en el stack.
 
 ## Etapa 5: cierre y verificación
 
