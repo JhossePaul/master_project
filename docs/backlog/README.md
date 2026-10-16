@@ -15,6 +15,8 @@ determinista, incremental y sin romper contratos entre componentes.
 * `epics.md`: Mapa general del proyecto dividido en 6 Épicas secuenciales,
   alineadas con el cronograma de 8 semanas y el marco *Data-Driven Scrum (DDS)*
   * *Eval-Driven Development (EDD)*.
+* `closure_epics_1_4.md`: Cierre de las épicas 1 a 4 (resultados medidos en
+  producción, límites conocidos e incidentes).
 * `epic_1.md` a `epic_6.md`: Desglose granular de las *Features* e Historias
   Técnicas de cada épica, incluyendo rutas exactas de archivos, firmas de
   funciones/clases, esquemas de datos y criterios de aceptación verificables.

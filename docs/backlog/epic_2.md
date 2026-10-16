@@ -869,7 +869,7 @@ confundir mocks con validación de recuperación del scraper.
 
 * [x] Todos los archivos dentro de `infra/` tienen *type annotations* completas y pasan `uv run ruff check infra`, `uv run pyrefly check` y `uv run bandit -c pyproject.toml -r infra` con **0 errores**.
 * [x] El comando `uv run pytest infra/tests --cov=infra/modules --cov-fail-under=80` pasa todas las pruebas unitarias con cobertura $\ge 80\%$.
-* [ ] El comando `pulumi preview --stack dev` (con credenciales de GCP activas) genera el plan de ejecución completo sin errores de sintaxis, referencias circulares ni violaciones de cuota de Free Tier.
+* [x] El comando `pulumi preview --stack dev` (con credenciales de GCP activas) genera el plan de ejecución completo sin errores de sintaxis, referencias circulares ni violaciones de cuota de Free Tier. *(Verificado el 2026-10-16: 54 recursos sin cambios sobre el stack desplegado; la deriva de `scaling` del servicio se corrigió declarándolo.)*
 
 El último criterio requiere la CLI de Pulumi, backend/stack configurados y
 credenciales del proyecto GCP real. La suite con mocks verifica los recursos
