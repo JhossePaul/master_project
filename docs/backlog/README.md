@@ -66,5 +66,5 @@ Las épicas tienen dependencias técnicas estrictas. **No inicies una épica sin
 2. `epic_2.md` (Infraestructura como Código en GCP con Pulumi).
 3. `epic_3.md` (Workers de Ingesta Paralela y Publicación en Pub/Sub).
 4. `epic_4.md` (Pipeline de Sanitización PII en Dataflow + Cloud DLP y Persistencia en BigQuery).
-5. `epic_5.md` (Modelado NLP: Baseline RoBERTa, Arquitectura Dual LoRA / Delora, Cálculo de TNSS y ABSA en Vertex AI).
+5. `epic_5.md` (Planteamiento analítico y experimentación: EDA, etiquetado oro/plata, competencia de modelos, tópicos, calibración y registro de decisión) y `epic_5_deployment.md` (despliegue, condicionado a ese registro).
 6. `epic_6.md` (API Backend en FastAPI, Búsqueda Vectorial, Explicabilidad SHAP/LIME, Portal React HITL y Gobernanza).

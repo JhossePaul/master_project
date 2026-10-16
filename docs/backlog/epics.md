@@ -17,7 +17,7 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 | **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | **IMPLEMENTADO** [Features 2.1–2.10 en Mocks](cite: 24) | Sem 1 - 2[cite: 24, 27] | `infra/`[cite: 24, 27] | `epic_2.md`[cite: 27] |
 | **EPIC-3** | Ingesta Multibanco Reanudable desde Google Play (`batchexecute`) | **IMPLEMENTADO** [Features 3.1–3.5; sin despliegue](cite: 25) | Sem 2[cite: 27] | `services/ingestion-worker/`, `experiments/playstore/`[cite: 25] | `epic_3.md`[cite: 27] |
 | **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **IMPLEMENTADO** [Features 4.1–4.5; sin despliegue](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
-| **EPIC-5** | Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA | **PENDIENTE** (Especificación v2 lista) | Sem 4 - 6[cite: 27] | `services/ml-delora/`[cite: 27] | `epic_5.md`[cite: 27] |
+| **EPIC-5** | Core Analítico NLP: planteamiento, experimentación y despliegue | **PENDIENTE** (Fases 1–2 especificadas; despliegue condicionado al registro de decisión) | Sem 4 - 6[cite: 27] | `experiments/analytics/`, `docs/analytics/`; después `services/ml-delora/`[cite: 27] | `epic_5.md`, `epic_5_deployment.md`[cite: 27] |
 | **EPIC-6** | Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | **PENDIENTE** (Especificación v2 lista) | Sem 7 - 8[cite: 14, 27] | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/`[cite: 27] | `epic_6.md`[cite: 27] |
 
 ---
@@ -78,15 +78,16 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 
 ---
 
-### EPIC-5: Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*) y ABSA
+### EPIC-5: Core Analítico NLP — Planteamiento, Experimentación y Despliegue
 
-* **Estado:** **PENDIENTE** (Especificación técnica actualizada a contratos v2).
-* **Objetivo Técnico:** Implementar el motor de Aprendizaje Automático en `services/ml-delora/` sobre **PyTorch**, **Transformers** y **PEFT** para cuantificar el baseline (**RoBERTa**), desacoplar el ruido de etiquetado (*Obligatory 5-Star*) mediante **Dual LoRA (*Delora*)**, calcular el **TNSS** continuo y categórico, clasificar los 8 tópicos de **ABSA**, generar *embeddings* de **768 dimensiones** y emitir alertas de picos operativos hacia Pub/Sub[cite: 1, 8, 13, 23, 27].
+* **Estado:** **PENDIENTE**. Fases 1 y 2 especificadas en `epic_5.md`; el despliegue (`epic_5_deployment.md`) es un borrador condicionado al registro de decisión.
+* **Objetivo Técnico:** Decidir con evidencia el pipeline analítico sobre las 2 649 047 reseñas de los 5 bancos antes de construir el paquete desplegable: sentimiento real separado de las estrellas, tópicos recurrentes y su evolución, detección de incidentes y priorización.
 * **Alcance y Componentes:**
-  * **Baseline y Extracción de Embeddings (`baseline_roberta.py`):** Evaluador con `pysentimiento/robertuito-sentiment-analysis` que genera la predicción base `sentimiento_roberta` y extrae el vector normalizado de 768 dimensiones para `embedding_vector`[cite: 2, 9, 23, 24].
-  * **Arquitectura Dual LoRA y Calibración (`model.py`, `scoring_and_entropy.py`):** Doble adaptador LoRA ($\Delta\theta_{\text{clean}}$ sólo sobre texto para predecir `tnss_score` y $\Delta\theta_{\text{noisy}}$ condicionado a `estrellas` para absorber el sesgo), score continuo `tnss_numeric_calibrated` ($[1.0, 5.0]$), entropía de Shannon normalizada ($[0.0, 1.0]$) para disparo de `requires_hitl` ($\ge 0.65$) y `priority_weight_score` ponderado por `votos_utilidad`[cite: 8, 10, 14, 17, 23, 27].
-  * **Clasificador ABSA y Suite EDD de Gobernanza (`absa_classifier.py`, `evaluate.py`):** Clasificación híbrida hacia los 8 tópicos de `ABSATopic` (aprovechando códigos `ref: 3702` y tokens DLP como `[MX_CLABE_BANCARIA]`) y evaluación automatizada de *Negative Recall*, *Eficacia de Desacoplamiento de Ruido* y *Paridad Dialectal* en modismos mexicanos[cite: 14, 15, 23, 27].
-  * **Inferencia Incremental y Alertas (`inference_pipeline.py`):** Selección incremental de reseñas en `sanitized_reviews_tds` sin predicción vigente, upsert mediante tabla temporal + `MERGE` hacia las 15 columnas de `delora_predictions` y publicación de `IncidentAlertMessage` en `voc-incident-alerts-topic`[cite: 13, 23, 24].
+  * **Planteamiento y EDA (5.1–5.2):** etiquetas y guía de anotación, elegibilidad por tarea (con motivo para lo no predecible), envolvente de volumetría y costo, EDA de 15 años × 5 bancos y reglas de limpieza.
+  * **Etiquetado (5.3):** plata con Gemini Flash (deduplicada, por lotes y con tope de gasto) y oro humano de 1 000–2 000 reseñas (40 % aleatorio estratificado, 60 % dirigido, submuestra a ciegas).
+  * **Competencia de modelos (5.4):** de las estrellas como referencia y TF-IDF hasta encoders ajustados, métodos de ruido (*label smoothing*, corrección *forward*, *Confident Learning*), Delora adaptado y Gemini como clasificador; mismo protocolo y métricas de calidad y costo.
+  * **Tópicos (5.5):** descubrimiento dinámico sobre negativos y decisión entre ABSA, tópicos dinámicos o híbrido, con señal de incidentes probada hacia atrás.
+  * **Calibración, escala y ciclo de vida (5.6–5.7)** y **registro de decisión (5.8)**, que habilita el despliegue (fase 3).
 
 ---
 

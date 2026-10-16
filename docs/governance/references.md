@@ -45,12 +45,12 @@ sentimiento del texto. Esta sección sustenta tanto el problema como el método.
 | Bini, Girrbach y Akata (2025). [*DeLoRA: Decoupling Angles and Strength in Low-Rank Adaptation*](https://arxiv.org/abs/2503.18225). ICLR 2025 | Nueva | ✔ (páginas 1–9 de 18) | Variante de LoRA: normaliza la actualización y la escala con un λ aprendible; más robusta al learning rate y al entrenamiento largo. En RoBERTa-base/GLUE promedia 85.6 frente a 84.7 de LoRA. **No trata ruido de etiquetas** | Variante opcional del adaptador. **Colisión de nombre con Delora de Yuan (C3)** |
 | Xu et al. (2025). [*Dual LoRA: Enhancing LoRA with Magnitude and Direction Updates*](https://arxiv.org/abs/2512.03402). arXiv 2512.03402 | Nueva | ✔ (fuente LaTeX completa) | Divide la actualización en grupo de magnitud (`ReLU(BA)`) y de dirección (`Sign(DC)`, con *straight-through estimator*). Requiere *warm-up* y cuesta hasta ~5 % más memoria y tiempo. **No trata ruido de etiquetas** | No se adopta: requiere código propio y la mejora es pequeña. Conservar solo como contexto. **Mismo riesgo de nombre (C3)** |
 
-### 1.3 Divergencias entre el paper de Delora y `epic_5.md`
+### 1.3 Divergencias entre el paper de Delora y la especificación anterior (`epic_5_deployment.md`)
 
 La especificación actual no sigue el método publicado. Hay que decidir de forma
 explícita si se adapta o se reemplaza.
 
-| Aspecto | Delora (Yuan et al., 2025) | `epic_5.md` actual |
+| Aspecto | Delora (Yuan et al., 2025) | `epic_5_deployment.md` (especificación anterior) |
 | :--- | :--- | :--- |
 | Función | **Detector de muestras ruidosas** en una primera etapa; la clasificación final se entrena aparte con las muestras seleccionadas | Un único modelo con dos ramas en el forward |
 | Rama ruidosa | Umbral aprendible por muestra, sin entradas extra | Condicionada a `estrellas` con un módulo de transición |
@@ -204,5 +204,5 @@ varias afirmaciones técnicas del caso de uso.
 | `model_card.md` | Mitchell (2019); Yuan (2025); Guo (2017); Angelopoulos (2023); Pérez (2022); límites de la sección 10 |
 | `data_card.md` | Gebru (2021); Hutchinson (2021); Gantayat (2017), Abaliyan, Molla (evidencia de ruido); BBVA (2025) |
 | `ethical_fmea_matrix.md` | Raji (2020); Tabassi (2023); Agarwal (2023); Goldsteen (2023); ISO 29134 |
-| `epic_5.md` | Sección 1 completa; sección 3 (calibración); sección 4 (evaluación) |
+| `epic_5.md` | Sección 1 completa; sección 3 (calibración); sección 4 (evaluación). En la competencia de modelos (5.4) Delora es un candidato, no el fundamento |
 | `epic_6.md` | Lundberg (2017); Ribeiro (2016); Dhurandhar (2018); Gama (2014) |
