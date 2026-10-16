@@ -47,7 +47,7 @@ config:
     secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
   gcp:userProjectOverride: "true"
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
-  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:2d65425541d60c8b92abeb48086fbbd46e16baac@sha256:c00497f432a148186d2390021794e83b8dae062db6adbc2711cd96d4fa56a139
-  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:2d65425541d60c8b92abeb48086fbbd46e16baac@sha256:9169a771d75ec14a3ae0de9ace741f67def5b916d0f3c1c1cb013f9b922d019b
+  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:932c659add8b4e396c40908a9d04da105da8939f33f2811d56d514f843ebf28b
+  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:45f3addbfc572586f561f3b1c09e6e140ef45d24ecce9328d9162643818dee84
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=
