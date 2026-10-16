@@ -61,6 +61,8 @@ def test_compute_and_scheduler_modes(
         ("voc-ingestion-worker", "voc-sa-ingestion", INGESTION_IMAGE),
         ("voc-api-backend", "voc-sa-ml-backend", API_BACKEND_IMAGE),
     ):
+        # Valor por defecto de la API declarado para evitar deriva en preview.
+        assert states[name]["scaling"] == {"minInstanceCount": 0}
         template = states[name]["template"]
         assert template["executionEnvironment"] == "EXECUTION_ENVIRONMENT_GEN2"
         assert template["scaling"] == {

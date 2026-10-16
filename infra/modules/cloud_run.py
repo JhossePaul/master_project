@@ -255,6 +255,9 @@ def create_cloud_run_resources(
             name=name,
             project=project_id,
             location=region,
+            # La API devuelve este valor por defecto a nivel de servicio;
+            # declararlo evita un diff permanente en `pulumi preview`.
+            scaling={"min_instance_count": 0},
             template={
                 "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
                 "service_account": account,
