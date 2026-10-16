@@ -1034,7 +1034,9 @@ def test_backup_restore_rejects_invalid_gzip_and_changed_event(durable, env):
     manifest = prepare(durable, env)
     capture = repo.pending_capture(repo.load(BANK), manifest.page_id)
     raw = repo.read_object(capture.backup)
-    with pytest.raises(BackupUnavailable):
+    from ingestion_worker.publisher import CaptureUnreadable
+
+    with pytest.raises(CaptureUnreadable):
         publisher._restore(manifest, b"invalid gzip", capture.mode)
     lines = gzip.decompress(raw).splitlines()
     event_data = json.loads(lines[1])
@@ -1074,6 +1076,7 @@ def test_future_without_message_id_cannot_commit(durable, env):
 def test_public_capture_reader_for_committed_pages(durable, env):
     from ingestion_worker.publisher import (
         BackupUnavailable,
+        CaptureUnreadable,
         read_committed_capture,
         restore_capture,
     )
@@ -1096,5 +1099,7 @@ def test_public_capture_reader_for_committed_pages(durable, env):
     with pytest.raises(BackupUnavailable):
         read_committed_capture(repo, committed)
     del bucket.objects[name]
-    with pytest.raises(BackupUnavailable):
+    with pytest.raises(BackupUnavailable) as missing:
         read_committed_capture(repo, committed)
+    # Ausente o reemplazada no es "ilegible": solo esa es recuperable.
+    assert not isinstance(missing.value, CaptureUnreadable)

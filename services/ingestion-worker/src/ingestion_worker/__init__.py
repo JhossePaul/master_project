@@ -19,6 +19,7 @@ from ingestion_worker.playstore_protocol import (
 )
 from ingestion_worker.publisher import (
     BackupUnavailable,
+    CaptureUnreadable,
     PublicationIncomplete,
     RawReviewBatchPublisher,
     compute_page_id,
@@ -51,6 +52,7 @@ __all__ = [
     "PlayStoreResilientExtractor",
     "select_user_agent",
     "BackupUnavailable",
+    "CaptureUnreadable",
     "PublicationIncomplete",
     "RawReviewBatchPublisher",
     "compute_page_id",

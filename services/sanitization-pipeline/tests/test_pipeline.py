@@ -341,6 +341,7 @@ class Env:
         self.ingestion.release_lease(handle)
         self.page_id = manifest.page_id
         self.backup = manifest.backup_uri.removeprefix("gs://test-bucket/")
+        self.good_backup = self.bucket.objects[self.backup]["data"]
         self.ledger = ProcessingLedgerRepository(
             self.storage, "test-bucket", self.ingestion, clock=lambda: T0
         )
@@ -665,6 +666,21 @@ def test_manifest_backfill_marks_expired_capture_as_gap():
     closure = env.ledger.page_closure(BANK, env.page_id)
     assert closure.status == SanitizationStatus.GAPS_DETECTED
     assert closure.reason == "STAGING_EXPIRED" and closure.missing == 3
+
+
+def test_manifest_backfill_leaves_an_unreadable_capture_open(capsys):
+    env = Env()
+    env.bucket.objects[env.backup]["data"] = b"not a gzip capture"
+    report = orch.ManifestBackfill(
+        env.ingestion,
+        env.services().processor(),
+        SanitizationExecutionConfig(),
+        banks=(BANK,),
+    ).run()
+    assert report.expired_captures == 0 and report.events_retryable == 3
+    assert report.exit_code() != 0
+    assert env.ledger.page_closure(BANK, env.page_id) is None
+    assert "Capture unreadable; page stays open" in capsys.readouterr().out
 
 
 def test_manifest_backfill_budgets_and_transient_stop():
@@ -1049,6 +1065,24 @@ def test_fast_replay_flags_an_expired_capture_as_a_gap():
     assert closure.status.value == "GAPS_DETECTED"
     assert closure.reason == "STAGING_EXPIRED" and closure.missing == 3
     assert env.bq.merges == 0
+
+
+def test_fast_replay_leaves_an_unreadable_capture_open(capsys):
+    # Un cierre es irreversible: una captura presente pero ilegible (p. ej.
+    # un lector desactualizado) no se rotula como expirada.
+    env = Env()
+    env.bucket.objects[env.backup]["data"] = b"not a gzip capture"
+    replay, ledger = make_replay(env)
+    report = replay.run()
+    assert report.expired_captures == 0 and report.tds_committed == 0
+    assert report.events_retryable == 3 and report.exit_code() != 0
+    assert ledger.page_closure(BANK, env.page_id) is None
+    assert env.bq.merges == 0
+    assert "Capture unreadable; page stays open" in capsys.readouterr().out
+    # Con un lector compatible (aquí: la captura restaurada) la página cierra.
+    env.bucket.objects[env.backup]["data"] = env.good_backup
+    again, _ = make_replay(env)
+    assert again.run().tds_committed == 3
 
 
 def test_fast_replay_detects_a_capture_missing_events(monkeypatch):

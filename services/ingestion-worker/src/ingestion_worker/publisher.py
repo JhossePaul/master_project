@@ -52,6 +52,15 @@ class BackupUnavailable(IntegrityError):
     """Pending capture cannot be replayed: record gap/recover source in 3.4."""
 
 
+class CaptureUnreadable(BackupUnavailable):
+    """La captura existe pero no se puede interpretar con este código.
+
+    A diferencia de una captura ausente o reemplazada (expirada), puede
+    resolverse desplegando un lector compatible: quien cierra páginas no debe
+    tratarla como hueco definitivo.
+    """
+
+
 class _Discard(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     row_index: int
@@ -168,7 +177,7 @@ def restore_capture(
         EOFError,
         zlib.error,
     ):
-        raise BackupUnavailable(
+        raise CaptureUnreadable(
             "Durable capture invalid; recover source"
         ) from None
 

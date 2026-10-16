@@ -18,7 +18,11 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
-from ingestion_worker.publisher import BackupUnavailable, read_committed_capture
+from ingestion_worker.publisher import (
+    BackupUnavailable,
+    CaptureUnreadable,
+    read_committed_capture,
+)
 from ingestion_worker.watermark_store import IntegrityError, WatermarkRepository
 from voc_common import (
     BankKey,
@@ -58,6 +62,13 @@ from sanitization_pipeline.processing_ledger import (
 )
 
 MODE = "GCS_FAST_REPLAY"
+
+
+class _Unreadable:
+    """Captura presente pero ilegible con este código (no es expiración)."""
+
+
+UNREADABLE = _Unreadable()
 
 
 @dataclass
@@ -172,18 +183,33 @@ class FastReplay:
         return True
 
     # -------------------------------------------------------------- páginas
-    def _read(self, manifest: PageManifest) -> list[RawReviewEnvelope] | None:
+    def _read(
+        self, manifest: PageManifest
+    ) -> list[RawReviewEnvelope] | _Unreadable | None:
         try:
             return read_committed_capture(self.ingestion, manifest)
+        except CaptureUnreadable:
+            return UNREADABLE
         except BackupUnavailable:
             return None
 
     def _sanitize(
         self,
         manifest: PageManifest,
-        envelopes: list[RawReviewEnvelope] | None,
+        envelopes: list[RawReviewEnvelope] | _Unreadable | None,
         report: RunReport,
     ) -> _Page:
+        if isinstance(envelopes, _Unreadable):
+            # El cierre es irreversible (el primero gana): una captura que
+            # existe pero no se entiende queda abierta hasta tener lector.
+            log_json(
+                "ERROR",
+                "Capture unreadable; page stays open",
+                run_id=report.run_id,
+                bank_id=manifest.bank_id.value,
+                page_id=manifest.page_id,
+            )
+            return _Page(manifest, retryable=max(manifest.valid_count, 1))
         if envelopes is None:
             report.expired_captures += 1
             return _Page(manifest, captured=False)
