@@ -106,3 +106,6 @@ gcp-key*.json
 # Evidencia de experimentos de explotación del endpoint
 # ======================================================
 evidence/
+
+# Snapshots locales del TDS para EPIC-5 (texto de reseñas: nunca versionar)
+experiments/analytics/data/

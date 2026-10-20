@@ -34,6 +34,8 @@ project_id = gcp_config.require("project")
 region = gcp_config.get("region") or "us-central1"
 enable_cmek = config.get_bool("enable_cmek") or False
 enable_vertex = config.get_bool("enable_dedicated_vertex_endpoints") or False
+# Solo la API de Vertex AI (Gemini), sin endpoints dedicados ni costo fijo.
+enable_vertex_ai_api = config.get_bool("enable_vertex_ai_api") or False
 free_tier = config.get_bool("free_tier_mode")
 free_tier = True if free_tier is None else free_tier
 environment = config.get("environment") or pulumi.get_stack()
@@ -56,7 +58,10 @@ storage_layout = IngestionStorageLayout.model_validate(
 )
 
 project_apis = enable_project_apis(
-    project_id, enable_cmek=enable_cmek, enable_vertex=enable_vertex
+    project_id,
+    enable_cmek=enable_cmek,
+    enable_vertex=enable_vertex,
+    enable_vertex_ai_api=enable_vertex_ai_api,
 )
 security = create_security_resources(
     project_id,

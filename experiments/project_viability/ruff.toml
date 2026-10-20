@@ -1,0 +1,4 @@
+# El cuaderno se conserva como documento histórico (EDA preliminar), no como
+# código mantenido: no se le aplican lint ni formato.
+extend = "../../pyproject.toml"
+extend-exclude = ["*.ipynb"]

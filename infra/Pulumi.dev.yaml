@@ -6,6 +6,9 @@ config:
   bbva-voc-infra:enable_cmek: "false"
   bbva-voc-infra:enable_vpc_sc: "false"
   bbva-voc-infra:enable_dedicated_vertex_endpoints: "false"
+  # Solo la API de Vertex AI (Gemini Flash para el etiquetado de EPIC-5),
+  # sin endpoints dedicados ni Dataflow.
+  bbva-voc-infra:enable_vertex_ai_api: "true"
   # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
   # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
   # por digest; ver docs/deployment.md. Requeridas en fase 2:

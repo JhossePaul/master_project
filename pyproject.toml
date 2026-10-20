@@ -64,3 +64,9 @@ testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
 [tool.bandit]
 exclude_dirs = ["tests", ".github", "docs", "web", ".venv", "infra/.pulumi"]
 skips = ["B101"]
+
+[tool.pyrefly]
+# Mismo preset que la configuración automática previa; experiments/analytics
+# es un proyecto uv aparte con su propio entorno.
+preset = "basic"
+project-excludes = ["experiments/analytics/**"]
