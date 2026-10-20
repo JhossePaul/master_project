@@ -17,7 +17,7 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 | **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | **IMPLEMENTADO** [Features 2.1–2.10 en Mocks](cite: 24) | Sem 1 - 2[cite: 24, 27] | `infra/`[cite: 24, 27] | `epic_2.md`[cite: 27] |
 | **EPIC-3** | Ingesta Multibanco Reanudable desde Google Play (`batchexecute`) | **IMPLEMENTADO** [Features 3.1–3.5; sin despliegue](cite: 25) | Sem 2[cite: 27] | `services/ingestion-worker/`, `experiments/playstore/`[cite: 25] | `epic_3.md`[cite: 27] |
 | **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **IMPLEMENTADO** [Features 4.1–4.5; sin despliegue](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
-| **EPIC-5** | Core Analítico NLP: planteamiento, experimentación y despliegue | **PENDIENTE** (Fases 1–2 especificadas; despliegue condicionado al registro de decisión) | Sem 4 - 6[cite: 27] | `experiments/analytics/`, `docs/analytics/`; después `services/ml-delora/`[cite: 27] | `epic_5.md`, `epic_5_deployment.md`[cite: 27] |
+| **EPIC-5** | Core Analítico NLP: planteamiento, experimentación y despliegue | **EN CURSO** (fase 2: etiquetado y competencia de modelos; despliegue condicionado al registro de decisión) | Sem 4 - 6[cite: 27] | `experiments/analytics/`, `docs/analytics/`; después `services/ml-delora/`[cite: 27] | `epic_5.md`, `epic_5_deployment.md`[cite: 27] |
 | **EPIC-6** | Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | **PENDIENTE** (Especificación v2 lista) | Sem 7 - 8[cite: 14, 27] | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/`[cite: 27] | `epic_6.md`[cite: 27] |
 
 ---
@@ -80,7 +80,7 @@ Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
 
 ### EPIC-5: Core Analítico NLP — Planteamiento, Experimentación y Despliegue
 
-* **Estado:** **PENDIENTE**. Fases 1 y 2 especificadas en `epic_5.md`; el despliegue (`epic_5_deployment.md`) es un borrador condicionado al registro de decisión.
+* **Estado:** **EN CURSO** (fase 2). Estado por feature y siguientes pasos en `epic_5.md`; historia de los resultados en [`docs/analytics/`](../analytics/README.md). El despliegue (`epic_5_deployment.md`) es un borrador condicionado al registro de decisión.
 * **Objetivo Técnico:** Decidir con evidencia el pipeline analítico sobre las 2 649 047 reseñas de los 5 bancos antes de construir el paquete desplegable: sentimiento real separado de las estrellas, tópicos recurrentes y su evolución, detección de incidentes y priorización.
 * **Alcance y Componentes:**
   * **Planteamiento y EDA (5.1–5.2):** etiquetas y guía de anotación, elegibilidad por tarea (con motivo para lo no predecible), envolvente de volumetría y costo, EDA de 15 años × 5 bancos y reglas de limpieza.

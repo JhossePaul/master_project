@@ -15,6 +15,7 @@ no citar como leído lo que solo se vio como resumen.
 | ✔ | Texto del paper leído (total o parcial, se indica) |
 | ◐ | Solo resumen, metadatos o ficha del editor, obtenidos por búsqueda web. Abrir el paper antes de citar cifras |
 | ✖ | No localizado o entrada incompleta. Requiere acción del autor del caso de uso |
+| +M | Sufijo: la afirmación que el proyecto usa se **midió en este corpus** (EPIC-5). No sustituye la lectura del paper |
 
 **Origen** (columna *Fuente*): `CU` = ya citada en el caso de uso; `Nueva` =
 añadida en esta revisión.
@@ -30,9 +31,9 @@ sentimiento del texto. Esta sección sustenta tanto el problema como el método.
 
 | Referencia | Fuente | Verif. | Qué aporta | Uso en el proyecto |
 | :--- | :---: | :---: | :--- | :--- |
-| Abaliyan et al. (2026). [*Fault of Our Stars: Behavioral Drivers of Rating–Sentiment Incongruence*](https://arxiv.org/pdf/2606.25518). arXiv 2606.25518 | CU | ◐ | Define patrones de incongruencia entre calificación y texto, entre ellos *Obligatory 5-Star*. Reporta 18.6 % de incongruencia en 16,156 reseñas de atracciones turísticas de Sri Lanka | Origen del término *Obligatory 5-Star* y del concepto LNB. **Ver corrección C1** |
+| Abaliyan et al. (2026). [*Fault of Our Stars: Behavioral Drivers of Rating–Sentiment Incongruence*](https://arxiv.org/pdf/2606.25518). arXiv 2606.25518 | CU | ◐ | Define patrones de incongruencia entre calificación y texto, entre ellos *Obligatory 5-Star*. Reporta 18.6 % de incongruencia en 16,156 reseñas de atracciones turísticas de Sri Lanka | Origen del término *Obligatory 5-Star* y del concepto LNB. **Ver correcciones C1 y C4** (el 28.3 % se reemplaza por lo medido en este corpus) |
 | Gantayat y Mohapatra (2017; autoría según la ficha de IBM Research, verificar). [*Fault in your stars: An Analysis of Android App Reviews*](https://arxiv.org/pdf/1708.04968). arXiv 1708.04968 | Nueva | ◐ | Con 8,600 reseñas leídas a mano de 10 apps Android, ~20 % de las calificaciones no coincide con el texto; el rango estimado va de 16 % a 26 % según la app | Evidencia en **apps móviles** (el anterior es turismo). Respalda el problema con un dominio más cercano |
-| Molla et al. (2026). [*A Multi-Model Approach to English-Bangla Sentiment Classification of Government Mobile Banking App Reviews*](https://arxiv.org/pdf/2604.13057). arXiv 2604.13057 | CU | ◐ | Reseñas de apps bancarias de Google Play. Compara etiquetas por estrellas contra un clasificador XLM-R y obtiene acuerdo moderado (κ = 0.459). Los modelos clásicos igualan o superan a los transformers en datos pequeños | Evidencia de ruido en **apps bancarias**. También una advertencia: un baseline clásico (TF-IDF + SVM/RF) debe estar en la escalera de modelos de EPIC-5 |
+| Molla et al. (2026). [*A Multi-Model Approach to English-Bangla Sentiment Classification of Government Mobile Banking App Reviews*](https://arxiv.org/pdf/2604.13057). arXiv 2604.13057 | CU | ◐ +M | Reseñas de apps bancarias de Google Play. Compara etiquetas por estrellas contra un clasificador XLM-R y obtiene acuerdo moderado (κ = 0.459). Los modelos clásicos igualan o superan a los transformers en datos pequeños | Evidencia de ruido en **apps bancarias**. También una advertencia: un baseline clásico (TF-IDF + SVM/RF) debe estar en la escalera de modelos de EPIC-5. **Verificado en este corpus (5.4, fase A):** un clásico compite. M1 (TF-IDF + LR entrenado con la plata) logra κ 0.91 contra el oro *dev* (n = 199); Gemini, 0.94; la diferencia no es significativa (IC 95 % [−0.01, 0.08]). [Reporte](../analytics/sentiment_models_v0_report.md) |
 | *Beyond Stars: Bridging the Gap Between Ratings and Review Sentiment with LLM* (2025). [arXiv 2509.20953](https://arxiv.org/pdf/2509.20953) | Nueva | ◐ | Mide la brecha entre estrellas y sentimiento del texto en escala 1–5 y la reporta como diferencia absoluta | Precedente del *Satisfaction Gap* (`tnss_numeric_calibrated − estrellas`) |
 
 ### 1.2 El método: Delora y su base teórica
@@ -65,7 +66,15 @@ Consecuencias a decidir en la reescritura de EPIC-5:
 
 - **Viabilidad de cómputo.** El paper no valida el método en modelos tipo RoBERTa. Un modelo de 8 B no cabe en Cloud Run CPU en Free Tier.
 - **Dependencia de un LLM externo** para pseudo-etiquetas y re-etiquetado. Aunque el texto ya pasó por DLP, hay que validarlo con la Norma de Gobierno de Datos de BBVA antes de enviarlo fuera del perímetro.
-- **Posible error en el paper.** Según la lectura por herramienta, la Eq. 5 (probabilidad limpia) parece contradecir el criterio de la Eq. 3. Verificar en el PDF; implementar con el criterio de la Eq. 3.
+- **Errores del paper (verificados contra el HTML de arXiv 2510.10208, 2026-10-20).**
+  - **Eq. 5:** p_c = e^{CE_c} / (e^{CE_c} + e^{CE_n}) = σ(CE_c − CE_n). Da más probabilidad de limpia cuanto peor ajusta la LoRA limpia, lo que contradice la Eq. 3 y la frase del propio paper ("p_c > 0.5" equivale a la Eq. 3). La implementación usa σ(CE_n − CE_c).
+  - **Eq. 6:** L_Detector = (1/N_p) Σ ℓ_nll(p_c, y) + ℓ_nll(1 − p_c, y^n). Tiene tres problemas:
+    1. arrastra el signo de la Eq. 5, así que minimizarla tal cual entrena al detector al revés;
+    2. aplica una NLL multiclase a una probabilidad escalar;
+    3. no indica que el segundo p_c se evalúa en la etiqueta volteada y^n; leída literalmente, la pérdida es degenerada.
+  - Lo que el paper pretende, y lo que se implementa, es la BCE estándar: −log p_c(x, y) − log(1 − p_c(x, y^n)) sobre D_p.
+  - El detector logra 0.93 de precisión contra la plata fuera de muestra, lo que es consistente con el signo corregido.
+  - Detalle en la [competencia de modelos](../analytics/sentiment_models_v0_report.md), sección 12, "Errores del paper en las Eq. 5 y 6".
 - **Hiperparámetros h₁ y h₂** sensibles a la tasa de ruido, sin valor por defecto. Requieren búsqueda, lo que justifica la fase de experimentación.
 
 ### 1.4 Técnicas complementarias de ruido de etiquetas
@@ -86,7 +95,9 @@ Consecuencias a decidir en la reescritura de EPIC-5:
 
 | Referencia | Fuente | Verif. | Qué aporta | Uso en el proyecto |
 | :--- | :---: | :---: | :--- | :--- |
-| Pérez et al. (2022). [*RoBERTuito: a pre-trained language model for social media text in Spanish*](https://arxiv.org/abs/2111.09453). LREC 2022 | Nueva | ◐ | RoBERTa entrenado con más de 500 M de tuits en español; evaluado en sentimiento (TASS 2020), odio, emoción e ironía | Checkpoint base `pysentimiento/robertuito-sentiment-analysis`. **Limitación:** preentrenado con tuits, no con reseñas de apps |
+| Pérez et al. (2022). [*RoBERTuito: a pre-trained language model for social media text in Spanish*](https://arxiv.org/abs/2111.09453). LREC 2022 | Nueva | ◐ +M | RoBERTa entrenado con más de 500 M de tuits en español; evaluado en sentimiento (TASS 2020), odio, emoción e ironía | Candidato M2 con `pysentimiento/robertuito-sentiment-analysis`. **Limitación:** preentrenado con tuits, no con reseñas de apps. **Medido (5.4, fase A):** sin ajuste da κ 0.47 en el oro *dev*, peor que las estrellas (0.69). Manda los elogios breves a `NEU` y sigue el esquema de TASS, no la guía v2; en textos de 11–30 palabras llega a κ 0.82. Motiva M4 (ajuste con la plata) |
+| Pérez et al. (2021, rev. 2024). [*pysentimiento: A Python Toolkit for Opinion Mining and Social NLP tasks*](https://arxiv.org/abs/2106.09462). arXiv 2106.09462 | Nueva | ◐ | Biblioteca sobre `transformers` con analizadores de sentimiento, odio, ironía y emoción; en español usa RoBERTuito y BETO ajustados con TASS | Implementa M2 en 5.4. **Licencia:** la biblioteca y sus modelos son solo para uso no comercial e investigación, y heredan la licencia de TASS. Cabe en una tesis, no en un uso comercial. Confirmar el texto exacto en el repositorio y en la ficha de cada modelo antes de citarlo |
+| BETO ajustado para sentimiento: [`finiteautomata/beto-sentiment-analysis`](https://huggingface.co/finiteautomata/beto-sentiment-analysis), de `pysentimiento`. Modelo base BETO (Cañete et al., 2020; ficha sin verificar) | Nueva | ◐ +M | BERT en español ajustado con TASS 2020 (tuits); mismas etiquetas `NEG`/`NEU`/`POS` y misma licencia no comercial de `pysentimiento` | Candidato M2. **Medido (5.4, fase A):** sin ajuste da κ 0.58 en el oro *dev*, por debajo de las estrellas (0.69); en textos de 11–30 palabras, κ 0.78 |
 
 ---
 
@@ -167,7 +178,7 @@ Es interno; no se verificó.
 | **C1** | Tres entradas llevan identificadores de arXiv de relleno (`2403.00000`, `2401.00000`, `2601.00000`), que no corresponden a ningún paper. Los identificadores reales localizados: Abaliyan et al. → **2606.25518**; Gao et al. → **2312.06522**; Molla et al. → **2604.13057** | Corregir las entradas. El ID de Abaliyan sugiere 2026, no 2024. La búsqueda dio el primer autor como "Abaiyan"; verificar la ortografía en el PDF |
 | **C2** | "Yuan et al. (2024)" es **Yuan, Chen y Zhang (2025)**, Findings of ACL 2025 (arXiv 2510.10208, octubre de 2025) | Corregir año y venue en el caso de uso |
 | **C3** | "Dual LoRA" y "DeLoRA" se usan en el proyecto para el método de Yuan et al., pero existen otros dos papers con esos nombres (Xu et al.; Bini et al.) que son técnicas distintas de LoRA | Escribir "Delora (Yuan et al., 2025)" y no citar los otros como fundamento. Considerar un nombre que evite la confusión |
-| **C4** | El caso de uso afirma que "hasta un 28.3 % de los usuarios otorga 5 estrellas por hábito" citando a Abaliyan. Lo que se vio del paper es **18.6 % de incongruencia total** en reseñas de turismo, con *Obligatory 5-Star* como parte de ellas | Verificar en el PDF qué mide exactamente el 28.3 % y de qué dominio proviene. Si no es de ahí, medirlo en el EDA con reseñas de BBVA |
+| **C4** | El caso de uso afirma que "hasta un 28.3 % de los usuarios otorga 5 estrellas por hábito" citando a Abaliyan. Lo que se vio del paper es **18.6 % de incongruencia total** en reseñas de turismo, con *Obligatory 5-Star* como parte de ellas. **Resuelta con medición propia (5.3):** el 28.3 % no se verificó y no se usa | Reemplazar el 28.3 % por lo medido en las cinco apps (estimación poblacional): estrellas distintas del texto en **9.9 %** (oro, EE 1.7) y **10.9 %** (plata); incongruencia en los extremos (1–2★ con `POS` o 4–5★ con `NEG`) en **4.7 %** (oro, EE 1.3) y **5.0 %** (plata). Fuentes: [oro](../analytics/gold_v0_r2_report.md) y [plata](../analytics/silver_v0_report.md). Abaliyan queda solo como origen del término |
 | **C5** | El caso de uso reporta 6,140,799 calificaciones pero **788,341 reseñas textuales** para BBVA. Las cifras de volumen que se usaron en la discusión de cómputo (6.17 M para BBVA) coinciden con las calificaciones | Confirmar cuántas reseñas con texto hay por banco. Cambia la estimación de costo de inferencia |
 | **C6** | El caso de uso lista *Paridad Dialectal* como KPI (cita Molla et al., 2026) | Si se descarta por alcance, registrarlo como cambio de alcance y como limitación en la Model Card |
 
@@ -201,7 +212,7 @@ varias afirmaciones técnicas del caso de uso.
 
 | Documento | Referencias a usar |
 | :--- | :--- |
-| `model_card.md` | Mitchell (2019); Yuan (2025); Guo (2017); Angelopoulos (2023); Pérez (2022); límites de la sección 10 |
+| `model_card.md` | Mitchell (2019); Yuan (2025); Guo (2017); Angelopoulos (2023); Pérez (2022); licencia de `pysentimiento` (sección 2) si entra uno de sus modelos; límites de la sección 10 |
 | `data_card.md` | Gebru (2021); Hutchinson (2021); Gantayat (2017), Abaliyan, Molla (evidencia de ruido); BBVA (2025) |
 | `ethical_fmea_matrix.md` | Raji (2020); Tabassi (2023); Agarwal (2023); Goldsteen (2023); ISO 29134 |
 | `epic_5.md` | Sección 1 completa; sección 3 (calibración); sección 4 (evaluación). En la competencia de modelos (5.4) Delora es un candidato, no el fundamento |

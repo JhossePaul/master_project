@@ -1,6 +1,7 @@
 # EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC con Pulumi)
 
 * **Estado:** IMPLEMENTADO — Features 2.1–2.10 verificadas localmente con mocks. Contrato único de estado/auditoría. Preview con proveedor y despliegue pendientes de stack/backend y credenciales reales.
+* **Recursos de predicción condicionados (2026-10-18):** la tabla `delora_predictions` (15 columnas, agrupada por `topico`) y el flag `enable_dedicated_vertex_endpoints` quedan sujetos al registro de decisión de EPIC-5 (5.8); no se reescriben antes. En la primera ronda de 5.4, M1 (TF-IDF + LR, κ 0.91 contra el oro *dev*) procesa ~9 100 textos/s en CPU con 6.8 MB, así que cabría en un Cloud Run Job de 1 Gi sin endpoint dedicado ([reporte](../analytics/sentiment_models_v0_report.md)).
 * **Semanas Objetivo:** Semanas 1 - 2
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/src/voc_common/config.py` (Ampliación de variables para Scraper Propio y Flags de Infraestructura)
@@ -135,6 +136,8 @@ config:
   bbva-voc-infra:enable_cmek: false
   bbva-voc-infra:enable_vpc_sc: false
   bbva-voc-infra:enable_dedicated_vertex_endpoints: false
+  # Solo la API aiplatform (Gemini para EPIC-5 5.3), sin endpoints ni Dataflow.
+  bbva-voc-infra:enable_vertex_ai_api: true
   bbva-voc-infra:ingestion_worker_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/ingestion-worker:latest"
   bbva-voc-infra:sanitization_job_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/sanitization-pipeline:latest"
   bbva-voc-infra:api_backend_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/api-backend:latest"

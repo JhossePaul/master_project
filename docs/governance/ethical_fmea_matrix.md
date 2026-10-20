@@ -3,7 +3,8 @@
 Análisis de modos de falla del manejo de datos personales y de la ingesta,
 sanitización y almacenamiento (EPIC-1 a EPIC-4). Las filas de EPIC-5 y EPIC-6
 (modelo, explicabilidad y HITL) se añaden cuando esas épicas tengan diseño
-cerrado; ver la sección final.
+cerrado; ver la sección final. La experimentación de EPIC-5 (etiquetado,
+copias locales y entrenamiento) ya tiene filas propias, F-10 a F-13.
 
 **Estado:** borrador del autor. Las calificaciones S/O/D son una propuesta
 razonada con la evidencia disponible y deben validarse con el Data Owner y el
@@ -36,7 +37,7 @@ una acción con responsable antes del siguiente despliegue.
 
 | ID | Modo de falla | Efecto | Causa | Controles actuales | S | O | D | RPN | Acción / estado |
 | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :--- |
-| **F-01** | Un nombre propio escrito en el texto libre llega al TDS | El nombre queda visible para quien consulte `sanitized_reviews_tds` y en el portal HITL | La regex local no detecta nombres; Cloud DLP (NER) está desactivado por defecto | Regex local para datos estructurados; `usuario`/`imagen_usuario` no existen en el TDS; solo texto, calificación e id; muestra: 0 de 798 con presentación o firma con nombre | 5 | 3 | 7 | **105** | **Acción abierta**: ver detalle |
+| **F-01** | Un nombre propio escrito en el texto libre llega al TDS | El nombre queda visible para quien consulte `sanitized_reviews_tds` y en el portal HITL | La regex local no detecta nombres; Cloud DLP (NER) está desactivado por defecto | Regex local para datos estructurados; `usuario`/`imagen_usuario` no existen en el TDS; solo texto, calificación e id; muestra: 0 de 798 con presentación o firma con nombre; oro `gold_v1`: 0 nombres en 1 300 reseñas anotadas (en las 1 000 aleatorias, cota superior al 95 % de ~0.4 %; 0.3 % sin efecto de diseño) | 5 | 2 | 7 | 70 | Monitorear. Acción 1 hecha; falta la acción 2 para bajar D (ver detalle) |
 | **F-02** | La respuesta de la entidad (que saluda al autor por su nombre) se almacena | Nombre de pila del autor en el TDS (medido en 249 de 302 respuestas) | `texto_respuesta` se capturaba y persistía | Se descarta antes de persistir: `titulo`, `texto_respuesta` y `fecha_respuesta` quedan `NULL` (commit `0da26dd`) | 5 | 2 | 3 | 30 | Controlado; el dato crudo sigue en tránsito (F-05) |
 | **F-03** | Falso positivo de la regex altera el texto | Pérdida de señal (p. ej. un monto de 10 dígitos se vuelve `[BBVA_ACCOUNT_NUMBER]`); sesgo menor en el modelo | Reglas numéricas sin contexto suficiente | El contexto (`cuenta`, `cel`…) decide entre cuenta y teléfono; pruebas con corpus adversarial; se conserva `ref: 3702…` | 3 | 3 | 5 | 45 | Monitorear: medir la tasa en el conjunto de oro |
 | **F-04** | Re-identificación a partir de `usuario_hash` | Un atacante con la sal puede confirmar si un usuario conocido está en el TDS | Sin `user_hash_salt`, el stack usa `DEV_USER_HASH_SALT`, una constante pública del repositorio; además la sal viaja como variable de entorno de Cloud Run, no como secreto | SHA-256 salado e irreversible; prod exige sal propia (validador); la sal de `dev` se fijó el 2026-10-15 cifrada con Cloud KMS (el repositorio es público) | 6 | 2 | 6 | 72 | Parcialmente controlado: queda la variable de entorno en claro |
@@ -74,6 +75,24 @@ no en una detección real. El riesgo residual existe.
 Con las acciones 1 y 2 y el disparador definidos, la detección baja de D=7 a D=4
 y el RPN a 60.
 
+**Estado (2026-10-20):** la acción 1 está **hecha**. Con el campo
+`nombre_persona` (guía `annotation_guideline_v2.1`) el autor anotó 1 300 reseñas
+de `gold_v1` y no encontró ningún nombre: 0 en las 1 000 del bloque aleatorio
+y 0 en las 300 del dirigido. La cota superior al 95 % es de ~0.4 %: la regla del
+tres con el tamaño efectivo de ~720, porque el bloque aleatorio es estratificado
+con pesos desiguales (efecto de diseño de Kish de ~1.4, ver el
+[diseño de `gold_v1`](../analytics/gold_v1_design.md)). Sin el efecto de diseño
+sería 0.3 %. Las dos quedan bajo el 1 % del disparador. El
+segundo anotador tampoco marcó nombres en sus 100 ítems. No se cumple el
+disparador. Ver el [reporte de `gold_v1`](../analytics/gold_v1_report.md),
+secciones 5 y 7.
+
+**Calificación (decisión del autor, 2026-10-20):** O baja de 3 a 2 (no
+observado, pero la causa sigue sin control: la regex no ve nombres). D sigue en
+7 porque el criterio de arriba exige también la acción 2, que no se ha hecho.
+RPN 5 × 2 × 7 = **70**, bajo el umbral: la fila pasa a monitorearse. Con la
+acción 2, D bajaría a 4 y el RPN a 40.
+
 ### F-04 `usuario_hash` y la sal
 
 `infra/__main__.py` usa `DEV_USER_HASH_SALT` cuando `bbva-voc-infra:user_hash_salt`
@@ -94,14 +113,95 @@ deja hashes inconsistentes entre sí.
 Modos de falla ya conocidos que se calificarán cuando exista el diseño:
 
 * Etiquetado por estrellas como señal ruidosa (*Label Noise Bias*) y su efecto
-  en el recall de reseñas negativas.
+  en el recall de reseñas negativas. **Ya tiene datos:** ver la propuesta de
+  calificación al final de esta sección.
+* Exposición de texto fuera del TDS durante la experimentación. **Ya tiene filas:**
+  F-10 a F-13, en la matriz de abajo.
 * Probabilidades sin calibrar que disparan o no el protocolo HITL.
 * Pérdida de cobertura de tópicos (taxonomía propia de 8 categorías, sin
   validación externa en español bancario).
-* Exposición de texto de reseñas en el portal HITL y en los embeddings.
+* Exposición de texto de reseñas en el portal HITL y en los embeddings. Sin
+  fila: el portal HITL y los embeddings aún no existen.
 * Deriva entre versiones de la app (*Concept Drift*).
 * Paridad dialectal: se descartó del alcance; debe quedar como limitación
   declarada en la Model Card.
+
+### Matriz (EPIC-5, experimentación)
+
+Las filas calificadas usan las escalas de arriba y son una propuesta del autor.
+Las demás quedan **por calificar** hasta que exista el dato que falta.
+
+| ID | Modo de falla | Efecto | Causa | Controles actuales | S | O | D | RPN | Acción / estado |
+| :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :--- |
+| **F-10** | Un dato personal residual del texto llega al LLM de etiquetado | El nombre que la regex no detecta (F-01) sale del TDS hacia Gemini | El oro y la plata se etiquetan con `gemini-3.6-flash` en Vertex AI | Vertex AI en el propio proyecto (flag `enable_vertex_ai_api`, sin endpoints dedicados); solo viaja `texto_sanitizado` con un índice local, sin `id_resena`, `usuario_hash` ni estrellas (`voc_analytics.labeling.label_gemini`); ~70 000 textos únicos de la plata, más los pilotos y el oro | 5 | 2 | 7 | 70 | Monitorear. S y D heredan F-01 y bajan con ella. La ubicación configurada es `global`, no una región fija: confirmar la residencia de datos si el proyecto la exige |
+| **F-11** | Acceso indebido a las copias locales del Mac del autor | Quien acceda al disco ve el TDS completo (texto sanitizado, `usuario_hash`), las etiquetas de oro y plata y las anotaciones | Snapshot `tds_20261016T054714Z` (2 649 047 filas) y etiquetas en `experiments/analytics/data/` para trabajar sin BigQuery | `experiments/analytics/data/` en `.gitignore`; `experiments/` en `.gcloudignore` y fuera de la lista de permitidos de `.dockerignore`; solo se versionan agregados; la app de anotación (Streamlit) escucha solo en `localhost` | 5 | 2 | 4 | 40 | Monitorear, como F-06. Borrar el snapshot al cerrar EPIC-5. El riesgo residual es el disco local |
+| **F-12** | El texto de reseñas queda expuesto a un segundo anotador | Una persona fuera del proyecto lee 100 reseñas de `gold_v1_a2` | Medir el acuerdo entre personas sin la contaminación por Gemini | Subconjunto de 100 ítems, a ciegas, misma app y misma guía; la cola solo lleva el texto. Sesión presencial en la app local del Mac del autor, sin copia del archivo; acuerdo verbal de confidencialidad (ambos confirmados por el autor). El nombre del segundo anotador solo está en el CSV local de anotaciones, fuera de git (cubierto por F-11), y no en `docs/`. 0 nombres marcados en esos 100 ítems | 5 | 1 | 5 | 25 | **Cerrado.** Calificada después de la anotación (2026-10-20), aunque el plan la ponía antes; calificación aprobada por el autor. La anotación se hizo una sola vez y el texto no salió del equipo |
+| **F-13** | Entrenamiento de modelos fuera de GCP | Textos y etiquetas salen del perímetro del proyecto hacia Kaggle | Los encoders de 5.4 (M4 con BETO, M8 Delora y sus semillas) necesitan GPU | Solo viaja `texto_sanitizado` con etiquetas de la plata, el oro *dev* y `holdout_nuevo`; el oro *test* no está en la carga. La medición de nombres de F-01 (acción 1, `nombre_persona` en `gold_v1`) dimensiona este riesgo: 0 nombres en 1 300 reseñas anotadas, bajo el disparador | — | — | — | — | **Riesgo aceptado por el autor (2026-10-19)**, con su criterio: priorizar el entrenamiento, que es crucial para continuar, porque la PII observada tras la regex es insignificante. Se descartó la GPU en el propio proyecto. La tasa de `nombre_persona` no supera el disparador de F-01 (2026-10-20) |
+
+### Propuesta de calificación: *Label Noise Bias* (5.4, *dev* ampliado)
+
+**Propuesta del autor**, no validada. Usa el *dev* aleatorio ampliado con
+`gold_v1` ([reporte](../analytics/gold_v1_report.md), métricas en
+[`sentiment_models_gold_v1_metrics.json`](../analytics/sentiment_models_gold_v1_metrics.json),
+commits `56786f4` y `763b63a`). Queda abierta hasta el registro de decisión (5.8), que
+evaluará el oro *test*.
+
+**Evidencia.** En el oro *dev* aleatorio (n = 794 evaluables: 199 de `gold_v0` y
+595 de `gold_v1`; 273 quejas `NEG`). El bloque dirigido no entra en estas cifras:
+
+| Etiqueta de sentimiento | Recall de `NEG` (IC 95 %) | Quejas perdidas | Precisión de `NEG` | κ (IC 95 %) |
+| :--- | ---: | ---: | ---: | ---: |
+| M0 estrellas (1–2 `NEG`, 3 `NEU`, 4–5 `POS`) | 66.3 % (62.7–70.2) | 92 de 273 (33.7 %) | 95.3 % | 0.68 (0.65–0.72) |
+| M1 TF-IDF + LR (entrenado con la plata) | 93.0 % (90.0–95.8) | 19 de 273 (7.0 %) | 94.1 % | 0.87 (0.84–0.90) |
+| M4 RoBERTuito ajustado con la plata | 96.0 % (93.8–98.1) | 11 de 273 (4.0 %) | 96.0 % | 0.91 (0.89–0.94) |
+
+* **M4** se reentrenó en el Mac con una semilla y sin ninguna reseña de las
+  colas del oro. Supera a M1 en κ por +0.04 (IC 95 % [0.02, 0.07]).
+* Ponderado por diseño (población), el recall de `NEG` es 66.7 % para M0,
+  94.8 % para M1 y 97.3 % para M4: se pierde el 33.3 %, el 5.2 % y el 2.7 % de
+  las quejas.
+* Con el *dev* de 199 ítems, M1 perdía 1 de 45 quejas (2.2 %). Esa cifra estaba
+  inflada por el anclaje: esos textos se anotaron primero viendo la propuesta de
+  Gemini, de la que M1 aprende.
+* Las quejas que las estrellas esconden están en 3★ y 4★: en la plata, el 73.3 %
+  de las 3★ y el 28.5 % de las 4★ son `NEG` ([reporte](../analytics/silver_v0_report.md)).
+* El efecto no es de privacidad, sino de omisión: quien se queja con 3★ o 4★ no
+  aparece en los agregados de quejas ni llega a priorización.
+
+**Criterio.** Las escalas de arriba miden exposición de datos; para este modo se
+leen así:
+
+* **S**, según el daño a los usuarios cuyas quejas no se ven: 1 = ninguna queja
+  perdida; 5 = pérdida ocasional; 10 = una clase de usuarios queda invisible de
+  forma sistemática.
+* **O**, según la fracción de quejas perdidas en el oro (muestra): ≤ 5 % → 2;
+  5–15 % → 4; 15–30 % → 6; > 30 % → 7 o más.
+* **D**, con la escala de arriba: hoy solo el oro, anotado a mano y por rondas,
+  revela las quejas perdidas.
+
+| Escenario | S | O | D | RPN | Lectura |
+| :--- | :-: | :-: | :-: | :-: | :--- |
+| Estrellas como etiqueta | 6 | 7 | 5 | **210** | Sobre el umbral: una de cada tres quejas se pierde (33.7 %) |
+| M1 como etiqueta | 6 | 4 | 5 | **120** | Sobre el umbral: se pierde el 7.0 % (con 199 ítems era 2.2 %, O = 2 y RPN 60) |
+| M4 como etiqueta | 6 | 2 | 5 | 60 | Bajo el umbral: se pierde el 4.0 % (2.7 % ponderado) |
+
+* **S = 6** en todos: el daño de cada queja perdida no cambia con el modelo, solo
+  su frecuencia. Queda debajo de 8 porque no expone datos ni decide sobre una
+  persona.
+* **D = 5** en todos: no hay control automático; la detección depende de
+  re-anotar oro. Bajaría con un muestreo periódico de reseñas de 3★ y 4★
+  contra el modelo.
+* **M1 cruza el umbral** con el *dev* ampliado. Ponderado por población (5.2 %)
+  queda en el borde entre O = 2 y O = 4.
+* **M4 es el único escenario medido bajo el umbral.** Está cerca del borde de
+  O = 2 (4.0 % contra 5 %) y viene de una sola semilla. La acción es fijar en
+  5.8 la etiqueta que baje O, o un control que baje D, y confirmarlo con el oro
+  *test*.
+* **Límites:**
+  * *dev* ya no es chico (273 `NEG`; una queja equivale a 0.4 puntos de recall),
+    pero las 199 de `gold_v0` conservan el residuo de anclaje que favorece a M1;
+  * M1 aprende el criterio de Gemini, incluidos sus sesgos;
+  * el oro *test* (601) queda reservado para 5.8 y puede mover O un nivel.
 
 ## Revisión
 

@@ -21,7 +21,7 @@ de trabajo. El mapa de rutas anteriores está en [`MIGRATION.md`](MIGRATION.md).
 | `annotation` | anotación humana (5.3) | `app` (Streamlit) |
 | `analysis` | análisis del etiquetado (5.3) | `analyze_gold_v0`\*, `validate_prompt`\*, `analyze_gold_v0_r2`\*, `analyze_silver`, `analyze_gold_v1` |
 | `sentiment` | competencia de modelos (5.4) | `data`, `metrics`, `encoder`, `evaluate` |
-| `sentiment.models` | modelos (5.4) | `baselines`, `pretrained`, `noisy`, `finetune`, `delora` |
+| `sentiment.models` | modelos (5.4) | `baselines`, `pretrained`, `noisy`, `finetune`, `delora`, `threshold` |
 | `sentiment.kaggle` | corridas con GPU (5.4) | `export_bundle`, `kaggle_push` |
 
 \* **Histórico:** etapa cerrada y superada por una versión posterior. Se
@@ -167,6 +167,8 @@ protocolo. El oro *test* no se predice.
    ```sh
    uv run python -m $M.sentiment.models.noisy                 # M3, M6, M7 (TF-IDF con estrellas), CPU
    uv run python -m $M.sentiment.models.finetune robertuito   # M4, ~50 min en MPS
+   uv run python -m $M.sentiment.models.finetune robertuito --label-smoothing 0.1  # M5
+   uv run python -m $M.sentiment.models.threshold             # sesgo de NEU sobre M4, sin reentrenar
    uv run python -m $M.sentiment.models.delora robertuito     # M8 (Delora), horas en MPS
    ```
 
@@ -176,8 +178,9 @@ protocolo. El oro *test* no se predice.
    oro *test*) con los módulos de `voc_analytics` que usan los encoders;
    `kaggle_push` sube el dataset y lanza lotes que corren
    `python -m voc_analytics.sentiment.models.<modelo>`. Requiere el token de
-   la API de Kaggle en `~/.kaggle/access_token`. Las predicciones
-   descargadas se copian a `data/models/preds/`.
+   la API de Kaggle en `~/.kaggle/access_token`. Lotes: `humo`, `m4`, `m5`,
+   `delora_grid` y `delora`. Las predicciones descargadas
+   (`uvx kaggle kernels output`) se copian a `data/models/preds/`.
 
    ```sh
    uv run python -m $M.sentiment.kaggle.export_bundle
@@ -185,7 +188,7 @@ protocolo. El oro *test* no se predice.
    uv run python -m $M.sentiment.kaggle.kaggle_push kernel <usuario> <lote>
    ```
 
-4. Evaluación común (~6 min de bootstrap):
+4. Evaluación común (~20 min de bootstrap con todos los modelos):
 
    ```sh
    uv run python -m $M.sentiment.evaluate

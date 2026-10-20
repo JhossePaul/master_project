@@ -1,0 +1,326 @@
+{
+  "anotadas_r2": 430,
+  "consistencia_r1_r2": {
+    "aleatorio_ciego_en_r1": {
+      "n": 201,
+      "acuerdo": 0.975,
+      "kappa": 0.944
+    },
+    "aleatorio_asistido_en_r1": {
+      "n": 199,
+      "acuerdo": 0.97,
+      "kappa": 0.927
+    },
+    "calibracion": {
+      "n": 30,
+      "acuerdo": 0.933,
+      "kappa": 0.804
+    },
+    "transiciones_ciego": [
+      {
+        "h1": "NA",
+        "POS": 1,
+        "NEG": 0,
+        "NEU": 0,
+        "NA": 1
+      },
+      {
+        "h1": "NEG",
+        "POS": 0,
+        "NEG": 54,
+        "NEU": 0,
+        "NA": 0
+      },
+      {
+        "h1": "NEU",
+        "POS": 1,
+        "NEG": 0,
+        "NEU": 4,
+        "NA": 0
+      },
+      {
+        "h1": "POS",
+        "POS": 137,
+        "NEG": 2,
+        "NEU": 1,
+        "NA": 0
+      }
+    ],
+    "transiciones_asistido": [
+      {
+        "h1": "NEG",
+        "NEG": 41,
+        "POS": 0,
+        "NEU": 0
+      },
+      {
+        "h1": "NEU",
+        "NEG": 4,
+        "POS": 2,
+        "NEU": 7
+      },
+      {
+        "h1": "POS",
+        "NEG": 0,
+        "POS": 145,
+        "NEU": 0
+      }
+    ]
+  },
+  "anclaje_retrospectivo": {
+    "asistido_r1_vs_v1": {
+      "n": 199,
+      "acuerdo": 0.995,
+      "kappa": 0.988
+    },
+    "mismos_textos_a_ciegas_r2_vs_v1": {
+      "n": 199,
+      "acuerdo": 0.965,
+      "kappa": 0.914
+    }
+  },
+  "poblacion_r2": {
+    "clase": {
+      "NEG": {
+        "p": 0.2598,
+        "se": 0.0254,
+        "n": 400
+      },
+      "NEU": {
+        "p": 0.0254,
+        "se": 0.0087,
+        "n": 400
+      },
+      "POS": {
+        "p": 0.7145,
+        "se": 0.026,
+        "n": 400
+      },
+      "NA": {
+        "p": 0.0003,
+        "se": 0.0003,
+        "n": 400
+      }
+    },
+    "incongruencia_extremos": {
+      "p": 0.047,
+      "se": 0.0126,
+      "n": 400
+    },
+    "estrellas_difiere_de_oro": {
+      "p": 0.0992,
+      "se": 0.0169,
+      "n": 399
+    },
+    "incongruencia_por_banco": {
+      "AZTECA": {
+        "p": 0.0324,
+        "se": 0.0263,
+        "n": 80
+      },
+      "BANORTE": {
+        "p": 0.0557,
+        "se": 0.0245,
+        "n": 80
+      },
+      "BBVA": {
+        "p": 0.0537,
+        "se": 0.0275,
+        "n": 80
+      },
+      "NUBANK": {
+        "p": 0.0699,
+        "se": 0.0351,
+        "n": 80
+      },
+      "SANTANDER": {
+        "p": 0.0406,
+        "se": 0.0244,
+        "n": 80
+      }
+    },
+    "incongruencia_por_periodo": {
+      "2020-2022": {
+        "p": 0.029,
+        "se": 0.0201,
+        "n": 107
+      },
+      "2023-2024": {
+        "p": 0.0439,
+        "se": 0.0227,
+        "n": 107
+      },
+      "2025-2026": {
+        "p": 0.0398,
+        "se": 0.0181,
+        "n": 106
+      },
+      "<=2019": {
+        "p": 0.0814,
+        "se": 0.0353,
+        "n": 80
+      }
+    },
+    "estrellas_vs_oro": {
+      "n": 399,
+      "acuerdo": 0.892,
+      "kappa": 0.725
+    },
+    "confusion_estrellas": [
+      {
+        "estrellas": 1,
+        "NEG": 62,
+        "POS": 1,
+        "NEU": 0
+      },
+      {
+        "estrellas": 2,
+        "NEG": 10,
+        "POS": 0,
+        "NEU": 0
+      },
+      {
+        "estrellas": 3,
+        "NEG": 11,
+        "POS": 2,
+        "NEU": 1
+      },
+      {
+        "estrellas": 4,
+        "NEG": 13,
+        "POS": 25,
+        "NEU": 4
+      },
+      {
+        "estrellas": 5,
+        "NEG": 5,
+        "POS": 258,
+        "NEU": 7
+      }
+    ]
+  },
+  "prompts_vs_oro_r2": {
+    "aleatorio": {
+      "v0": {
+        "n": 400,
+        "acuerdo": 0.963,
+        "kappa": 0.913
+      },
+      "v1": {
+        "n": 400,
+        "acuerdo": 0.955,
+        "kappa": 0.897
+      },
+      "v2": {
+        "n": 400,
+        "acuerdo": 0.96,
+        "kappa": 0.908
+      },
+      "v3": {
+        "n": 400,
+        "acuerdo": 0.97,
+        "kappa": 0.93
+      }
+    },
+    "aleatorio_falla": {
+      "v0": {
+        "n": 400,
+        "acuerdo": 0.948,
+        "kappa": 0.841
+      },
+      "v1": {
+        "n": 400,
+        "acuerdo": 0.945,
+        "kappa": 0.836
+      },
+      "v2": {
+        "n": 400,
+        "acuerdo": 0.948,
+        "kappa": 0.844
+      },
+      "v3": {
+        "n": 400,
+        "acuerdo": 0.945,
+        "kappa": 0.837
+      }
+    },
+    "calibracion": {
+      "v0": {
+        "n": 30,
+        "acuerdo": 0.867,
+        "kappa": 0.655
+      },
+      "v1": {
+        "n": 30,
+        "acuerdo": 0.533,
+        "kappa": 0.245
+      },
+      "v2": {
+        "n": 30,
+        "acuerdo": 0.9,
+        "kappa": 0.701
+      },
+      "v3": {
+        "n": 30,
+        "acuerdo": 0.9,
+        "kappa": 0.701
+      }
+    },
+    "confusion_v3": [
+      {
+        "h2": "NA",
+        "NEU": 0,
+        "POS": 0,
+        "NA": 1,
+        "NEG": 0
+      },
+      {
+        "h2": "NEG",
+        "NEU": 2,
+        "POS": 1,
+        "NA": 0,
+        "NEG": 98
+      },
+      {
+        "h2": "NEU",
+        "NEU": 9,
+        "POS": 3,
+        "NA": 0,
+        "NEG": 0
+      },
+      {
+        "h2": "POS",
+        "NEU": 3,
+        "POS": 280,
+        "NA": 0,
+        "NEG": 3
+      }
+    ],
+    "v3_menos_v0": {
+      "diferencia": 0.017,
+      "ic95": [
+        -0.012,
+        0.049
+      ]
+    },
+    "v3_menos_v2": {
+      "diferencia": 0.022,
+      "ic95": [
+        -0.012,
+        0.058
+      ]
+    }
+  },
+  "estabilidad": {
+    "prompt_v2": {
+      "n": 430,
+      "acuerdo": 0.984,
+      "kappa": 0.965
+    },
+    "prompt_v3": {
+      "n": 430,
+      "acuerdo": 0.998,
+      "kappa": 0.995
+    }
+  }
+}

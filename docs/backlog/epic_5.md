@@ -1,13 +1,14 @@
 # EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado:** Pendiente. Reemplaza la especificación anterior, que fijaba modelo, dependencias, tópicos y esquema de salida antes de tener evidencia. Esa especificación se conserva como borrador condicionado en [`epic_5_deployment.md`](epic_5_deployment.md) y solo se reescribe tras el registro de decisión (feature 5.8).
-* **Fases:** (1) planteamiento analítico viable → (2) experimentación para elegir la estrategia de producción → (3) despliegue de la estrategia elegida (`epic_5_deployment.md`).
+* **Estado (2026-10-19):** En curso, fase 2. Hechos: EDA y patrones temporales (5.2), guía de anotación, oro `gold_v1` y plata `silver_v0` (5.3), y la primera comparación de modelos con el oro ampliado (5.4). Siguen las semillas en Kaggle (5.4) y las features 5.5–5.8. Ver [estado por feature](#-estado-por-feature) y [siguientes pasos](#siguientes-pasos).
+* **Historia de los resultados:** [`docs/analytics/README.md`](../analytics/README.md) ordena los reportes como una historia y dice qué cifra está vigente. Este documento solo guarda el planteamiento, el estado y lo que falta; la cronología detallada está en los reportes.
+* **Fases:** (1) planteamiento analítico viable → (2) experimentación para elegir la estrategia de producción → (3) despliegue de la estrategia elegida. La especificación anterior, que fijaba modelo, dependencias, tópicos y esquema de salida antes de tener evidencia, se conserva como borrador condicionado en [`epic_5_deployment.md`](epic_5_deployment.md) y solo se reescribe tras el registro de decisión (5.8).
 * **Semanas Objetivo:** Semanas 4 - 6 (fases 1 y 2).
 * **Dependencias:** EPIC-1 a EPIC-4 cerradas ([cierre](closure_epics_1_4.md)). Corpus: `bbva_voc_tds.sanitized_reviews_tds`, **2 649 047 reseñas** de BBVA, NUBANK, SANTANDER, AZTECA y BANORTE (2011-04 a 2026-10), con `source_observed_at`. Bibliografía: [`references.md`](../governance/references.md).
 * **Directorios:**
-  * `experiments/analytics/`: proyecto `uv` **independiente del workspace** (su propio `pyproject.toml` y `uv.lock`), para que las dependencias de experimentación (scikit-learn, sentence-transformers, torch, peft, cleanlab, BERTopic, polars/duckdb, cliente de Gemini) no entren al lock de producción. Scripts y notebooks reproducibles, con semillas fijas.
-  * `docs/analytics/`: reportes de cada experimento, guía de anotación y el registro de decisión (`decision_record.md`).
-  * `docs/governance/`: Data Card y Model Card se completan con los resultados.
+  * `experiments/analytics/`: proyecto `uv` **independiente del workspace** (su propio `pyproject.toml` y `uv.lock`), para que las dependencias de experimentación no entren al lock de producción. El código es el paquete `voc_analytics` (`src/`), agrupado por etapa: `snapshot`, `eda`, `labeling`, `sampling`, `annotation`, `analysis` y `sentiment`. Comandos en su [README](../../experiments/analytics/README.md).
+  * `docs/analytics/`: reportes de cada experimento, guía de anotación, protocolo de 5.4 y, al final, el registro de decisión (`decision_record.md`).
+  * `docs/governance/`: Data Card, Model Card y matriz FMEA se completan con los resultados.
 
 ---
 
@@ -30,159 +31,91 @@ Principios:
 * **Toda cifra de la literatura o de conversaciones con LLM es una hipótesis** hasta medirla sobre este corpus (ver `references.md`, columna *Verif.*).
 * **Etiquetado humano limitado:** 1 000 reseñas como base y hasta 2 000 con esfuerzo extra. Nunca se etiqueta el corpus completo; las 2.65 M solo se predicen.
 
----
-
-## 📊 Evidencia inicial (2026-10-16)
-
-Consulta de longitudes por banco y año sobre `sanitized_reviews_tds` (palabras = tokens separados por espacios de `texto_limpio`):
-
-| Banco | Filas | Textos únicos (cota) | 1 palabra | > 60 palabras | p99 por año | Máx. | Estrellas prom. | Antes de 2018 |
-| :--- | ---: | ---: | ---: | ---: | :---: | ---: | ---: | ---: |
-| BBVA | 787 875 | ≤ 65 % | 16.8 % | 2.4 % | 57–84 | 384 | 3.72 | 7.9 % |
-| SANTANDER | 623 594 | ≤ 60 % | 18.2 % | 1.0 % | 52–87 | 625 | 4.03 | 0.9 % |
-| AZTECA | 590 981 | ≤ 52 % | 21.9 % | 0.9 % | 50–88 | 655 | 4.40 | 0.2 % |
-| BANORTE | 518 393 | ≤ 60 % | 17.5 % | 1.0 % | 51–87 | 297 | 4.25 | 2.6 % |
-| NUBANK | 128 204 | ≤ 72 % | 14.7 % | 2.6 % | 30–100 | 114 | 4.21 | 0.0 % |
-| **Total** | **2 649 047** | **≤ 1.60 M (60 %)** | **18.3 %** | **1.46 %** | **50–89** | **655** | | **3.1 %** |
-
-Los textos únicos son la suma por banco y año: una **cota superior** del total deduplicado.
-
-Implicaciones para el planteamiento:
-
-* **Longitud:** el p99 por año está entre 50 y 89 palabras y solo 38 796 reseñas (1.46 %) superan 60. Un encoder de 512 tokens cubre prácticamente todo el corpus; el contexto largo no es un requisito. El rango 2–60 del EDA original ya **no filtra** en el TDS (EPIC-4 lo movió al análisis): su uso se decide en 5.2.
-* **Textos de una palabra:** 484 829 (18.3 %; 21.9 % en AZTECA). Tienen sentimiento evaluable ("excelente", "pésima"), pero casi nunca un tema. La elegibilidad debe ser **por tarea** (sentimiento sí, tópico no), no un único filtro.
-* **Deduplicación:** como mucho el 60 % de los textos es único, así que etiquetar y predecir sobre textos únicos ahorra al menos 40 % del costo. El EDA mide la cifra exacta (deduplicación global, no por año).
-* **Deriva temporal evidente:** antes de 2018 las estrellas promedio rondan 2–3.5 y los textos son más largos. Desde 2019, AZTECA, BANORTE y SANTANDER suben a ~4.2–4.5 con medianas de 3–4 palabras, posible efecto de solicitudes de calificación dentro de la app. BBVA es el único que baja (3.2–3.7 en 2020 y 2024–2026). No se puede asumir una distribución estable ni una tasa de ruido única.
-* **Concentración temporal:** el 97 % es de 2018 en adelante y el 31 % de 2024–2026. Muestreo y validación deben estratificar por periodo.
-* **Límites heredados del cierre de EPIC-1–4:**
-  * `fecha` es la de la **última edición** de la reseña, no la de creación.
-  * La sanitización en producción es solo regex (Cloud DLP desactivado); queda PII residual posible (FMEA F-01/F-03).
-  * Hay ~175 reseñas de NUBANK de 2015–2019, anteriores a su lanzamiento en México: decidir si se excluyen.
-  * 8 textos vacíos.
+La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco y año, 2026-10-16) está en el [capítulo 1 de la historia](../analytics/README.md#1-problema-y-corpus).
 
 ---
 
-## 📦 Features
+## 📦 Estado por feature
+
+| Feature | Estado | Reportes |
+| :--- | :--- | :--- |
+| 5.1 Planteamiento y elegibilidad | En curso: guía adoptada; reglas en borrador `v0.1` | [Reglas](../analytics/eligibility_rules.md), [guía](../analytics/annotation_guideline.md) |
+| 5.2 EDA | Primera pasada y patrones temporales hechos; quedan tokens, multi-aspecto y *Data Card* | [EDA](../analytics/eda_report.md), [temporal](../analytics/eda_temporal_report.md) |
+| 5.3 Etiquetado | **Cerrada (2026-10-20).** Oro (1 730 ítems) y plata vigentes; acuerdo entre personas medido (κ 0.81). Se reabre si 5.5 usa `menciona_falla` (`prompt_v4`), si 5.6 o 5.8 necesitan más oro, o si se suman anotadores (guía `v2.3`) | [Capítulo 3](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata) |
+| 5.4 Modelos de sentimiento | **Cerrada la experimentación (2026-10-20):** M0–M9 evaluados; M4 RoBERTuito es el mejor modelo propio; M4 contra M9 se decide en 5.8 | [Protocolo](../analytics/sentiment_models_protocol.md), [capítulo 4](../analytics/README.md#4-competencia-de-modelos-de-sentimiento) |
+| 5.5 Tópicos y ABSA | Sin iniciar | — |
+| 5.6 Calibración, HITL y priorización | Sin iniciar | — |
+| 5.7 Escala, ciclo de vida y monitoreo | Sin iniciar | — |
+| 5.8 Registro de decisión | Sin iniciar | — |
 
 ### FEATURE 5.1: Planteamiento, Volumetría y Contrato Analítico
 
 **Objetivo:** fijar qué se predice, sobre qué filas y con qué presupuesto, antes de experimentar.
 
-1. **Definición de etiquetas de sentimiento** (guía de anotación, `docs/analytics/annotation_guideline.md`):
-   * Clases candidatas: `NEG`, `NEU`, `POS`, con reglas explícitas para mezclas ("buena app pero no puedo transferir"), sarcasmo, quejas sobre el banco y no sobre la app, y textos sin opinión.
-   * Decidir si existe una clase o marca `NO_EVALUABLE`, distinta de `NEU`.
-   * Ejemplos por clase y por banco, revisados antes de etiquetar.
-2. **Contrato de elegibilidad por tarea:** cada reseña recibe, por tarea (sentimiento, tópico), un estado `PREDICTABLE` o `NOT_PREDICTABLE` con motivo:
-
-   | Motivo candidato | Criterio a definir en 5.2 |
-   | :--- | :--- |
-   | `EMPTY` | Texto vacío tras la limpieza |
-   | `ONLY_TOKENS_OR_SYMBOLS` | Solo emojis, signos o tokens de sanitización (`[PERSON_NAME]`, …) |
-   | `NOT_SPANISH` | Idioma distinto de español con confianza alta |
-   | `TOO_SHORT_FOR_TOPIC` | Longitud insuficiente para asignar tema (umbral medido) |
-   | `OUT_OF_SCOPE_PERIOD` | Por ejemplo, NUBANK anterior a su lanzamiento en México |
-
-   Las reseñas no predecibles **se conservan y se reportan**; no se descartan.
-3. **Envolvente de volumetría y costo:**
-   * Backfill único sobre ≤ 1.60 M textos únicos y delta diario de cientos de reseñas.
-   * Presupuesto máximo por fase: etiquetado con Gemini, cómputo de experimentos, backfill y operación diaria.
-   * Cualquier estrategia que no quepa en la envolvente queda descartada, aunque gane en calidad.
-4. **Borrador de las salidas de producción** (se cierra en 5.8):
-   * predicción por reseña, versionada por modelo y corrida;
-   * asignación de tópicos por periodo;
-   * catálogo de tópicos con su ciclo de vida;
-   * estado de elegibilidad;
-   * registro de corridas.
-
-   El esquema de 15 columnas de `delora_predictions` (EPIC-2) se revisa con esta evidencia.
+* **Etiquetas de sentimiento:** decidido. `NEG`/`NEU`/`POS` más la marca `NO_EVALUABLE`, con `menciona_falla`, `duda` y `nombre_persona`; cualquier queja concreta es `NEG`. Ver la [guía `v2.2`](../analytics/annotation_guideline.md).
+* **Reglas deterministas de elegibilidad** ([`eligibility_rules_v0.1`](../analytics/eligibility_rules.md), borrador):
+  * se evalúan por fila antes de la inferencia, sin modelos ni aleatoriedad; gana la primera que coincide;
+  * la fila excluida queda `NOT_PREDICTED` con su código, se conserva y se reporta por banco × periodo × motivo;
+  * la inferencia corre una vez por texto único elegible y se propaga a sus filas;
+  * `TOPIC_NOT_NEGATIVE` usa el TNSS **predicho**, nunca las estrellas, así que el backfill de tópicos es posterior al de TNSS;
+  * el EDA puede añadir reglas, cada una con código, criterio, conteo y justificación.
+* **Decisiones vigentes:** corte de NUBANK en 2020-01-01 (`TNSS_TIME_OUTLIER`, 175 filas); `TNSS_NOT_SPANISH` descartada.
+* **Abierto:**
+  * `TNSS_SINGLE_WORD` (484 829 filas, 18.3 %): excluir y reportar cobertura, o asignar por léxico como `RULE_BASED`. El sesgo de excluirlas es de −0.10 a −0.21 estrellas por banco, y los modelos aciertan ~96 % en una palabra. Decide 5.8.
+  * Umbral de `TOPIC_TOO_SHORT`: se fija con el piloto de tópicos (5.5).
+* **Envolvente de volumetría y costo:** backfill único sobre ≤ 1.60 M textos únicos (1 383 138 medidos) y delta diario de cientos de reseñas. Cualquier estrategia que no quepa queda descartada aunque gane en calidad. Costos medidos hasta ahora en la [sección de cómputo](#-cómputo-y-presupuesto).
+* **Borrador de las salidas de producción** (se cierra en 5.8): predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con su ciclo de vida; estado de elegibilidad; registro de corridas. El esquema de 15 columnas de `delora_predictions` (EPIC-2) se revisa con esta evidencia.
 
 ### FEATURE 5.2: EDA Global y Pipeline de Limpieza
 
-**Objetivo:** describir los 15 años y 5 bancos (no solo la muestra de 5 000 reseñas del último mes de BBVA) y decidir la limpieza y la elegibilidad.
+**Objetivo:** describir los 15 años y 5 bancos y decidir la limpieza y la elegibilidad.
 
-* **Corpus local:** exportar `sanitized_reviews_tds` a Parquet (una sola lectura de BigQuery dentro del free tier) y analizarlo localmente con polars/duckdb.
-* **Volumen y duplicados:** textos únicos globales, duplicados exactos y casi exactos (normalización de mayúsculas, espacios y repeticiones), y textos repetidos entre bancos.
-* **Distribuciones por banco × año × `version_app`:**
-  * longitud en palabras y tokens del tokenizador candidato;
-  * estrellas y votos de utilidad;
-  * idioma, emojis y tokens de sanitización;
-  * códigos `ref:`.
-* **Proxy de incongruencia:** en una muestra, comparar estrellas contra el sentimiento estimado (Gemini o un modelo sin ajuste) por banco y periodo, para dimensionar el ruido real. Esto reemplaza la cifra no verificada del 28.3 % (`references.md`, C4).
-* **Multi-aspecto:** estimar qué fracción de reseñas negativas menciona más de un tema; esto informa la decisión ABSA vs tópicos (5.5).
-* **Pipeline de limpieza:** evaluar `limpiar_texto_bancario` (minúsculas, URLs, repeticiones) frente al texto sanitizado sin limpiar, por cada familia de modelos (los transformers pueden preferir texto menos procesado). Decidir cómo tratar emojis, tokens de sanitización y códigos `ref:`.
-* **Entregables:**
-  * reporte `docs/analytics/eda_report.md`;
-  * reglas de limpieza y elegibilidad versionadas;
-  * Data Card actualizada.
+* **Hecho:** [EDA global](../analytics/eda_report.md) (2026-10-16) y [patrones temporales](../analytics/eda_temporal_report.md) (2026-10-18). Conclusiones en el [capítulo 2](../analytics/README.md#2-eda-y-elegibilidad).
+* **Decisiones vigentes:**
+  * sin filtro de longitud: la longitud predice las estrellas y filtrar sesga los agregados;
+  * deduplicar por texto único antes de etiquetar y predecir;
+  * la plata no necesita estratos de quincena, día de la semana ni trimestre; los atributos temporales se guardan por fila;
+  * las ventanas de deriva de 5.7 siguen la cadencia de cada banco (semanal en NUBANK, 2–5 semanas en el resto).
+* **Resuelto en otras features:**
+  * proxy de incongruencia estrellas–texto: lo midieron el oro y la plata (5.3);
+  * limpieza por familia de modelos: `texto_sanitizado` sin `limpiar_texto_bancario` (5.4).
+* **Pendiente:** longitud en tokens de los tokenizadores candidatos, proporción multi-aspecto de las negativas (informa ABSA contra tópicos en 5.5), cobertura del léxico determinista para reseñas cortas y *Data Card* actualizada.
 
 ### FEATURE 5.3: Estrategia de Etiquetado (Oro y Plata)
 
+> **Cerrada (2026-10-20).** Oro vigente de 1 730 ítems, plata `silver_v0`, guía `v2.2`, segundo anotador (κ 0.81) y F-01 en monitoreo. Se reabre solo si:
+> 1. 5.5 usa `menciona_falla` en sus métricas (`prompt_v4`);
+> 2. 5.6 o 5.8 necesitan más oro (por ejemplo, para calibrar umbrales);
+> 3. se suman anotadores (guía `v2.3` con ejemplos largos de elogio con una queja menor).
+
 **Objetivo:** obtener etiquetas limpias suficientes para entrenar y, sobre todo, para evaluar sin sesgo, con 1 000–2 000 etiquetas humanas.
 
-1. **Conjunto de plata (Gemini Flash):**
-   * Muestra estratificada por banco × estrellas × periodo de **decenas de miles de textos únicos** (tamaño fijado por el presupuesto de 5.1), sobremuestreando 4 y 5 estrellas.
-   * Eficiencia obligatoria:
-     * deduplicar antes de enviar;
-     * 50–100 reseñas por solicitud con una sola instrucción corta;
-     * salida estructurada mínima (índice, etiqueta enum, confianza);
-     * razonamiento (*thinking*) apagado o mínimo;
-     * temperatura 0;
-     * Batch API cuando la espera sea aceptable.
-   * Antes de la corrida completa, un piloto de ~500 textos mide tokens reales, costo y acuerdo con humanos. Se fija un tope de gasto.
-   * Versionar el prompt, el modelo exacto y la fecha. Las etiquetas de plata nunca se usan como verdad para reportar KPIs.
-2. **Conjunto de oro (humano, 1 000 base / 2 000 con esfuerzo extra):**
-   * **~40 % aleatorio estratificado** por banco × estrellas × periodo × longitud, con probabilidades de inclusión registradas. Es el único bloque válido para estimar métricas poblacionales e intervalos (*Prediction-Powered Inference*, Angelopoulos et al., 2023).
-   * **~60 % dirigido:**
-     * desacuerdos entre estrellas y Gemini (el sesgo de interés);
-     * baja confianza de Gemini o desacuerdo entre Gemini y un modelo clásico;
-     * cobertura de grupos de embeddings: temas raros, modismos, textos largos, solo tokens, códigos `ref:`.
-   * **Anclaje:** el anotador ve la propuesta de Gemini. Una submuestra de **150–200 reseñas se etiqueta a ciegas** para medir el acuerdo con y sin ver la propuesta.
-   * **Uso:** el oro se divide en *dev* (selección de hiperparámetros y umbrales) y *test* (reporte final, intocable hasta 5.8). Nunca entra al entrenamiento salvo, opcionalmente, una porción pequeña declarada como ancla limpia para Delora.
-3. **Segunda ronda (*active learning*):** si el presupuesto humano llega a 2 000, las ~1 000 adicionales se eligen por incertidumbre del mejor modelo de la primera ronda.
-4. **Métricas del etiquetado:**
-   * acuerdo humano–Gemini (κ de Cohen);
-   * acuerdo humano a ciegas vs con propuesta;
-   * tasa de incongruencia estrellas–oro por banco y periodo.
+* **Hecho:** guía de anotación, piloto de Gemini, oro en dos rondas más una re-anotación a ciegas, y plata v0. Historia y cifras vigentes en el [capítulo 3](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata).
+* **Decisiones vigentes:**
+  * **Gemini Flash vía Vertex AI en el proyecto:** los datos no salen de GCP y se paga con créditos. La API se habilita con el flag `enable_vertex_ai_api`; **no** se usa `enable_dedicated_vertex_endpoints`.
+  * **Etiquetador:** `gemini-3.6-flash` con `prompt_v3` (guía `v2`): κ 0.92 contra el oro en 600 textos nuevos, $0.045–0.048 por 1 000 textos. Se versionan el prompt, el modelo exacto y la fecha. Las etiquetas de plata nunca se usan como verdad para reportar KPIs.
+  * **Todo el oro se anota a ciegas,** tras medir un anclaje de +7 puntos en modo asistido.
+  * **Oro vigente** (`gold_v0_r2` + `gold_v1`, 1 730 ítems): *dev* aleatorio 799, *dev* dirigido 300, *test* 601 y 30 de calibración. Solo el bloque aleatorio da cifras poblacionales; el *test* se evalúa una sola vez, en 5.8. Diseño en [`gold_v1_design.md`](../analytics/gold_v1_design.md).
+  * **Plata vigente:** `silver_v0`, 99 926 filas y 70 284 textos únicos por $3.37, con holdout temporal desde 2026-04-01.
+  * **Herramienta del oro:** app Streamlit local (`voc_analytics.annotation`), solo en `localhost`; guarda en CSV fuera de git y registra el tiempo por reseña.
+  * `prompt_v4` solo se justifica si `menciona_falla` entra a las métricas de 5.5.
+* **Segundo anotador (2026-10-20):** 100 ítems a ciegas de `gold_v1`, con la guía `v2.2`. κ entre personas 0.81 [0.70, 0.91] con 4 clases y 0.87 con 3; Gemini coincide con cada anotador (0.91 y 0.88 en *dev*) tanto o más que ellos entre sí. El desacuerdo principal es la regla 2 amplia: el segundo anotador decide por el tono. Ver el [reporte](../analytics/gold_v1_report.md), sección 7.
+* **F-01 (hecho, 2026-10-20):** la [matriz FMEA](../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) registra la tasa medida de nombres propios, 0 en 1 300 anotadas. RPN 105 → 70; la fila pasa a monitoreo.
 
 ### FEATURE 5.4: Competencia de Modelos de Sentimiento con Etiquetas Ruidosas
 
 **Objetivo:** elegir el modelo de Q1 por evidencia, con el mismo protocolo para todos.
 
-**Candidatos (escalera de complejidad):**
-
-| ID | Estrategia | Fuente |
-| :---: | :--- | :--- |
-| M0 | Estrellas → polaridad (1–2 NEG, 3 NEU, 4–5 POS) | Referencia trivial: mide cuánto ruido hay |
-| M1 | TF-IDF + regresión logística / SVM | Molla et al. (2026): los clásicos compiten con pocos datos |
-| M2 | Encoder de sentimiento sin ajuste (p. ej., `pysentimiento/robertuito-sentiment-analysis`) | Pérez et al. (2022) |
-| M3 | Encoder ajustado con estrellas como etiqueta | Referencia ingenua: aprende el ruido |
-| M4 | Encoder ajustado con etiquetas de plata | Destilación del LLM |
-| M5 | M3 o M4 con *label smoothing* | Gao et al. (2024) |
-| M6 | Corrección *forward* con matriz de transición estrellas → sentimiento | Patrini et al. (2017); Sukhbaatar et al. (2015) |
-| M7 | *Confident Learning* (`cleanlab`) para filtrar o re-ponderar y reentrenar | Northcutt et al. (2021) |
-| M8 | Delora adaptado: detector de dos LoRA (Eq. 3) y clasificador en etapa 2 | Yuan, Chen y Zhang (2025) |
-| M9 | Gemini Flash como clasificador directo | Costo por millón medido en 5.3 |
-
-* **Encoders a evaluar** (la disponibilidad y licencia de cada checkpoint se verifican antes de usarlo):
-  * `robertuito` (preentrenado con tuits);
-  * RoBERTa-BNE / BETO (español general);
-  * mDeBERTa-v3 (multilingüe).
-* El rango de LoRA es un hiperparámetro (Steele, 2026), no se fija en 8.
-* **M8 es el más caro y el menos validado:** el paper solo evalúa Llama-3.1-8B y requiere h₁, h₂ y un conjunto limpio. Se time-boxea y se compara contra M5–M7. Si no supera claramente a los métodos baratos, no se adopta. Los otros dos "DeLoRA / Dual LoRA" (Bini et al.; Xu et al.) **no tratan ruido** y no son candidatos (`references.md`, C3).
-* **Protocolo:**
-  * validación cruzada sobre la plata, estratificada por banco y periodo;
-  * selección en el oro *dev*;
-  * reporte final una sola vez sobre el oro *test*, con intervalos de confianza por *bootstrap* y estimaciones poblacionales por PPI.
-* **Métricas de calidad:**
-  * macro-F1;
-  * **Negative Recall** y precisión de `NEG`;
-  * detección de incongruencia (sobre el oro: el modelo acierta cuando estrellas y texto no coinciden);
-  * calibración (ECE);
-  * brecha de desempeño entre bancos y entre periodos (la paridad por banco y periodo sustituye a la "paridad dialectal" del caso de uso, que no tiene un corpus de modismos etiquetado; `references.md`, C6).
-* **Métricas de costo:**
-  * reseñas por segundo y costo por millón en Mac M2 (MPS), Kaggle T4 y Cloud Run CPU;
-  * tamaño del artefacto;
-  * memoria.
+* **Candidatos y protocolo:** escalera M0–M9, particiones, métricas y regla de decisión en [`sentiment_models_protocol.md`](../analytics/sentiment_models_protocol.md). M8 (Delora) es el más caro y el menos validado: se time-boxea y solo se adopta si supera claramente a los métodos baratos.
+* **Hecho:** fase A en el Mac (M0, M1, M2, T0, M9), escalera de ruido con TF-IDF (M3, M6, M7), M4 con RoBERTuito y BETO (3 semillas cada uno) M8 Delora (búsqueda del detector y 3 semillas), M5 (*label smoothing* sobre M4, 2 valores de ε y 3 semillas) en Kaggle y un sesgo de `NEU` sobre M4, evaluados con el *dev* ampliado. Detalle en las secciones 12 a 14 del [reporte](../analytics/sentiment_models_v0_report.md). Ver el [capítulo 4](../analytics/README.md#4-competencia-de-modelos-de-sentimiento).
+* **Decisiones vigentes:**
+  * entrada `texto_sanitizado`, un ejemplo por texto único, sin pesos ni filtro de longitud; las métricas se desglosan por longitud;
+  * se excluyen del entrenamiento las reseñas de todas las colas del oro;
+  * descartados con motivo: T0 y M2 sin ajustar (dominio), M3, M6 y M7 (estrellas como etiqueta) **M8 Delora** (−0.04 a −0.05 de κ contra M4 en las tres semillas, más caro; su detector queda como candidato para la incongruencia) y **M5** (empata con M4 y calibra peor);
+  * M4 RoBERTuito es el mejor modelo propio: empata con BETO en el aleatorio y gana en el dirigido;
+  * entrenamiento con GPU en Kaggle, sin el oro *test* (riesgo F-13 aceptado por el autor); nada de GPU en GCP sin su aprobación.
+* **Resultado vigente** (κ *dev* aleatorio, n = 794; M4 y M8, media de 3 semillas): M0 0.68, M1 0.87, M8 0.87, M4 0.92, M9 0.93. M4 − M1 entre +0.043 y +0.053, significativo en las seis corridas; M9 − M4 = +0.021 [−0.000, 0.043], concentrado en `NEU` (F1 0.73 contra 0.55).
+* **Cerrado (2026-10-20):** escalera M0–M9 completa. Un sesgo de `NEU` sobre M4, elegido con la plata de `holdout_nuevo`, no mejora en el oro (Δκ medio −0.001) y no se adopta. **M4 RoBERTuito queda como el mejor modelo propio**; la elección entre M4 y M9 se hace en 5.8, por costo, licencia (`pysentimiento` es no comercial) y el oro *test*.
 
 ### FEATURE 5.5: Descubrimiento de Tópicos y Decisión sobre ABSA
 
@@ -199,19 +132,20 @@ Implicaciones para el planteamiento:
   | Tópicos dinámicos | Detecta temas nuevos sin reentrenar | Nombres e identidad cambian entre corridas; requiere curaduría |
   | Híbrido: núcleo estable + "emergentes" | Comparabilidad y detección de lo nuevo | Más complejidad operativa |
 
-* **Detección de incidentes (Q3):** proponer una señal (aparición o crecimiento anómalo de un tópico por banco y versión) y probarla hacia atrás con los picos por versión que ya mostró el EDA.
+* **Detección de incidentes (Q3):** proponer una señal (aparición o crecimiento anómalo de un tópico por banco y versión) y probarla hacia atrás con los picos que ya mostró el EDA (BBVA 2024-07, 2025-10 y 2025-11) y con los días pico de SANTANDER y AZTECA donde las 5★ esconden quejas.
 * **Entregable:** recomendación con su costo de operación (frecuencia de re-clustering, curaduría humana, estabilidad de identificadores de tópico).
 
 ### FEATURE 5.6: Calibración, Incertidumbre, HITL y Priorización
 
-* **Calibración:** *temperature scaling* (Guo et al., 2017) sobre el oro *dev*, antes de cualquier uso de probabilidades o entropía.
-* **Umbral de revisión humana:** elegido por la curva cobertura–riesgo en el oro *dev* (qué fracción se envía a revisión frente al error que se evita), no fijado a priori en 0.65.
-* **Priorización (Q4):** las fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` de la especificación anterior son hipótesis. Se evalúan contra un criterio observable (por ejemplo, ordenar incidentes conocidos) antes de adoptarlas.
+* **Calibración:** *temperature scaling* (Guo et al., 2017) sobre el oro *dev*, antes de cualquier uso de probabilidades o entropía. En el *dev* de 199, M1 tenía ECE 0.02 y M4 0.017 sin calibrar; se re-mide con el *dev* ampliado.
+* **Umbral de revisión humana:** elegido por la curva cobertura–riesgo en el oro *dev*, no fijado a priori en 0.65.
+* **Estimaciones poblacionales:** PPI con la plata y el oro aleatorio para la incongruencia por banco y periodo con intervalos válidos.
+* **Priorización (Q4):** las fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` de la especificación anterior son hipótesis. Se evalúan contra un criterio observable (por ejemplo, ordenar incidentes conocidos) antes de adoptarlas. Los votos de utilidad son escasos y de cola larga (EDA, H7): conviene transformarlos.
 
 ### FEATURE 5.7: Escala, Ciclo de Vida y Monitoreo
 
-* **Benchmark de escala:** tiempo y costo del backfill sobre los textos únicos y del delta diario para los finalistas, aplicando deduplicación, orden por longitud y adaptadores fusionados.
-* **Ciclo de vida de artefactos:** proponer el registro de versiones (GCS versionado o Vertex Model Registry), la Model Card por versión, la regla de promoción y rollback, y la política de **re-scoring** al cambiar de modelo (todo el histórico o solo lo nuevo).
+* **Benchmark de escala:** tiempo y costo del backfill sobre los textos únicos y del delta diario para los finalistas (Kaggle T4 y Cloud Run CPU), aplicando deduplicación, orden por longitud y adaptadores fusionados.
+* **Ciclo de vida de artefactos:** registro de versiones (GCS versionado o Vertex Model Registry), Model Card por versión, regla de promoción y rollback, y política de **re-scoring** al cambiar de modelo (todo el histórico o solo lo nuevo).
 * **Monitoreo (sin y con etiquetas):**
 
   | Nivel | Qué se mide | ¿Requiere etiquetas? |
@@ -227,7 +161,7 @@ Implicaciones para el planteamiento:
 
 * modelo de sentimiento, encoder y método de ruido (o su ausencia), con métricas del oro *test* e intervalos;
 * estrategia de tópicos y detección de incidentes;
-* reglas de limpieza y elegibilidad;
+* reglas de limpieza y elegibilidad, incluida `TNSS_SINGLE_WORD`;
 * esquema de las tablas de salida y migración desde `delora_predictions`;
 * umbral HITL y priorización;
 * plan de backfill, operación diaria, ciclo de vida y monitoreo;
@@ -237,18 +171,42 @@ Al aprobarlo se reescribe `epic_5_deployment.md` (fase 3) con las dependencias, 
 
 ---
 
+<a id="siguientes-pasos"></a>
+
+## 🧭 Siguientes pasos
+
+En orden. Cada paso sale de un pendiente de los reportes o del alcance de su feature.
+
+| # | Paso | Dueña | Depende de | Terminado cuando |
+| :---: | :--- | :---: | :--- | :--- |
+| 1 | **Hecho (2026-10-20).** Regenerar el paquete de Kaggle tras la consolidación en `voc_analytics`, subirlo y correr el lote `humo` | 5.4 | — | `kaggle_push dataset --update` hecho y `humo` instala, ve la GPU y escribe salidas de M4 y Delora |
+| 2 | **Hecho (2026-10-20):** κ *dev* 0.917 con RoBERTuito y con BETO (media de 3 semillas); M4 − M1 significativo en las 6 corridas; RoBERTuito gana en el dirigido (0.63 contra 0.58). Ver el [reporte](../analytics/sentiment_models_v0_report.md), sección 12. **Semillas de M4:** RoBERTuito y BETO, 3 semillas cada uno (lote `m4`) | 5.4 | 1 | Predicciones evaluadas con `evaluate` en el *dev* aleatorio y el dirigido; reporte con la varianza entre semillas y las diferencias pareadas contra M1 y M9 |
+| 3 | **Evaluado y descartado con motivo (2026-10-20):** κ 0.913 con ε = 0.1 y 0.2; empata con M4 y calibra peor (ECE 0.05 y 0.10 contra 0.035). Ver el [reporte](../analytics/sentiment_models_v0_report.md), sección 14. **M5:** *label smoothing* sobre M4 RoBERTuito, dirigido a la brecha de `NEU` contra Gemini | 5.4 | 2 | Evaluado con el mismo protocolo, o descartado con motivo |
+| 4 | **Evaluado y descartado con motivo (2026-10-20):** κ *dev* 0.866, M8 − M4 entre −0.04 y −0.05, significativo en las 3 semillas; el detector queda como candidato para la incongruencia. Ver el [reporte](../analytics/sentiment_models_v0_report.md), sección 13. **M8 Delora:** búsqueda del detector (`delora_grid`, elegida por F1 de detección fuera de muestra contra la plata) y Delora completo con 3 semillas | 5.4 | 1; se compara contra 2 y 3 | Evaluado o descartado con motivo, dentro de su *time-box* |
+| 5 | ~~Actualizar F-01 (y la nota de F-13) en la matriz FMEA con la tasa medida~~ **Hecho (2026-10-20):** 0 nombres en 1 300 anotadas; O 3 → 2 y RPN 105 → 70 | Documentación y gobierno | — | Estado de F-01 y su calificación actualizados con la evidencia de [`gold_v1`](../analytics/gold_v1_report.md), sección 5 |
+| 6 | ~~Calificar F-12~~ **Hecho (2026-10-20):** sesión presencial en el Mac del autor, sin copia, con acuerdo verbal; RPN 25 | Documentación y gobierno | Decisión del autor | Fila F-12 calificada en la matriz FMEA |
+| 7 | ~~Segundo anotador de `gold_v1`~~ **Hecho (2026-10-20):** κ entre personas 0.81 [0.70, 0.91] con 4 clases y 0.87 con 3; Gemini coincide con cada anotador (0.91 y 0.88) tanto o más que ellos entre sí (0.80). Ver [`gold_v1`](../analytics/gold_v1_report.md), sección 7 | 5.3 | 6 y una persona disponible | Acuerdo entre personas (κ) reportado con su IC y comparado con el acuerdo humano–Gemini |
+| 8 | ~~Actualizar la *Data Card* con el oro `gold_v1`~~ **Hecho (2026-10-20):** la sección de etiquetas cita el oro vigente y el acuerdo entre personas | Documentación y gobierno | — | La sección de etiquetas cita el oro vigente y el [índice de la historia](../analytics/README.md#qué-cifra-citar) |
+| 9 | Pendientes de 5.2: longitud en tokens con los tokenizadores de 5.4, proporción multi-aspecto de las negativas y cobertura del léxico para reseñas cortas | 5.2 | 2 para los tokenizadores | Agregados en el reporte del EDA |
+| 10 | **5.5 Tópicos:** piloto de tópicos sobre las negativas, umbral de `TOPIC_TOO_SHORT` y señal de incidentes probada hacia atrás | 5.5 (al arrancar) | Un TNSS predicho para las negativas; 9 (multi-aspecto) | Recomendación ABSA, dinámico o híbrido con su costo de operación |
+| 11 | **5.6:** calibración, umbral HITL por cobertura–riesgo, PPI y priorización | 5.6 (al arrancar) | Modelo finalista (2–4) | Umbral y calibración elegidos en el oro *dev* |
+| 12 | **5.7:** benchmark de escala de los finalistas, ciclo de vida y plan de monitoreo | 5.7 (al arrancar) | Finalistas (2–4) | Tiempo y costo del backfill y del delta medidos; propuesta de ciclo de vida y monitoreo |
+| 13 | **5.8:** registro de decisión, evaluación única en el oro *test*, decisión de `TNSS_SINGLE_WORD` y aprobación de las reglas | 5.8 (al arrancar) | 2–12 | `decision_record.md` aprobado y `epic_5_deployment.md` reescrito |
+
+---
+
 ## 💻 Cómputo y presupuesto
 
-| Tarea | Dónde | Costo esperado |
+| Tarea | Dónde | Costo |
 | :--- | :--- | :--- |
-| EDA, deduplicación, muestreo y prototipos | Mac M2 16 GB (polars/duckdb, PyTorch MPS) | $0 |
-| Etiquetas de plata y M9 | Vertex AI Gemini Flash (Batch API si aplica) | Unos dólares para decenas de miles de textos; se mide en el piloto |
-| Ajuste de encoders y validación cruzada | Kaggle (~30 h/semana de GPU, no garantizadas) o Mac M2 | $0 |
-| GPU dentro de GCP (opcional) | Pasar la cuenta de prueba a pago conserva los créditos y permite pedir cuota de GPU Spot (L4/T4) | Centavos por hora; la cuota puede tardar días |
+| EDA, deduplicación, muestreo y modelos lineales | Mac M2 8 GB (polars/duckdb, CPU) | $0 |
+| Etiquetas de plata y M9 | Vertex AI, `gemini-3.6-flash` | Medido: plata v0 $3.37 por 70 284 textos; Gemini sobre el backfill completo ~$72 (precio introductorio hasta el 2026-12-31) |
+| Ajuste de encoders y semillas | Kaggle (~30 h/semana de GPU, no garantizadas); el Mac solo para validar el pipeline (M4 en 46–48 min, una semilla). Medido en la T4: M4 y M5 ~6 min por corrida; M8 ~1 h por semilla | $0 |
+| GPU dentro de GCP (opcional) | Pasar la cuenta de prueba a pago conserva los créditos y permite pedir cuota de GPU Spot (L4/T4) | Centavos por hora; requiere aprobación del autor |
 | Backfill de 2.65 M | El entorno más barato que cumpla el benchmark de 5.7 | Se mide |
 | Delta diario | Cloud Run Job en CPU (free tier: 180 000 vCPU-s/mes) | ~$0 si el modelo es ligero |
 
-Las cifras de throughput, costo y duplicados de la literatura o de conversaciones con otros LLM no se usan para decidir hasta medirlas.
+Crédito disponible: ~$5 000 MXN. La restricción del etiquetado es el tiempo humano, no el gasto. Las cifras de throughput, costo y duplicados de la literatura o de conversaciones con otros LLM no se usan para decidir hasta medirlas.
 
 ---
 
@@ -256,7 +214,9 @@ Las cifras de throughput, costo y duplicados de la literatura o de conversacione
 
 * **Delora no está validado** en encoders de ~110 M ni con estrellas como etiqueta (`references.md`, §10). Su adopción depende de que supere a métodos baratos.
 * **El ruido de las estrellas depende de la instancia y del periodo** (NoisyAG-News, 2024): los resultados con ruido sintético no transfieren.
-* **Las etiquetas de plata heredan sesgos de Gemini** (sarcasmo, jerga bancaria mexicana); solo el oro sirve para reportar.
+* **Las etiquetas de plata heredan sesgos de Gemini** (sarcasmo, jerga bancaria mexicana, `NEU`); solo el oro sirve para reportar.
+* **El oro es el criterio de un anotador**, el autor, que además escribió la guía y la calibró en parte con Gemini. Un segundo anotador coincide con él con κ 0.81 (0.87 con 3 clases), sobre todo por la regla 2 amplia, que un anotador nuevo tiende a decidir por el tono. Por eso las diferencias de ~0.02 entre los mejores modelos (κ 0.91–0.93) quedan por debajo del ruido entre personas.
+* **Licencia:** los modelos de `pysentimiento` son solo para uso no comercial e investigación; para producción (5.8) son una restricción.
 * **`fecha` es de última edición:** el análisis temporal mide cuándo se escribió la versión vigente, no la original.
 * **Puede haber PII residual** por la sanitización solo con regex: no publicar ejemplos del corpus sin revisión.
 * **Los tópicos dinámicos requieren curaduría humana continua;** sin ella pierden identidad entre corridas.
@@ -265,12 +225,13 @@ Las cifras de throughput, costo y duplicados de la literatura o de conversacione
 
 ## ✅ Checklist de Aceptación de la Épica 5 (fases 1 y 2)
 
-* [ ] Guía de anotación, contrato de elegibilidad por tarea y envolvente de costo aprobados (5.1).
-* [ ] EDA global de los 5 bancos y 15 años, con reglas de limpieza versionadas y Data Card actualizada (5.2).
-* [ ] Conjunto de plata con prompt, modelo y costo versionados; conjunto de oro con bloque aleatorio documentado y medición de anclaje (5.3).
-* [ ] Al menos M0–M7 evaluados con el mismo protocolo; M8 y M9 evaluados o descartados con motivo (5.4).
+* [ ] Guía de anotación, reglas deterministas de elegibilidad por tarea (con códigos, precedencia y versión) y envolvente de costo aprobados (5.1). *Avance: guía `v2.2` adoptada; reglas en borrador `v0.1`; costos de etiquetado medidos.*
+* [ ] Reporte de cobertura por banco × periodo × motivo, y decisión sobre `TNSS_SINGLE_WORD` (excluir o léxico determinista) con su sesgo medido (5.2, 5.8). *Avance: sesgo medido (−0.10 a −0.21 estrellas por banco); conteos por regla en el EDA.*
+* [ ] EDA global de los 5 bancos y 15 años, con reglas de limpieza versionadas y Data Card actualizada (5.2). *Avance: EDA y patrones temporales hechos; limpieza decidida en 5.4; la Data Card ya cita el oro vigente, pero sigue en borrador.*
+* [x] Conjunto de plata con prompt, modelo y costo versionados; conjunto de oro con bloque aleatorio documentado y medición de anclaje (5.3).
+* [x] Al menos M0–M7 evaluados con el mismo protocolo; M8 y M9 evaluados o descartados con motivo (5.4). *M4 RoBERTuito es el mejor modelo propio; M5 y M8 descartados con motivo; M4 contra M9 se decide en 5.8.*
 * [ ] Decisión sobre ABSA, tópicos dinámicos o híbrido, con una señal de incidentes probada hacia atrás (5.5).
 * [ ] Calibración y umbral HITL elegidos por cobertura–riesgo (5.6).
 * [ ] Benchmark de escala, propuesta de ciclo de vida y plan de monitoreo (5.7).
 * [ ] Registro de decisión aprobado y `epic_5_deployment.md` reescrito a partir de él (5.8).
-* [ ] Experimentos reproducibles en `experiments/analytics/` (proyecto `uv` propio, semillas fijas), sin dependencias de experimentación en el `uv.lock` de producción.
+* [x] Experimentos reproducibles en `experiments/analytics/` (proyecto `uv` propio, semillas fijas), sin dependencias de experimentación en el `uv.lock` de producción.

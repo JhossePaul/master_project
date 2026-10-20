@@ -1,0 +1,106 @@
+{
+  "items": 100,
+  "por_particion": {
+    "test": 32,
+    "dev": 68
+  },
+  "guia_a2": "annotation_guideline_v2.2",
+  "tiempo_a2": {
+    "minutos_efectivos": 78.0,
+    "mediana_s": 24.65,
+    "mediana_s_autor_mismos_items": 2.95
+  },
+  "acuerdo_sentimiento": {
+    "cuatro_clases": {
+      "n": 100,
+      "acuerdo": 0.9,
+      "kappa": 0.811,
+      "ic95": [
+        0.701,
+        0.911
+      ]
+    },
+    "tres_clases_ambos_evaluables": {
+      "n": 94,
+      "acuerdo": 0.936,
+      "kappa": 0.867,
+      "ic95": [
+        0.752,
+        0.957
+      ]
+    },
+    "confusion_autor_vs_a2": [
+      {
+        "autor": "NA",
+        "NA": 2,
+        "POS": 1,
+        "NEG": 0,
+        "NEU": 0
+      },
+      {
+        "autor": "NEG",
+        "NA": 1,
+        "POS": 4,
+        "NEG": 31,
+        "NEU": 0
+      },
+      {
+        "autor": "NEU",
+        "NA": 2,
+        "POS": 1,
+        "NEG": 0,
+        "NEU": 1
+      },
+      {
+        "autor": "POS",
+        "NA": 0,
+        "POS": 56,
+        "NEG": 1,
+        "NEU": 0
+      }
+    ],
+    "desacuerdos": 10,
+    "desacuerdos_con_duda_de_alguno": 1
+  },
+  "acuerdo_falla": {
+    "n": 100,
+    "acuerdo": 0.9,
+    "kappa": 0.752,
+    "tasa_autor": 0.3,
+    "tasa_a2": 0.26
+  },
+  "marcas": {
+    "duda_autor": 1,
+    "duda_a2": 2,
+    "nombre_persona_autor": 0,
+    "nombre_persona_a2": 0
+  },
+  "dev_contra_modelos": {
+    "n": 68,
+    "gemini_vs_autor": {
+      "n": 68,
+      "acuerdo": 0.956,
+      "kappa": 0.914
+    },
+    "gemini_vs_a2": {
+      "n": 68,
+      "acuerdo": 0.941,
+      "kappa": 0.879
+    },
+    "autor_vs_a2": {
+      "n": 68,
+      "acuerdo": 0.897,
+      "kappa": 0.796
+    },
+    "estrellas_vs_autor": {
+      "n": 66,
+      "acuerdo": 0.833,
+      "kappa": 0.668
+    },
+    "estrellas_vs_a2": {
+      "n": 65,
+      "acuerdo": 0.892,
+      "kappa": 0.763
+    }
+  }
+}
