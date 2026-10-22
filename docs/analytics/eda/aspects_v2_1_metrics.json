@@ -1,0 +1,494 @@
+{
+  "prompt": "aspects_v2_1",
+  "guia": "aspects_guideline_v2.1",
+  "model": "gemini-3.6-flash",
+  "codes": [
+    "AC",
+    "TR",
+    "DI",
+    "PR",
+    "AT",
+    "FA",
+    "LE",
+    "CO",
+    "DV",
+    "UX",
+    "OT"
+  ],
+  "decision_autor": {
+    "fecha": "2026-10-21",
+    "taxonomia": "DV separado; FQ dentro de UX; instalación y actualización en CO; token, códigos, NIP y biometría en AC",
+    "desviacion_de_la_regla_v2": "La regla v2 fusiona DV y UX en DU porque UX no llega a κ 0.60. DV se mantiene separado por ahora, como excepción por baja prevalencia: la confusión DV↔UX es baja y DV tiene κ alto, así que el κ de UX viene de su frontera con otras familias. FQ se fusiona con UX por prevalencia.",
+    "criterio_fijado_antes_de_recodificar": "1) Se mide el efecto aislado de v2.1 sobre UX con su κ sin fusionar DV (resuelto si κ ≥ 0.60). 2) Después se decide si DV se une a UX, por definición y prevalencia; el κ de DV+UX es solo sensibilidad.",
+    "kappa_marca_min": 0.6,
+    "decision_final_dv": "2026-10-21: DV se mantiene separado como excepción a la prevalencia mínima (1.8 % con Gemini y v2.1). UX llegó a κ ≥ 0.60 sin fusionarse y la confusión DV↔UX es baja; unirlos sería una decisión de definición que perdería esa distinción."
+  },
+  "esquema_salida": {
+    "archivo": "data/eda/aspects_v2/labels_aspects_v2_1_<set>.parquet",
+    "columnas": {
+      "text_id": "UInt32; texto único de silver_v0",
+      "codes": "String; familias separadas por comas, vacío si no hay problema concreto",
+      "actualizacion": "Boolean; marca u (problema atribuido a actualización)",
+      "seguridad": "Boolean; marca s (queja de seguridad o privacidad)",
+      "elogio": "Boolean; elogio concreto"
+    }
+  },
+  "intra_autor": {
+    "fuente": "muestra_v21",
+    "nota": "recodificación con la guía v2.1 y casillas agrupadas; solo códigos cuya definición no cambió",
+    "items": 300,
+    "dias_entre_codificaciones_min": 0.71,
+    "kappa_por_codigo": {
+      "LE": 0.876,
+      "DI": 0.854,
+      "AT": 0.705,
+      "DV": 0.973,
+      "OT": 0.497
+    },
+    "kappa_u": 0.831,
+    "kappa_s": 0.932
+  },
+  "poblacion_filas_neg": {
+    "extracciones": 1500,
+    "multi_aspecto": {
+      "n": 1500,
+      "p": 0.2467,
+      "ic95": [
+        0.226,
+        0.268
+      ]
+    },
+    "multi_aspecto_v1": {
+      "n": 1500,
+      "p": 0.3207,
+      "ic95": [
+        0.2967,
+        0.344
+      ]
+    },
+    "sin_aspecto_concreto": {
+      "n": 1500,
+      "p": 0.0993,
+      "ic95": [
+        0.084,
+        0.1153
+      ]
+    },
+    "actualizacion_u": {
+      "n": 1500,
+      "p": 0.1633,
+      "ic95": [
+        0.144,
+        0.182
+      ]
+    },
+    "seguridad_s": {
+      "n": 1500,
+      "p": 0.0207,
+      "ic95": [
+        0.014,
+        0.028
+      ]
+    },
+    "elogio_concreto": {
+      "n": 1500,
+      "p": 0.1007,
+      "ic95": [
+        0.086,
+        0.116
+      ]
+    },
+    "por_codigo": [
+      {
+        "codigo": "AC",
+        "n": 1500,
+        "p": 0.244,
+        "ic95": [
+          0.2233,
+          0.266
+        ]
+      },
+      {
+        "codigo": "TR",
+        "n": 1500,
+        "p": 0.1373,
+        "ic95": [
+          0.1213,
+          0.1553
+        ]
+      },
+      {
+        "codigo": "DI",
+        "n": 1500,
+        "p": 0.0267,
+        "ic95": [
+          0.0187,
+          0.0353
+        ]
+      },
+      {
+        "codigo": "PR",
+        "n": 1500,
+        "p": 0.1147,
+        "ic95": [
+          0.0987,
+          0.1313
+        ]
+      },
+      {
+        "codigo": "AT",
+        "n": 1500,
+        "p": 0.0807,
+        "ic95": [
+          0.0673,
+          0.0947
+        ]
+      },
+      {
+        "codigo": "FA",
+        "n": 1500,
+        "p": 0.2953,
+        "ic95": [
+          0.2727,
+          0.3193
+        ]
+      },
+      {
+        "codigo": "LE",
+        "n": 1500,
+        "p": 0.106,
+        "ic95": [
+          0.0907,
+          0.1213
+        ]
+      },
+      {
+        "codigo": "CO",
+        "n": 1500,
+        "p": 0.0793,
+        "ic95": [
+          0.066,
+          0.0933
+        ]
+      },
+      {
+        "codigo": "DV",
+        "n": 1500,
+        "p": 0.018,
+        "ic95": [
+          0.012,
+          0.0247
+        ]
+      },
+      {
+        "codigo": "UX",
+        "n": 1500,
+        "p": 0.0827,
+        "ic95": [
+          0.0687,
+          0.0973
+        ]
+      },
+      {
+        "codigo": "OT",
+        "n": 1500,
+        "p": 0.006,
+        "ic95": [
+          0.0027,
+          0.0107
+        ]
+      }
+    ],
+    "multi_por_largo": [
+      {
+        "largo": "1",
+        "n": 28,
+        "p": 0.0,
+        "ic95": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "largo": "2-5",
+        "n": 196,
+        "p": 0.0204,
+        "ic95": [
+          0.0051,
+          0.0408
+        ]
+      },
+      {
+        "largo": "6-15",
+        "n": 480,
+        "p": 0.1313,
+        "ic95": [
+          0.1021,
+          0.1604
+        ]
+      },
+      {
+        "largo": "16-40",
+        "n": 597,
+        "p": 0.3149,
+        "ic95": [
+          0.2764,
+          0.3518
+        ]
+      },
+      {
+        "largo": ">40",
+        "n": 199,
+        "p": 0.5779,
+        "ic95": [
+          0.5075,
+          0.6482
+        ]
+      }
+    ],
+    "multi_desde_k_palabras": [
+      {
+        "k": 2,
+        "n": 1472,
+        "p": 0.2514,
+        "ic95": [
+          0.2296,
+          0.2745
+        ]
+      },
+      {
+        "k": 3,
+        "n": 1422,
+        "p": 0.2602,
+        "ic95": [
+          0.2391,
+          0.2834
+        ]
+      },
+      {
+        "k": 5,
+        "n": 1340,
+        "p": 0.2754,
+        "ic95": [
+          0.2507,
+          0.2993
+        ]
+      },
+      {
+        "k": 10,
+        "n": 1060,
+        "p": 0.334,
+        "ic95": [
+          0.3057,
+          0.3632
+        ]
+      },
+      {
+        "k": 20,
+        "n": 641,
+        "p": 0.4321,
+        "ic95": [
+          0.3947,
+          0.4696
+        ]
+      }
+    ],
+    "marcas_por_banco": [
+      {
+        "bank_id": "AZTECA",
+        "actualizacion_u": {
+          "n": 210,
+          "p": 0.0952,
+          "ic95": [
+            0.0571,
+            0.1381
+          ]
+        },
+        "seguridad_s": {
+          "n": 210,
+          "p": 0.0143,
+          "ic95": [
+            0.0,
+            0.0333
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 210,
+          "p": 0.0,
+          "ic95": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "bank_id": "BANORTE",
+        "actualizacion_u": {
+          "n": 259,
+          "p": 0.139,
+          "ic95": [
+            0.0965,
+            0.1815
+          ]
+        },
+        "seguridad_s": {
+          "n": 259,
+          "p": 0.0193,
+          "ic95": [
+            0.0039,
+            0.0386
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 259,
+          "p": 0.0039,
+          "ic95": [
+            0.0,
+            0.0116
+          ]
+        }
+      },
+      {
+        "bank_id": "BBVA",
+        "actualizacion_u": {
+          "n": 611,
+          "p": 0.2439,
+          "ic95": [
+            0.2111,
+            0.2782
+          ]
+        },
+        "seguridad_s": {
+          "n": 611,
+          "p": 0.0311,
+          "ic95": [
+            0.018,
+            0.0458
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 611,
+          "p": 0.0033,
+          "ic95": [
+            0.0,
+            0.0082
+          ]
+        }
+      },
+      {
+        "bank_id": "NUBANK",
+        "actualizacion_u": {
+          "n": 63,
+          "p": 0.0794,
+          "ic95": [
+            0.0159,
+            0.1433
+          ]
+        },
+        "seguridad_s": {
+          "n": 63,
+          "p": 0.0317,
+          "ic95": [
+            0.0,
+            0.0794
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 63,
+          "p": 0.0317,
+          "ic95": [
+            0.0,
+            0.0794
+          ]
+        }
+      },
+      {
+        "bank_id": "SANTANDER",
+        "actualizacion_u": {
+          "n": 357,
+          "p": 0.098,
+          "ic95": [
+            0.0672,
+            0.1289
+          ]
+        },
+        "seguridad_s": {
+          "n": 357,
+          "p": 0.0056,
+          "ic95": [
+            0.0,
+            0.014
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 357,
+          "p": 0.0112,
+          "ic95": [
+            0.0028,
+            0.0224
+          ]
+        }
+      }
+    ]
+  },
+  "validacion_autor": {
+    "cola": "muestra_v21",
+    "prompt_gemini": "aspects_v2_1",
+    "guias": {
+      "aspects_guideline_v2.1": 300
+    },
+    "muestra": {
+      "items": 300,
+      "kappa_por_codigo": {
+        "AC": 0.701,
+        "TR": 0.683,
+        "DI": 0.615,
+        "PR": 0.617,
+        "AT": 0.679,
+        "FA": 0.549,
+        "LE": 0.864,
+        "CO": 0.766,
+        "DV": 0.737,
+        "UX": 0.74,
+        "OT": 0.0
+      },
+      "kappa_u": 0.7,
+      "kappa_s": 0.561,
+      "multi_autor": 0.2333,
+      "multi_gemini": 0.3,
+      "acuerdo_conjunto_exacto": 0.583
+    },
+    "mitad_aleatoria": {
+      "items": 150,
+      "kappa_por_codigo": {
+        "AC": 0.723,
+        "TR": 0.596,
+        "DI": 0.529,
+        "PR": 0.469,
+        "AT": 0.706,
+        "FA": 0.567,
+        "LE": 0.852,
+        "CO": 0.607,
+        "DV": 0.854,
+        "UX": 0.679,
+        "OT": 0.0
+      },
+      "kappa_u": 0.643,
+      "kappa_s": 0.479,
+      "multi_autor": 0.1267,
+      "multi_gemini": 0.2067,
+      "acuerdo_conjunto_exacto": 0.58
+    }
+  },
+  "efecto_v21_en_ux": {
+    "kappa_ux_v2": 0.55,
+    "kappa_ux_v21": 0.74,
+    "resuelto": true,
+    "confusion_dv_ux": {
+      "desacuerdos": 8,
+      "cambios": 1,
+      "proporcion": 0.125
+    },
+    "sensibilidad_kappa_dv_mas_ux": 0.822
+  }
+}

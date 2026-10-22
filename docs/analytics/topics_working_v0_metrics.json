@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-10-21T04:55:41+00:00",
+  "source": "silver_v0 (prompt_v3), gemini_s == NEG",
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "rules_version": "eligibility_rules_v0.1",
+  "rows": 42573,
+  "unique_texts": 40382,
+  "rows_estimated_population": 706197,
+  "words_quantiles": {
+    "p10": 6.0,
+    "p25": 10.0,
+    "p50": 18.0,
+    "p75": 31.0,
+    "p90": 49.0
+  },
+  "by_bank": [
+    {
+      "bank_id": "AZTECA",
+      "filas": 6757,
+      "sin_version": 0.1473,
+      "releases": 237,
+      "releases_con_masa": 19,
+      "filas_no_elegibles": 0
+    },
+    {
+      "bank_id": "BANORTE",
+      "filas": 8450,
+      "sin_version": 0.123,
+      "releases": 31,
+      "releases_con_masa": 26,
+      "filas_no_elegibles": 0
+    },
+    {
+      "bank_id": "BBVA",
+      "filas": 10145,
+      "sin_version": 0.1073,
+      "releases": 257,
+      "releases_con_masa": 58,
+      "filas_no_elegibles": 0
+    },
+    {
+      "bank_id": "NUBANK",
+      "filas": 8524,
+      "sin_version": 0.1688,
+      "releases": 299,
+      "releases_con_masa": 31,
+      "filas_no_elegibles": 0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "filas": 8697,
+      "sin_version": 0.091,
+      "releases": 198,
+      "releases_con_masa": 54,
+      "filas_no_elegibles": 0
+    }
+  ]
+}

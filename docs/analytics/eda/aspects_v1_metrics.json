@@ -1,0 +1,607 @@
+{
+  "fuente": "silver_v0 (prompt_v3), filas NEG; extracciones con reemplazo proporcionales a 1/pi",
+  "prompt": "aspects_v1",
+  "model": "gemini-3.6-flash",
+  "draws": 1500,
+  "draws_labeled": 1500,
+  "unique_texts_labeled": 1434,
+  "codes": [
+    "AC",
+    "FA",
+    "LE",
+    "TR",
+    "DI",
+    "PR",
+    "AT",
+    "DS",
+    "CO",
+    "OT"
+  ],
+  "poblacion_filas_neg": {
+    "multi_aspecto": {
+      "n": 1500,
+      "p": 0.3207,
+      "ic95": [
+        0.2967,
+        0.344
+      ]
+    },
+    "un_aspecto": {
+      "n": 1500,
+      "p": 0.6,
+      "ic95": [
+        0.5747,
+        0.6253
+      ]
+    },
+    "sin_aspecto_concreto": {
+      "n": 1500,
+      "p": 0.0793,
+      "ic95": [
+        0.0653,
+        0.092
+      ]
+    },
+    "elogio_concreto": {
+      "n": 1500,
+      "p": 0.1073,
+      "ic95": [
+        0.092,
+        0.1233
+      ]
+    },
+    "n_aspectos_dist": [
+      {
+        "n_aspectos": 0,
+        "len": 119
+      },
+      {
+        "n_aspectos": 1,
+        "len": 900
+      },
+      {
+        "n_aspectos": 2,
+        "len": 399
+      },
+      {
+        "n_aspectos": 3,
+        "len": 72
+      },
+      {
+        "n_aspectos": 4,
+        "len": 9
+      },
+      {
+        "n_aspectos": 5,
+        "len": 1
+      }
+    ]
+  },
+  "por_codigo": [
+    {
+      "codigo": "AC",
+      "n": 1500,
+      "p": 0.3487,
+      "ic95": [
+        0.3247,
+        0.3733
+      ]
+    },
+    {
+      "codigo": "FA",
+      "n": 1500,
+      "p": 0.2407,
+      "ic95": [
+        0.2187,
+        0.2613
+      ]
+    },
+    {
+      "codigo": "LE",
+      "n": 1500,
+      "p": 0.1093,
+      "ic95": [
+        0.094,
+        0.126
+      ]
+    },
+    {
+      "codigo": "TR",
+      "n": 1500,
+      "p": 0.15,
+      "ic95": [
+        0.1313,
+        0.1673
+      ]
+    },
+    {
+      "codigo": "DI",
+      "n": 1500,
+      "p": 0.04,
+      "ic95": [
+        0.0307,
+        0.0507
+      ]
+    },
+    {
+      "codigo": "PR",
+      "n": 1500,
+      "p": 0.0567,
+      "ic95": [
+        0.0453,
+        0.0687
+      ]
+    },
+    {
+      "codigo": "AT",
+      "n": 1500,
+      "p": 0.0907,
+      "ic95": [
+        0.0773,
+        0.106
+      ]
+    },
+    {
+      "codigo": "DS",
+      "n": 1500,
+      "p": 0.2007,
+      "ic95": [
+        0.1807,
+        0.2193
+      ]
+    },
+    {
+      "codigo": "CO",
+      "n": 1500,
+      "p": 0.0367,
+      "ic95": [
+        0.028,
+        0.046
+      ]
+    },
+    {
+      "codigo": "OT",
+      "n": 1500,
+      "p": 0.03,
+      "ic95": [
+        0.0213,
+        0.0393
+      ]
+    }
+  ],
+  "pares_frecuentes_en_multi": [
+    {
+      "par": "AC+DS",
+      "extracciones": 86
+    },
+    {
+      "par": "AC+FA",
+      "extracciones": 69
+    },
+    {
+      "par": "AC+AT",
+      "extracciones": 59
+    },
+    {
+      "par": "DS+TR",
+      "extracciones": 48
+    },
+    {
+      "par": "DS+FA",
+      "extracciones": 46
+    },
+    {
+      "par": "AC+TR",
+      "extracciones": 42
+    },
+    {
+      "par": "DS+LE",
+      "extracciones": 28
+    },
+    {
+      "par": "FA+LE",
+      "extracciones": 27
+    },
+    {
+      "par": "FA+TR",
+      "extracciones": 27
+    },
+    {
+      "par": "AC+LE",
+      "extracciones": 24
+    }
+  ],
+  "por_banco": [
+    {
+      "bank_id": "AZTECA",
+      "multi_aspecto": {
+        "n": 210,
+        "p": 0.2714,
+        "ic95": [
+          0.2143,
+          0.3333
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 210,
+        "p": 0.0905,
+        "ic95": [
+          0.0524,
+          0.1286
+        ]
+      },
+      "elogio_concreto": 0.1095
+    },
+    {
+      "bank_id": "BANORTE",
+      "multi_aspecto": {
+        "n": 259,
+        "p": 0.2973,
+        "ic95": [
+          0.2394,
+          0.3552
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 259,
+        "p": 0.0618,
+        "ic95": [
+          0.0347,
+          0.0927
+        ]
+      },
+      "elogio_concreto": 0.1544
+    },
+    {
+      "bank_id": "BBVA",
+      "multi_aspecto": {
+        "n": 611,
+        "p": 0.3421,
+        "ic95": [
+          0.3028,
+          0.3781
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 611,
+        "p": 0.0458,
+        "ic95": [
+          0.0295,
+          0.0622
+        ]
+      },
+      "elogio_concreto": 0.0835
+    },
+    {
+      "bank_id": "NUBANK",
+      "multi_aspecto": {
+        "n": 63,
+        "p": 0.2698,
+        "ic95": [
+          0.1587,
+          0.381
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 63,
+        "p": 0.0476,
+        "ic95": [
+          0.0,
+          0.1111
+        ]
+      },
+      "elogio_concreto": 0.1429
+    },
+    {
+      "bank_id": "SANTANDER",
+      "multi_aspecto": {
+        "n": 357,
+        "p": 0.3389,
+        "ic95": [
+          0.2913,
+          0.3894
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 357,
+        "p": 0.1485,
+        "ic95": [
+          0.112,
+          0.1849
+        ]
+      },
+      "elogio_concreto": 0.1064
+    }
+  ],
+  "por_estrellas": [
+    {
+      "estrellas": 1,
+      "multi_aspecto": {
+        "n": 875,
+        "p": 0.3509,
+        "ic95": [
+          0.3211,
+          0.3817
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 875,
+        "p": 0.1166,
+        "ic95": [
+          0.096,
+          0.1371
+        ]
+      },
+      "elogio_concreto": 0.0286
+    },
+    {
+      "estrellas": 2,
+      "multi_aspecto": {
+        "n": 180,
+        "p": 0.3833,
+        "ic95": [
+          0.3167,
+          0.4556
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 180,
+        "p": 0.0222,
+        "ic95": [
+          0.0056,
+          0.0444
+        ]
+      },
+      "elogio_concreto": 0.0333
+    },
+    {
+      "estrellas": 3,
+      "multi_aspecto": {
+        "n": 201,
+        "p": 0.2935,
+        "ic95": [
+          0.2289,
+          0.3582
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 201,
+        "p": 0.0199,
+        "ic95": [
+          0.005,
+          0.0398
+        ]
+      },
+      "elogio_concreto": 0.1493
+    },
+    {
+      "estrellas": 4,
+      "multi_aspecto": {
+        "n": 147,
+        "p": 0.2109,
+        "ic95": [
+          0.1497,
+          0.2789
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 147,
+        "p": 0.0408,
+        "ic95": [
+          0.0136,
+          0.0748
+        ]
+      },
+      "elogio_concreto": 0.4218
+    },
+    {
+      "estrellas": 5,
+      "multi_aspecto": {
+        "n": 97,
+        "p": 0.1546,
+        "ic95": [
+          0.0928,
+          0.2268
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 97,
+        "p": 0.0309,
+        "ic95": [
+          0.0,
+          0.0722
+        ]
+      },
+      "elogio_concreto": 0.3918
+    }
+  ],
+  "por_largo_palabras": [
+    {
+      "largo": "1",
+      "multi_aspecto": {
+        "n": 28,
+        "p": 0.0,
+        "ic95": [
+          0.0,
+          0.0
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 28,
+        "p": 0.9643,
+        "ic95": [
+          0.8929,
+          1.0
+        ]
+      },
+      "elogio_concreto": 0.0
+    },
+    {
+      "largo": "16-40",
+      "multi_aspecto": {
+        "n": 597,
+        "p": 0.4171,
+        "ic95": [
+          0.3752,
+          0.4573
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 597,
+        "p": 0.0101,
+        "ic95": [
+          0.0034,
+          0.0184
+        ]
+      },
+      "elogio_concreto": 0.1206
+    },
+    {
+      "largo": "2-5",
+      "multi_aspecto": {
+        "n": 196,
+        "p": 0.0204,
+        "ic95": [
+          0.0051,
+          0.0408
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 196,
+        "p": 0.2704,
+        "ic95": [
+          0.2092,
+          0.3318
+        ]
+      },
+      "elogio_concreto": 0.0153
+    },
+    {
+      "largo": "6-15",
+      "multi_aspecto": {
+        "n": 480,
+        "p": 0.2042,
+        "ic95": [
+          0.1688,
+          0.2437
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 480,
+        "p": 0.0688,
+        "ic95": [
+          0.0479,
+          0.0917
+        ]
+      },
+      "elogio_concreto": 0.1187
+    },
+    {
+      "largo": ">40",
+      "multi_aspecto": {
+        "n": 199,
+        "p": 0.6533,
+        "ic95": [
+          0.5879,
+          0.7186
+        ]
+      },
+      "sin_aspecto_concreto": {
+        "n": 199,
+        "p": 0.0,
+        "ic95": [
+          0.0,
+          0.0
+        ]
+      },
+      "elogio_concreto": 0.1457
+    }
+  ],
+  "multi_desde_k_palabras": [
+    {
+      "k": 3,
+      "share_filas_neg": 0.948,
+      "n": 1422,
+      "p": 0.3383,
+      "ic95": [
+        0.3143,
+        0.3636
+      ]
+    },
+    {
+      "k": 5,
+      "share_filas_neg": 0.8933,
+      "n": 1340,
+      "p": 0.3582,
+      "ic95": [
+        0.3321,
+        0.3843
+      ]
+    },
+    {
+      "k": 10,
+      "share_filas_neg": 0.7067,
+      "n": 1060,
+      "p": 0.4292,
+      "ic95": [
+        0.4,
+        0.4585
+      ]
+    },
+    {
+      "k": 20,
+      "share_filas_neg": 0.4273,
+      "n": 641,
+      "p": 0.5164,
+      "ic95": [
+        0.4774,
+        0.5538
+      ]
+    }
+  ],
+  "palabras_clave": {
+    "nota": "Familias por expresiones regulares; cota barata, no medición validada",
+    "en_muestra": {
+      "multi_aspecto": {
+        "n": 1500,
+        "p": 0.376,
+        "ic95": [
+          0.352,
+          0.4013
+        ]
+      },
+      "kappa_multi_vs_gemini": 0.463,
+      "precision_multi": 0.601,
+      "recall_multi": 0.705
+    },
+    "toda_la_plata_neg": {
+      "filas": 42573,
+      "multi_aspecto_ponderado": 0.3827
+    }
+  },
+  "validacion_autor": {
+    "items": 100,
+    "items_por_guia": {
+      "aspects_guideline_v0": 61,
+      "aspects_guideline_v1": 39
+    },
+    "multi_autor": 0.44,
+    "multi_gemini": 0.32,
+    "kappa_multi": 0.415,
+    "acuerdo_multi": 0.72,
+    "kappa_elogio": 0.589,
+    "acuerdo_conjunto_exacto": 0.4,
+    "kappa_por_codigo": {
+      "AC": 0.699,
+      "FA": 0.584,
+      "LE": 0.811,
+      "TR": 0.667,
+      "DI": 0.26,
+      "PR": 0.646,
+      "AT": 0.593,
+      "DS": 0.39,
+      "CO": -0.015,
+      "OT": 0.421
+    }
+  }
+}

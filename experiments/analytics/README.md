@@ -15,7 +15,7 @@ de trabajo. El mapa de rutas anteriores está en [`MIGRATION.md`](MIGRATION.md).
 | --- | --- | --- |
 | `paths` | común | rutas de `data/` y `docs/analytics/` |
 | `snapshot` | datos | `consolidate_tds_snapshot` |
-| `eda` | EDA (5.2) | `eda_global`, `eda_temporal` |
+| `eda` | EDA (5.2) | `eda_global`, `eda_temporal`, `eda_tokens`, `eda_aspects`, `aspects_app` (Streamlit), `eda_lexicon`, `prompts/aspects_v0.md` |
 | `labeling` | módulos compartidos de etiquetado | `eligibility` (5.1), `temporal_context`, `label_gemini`, `agreement`, `prompts/prompt_v0..v3.md` |
 | `sampling` | muestreo (5.3) | `sample_pilot`\*, `sample_gold_v0`\*, `sample_gold_v0_r2`\*, `sample_silver`, `sample_gold_v1`, `strata` |
 | `annotation` | anotación humana (5.3) | `app` (Streamlit) |
@@ -80,9 +80,22 @@ manifiesto.
 ```sh
 uv run python -m $M.eda.eda_global data/tds_<SNAPSHOT>.parquet
 uv run python -m $M.eda.eda_temporal data/tds_<SNAPSHOT>.parquet
+uv run python -m $M.eda.eda_tokens data/tds_<SNAPSHOT>.parquet   # ~3 min en CPU
+uv run python -m $M.eda.eda_lexicon data/tds_<SNAPSHOT>.parquet  # necesita la plata y el oro
+uv run python -m $M.eda.eda_aspects sample                       # necesita la plata
+uv run python -m $M.eda.eda_aspects label --prompt aspects_v1      # Gemini, ~$0.09
+uv run python -m $M.eda.eda_aspects validation                   # 100 textos a ciegas para el autor
+uv run streamlit run src/voc_analytics/eda/aspects_app.py         # el autor los codifica
+uv run streamlit run src/voc_analytics/eda/aspects_app.py -- --revisar-fa  # revisión con la guía v1
+uv run python -m $M.eda.eda_aspects analyze --prompt aspects_v1
 ```
 
-Solo escriben agregados en `docs/analytics/eda/`. Reportes:
+Solo escriben agregados en `docs/analytics/eda/`. `eda_aspects` guarda su
+muestra, las etiquetas por prompt y la cola de validación en
+`data/eda/aspects_v0/` (fuera de git). La codificación sigue la
+[guía de aspectos](../../docs/analytics/eda_aspects_guideline.md); `analyze`
+incluye el acuerdo con el autor (gana la pasada con la guía `v1`,
+`validation_annotations_v1.csv`, sobre la primera). Reportes:
 [`eda_report.md`](../../docs/analytics/eda_report.md) y
 [`eda_temporal_report.md`](../../docs/analytics/eda_temporal_report.md).
 

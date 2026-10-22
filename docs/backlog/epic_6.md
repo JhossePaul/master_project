@@ -63,6 +63,19 @@ El Agente IA **DEBE** acatar las siguientes 5 reglas de integración con lo ya c
 
 ---
 
+## 🧭 Decisiones heredadas de 5.5 (2026-10-22)
+
+El autor aprobó la recomendación híbrida de 5.5 ([nota de decisión](../analytics/topics_decision_note.md)). Donde el texto original de esta épica la contradice, se conserva para trazabilidad y rige lo siguiente:
+
+| Texto original de EPIC-6 | Decisión heredada de 5.5 | Se fija en |
+| :--- | :--- | :--- |
+| Taxonomía de los 8 `ABSATopic` (ranking de backlog, `predicted_topic`, `validated_topic`, filtros) | Núcleo: las 11 familias multi-etiqueta de `aspects_v2_1` más las marcas `u` y `s`; una reseña puede tener varias familias. Los tópicos de BERTopic son una capa de detalle aparte, con versión y curada. | 6.1 a 6.4 al implementarlas; contratos de `voc_common` (EPIC-1, sin hilo) |
+| `embedding_vector` de 768 dimensiones del modelo Delora (búsqueda semántica) | 5.4 descartó Delora (M8); los tópicos usan MiniLM (384 dimensiones). La búsqueda semántica debe decidir su encoder. | 5.7 o 5.8 |
+| *Concept drift* con JSD de la distribución de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA. | Umbrales en 5.7 |
+| Umbral HITL `prediction_entropy >= 0.65` fijado a priori | Lo fija 5.6 con la curva cobertura–riesgo en el oro *dev*. | 5.6 |
+
+---
+
 ## 📦 Desglose de Features e Historias Técnicas
 
 ### FEATURE 6.1: Configuración del Paquete `api-backend` y Servicio Analítico/Vectorial en BigQuery (`bq_vector_and_analytics.py`)
@@ -307,6 +320,28 @@ Escribir pruebas deterministas que validen:
 
 ---
 
+### FEATURE 6.7: Frontales de Curaduría HITL y Base de Datos de Curadurías (agregado del autor, 2026-10-22)
+
+**Decisión del autor:** todos los aplicativos de curaduría desarrollados en EPIC-5 (sentimiento y tópicos) pertenecen también al frontal de EPIC-6, y se diseña la base de datos que guarda las curadurías para el reentrenamiento. Insumo: sección final de la [nota de decisión](../analytics/topics_decision_note.md).
+
+#### Tarea 6.7.1: Frontales de curaduría en `web/hitl-portal/`
+
+| Prototipo actual (local, EPIC-5) | Pantalla en el portal |
+| :--- | :--- |
+| `annotation/app.py` (Streamlit, 5.3): etiqueta de sentimiento, `menciona_falla`, duda | Cola de sentimiento (`HitlTriageQueue`) |
+| `eda/aspects_app.py` y `eda/aspects_v2_app.py` (Streamlit, 5.2): familias `v2.1`, marcas `u` y `s` | Codificación de aspectos (nueva) |
+| Fichas y CSV de `data/topics/phase4_v0/` (5.5) | Curaduría de tópicos en la revisión trimestral de la fase 4 (nueva) |
+
+* Criterio de terminado: cada pantalla reproduce el flujo del prototipo, escribe en la base de la tarea 6.7.2 y muestra solo texto sanitizado.
+
+#### Tarea 6.7.2: Diseñar la base de datos de curadurías para el reentrenamiento
+
+* Punto de partida: el borrador de tablas de la nota (`curation_sentiment` o ampliar `hitl_triage_audit_log`, `curation_aspects`, `topic_model_versions`, `topic_catalog`, `curation_topics`, `topic_assignments`).
+* Principios: registros inmutables (solo inserción, como `hitl_triage_audit_log`); revisor como hash SHA-256; cada registro guarda la versión de la guía, del modelo y del prompt que produjo la predicción revisada; solo texto sanitizado.
+* Criterio de terminado: esquema con contratos Pydantic, uso en el reentrenamiento (5.4 y 5.7) y fila en la matriz FMEA si almacena texto.
+
+---
+
 ## ✅ Checklist de Aceptación de la Épica 6 (Cierre del Proyecto)
 
 * [ ] `api-backend` expone los endpoints de KPIs (*Satisfaction Gap*), series de tiempo por versión, búsqueda vectorial de 768 dimensiones, explicabilidad SHAP/LIME y cola de validación HITL.
@@ -319,3 +354,5 @@ Escribir pruebas deterministas que validen:
 
 * [ ] El portal web en `web/hitl-portal/` compila sin errores de TypeScript (`npm run build`).
 * [ ] Todos los *Quality Gates* del monorepo (`uv run ruff check .`, `uv run ruff format --check .`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r .` y `uv run pytest --cov-fail-under=85`) pasan con **0 errores**.
+
+* [ ] Los frontales de curaduría de sentimiento, aspectos y tópicos están en el portal y escriben en la base de curadurías para el reentrenamiento (6.7).

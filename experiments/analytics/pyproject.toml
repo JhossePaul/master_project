@@ -16,6 +16,10 @@ dependencies = [
     "pysentimiento>=0.7,<1",
     "textblob>=0.18,<1",
     "cleanlab>=2.7,<3",
+    "bertopic>=0.17,<1",
+    "sentence-transformers>=5,<7",
+    "umap-learn>=0.5,<1",
+    "hdbscan>=0.8,<1",
 ]
 
 [build-system]

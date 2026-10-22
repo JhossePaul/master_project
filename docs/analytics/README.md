@@ -10,10 +10,11 @@ Esta carpeta reúne los reportes de la fase de planteamiento y experimentación 
 | # | Capítulo | Feature | Reportes | Estado |
 | :---: | :--- | :---: | :--- | :--- |
 | 1 | [Problema y corpus](#1-problema-y-corpus) | 5.1 | [`epic_5.md`](../backlog/epic_5.md) | Vigente |
-| 2 | [EDA y elegibilidad](#2-eda-y-elegibilidad) | 5.1, 5.2 | [`eda_report`](eda_report.md), [`eda_temporal_report`](eda_temporal_report.md), [`eligibility_rules`](eligibility_rules.md) | Vigente; reglas en borrador |
+| 2 | [EDA y elegibilidad](#2-eda-y-elegibilidad) | 5.1, 5.2 | [`eda_report`](eda_report.md), [`eda_temporal_report`](eda_temporal_report.md), [`eda_aspects_guideline`](eda_aspects_guideline.md), [`eligibility_rules`](eligibility_rules.md) | 5.2 cerrada (2026-10-21, guía `v2.1`); reglas en borrador |
 | 3 | [Etiquetado: guía, pilotos, oro y plata](#3-etiquetado-guía-pilotos-oro-y-plata) | 5.3 | [`annotation_guideline`](annotation_guideline.md), [`labeling_pilot_v0`](labeling_pilot_v0.md), [`gold_v0_report`](gold_v0_report.md), [`gold_v0_r2_report`](gold_v0_r2_report.md), [`silver_v0_report`](silver_v0_report.md), [`gold_v1_design`](gold_v1_design.md), [`gold_v1_report`](gold_v1_report.md) | Cerrada (2026-10-20); oro `gold_v1` y plata `silver_v0` vigentes |
 | 4 | [Competencia de modelos de sentimiento](#4-competencia-de-modelos-de-sentimiento) | 5.4 | [`sentiment_models_protocol`](sentiment_models_protocol.md), [`sentiment_models_v0_report`](sentiment_models_v0_report.md), [`gold_v1_report`](gold_v1_report.md) (sección 6) | Experimentación cerrada; M4 contra M9 se decide en 5.8 |
-| 5 | [Siguientes pasos](#5-siguientes-pasos) | 5.3–5.8 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos) | — |
+| 5 | [Tópicos e incidencias](#5-tópicos-e-incidencias) | 5.5 | [`topics_design`](topics_design.md), [`topics_report`](topics_report.md), [`topics_decision_note`](topics_decision_note.md) | Cerrado (2026-10-22): híbrido aprobado; `TOPIC_TOO_SHORT` k = 1 |
+| 6 | [Siguientes pasos](#6-siguientes-pasos) | 5.3–5.8 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos) | — |
 
 ---
 
@@ -38,7 +39,7 @@ El proyecto quiere medir el **sentimiento real del texto** de las reseñas de ap
 
 Los textos únicos de esta tabla son una cota superior; el EDA midió 1 383 138 (52.2 %).
 
-**Conclusión vigente:** un encoder de 512 tokens cubre el corpus; deduplicar ahorra cerca de la mitad de la inferencia; no hay una distribución estable en el tiempo, así que todo se estratifica por banco × periodo.
+**Conclusión vigente:** un encoder de 512 tokens cubre el corpus, y el tope de 128 de 5.4 trunca menos del 0.1 % de las filas ([EDA](eda_report.md#51-longitud-en-tokens), sección 5.1); deduplicar ahorra cerca de la mitad de la inferencia; no hay una distribución estable en el tiempo, así que todo se estratifica por banco × periodo.
 
 ## 2. EDA y elegibilidad
 
@@ -46,9 +47,13 @@ Los textos únicos de esta tabla son una cota superior; el EDA midió 1 383 138 
 | :--- | :--- | :--- |
 | [EDA global](eda_report.md) | Vigente | **La longitud predice las estrellas** (1 palabra: 4.75★; más de 60: ~1.9★), así que cualquier filtro por longitud sesga los agregados. Pocos textos concentran el corpus ("excelente" es el 6.5 % de las filas) y la detección de idioma confunde el español informal. Hay picos de campañas de calificación y de incidentes (BBVA 2024–2025). |
 | [Patrones temporales](eda_temporal_report.md) | Vigente (versión 2) | Sin ciclo trimestral; sprints de 1–2 semanas en NUBANK, BBVA y AZTECA. **La quincena sube el volumen de todas las estrellas, no las quejas.** Con la plata: en los días pico de SANTANDER y AZTECA las 5★ esconden más quejas, el patrón de incidencia que busca el proyecto. |
+| [EDA, segunda pasada](eda_report.md#5-pendientes-cerrados-tokens-multi-aspecto-y-léxico) (sección 5) | Vigente | **Tokens:** el tope de 128 trunca menos del 0.1 %. **Multi-aspecto:** entre el 32 % (Gemini, cota inferior) y el 44 % (autor, κ 0.42) de las negativas nombra dos o más problemas, y la mitad de las de 20 palabras o más; las de 1 a 5 palabras casi nunca son multi-aspecto, pero sí nombran un problema concreto (4 % de las de una palabra, 48–50 % de las de 2 y 77–81 % de las de 3 a 5; provisional, sección 2.3 de [`topics_report`](topics_report.md), con `aspects_v2` sin validar). **Léxico:** 151 formas cubren el 95.3 % de las reseñas de una palabra con 99 % de exactitud; excluir solo las no cubiertas casi no sesga las estrellas. |
+| [Guía de aspectos](eda_aspects_guideline.md) | `v2.1`, vigente y cerrada (copias congeladas: [`v1`](eda_aspects_guideline_v1.md) y [`v2`](eda_aspects_guideline_v2.md)) | Taxonomía de 11 códigos para las negativas; "sin problema concreto" es explícito (sin familias). `FQ` se fusionó en `UX`; `CO` incluye instalar y actualizar; `AC` incluye todo el token; `DV` se mantiene separado por decisión del autor, como excepción a la prevalencia mínima. Las marcas ortogonales `u` (actualización) y `s` (seguridad, incluye privacidad) sustituyen a la regla 3 de `v1`. La siguen el prompt `aspects_v2_1` y la app de validación. El κ 0.39 de `DS` es un dato de `v1`. |
 | [Reglas de elegibilidad](eligibility_rules.md) | Borrador `v0.1` | Reglas deterministas por tarea con código de motivo; la fila excluida se conserva como `NOT_PREDICTED`. Corte de NUBANK en 2020-01-01. `TNSS_NOT_SPANISH` descartada. **Abierto:** `TNSS_SINGLE_WORD` (5.8) y `TOPIC_TOO_SHORT` (5.5). |
 
-Figuras: [`eda/figures/`](eda/figures/monthly_volume.png); métricas: [`eda/metrics.json`](eda/metrics.json) y [`eda/temporal_metrics.json`](eda/temporal_metrics.json).
+**Feature 5.2 cerrada (2026-10-21), con la [sección 5.2.1](eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55) de `eda_report.md` (guía de aspectos `v2.1`).** Se reabre si hay un snapshot nuevo.
+
+Figuras: [`eda/figures/`](eda/figures/monthly_volume.png); métricas: [`eda/metrics.json`](eda/metrics.json), [`eda/temporal_metrics.json`](eda/temporal_metrics.json), [`eda/tokens_metrics.json`](eda/tokens_metrics.json), [`eda/aspects_v1_metrics.json`](eda/aspects_v1_metrics.json) y [`eda/lexicon_metrics.json`](eda/lexicon_metrics.json).
 
 ## 3. Etiquetado: guía, pilotos, oro y plata
 
@@ -101,12 +106,18 @@ El [protocolo](sentiment_models_protocol.md) fija los candidatos (M0–M9), las 
 
 **Conclusión vigente (experimentación cerrada, 2026-10-20):** la escalera M0–M9 está completa. M4 RoBERTuito es el mejor modelo propio: κ 0.917 con 3 semillas, 0.63 en el dirigido y sin costo por texto. Queda a +0.021 [−0.000, 0.043] de Gemini, una brecha de unos 5 `NEU` de 30 que el *dev* no puede resolver. M5 y M8 se descartan; el detector de M8 se conserva como candidato para la incongruencia. La elección entre M4 y M9 queda para 5.8, por costo (Gemini ~$72 el backfill), licencia (`pysentimiento` es no comercial) y el oro *test*, que sigue intacto. Con κ 0.81–0.87 entre personas, diferencias de ~0.02 entre los mejores modelos quedan por debajo del ruido entre anotadores ([`gold_v1`](gold_v1_report.md), sección 7).
 
-## 5. Siguientes pasos
+## 5. Tópicos e incidencias
+
+Feature 5.5, con hilo propio. [`topics_design`](topics_design.md) es el plan `v1` aprobado por el autor (alcance, enfoque, métricas, entregables, riesgos); [`topics_report`](topics_report.md) es el reporte, cerrado el 2026-10-22: cerró las fases 0 a 3 (la 3 sin llamadas nuevas a Gemini, sección 4); su lectura provisional apoya el híbrido. La vía B a escala está hecha (40 382 negativas de la plata codificadas con `aspects_v2_1`, $3.64, sección 4.5) y el autor decidió `TOPIC_TOO_SHORT` k = 1 (2026-10-22). Usa la [guía de aspectos](eda_aspects_guideline.md) `v2.1` y el prompt `aspects_v2_1`. [`topics_decision_note`](topics_decision_note.md) resume la recomendación para el registro de decisión (5.8). **Cerrado (2026-10-22): el autor aprobó el híbrido** (familias `v2.1` como núcleo, marca `u` como alerta, tópicos como capa de detalle curada) y pidió que los aplicativos de curaduría pasen al frontal de EPIC-6 con una base de curadurías. Las métricas están en la [tabla de abajo](#archivos-de-métricas).
+
+---
+
+## 6. Siguientes pasos
 
 La lista ordenada, con dueño, dependencia y criterio de terminado, está en [`epic_5.md`, "Siguientes pasos"](../backlog/epic_5.md#siguientes-pasos). En resumen:
 
 1. 5.4 cerrada: la elección entre M4 y M9 pasa a 5.8.
-2. Pendientes de 5.2: tokens, multi-aspecto y léxico para reseñas cortas.
+2. ~~Pendientes de 5.2: tokens, multi-aspecto y léxico para reseñas cortas~~: hechos (2026-10-20); 5.2 cerrada.
 3. Tópicos e incidencias (5.5), calibración y HITL (5.6), escala y monitoreo (5.7).
 4. Registro de decisión y evaluación única en el oro *test* (5.8).
 
@@ -124,6 +135,9 @@ La lista ordenada, con dueño, dependencia y criterio de terminado, está en [`e
 | Acuerdo entre personas (autor y segundo anotador, 100 ítems a ciegas) | κ 0.81 [0.70, 0.91] con 4 clases; 0.87 con 3 | [`gold_v1`](gold_v1_report.md), sección 7 | — |
 | Nombres propios tras la regex (F-01) | 0 de 1 000 aleatorias (cota 95 %: 0.3 %) | [`gold_v1`](gold_v1_report.md), sección 5 | — |
 | Costo de la plata | $0.048 por 1 000 textos | [plata](silver_v0_report.md) | $0.124 (`prompt_v0`), $0.052 (`prompt_v1`) |
+| Multi-aspecto de las negativas (filas `NEG` elegibles) | 32 % [30, 34] según Gemini (`aspects_v1`, cota inferior); 44 % [35, 54] según el autor en 100 textos; κ autor–Gemini 0.42 | [EDA](eda_report.md#52-proporción-multi-aspecto-de-las-negativas), sección 5.2 | κ 0.29 con `aspects_v0` |
+| Cobertura del léxico en reseñas de una palabra | 95.3 % de las filas, 99 % de exactitud en el oro *dev* | [EDA](eda_report.md#53-léxico-determinista-para-reseñas-de-una-palabra), sección 5.3 | — |
+| Filas truncadas con el tope de 128 tokens | 0.03 % con RoBERTuito, 0.07 % con BETO | [EDA](eda_report.md#51-longitud-en-tokens), sección 5.1 | — |
 | κ de los modelos | tabla del capítulo 4 | [`gold_v1`](gold_v1_report.md), sección 6, y [competencia de modelos](sentiment_models_v0_report.md), secciones 12 a 14 (semillas) | M1 0.91 y M4 0.95 en el *dev* de 199 (inflados por el anclaje) |
 
 ## Archivos de métricas
@@ -134,6 +148,12 @@ Todos los escribe el paquete `voc_analytics`; solo contienen agregados.
 | :--- | :--- | :--- | :--- |
 | [`eda/metrics.json`](eda/metrics.json) y `eda/figures/` | `eda.eda_global` | [EDA global](eda_report.md) | Vigente |
 | [`eda/temporal_metrics.json`](eda/temporal_metrics.json) y `eda/figures/temporal_*` | `eda.eda_temporal` | [Patrones temporales](eda_temporal_report.md) | Vigente |
+| [`eda/tokens_metrics.json`](eda/tokens_metrics.json) y `eda/figures/tokens_ccdf.png` | `eda.eda_tokens` | [EDA](eda_report.md), sección 5.1 | Vigente |
+| [`eda/aspects_v2_metrics.json`](eda/aspects_v2_metrics.json) | `eda.eda_aspects_v2 analyze` | [EDA](eda_report.md), sección 5.2.1 | Histórico |
+| [`eda/aspects_v2_1_metrics.json`](eda/aspects_v2_1_metrics.json) | `eda.eda_aspects_v2 analyze` | [EDA](eda_report.md), sección 5.2.1 | Vigente |
+| [`eda/aspects_v1_metrics.json`](eda/aspects_v1_metrics.json) | `eda.eda_aspects analyze --prompt aspects_v1` | [EDA](eda_report.md), sección 5.2 | Histórico |
+| [`eda/aspects_v0_metrics.json`](eda/aspects_v0_metrics.json) | `eda.eda_aspects analyze --prompt aspects_v0` | [EDA](eda_report.md), sección 5.2 | Histórico |
+| [`eda/lexicon_metrics.json`](eda/lexicon_metrics.json) | `eda.eda_lexicon` | [EDA](eda_report.md), sección 5.3 | Vigente |
 | [`gold_v0_metrics.json`](gold_v0_metrics.json) | `analysis.analyze_gold_v0` | [Oro, primera ronda](gold_v0_report.md) | Histórico |
 | [`prompt_validation_prompt_v2.json`](prompt_validation_prompt_v2.json) | `analysis.validate_prompt` | [Oro, primera ronda](gold_v0_report.md), sección 3 | Histórico |
 | [`gold_v0_r2_metrics.json`](gold_v0_r2_metrics.json) | `analysis.analyze_gold_v0_r2` | [Re-anotación](gold_v0_r2_report.md) | Vigente en parte |
@@ -142,3 +162,6 @@ Todos los escribe el paquete `voc_analytics`; solo contienen agregados.
 | [`gold_v1_a2_metrics.json`](gold_v1_a2_metrics.json) | `analysis.analyze_gold_v1_a2` | [`gold_v1`](gold_v1_report.md), sección 7 | Vigente |
 | [`sentiment_models_metrics.json`](sentiment_models_metrics.json) | `sentiment.evaluate` (primera ronda) | [Primera ronda](sentiment_models_v0_report.md) | Histórico |
 | [`sentiment_models_gold_v1_metrics.json`](sentiment_models_gold_v1_metrics.json) | `sentiment.evaluate` | [`gold_v1`](gold_v1_report.md), sección 6 | Vigente |
+| [`topics_working_v0_metrics.json`](topics_working_v0_metrics.json) | `topics.working_set` | [Tópicos](topics_report.md) | Provisional |
+| [`topics_pilot_v0_metrics.json`](topics_pilot_v0_metrics.json) | `topics.pilot` | [Tópicos](topics_report.md) | Provisional |
+| [`topics_aspects_scale_v0_metrics.json`](topics_aspects_scale_v0_metrics.json) | `topics.aspects_scale` | [Tópicos](topics_report.md), sección 4.5 | Vigente |
