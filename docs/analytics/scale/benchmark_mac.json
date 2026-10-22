@@ -1,0 +1,135 @@
+{
+  "generado": "2026-10-22T17:21:27+00:00",
+  "entorno": "mac",
+  "cpus_visibles": 8,
+  "plataforma": "macOS-27.0.1-arm64-arm-64bit",
+  "torch": "2.14.1",
+  "corridas": [
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 52.9,
+      "textos_por_segundo": 37.8,
+      "carga_modelo_s": 0.46,
+      "rss_pico_mb": 1386.7
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 13.55,
+      "textos_por_segundo": 147.6,
+      "carga_modelo_s": 0.73,
+      "rss_pico_mb": 1535.6
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 365.64,
+      "textos_por_segundo": 5.5,
+      "carga_modelo_s": 0.96,
+      "rss_pico_mb": 1330.8
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 90.23,
+      "textos_por_segundo": 22.2,
+      "carga_modelo_s": 0.99,
+      "rss_pico_mb": 1218.5
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 41.72,
+      "textos_por_segundo": 47.9,
+      "carga_modelo_s": 0.76,
+      "rss_pico_mb": 1995.8
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 10.82,
+      "textos_por_segundo": 184.8,
+      "carga_modelo_s": 0.66,
+      "rss_pico_mb": 1821.9
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 188.12,
+      "textos_por_segundo": 10.6,
+      "carga_modelo_s": 0.49,
+      "rss_pico_mb": 2045.9
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 47.25,
+      "textos_por_segundo": 42.3,
+      "carga_modelo_s": 0.91,
+      "rss_pico_mb": 1472.1
+    },
+    {
+      "hilos": 4,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 39.23,
+      "textos_por_segundo": 51.0,
+      "carga_modelo_s": 0.71,
+      "rss_pico_mb": 1688.9
+    },
+    {
+      "hilos": 4,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 10.03,
+      "textos_por_segundo": 199.4,
+      "carga_modelo_s": 0.7,
+      "rss_pico_mb": 1491.9
+    },
+    {
+      "hilos": 4,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 103.78,
+      "textos_por_segundo": 19.3,
+      "carga_modelo_s": 0.49,
+      "rss_pico_mb": 1541.9
+    },
+    {
+      "hilos": 4,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 25.08,
+      "textos_por_segundo": 79.7,
+      "carga_modelo_s": 0.96,
+      "rss_pico_mb": 1588.2
+    }
+  ],
+  "calidad_int8": {
+    "n": 794,
+    "kappa_fp32": 0.9123,
+    "kappa_int8": 0.9176,
+    "acuerdo_int8_fp32": 0.9975
+  }
+}

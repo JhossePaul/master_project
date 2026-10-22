@@ -320,9 +320,10 @@ La cobertura de la revisión humana es una decisión informada, no un número fi
 
 * la curva de cobertura y riesgo del modelo vigente (`hitl_coverage_curves` de EPIC-6), con el punto de la política vigente marcado;
 * para cada cobertura: el error esperado entre lo aceptado, los errores que caen en revisión, las revisiones por semana y los minutos estimados, con el volumen y el tiempo por revisión medidos;
-* el parámetro configurable (cobertura objetivo; por defecto 90 %, decidido en 5.6).
+* el parámetro configurable de la **política HITL global** (cobertura objetivo; 90 % por defecto, decidido en 5.6), con las subidas temporales activas por banco (`hitl_boosts`);
+* aparte, la **configuración de alertas de deriva de cada banco** (`drift_policy`: umbrales por serie y regla de entrada), con la tasa histórica de alerta que daría cada umbral.
 
-Cambiar el parámetro **crea una versión nueva** de `hitl_policy` (solo inserción, con revisor como hash y motivo) y nunca edita la anterior. La API expone `GET /api/v1/hitl/policy`, `GET /api/v1/hitl/coverage-curve` y `POST /api/v1/hitl/policy`.
+Cambiar un parámetro **crea una versión nueva** de `risk_policy` (global) o de la `drift_policy` del banco (solo inserción, con revisor como hash y motivo) y nunca edita la anterior. La API expone `GET /api/v1/hitl/policy`, `GET /api/v1/hitl/coverage-curve` y `POST /api/v1/hitl/policy`.
 
 * Criterio de terminado: la curva se ve con el punto vigente; el cambio de parámetro queda versionado y auditado; la siguiente corrida de inferencia usa la política nueva.
 

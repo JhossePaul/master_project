@@ -72,23 +72,36 @@ def cost_of(usage: dict) -> float:
     ) / 1e6
 
 
-def label(workers: int, max_cost: float, missing: bool) -> None:
-    frame = pl.read_parquet(
-        WORKING / "texts.parquet", columns=["text_id", "texto_sanitizado"]
-    ).sort("text_id")
+def label(
+    workers: int,
+    max_cost: float,
+    missing: bool,
+    frame: pl.DataFrame | None = None,
+    out=OUT,
+) -> None:
+    """Etiqueta `frame` (por defecto, las negativas de `working_set`).
+
+    `frame` y `out` permiten reutilizarlo con otra muestra (5.7, `ppi_v0`).
+    """
+    if frame is None:
+        frame = pl.read_parquet(
+            WORKING / "texts.parquet", columns=["text_id", "texto_sanitizado"]
+        )
+    frame = frame.sort("text_id")
+    checkpoint = out / "checkpoint.jsonl"
     ids, texts = frame["text_id"].to_list(), frame["texto_sanitizado"].to_list()
     slices = {
         n: (ids[s : s + BATCH], texts[s : s + BATCH])
         for n, s in enumerate(range(0, len(ids), BATCH))
     }
-    OUT.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
     records: dict[int, dict] = {}
-    if CHECKPOINT.exists():
+    if checkpoint.exists():
         if not missing:
             raise SystemExit(
-                f"{CHECKPOINT} ya existe: usa --solo-faltantes para completar"
+                f"{checkpoint} ya existe: usa --solo-faltantes para completar"
             )
-        for line in CHECKPOINT.read_text().splitlines():
+        for line in checkpoint.read_text().splitlines():
             r = json.loads(line)
             if (
                 r["batch"] in slices
@@ -133,7 +146,7 @@ def label(workers: int, max_cost: float, missing: bool) -> None:
     pending = [n for n in slices if n not in records]
     stopped = None
     with (
-        CHECKPOINT.open("a") as sink,
+        checkpoint.open("a") as sink,
         ThreadPoolExecutor(max_workers=workers) as pool,
     ):
         futures = [pool.submit(work, n) for n in pending]
@@ -170,7 +183,7 @@ def label(workers: int, max_cost: float, missing: bool) -> None:
     labels = pl.DataFrame(
         [item for r in good.values() for item in r["items"]], schema=SCHEMA
     ).sort("text_id")
-    labels.write_parquet(OUT / f"labels_{PROMPT}.parquet")
+    labels.write_parquet(out / f"labels_{PROMPT}.parquet")
     batches = [
         {"batch": n, "texts": len(r["ids"]), **r["usage"]}
         for n, r in sorted(records.items())
@@ -190,14 +203,14 @@ def label(workers: int, max_cost: float, missing: bool) -> None:
         "cost_usd_total": round(
             sum(
                 cost_of(json.loads(line)["usage"])
-                for line in CHECKPOINT.read_text().splitlines()
+                for line in checkpoint.read_text().splitlines()
             ),
             5,
         ),
         "stopped": stopped,
         "batches": batches,
     }
-    (OUT / f"run_{PROMPT}_{run}.json").write_text(
+    (out / f"run_{PROMPT}_{run}.json").write_text(
         json.dumps(meta, indent=2) + "\n"
     )
     print({k: v for k, v in meta.items() if k != "batches"})

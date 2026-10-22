@@ -2,9 +2,9 @@
 
 Esta carpeta reúne los reportes de la fase de planteamiento y experimentación de [EPIC-5](../backlog/epic_5.md). Cada reporte se escribió en su momento y conserva sus cifras como evidencia. Este índice los ordena como una historia y dice, para cada capítulo, qué conclusión sigue vigente.
 
-* **Estado:** al 2026-10-22. 5.2 a 5.6 cerradas; faltan 5.7 y 5.8. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
+* **Estado:** al 2026-10-22. 5.2 a 5.7 cerradas; faltan 5.8 y 5.9. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
 * **Cómo leer un reporte:** al inicio, una nota **Estado** dice si es vigente, vigente en parte o histórico, y qué lo reemplazó. Las cifras de un reporte histórico no se corrigen: se citan con su fecha o se reemplazan por las del reporte que lo sustituye.
-* **Carpetas:** una por etapa del paquete, cada una con un dueño: [`eda/`](eda/) (5.1 y 5.2, Datos y EDA), [`labeling/`](labeling/) (5.3, Golden dataset y etiquetado), [`sentiment/`](sentiment/) (5.4, Modelos) y [`topics/`](topics/) (5.5, Tópicos) y [`calibration/`](calibration/) (5.6, Calibración). Cada carpeta guarda sus reportes y los JSON de métricas que escribe el paquete; las guías congeladas van a `archive/`. El registro de decisión de 5.8 irá en la raíz de esta carpeta.
+* **Carpetas:** una por etapa del paquete, cada una con un dueño: [`eda/`](eda/) (5.1 y 5.2, Datos y EDA), [`labeling/`](labeling/) (5.3, Golden dataset y etiquetado), [`sentiment/`](sentiment/) (5.4, Modelos) y [`topics/`](topics/) (5.5, Tópicos) [`calibration/`](calibration/) (5.6, Calibración) y [`scale/`](scale/) (5.7, Escala). El registro de decisión de 5.8 ([`decision_record.md`](decision_record.md)) está en la raíz de esta carpeta. Cada carpeta guarda sus reportes y los JSON de métricas que escribe el paquete; las guías congeladas van a `archive/`.
 * **Código:** paquete `voc_analytics` en [`experiments/analytics/`](../../experiments/analytics/README.md), con los comandos de cada etapa en orden de ejecución.
 * **Datos:** aquí solo hay agregados y ejemplos sintéticos. Las reseñas, las colas y las etiquetas individuales están en `experiments/analytics/data/`, fuera de git.
 
@@ -16,7 +16,9 @@ Esta carpeta reúne los reportes de la fase de planteamiento y experimentación 
 | 4 | [Competencia de modelos de sentimiento](#4-competencia-de-modelos-de-sentimiento) | 5.4 | [`sentiment_models_protocol`](sentiment/sentiment_models_protocol.md), [`sentiment_models_v0_report`](sentiment/sentiment_models_v0_report.md), [`gold_v1_report`](labeling/gold_v1_report.md) (sección 6) | Experimentación cerrada; M4 contra M9 se decide en 5.8 ([P8-1 y P8-2](../backlog/epic_5.md#decisiones-pendientes)) |
 | 5 | [Tópicos e incidencias](#5-tópicos-e-incidencias) | 5.5 | [`topics_design`](topics/topics_design.md), [`topics_report`](topics/topics_report.md), [`topics_decision_note`](topics/topics_decision_note.md) | Cerrado (2026-10-22): híbrido aprobado; `TOPIC_TOO_SHORT` k = 1 |
 | 6 | [Calibración, HITL y PPI](#6-calibración-hitl-y-ppi) | 5.6 | [`calibration_design`](calibration/calibration_design.md), [`calibration_report`](calibration/calibration_report.md) | Cerrada (2026-10-22) |
-| 7 | [Siguientes pasos](#7-siguientes-pasos) | 5.7, 5.8 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes) | 20 decisiones pendientes |
+| 7 | [Escala, ciclo de vida y monitoreo](#7-escala-ciclo-de-vida-y-monitoreo) | 5.7 | [`scale_design`](scale/scale_design.md), [`scale_report`](scale/scale_report.md) | Cerrada (2026-10-22) |
+| 8 | [Registro de decisión](#8-registro-de-decisión) | 5.8 | [`decision_record`](decision_record.md) | Borrador (2026-10-22) |
+| 9 | [Siguientes pasos](#9-siguientes-pasos) | 5.7–5.9 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes) | 20 decisiones pendientes |
 
 ---
 
@@ -122,14 +124,25 @@ Feature 5.6 ([plan](calibration/calibration_design.md), [reporte](calibration/ca
 
 ---
 
-## 7. Siguientes pasos
+## 7. Escala, ciclo de vida y monitoreo
+
+Feature 5.7 ([plan](scale/scale_design.md), [reporte](scale/scale_report.md)). **Vigente (2026-10-22):** en Cloud Run con 1 vCPU, M4 hace 22.6 textos/s (fp32, ordenado por longitud) y necesita 2 GiB; el backfill tardaría ~17 h, así que va a la T4 de Kaggle (~9 min) con un pipeline desde GCP, y el delta diario (~25 s) queda en Cloud Run. int8 no pierde calidad. Las familias con Gemini cuestan $0.091 por 1 000 textos (~$72 el histórico). `VECTOR_SEARCH` en BigQuery es viable si la tabla de embeddings se particiona por mes (~0.5 GB por búsqueda con 12 meses). El registro de modelos es Vertex Model Registry. El monitor de deriva tiene su línea base histórica y sus umbrales por banco (`drift_policy`, P7-9); la política HITL es global (`risk_policy`); M4 se reentrena si su κ en la muestra humana trimestral (300 revisiones) cae debajo de 0.89, y las familias se revalidan al cambiar Gemini (P7-10, P7-11). **5.7 cerrada (2026-10-22).**
+
+## 8. Registro de decisión
+
+Feature 5.8. El [borrador del registro](decision_record.md) junta por tema lo decidido en 5.1–5.7, lo pendiente y su evidencia: falta la evaluación única en el oro *test* (M4 contra M9), el *Satisfaction Gap* (P8-9), y el alcance de EPIC-7 (P8-12).
+
+---
+
+## 9. Siguientes pasos
 
 La lista ordenada, con dueño, dependencia y criterio de terminado, está en [`epic_5.md`, "Siguientes pasos"](../backlog/epic_5.md#siguientes-pasos). En resumen:
 
 1. ~~5.2 a 5.6~~: cerradas (2026-10-20 a 2026-10-22).
-2. **5.7, escala, ciclo de vida y monitoreo:** ya hay una medición indicativa de la velocidad de M4 ([5.6](calibration/calibration_report.md), §3.3) y pesos guardados; faltan las decisiones P7-1 a P7-8 (entorno del backfill, recursos del delta, registro de artefactos, *re-scoring*, umbrales de la señal, D1, monitoreo de concepto y re-ajuste de tópicos).
-3. **5.8, registro de decisión:** evaluación única en el oro *test* y las decisiones P8-1 a P8-12 (modelo y licencia, `TNSS_SINGLE_WORD`, reglas, esquema de salida, búsqueda semántica, familias en producción, explicabilidad, *Satisfaction Gap*, estimaciones del portal, registro de revisiones y alcance de EPIC-7).
-4. **Antes de EPIC-6 y EPIC-7:** resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) entre su diseño original y la evidencia.
+2. ~~**5.7, escala, ciclo de vida y monitoreo**~~: cerrada (2026-10-22).
+3. **5.8, registro de decisión:** [borrador](decision_record.md) listo; faltan la evaluación única en el oro *test*, P8-9 y P8-12; el esquema (P8-5, P8-11) está aprobado con la condición de cubrir el frontal de EPIC-7.
+4. **5.9, incidentes y versiones con la estrategia elegida:** meses candidatos a incidente en los 5 bancos, validados por el autor, y análisis por versión con más filas; va después de 5.8 para no predecir con un modelo que la decisión podría descartar.
+5. **Antes de EPIC-6 y EPIC-7:** resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) entre su diseño original y la evidencia.
 
 Las opciones, la evidencia y una propuesta para cada decisión están en el [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
 
@@ -153,7 +166,9 @@ Las opciones, la evidencia y una propuesta para cada decisión están en el [reg
 | ECE de M4 (población) | 0.023–0.027 sin calibrar; 0.009–0.013 con *temperature scaling* (T ≈ 1.7) | [5.6](calibration/calibration_report.md), sección 1 | 0.035 (5.4, sin ponderar) |
 | Umbral HITL de sentimiento | 90 % de cobertura: error entre lo aceptado 0.4 % [0.03, 1.1], ~350 textos por semana | [5.6](calibration/calibration_report.md), sección 2 | — |
 | Estrellas distintas del texto con PPI (corpus) | 11.6 % [10.5, 12.6] con Gemini; 11.7 % [10.6, 12.8] con M4 | [5.6](calibration/calibration_report.md), sección 3 | Solo oro: 12.1 % [9.7, 14.5] (*dev*), 12.5 % (oro aleatorio completo) |
-| Velocidad de inferencia de M4 | ~2 500 textos/s en la T4; 39–53 en CPU (Mac M2) | [5.6](calibration/calibration_report.md), sección 3.3 | — |
+| Velocidad de inferencia de M4 en Cloud Run | 22.6 textos/s con 1 vCPU (fp32, ordenado por longitud); 88 con 2 vCPU en int8; memoria pico 1.2–1.4 GB | [5.7](scale/scale_report.md), sección 1 | — |
+| Costo de las familias con Gemini | $0.091 por 1 000 textos; ~$72 el llenado histórico | [5.7](scale/scale_report.md), sección 3 | $3.64 por 40 382 negativas (5.5) |
+| Velocidad de inferencia de M4 en el Mac y la T4 | ~2 500 textos/s en la T4; 39–53 en CPU (Mac M2) | [5.6](calibration/calibration_report.md), sección 3.3 | — |
 | κ de los modelos | tabla del capítulo 4 | [`gold_v1`](labeling/gold_v1_report.md), sección 6, y [competencia de modelos](sentiment/sentiment_models_v0_report.md), secciones 12 a 14 (semillas) | M1 0.91 y M4 0.95 en el *dev* de 199 (inflados por el anclaje) |
 
 ## Archivos de métricas
@@ -186,3 +201,9 @@ Todos los escribe el paquete `voc_analytics` en la carpeta de su etapa; solo con
 | [`selective_v0_metrics.json`](calibration/selective_v0_metrics.json) | `calibration.selective` | [5.6](calibration/calibration_report.md), sección 2 | Vigente |
 | [`ppi_v0_gemini_metrics.json`](calibration/ppi_v0_gemini_metrics.json) y [`ppi_v0_m4_metrics.json`](calibration/ppi_v0_m4_metrics.json) | `calibration.ppi` | [5.6](calibration/calibration_report.md), sección 3 | Vigente |
 | [`priority_v0_metrics.json`](calibration/priority_v0_metrics.json) | `calibration.priority` | [5.6](calibration/calibration_report.md), sección 4 | Vigente |
+| [`benchmark_mac.json`](scale/benchmark_mac.json), [`benchmark_cloudrun-1cpu-2gi.json`](scale/benchmark_cloudrun-1cpu-2gi.json) y [`benchmark_cloudrun-2cpu-4gi.json`](scale/benchmark_cloudrun-2cpu-4gi.json) | `scale.benchmark` | [5.7](scale/scale_report.md), sección 1 | Vigente |
+| [`drift_baseline_v0_metrics.json`](scale/drift_baseline_v0_metrics.json) | `scale.drift_baseline` | [5.7](scale/scale_report.md), sección 2 | Vigente |
+| [`aspects_cost_v0_metrics.json`](scale/aspects_cost_v0_metrics.json) | `scale.aspects_ppi` | [5.7](scale/scale_report.md), sección 3 | Vigente |
+| [`explain_cost_v0_metrics.json`](scale/explain_cost_v0_metrics.json) | `scale.explain_cost` | [5.7](scale/scale_report.md), sección 4 | Vigente |
+| [`model_monitor_v0_metrics.json`](scale/model_monitor_v0_metrics.json) | `scale.model_monitor` | [5.7](scale/scale_report.md), sección 8 | Vigente |
+| [`vector_search_v0_metrics.json`](scale/vector_search_v0_metrics.json) y [`vector_filter_v0_metrics.json`](scale/vector_filter_v0_metrics.json) | `scale.vector_search`, `scale.vector_filter` | [5.7](scale/scale_report.md), secciones 5 y 5.1 | Vigente |

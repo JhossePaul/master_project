@@ -1,0 +1,1728 @@
+{
+  "generado": "2026-10-22T20:13:49+00:00",
+  "desde": "2011-01",
+  "linea_base_meses": 12,
+  "minimo_filas_mes": 200,
+  "minimo_muestra_mes": 30,
+  "meses": 186,
+  "resumen_por_banco": {
+    "AZTECA": {
+      "filas_por_mes_mediana": 4710.5,
+      "vocab_fuera_mediana": 0.0216,
+      "no_predecible_mediana": 0.0088
+    },
+    "BANORTE": {
+      "filas_por_mes_mediana": 3443.0,
+      "vocab_fuera_mediana": 0.0203,
+      "no_predecible_mediana": 0.0057
+    },
+    "BBVA": {
+      "filas_por_mes_mediana": 4050.0,
+      "vocab_fuera_mediana": 0.0231,
+      "no_predecible_mediana": 0.0049
+    },
+    "NUBANK": {
+      "filas_por_mes_mediana": 434.5,
+      "vocab_fuera_mediana": 0.0235,
+      "no_predecible_mediana": 0.0086
+    },
+    "SANTANDER": {
+      "filas_por_mes_mediana": 4294.5,
+      "vocab_fuera_mediana": 0.0198,
+      "no_predecible_mediana": 0.0062
+    }
+  },
+  "estabilidad_del_volumen": {
+    "AZTECA": {
+      "2017": {
+        "meses": 10,
+        "filas_mes_mediana": 107.5,
+        "cv": 0.873
+      },
+      "2018": {
+        "meses": 12,
+        "filas_mes_mediana": 547.0,
+        "cv": 0.237
+      },
+      "2019": {
+        "meses": 12,
+        "filas_mes_mediana": 5639.5,
+        "cv": 0.83
+      },
+      "2020": {
+        "meses": 12,
+        "filas_mes_mediana": 8806.5,
+        "cv": 0.296
+      },
+      "2021": {
+        "meses": 12,
+        "filas_mes_mediana": 9503.5,
+        "cv": 0.14
+      },
+      "2022": {
+        "meses": 12,
+        "filas_mes_mediana": 6874.0,
+        "cv": 0.23
+      },
+      "2023": {
+        "meses": 12,
+        "filas_mes_mediana": 4491.0,
+        "cv": 0.148
+      },
+      "2024": {
+        "meses": 12,
+        "filas_mes_mediana": 3768.0,
+        "cv": 0.142
+      },
+      "2025": {
+        "meses": 12,
+        "filas_mes_mediana": 5264.0,
+        "cv": 0.139
+      },
+      "2026": {
+        "meses": 10,
+        "filas_mes_mediana": 4615.0,
+        "cv": 0.216
+      }
+    },
+    "BANORTE": {
+      "2012": {
+        "meses": 10,
+        "filas_mes_mediana": 13.5,
+        "cv": 1.034
+      },
+      "2013": {
+        "meses": 12,
+        "filas_mes_mediana": 15.0,
+        "cv": 1.093
+      },
+      "2014": {
+        "meses": 12,
+        "filas_mes_mediana": 46.5,
+        "cv": 0.627
+      },
+      "2015": {
+        "meses": 12,
+        "filas_mes_mediana": 154.5,
+        "cv": 0.442
+      },
+      "2016": {
+        "meses": 12,
+        "filas_mes_mediana": 167.5,
+        "cv": 1.081
+      },
+      "2017": {
+        "meses": 12,
+        "filas_mes_mediana": 354.5,
+        "cv": 0.839
+      },
+      "2018": {
+        "meses": 12,
+        "filas_mes_mediana": 3516.5,
+        "cv": 0.259
+      },
+      "2019": {
+        "meses": 12,
+        "filas_mes_mediana": 6024.5,
+        "cv": 0.498
+      },
+      "2020": {
+        "meses": 12,
+        "filas_mes_mediana": 3690.0,
+        "cv": 0.284
+      },
+      "2021": {
+        "meses": 12,
+        "filas_mes_mediana": 4230.0,
+        "cv": 0.419
+      },
+      "2022": {
+        "meses": 12,
+        "filas_mes_mediana": 6654.5,
+        "cv": 0.254
+      },
+      "2023": {
+        "meses": 12,
+        "filas_mes_mediana": 4133.5,
+        "cv": 0.124
+      },
+      "2024": {
+        "meses": 12,
+        "filas_mes_mediana": 4259.0,
+        "cv": 0.149
+      },
+      "2025": {
+        "meses": 12,
+        "filas_mes_mediana": 5176.0,
+        "cv": 0.097
+      },
+      "2026": {
+        "meses": 10,
+        "filas_mes_mediana": 4552.5,
+        "cv": 0.198
+      }
+    },
+    "BBVA": {
+      "2011": {
+        "meses": 8,
+        "filas_mes_mediana": 5.5,
+        "cv": 0.582
+      },
+      "2012": {
+        "meses": 12,
+        "filas_mes_mediana": 30.5,
+        "cv": 0.376
+      },
+      "2013": {
+        "meses": 12,
+        "filas_mes_mediana": 47.0,
+        "cv": 0.987
+      },
+      "2014": {
+        "meses": 12,
+        "filas_mes_mediana": 256.0,
+        "cv": 0.619
+      },
+      "2015": {
+        "meses": 12,
+        "filas_mes_mediana": 493.0,
+        "cv": 0.407
+      },
+      "2016": {
+        "meses": 12,
+        "filas_mes_mediana": 1176.0,
+        "cv": 0.339
+      },
+      "2017": {
+        "meses": 12,
+        "filas_mes_mediana": 2261.0,
+        "cv": 0.525
+      },
+      "2018": {
+        "meses": 12,
+        "filas_mes_mediana": 5936.0,
+        "cv": 0.151
+      },
+      "2019": {
+        "meses": 12,
+        "filas_mes_mediana": 12280.5,
+        "cv": 0.216
+      },
+      "2020": {
+        "meses": 12,
+        "filas_mes_mediana": 5721.5,
+        "cv": 0.167
+      },
+      "2021": {
+        "meses": 12,
+        "filas_mes_mediana": 5756.5,
+        "cv": 0.63
+      },
+      "2022": {
+        "meses": 12,
+        "filas_mes_mediana": 4051.0,
+        "cv": 0.104
+      },
+      "2023": {
+        "meses": 12,
+        "filas_mes_mediana": 3852.5,
+        "cv": 0.208
+      },
+      "2024": {
+        "meses": 12,
+        "filas_mes_mediana": 8000.0,
+        "cv": 0.354
+      },
+      "2025": {
+        "meses": 12,
+        "filas_mes_mediana": 6362.5,
+        "cv": 0.503
+      },
+      "2026": {
+        "meses": 10,
+        "filas_mes_mediana": 5672.0,
+        "cv": 0.246
+      }
+    },
+    "NUBANK": {
+      "2015": {
+        "meses": 4,
+        "filas_mes_mediana": 1.0,
+        "cv": 0.4
+      },
+      "2016": {
+        "meses": 10,
+        "filas_mes_mediana": 2.0,
+        "cv": 0.527
+      },
+      "2017": {
+        "meses": 7,
+        "filas_mes_mediana": 1.0,
+        "cv": 0.555
+      },
+      "2018": {
+        "meses": 9,
+        "filas_mes_mediana": 3.0,
+        "cv": 0.442
+      },
+      "2019": {
+        "meses": 12,
+        "filas_mes_mediana": 9.5,
+        "cv": 0.54
+      },
+      "2020": {
+        "meses": 12,
+        "filas_mes_mediana": 58.0,
+        "cv": 1.039
+      },
+      "2021": {
+        "meses": 12,
+        "filas_mes_mediana": 485.5,
+        "cv": 0.484
+      },
+      "2022": {
+        "meses": 12,
+        "filas_mes_mediana": 1051.5,
+        "cv": 0.242
+      },
+      "2023": {
+        "meses": 12,
+        "filas_mes_mediana": 569.5,
+        "cv": 0.623
+      },
+      "2024": {
+        "meses": 12,
+        "filas_mes_mediana": 1378.0,
+        "cv": 0.778
+      },
+      "2025": {
+        "meses": 12,
+        "filas_mes_mediana": 1666.5,
+        "cv": 0.98
+      },
+      "2026": {
+        "meses": 10,
+        "filas_mes_mediana": 3678.5,
+        "cv": 0.638
+      }
+    },
+    "SANTANDER": {
+      "2012": {
+        "meses": 10,
+        "filas_mes_mediana": 16.5,
+        "cv": 0.739
+      },
+      "2013": {
+        "meses": 12,
+        "filas_mes_mediana": 19.0,
+        "cv": 0.35
+      },
+      "2014": {
+        "meses": 12,
+        "filas_mes_mediana": 47.0,
+        "cv": 0.336
+      },
+      "2015": {
+        "meses": 12,
+        "filas_mes_mediana": 53.5,
+        "cv": 0.216
+      },
+      "2016": {
+        "meses": 12,
+        "filas_mes_mediana": 148.0,
+        "cv": 0.835
+      },
+      "2017": {
+        "meses": 12,
+        "filas_mes_mediana": 132.0,
+        "cv": 0.235
+      },
+      "2018": {
+        "meses": 12,
+        "filas_mes_mediana": 233.0,
+        "cv": 2.901
+      },
+      "2019": {
+        "meses": 12,
+        "filas_mes_mediana": 10339.0,
+        "cv": 0.253
+      },
+      "2020": {
+        "meses": 12,
+        "filas_mes_mediana": 6471.5,
+        "cv": 0.156
+      },
+      "2021": {
+        "meses": 12,
+        "filas_mes_mediana": 6501.0,
+        "cv": 0.274
+      },
+      "2022": {
+        "meses": 12,
+        "filas_mes_mediana": 5484.0,
+        "cv": 0.128
+      },
+      "2023": {
+        "meses": 12,
+        "filas_mes_mediana": 4812.0,
+        "cv": 0.107
+      },
+      "2024": {
+        "meses": 12,
+        "filas_mes_mediana": 4629.0,
+        "cv": 0.081
+      },
+      "2025": {
+        "meses": 12,
+        "filas_mes_mediana": 4916.0,
+        "cv": 0.179
+      },
+      "2026": {
+        "meses": 10,
+        "filas_mes_mediana": 5643.5,
+        "cv": 0.258
+      }
+    }
+  },
+  "tasa_de_alerta": {
+    "z_palabras_media": {
+      "total": {
+        "evaluables": 522,
+        "tasa_3": 0.113,
+        "tasa_4": 0.069,
+        "tasa_5": 0.0421
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.0874,
+          "tasa_4": 0.0485,
+          "tasa_5": 0.0291
+        },
+        "BANORTE": {
+          "evaluables": 113,
+          "tasa_3": 0.1327,
+          "tasa_4": 0.0885,
+          "tasa_5": 0.0619
+        },
+        "BBVA": {
+          "evaluables": 144,
+          "tasa_3": 0.1319,
+          "tasa_4": 0.0694,
+          "tasa_5": 0.0347
+        },
+        "NUBANK": {
+          "evaluables": 65,
+          "tasa_3": 0.0615,
+          "tasa_4": 0.0462,
+          "tasa_5": 0.0154
+        },
+        "SANTANDER": {
+          "evaluables": 97,
+          "tasa_3": 0.1237,
+          "tasa_4": 0.0825,
+          "tasa_5": 0.0619
+        }
+      },
+      "por_anio": {
+        "2014": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2015": {
+          "evaluables": 11,
+          "tasa_3": 0.1818,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2016": {
+          "evaluables": 12,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 19,
+          "tasa_3": 0.2105,
+          "tasa_4": 0.1579,
+          "tasa_5": 0.1053
+        },
+        "2018": {
+          "evaluables": 36,
+          "tasa_3": 0.1667,
+          "tasa_4": 0.1111,
+          "tasa_5": 0.1111
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_3": 0.1458,
+          "tasa_4": 0.1042,
+          "tasa_5": 0.0625
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0625,
+          "tasa_5": 0.0417
+        },
+        "2021": {
+          "evaluables": 56,
+          "tasa_3": 0.1607,
+          "tasa_4": 0.1071,
+          "tasa_5": 0.0357
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.05,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0167
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.1186,
+          "tasa_4": 0.0339,
+          "tasa_5": 0.0169
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.05,
+          "tasa_5": 0.0167
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.15,
+          "tasa_4": 0.1,
+          "tasa_5": 0.0833
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.06,
+          "tasa_4": 0.06,
+          "tasa_5": 0.02
+        }
+      }
+    },
+    "z_una_palabra": {
+      "total": {
+        "evaluables": 522,
+        "tasa_3": 0.0977,
+        "tasa_4": 0.0536,
+        "tasa_5": 0.0307
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.1068,
+          "tasa_4": 0.0583,
+          "tasa_5": 0.0194
+        },
+        "BANORTE": {
+          "evaluables": 113,
+          "tasa_3": 0.115,
+          "tasa_4": 0.0708,
+          "tasa_5": 0.0354
+        },
+        "BBVA": {
+          "evaluables": 144,
+          "tasa_3": 0.1181,
+          "tasa_4": 0.0625,
+          "tasa_5": 0.0486
+        },
+        "NUBANK": {
+          "evaluables": 65,
+          "tasa_3": 0.0308,
+          "tasa_4": 0.0154,
+          "tasa_5": 0.0
+        },
+        "SANTANDER": {
+          "evaluables": 97,
+          "tasa_3": 0.0825,
+          "tasa_4": 0.0412,
+          "tasa_5": 0.0309
+        }
+      },
+      "por_anio": {
+        "2014": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2015": {
+          "evaluables": 11,
+          "tasa_3": 0.0909,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2016": {
+          "evaluables": 12,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 19,
+          "tasa_3": 0.4211,
+          "tasa_4": 0.2632,
+          "tasa_5": 0.2632
+        },
+        "2018": {
+          "evaluables": 36,
+          "tasa_3": 0.1111,
+          "tasa_4": 0.0278,
+          "tasa_5": 0.0
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_3": 0.2083,
+          "tasa_4": 0.125,
+          "tasa_5": 0.0833
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0417,
+          "tasa_4": 0.0417,
+          "tasa_5": 0.0
+        },
+        "2021": {
+          "evaluables": 56,
+          "tasa_3": 0.1429,
+          "tasa_4": 0.0714,
+          "tasa_5": 0.0357
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.0333,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0167
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.0508,
+          "tasa_4": 0.0169,
+          "tasa_5": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.05,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0167
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.15,
+          "tasa_4": 0.1,
+          "tasa_5": 0.05
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.02,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        }
+      }
+    },
+    "z_mas_de_60": {
+      "total": {
+        "evaluables": 522,
+        "tasa_3": 0.0881,
+        "tasa_4": 0.0498,
+        "tasa_5": 0.0307
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.0485,
+          "tasa_4": 0.0097,
+          "tasa_5": 0.0097
+        },
+        "BANORTE": {
+          "evaluables": 113,
+          "tasa_3": 0.1416,
+          "tasa_4": 0.0973,
+          "tasa_5": 0.0619
+        },
+        "BBVA": {
+          "evaluables": 144,
+          "tasa_3": 0.1042,
+          "tasa_4": 0.0625,
+          "tasa_5": 0.0347
+        },
+        "NUBANK": {
+          "evaluables": 65,
+          "tasa_3": 0.0615,
+          "tasa_4": 0.0308,
+          "tasa_5": 0.0154
+        },
+        "SANTANDER": {
+          "evaluables": 97,
+          "tasa_3": 0.0619,
+          "tasa_4": 0.0309,
+          "tasa_5": 0.0206
+        }
+      },
+      "por_anio": {
+        "2014": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2015": {
+          "evaluables": 11,
+          "tasa_3": 0.0909,
+          "tasa_4": 0.0909,
+          "tasa_5": 0.0
+        },
+        "2016": {
+          "evaluables": 12,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 19,
+          "tasa_3": 0.1053,
+          "tasa_4": 0.0526,
+          "tasa_5": 0.0
+        },
+        "2018": {
+          "evaluables": 36,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0278,
+          "tasa_5": 0.0278
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_3": 0.1667,
+          "tasa_4": 0.1458,
+          "tasa_5": 0.125
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.1458,
+          "tasa_4": 0.1042,
+          "tasa_5": 0.0833
+        },
+        "2021": {
+          "evaluables": 56,
+          "tasa_3": 0.0714,
+          "tasa_4": 0.0536,
+          "tasa_5": 0.0357
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.0667,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.0678,
+          "tasa_4": 0.0169,
+          "tasa_5": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.1,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0167
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.0667,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0333
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.06,
+          "tasa_4": 0.04,
+          "tasa_5": 0.0
+        }
+      }
+    },
+    "z_no_predecible": {
+      "total": {
+        "evaluables": 522,
+        "tasa_3": 0.0479,
+        "tasa_4": 0.023,
+        "tasa_5": 0.0115
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.068,
+          "tasa_4": 0.0485,
+          "tasa_5": 0.0485
+        },
+        "BANORTE": {
+          "evaluables": 113,
+          "tasa_3": 0.0354,
+          "tasa_4": 0.0177,
+          "tasa_5": 0.0
+        },
+        "BBVA": {
+          "evaluables": 144,
+          "tasa_3": 0.0764,
+          "tasa_4": 0.0278,
+          "tasa_5": 0.0069
+        },
+        "NUBANK": {
+          "evaluables": 65,
+          "tasa_3": 0.0154,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "SANTANDER": {
+          "evaluables": 97,
+          "tasa_3": 0.0206,
+          "tasa_4": 0.0103,
+          "tasa_5": 0.0
+        }
+      },
+      "por_anio": {
+        "2014": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2015": {
+          "evaluables": 11,
+          "tasa_3": 0.0909,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2016": {
+          "evaluables": 12,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 19,
+          "tasa_3": 0.1053,
+          "tasa_4": 0.0526,
+          "tasa_5": 0.0
+        },
+        "2018": {
+          "evaluables": 36,
+          "tasa_3": 0.2222,
+          "tasa_4": 0.1667,
+          "tasa_5": 0.1667
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0417,
+          "tasa_4": 0.0208,
+          "tasa_5": 0.0
+        },
+        "2021": {
+          "evaluables": 56,
+          "tasa_3": 0.0357,
+          "tasa_4": 0.0357,
+          "tasa_5": 0.0
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.05,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.0169,
+          "tasa_4": 0.0169,
+          "tasa_5": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.0167,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.02,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        }
+      }
+    },
+    "z_vocab_fuera": {
+      "total": {
+        "evaluables": 522,
+        "tasa_3": 0.069,
+        "tasa_4": 0.0326,
+        "tasa_5": 0.0172
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.0777,
+          "tasa_4": 0.0583,
+          "tasa_5": 0.0194
+        },
+        "BANORTE": {
+          "evaluables": 113,
+          "tasa_3": 0.0708,
+          "tasa_4": 0.0177,
+          "tasa_5": 0.0
+        },
+        "BBVA": {
+          "evaluables": 144,
+          "tasa_3": 0.1181,
+          "tasa_4": 0.0556,
+          "tasa_5": 0.0417
+        },
+        "NUBANK": {
+          "evaluables": 65,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "SANTANDER": {
+          "evaluables": 97,
+          "tasa_3": 0.0309,
+          "tasa_4": 0.0103,
+          "tasa_5": 0.0103
+        }
+      },
+      "por_anio": {
+        "2014": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2015": {
+          "evaluables": 11,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2016": {
+          "evaluables": 12,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 19,
+          "tasa_3": 0.3158,
+          "tasa_4": 0.1053,
+          "tasa_5": 0.0526
+        },
+        "2018": {
+          "evaluables": 36,
+          "tasa_3": 0.25,
+          "tasa_4": 0.2222,
+          "tasa_5": 0.1389
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0417,
+          "tasa_4": 0.0208,
+          "tasa_5": 0.0
+        },
+        "2021": {
+          "evaluables": 56,
+          "tasa_3": 0.0179,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.0167,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.0339,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.0667,
+          "tasa_4": 0.0667,
+          "tasa_5": 0.0167
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.1167,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0167
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.06,
+          "tasa_4": 0.02,
+          "tasa_5": 0.02
+        }
+      }
+    },
+    "psi_palabras": {
+      "total": {
+        "evaluables": 561,
+        "tasa_0.1": 0.1087,
+        "tasa_0.25": 0.0196
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 109,
+          "tasa_0.1": 0.1101,
+          "tasa_0.25": 0.0092
+        },
+        "BANORTE": {
+          "evaluables": 122,
+          "tasa_0.1": 0.0984,
+          "tasa_0.25": 0.0246
+        },
+        "BBVA": {
+          "evaluables": 150,
+          "tasa_0.1": 0.16,
+          "tasa_0.25": 0.0267
+        },
+        "NUBANK": {
+          "evaluables": 71,
+          "tasa_0.1": 0.0845,
+          "tasa_0.25": 0.0282
+        },
+        "SANTANDER": {
+          "evaluables": 109,
+          "tasa_0.1": 0.0642,
+          "tasa_0.25": 0.0092
+        }
+      },
+      "por_anio": {
+        "2013": {
+          "evaluables": 2,
+          "tasa_0.1": 0.0,
+          "tasa_0.25": 0.0
+        },
+        "2014": {
+          "evaluables": 7,
+          "tasa_0.1": 0.1429,
+          "tasa_0.25": 0.1429
+        },
+        "2015": {
+          "evaluables": 13,
+          "tasa_0.1": 0.1538,
+          "tasa_0.25": 0.0
+        },
+        "2016": {
+          "evaluables": 22,
+          "tasa_0.1": 0.0455,
+          "tasa_0.25": 0.0
+        },
+        "2017": {
+          "evaluables": 25,
+          "tasa_0.1": 0.32,
+          "tasa_0.25": 0.04
+        },
+        "2018": {
+          "evaluables": 45,
+          "tasa_0.1": 0.1778,
+          "tasa_0.25": 0.0222
+        },
+        "2019": {
+          "evaluables": 48,
+          "tasa_0.1": 0.2917,
+          "tasa_0.25": 0.0417
+        },
+        "2020": {
+          "evaluables": 50,
+          "tasa_0.1": 0.24,
+          "tasa_0.25": 0.06
+        },
+        "2021": {
+          "evaluables": 60,
+          "tasa_0.1": 0.0667,
+          "tasa_0.25": 0.0
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_0.1": 0.0167,
+          "tasa_0.25": 0.0
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_0.1": 0.0169,
+          "tasa_0.25": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_0.1": 0.0167,
+          "tasa_0.25": 0.0167
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_0.1": 0.1,
+          "tasa_0.25": 0.0333
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_0.1": 0.04,
+          "tasa_0.25": 0.0
+        }
+      }
+    },
+    "z_neg_gemini_plata": {
+      "total": {
+        "evaluables": 487,
+        "tasa_3": 0.0965,
+        "tasa_4": 0.0657,
+        "tasa_5": 0.0349
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 103,
+          "tasa_3": 0.0971,
+          "tasa_4": 0.0583,
+          "tasa_5": 0.0097
+        },
+        "BANORTE": {
+          "evaluables": 105,
+          "tasa_3": 0.0857,
+          "tasa_4": 0.0667,
+          "tasa_5": 0.0571
+        },
+        "BBVA": {
+          "evaluables": 120,
+          "tasa_3": 0.1167,
+          "tasa_4": 0.0917,
+          "tasa_5": 0.0583
+        },
+        "NUBANK": {
+          "evaluables": 69,
+          "tasa_3": 0.058,
+          "tasa_4": 0.0435,
+          "tasa_5": 0.0
+        },
+        "SANTANDER": {
+          "evaluables": 90,
+          "tasa_3": 0.1111,
+          "tasa_4": 0.0556,
+          "tasa_5": 0.0333
+        }
+      },
+      "por_anio": {
+        "2016": {
+          "evaluables": 2,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 13,
+          "tasa_3": 0.3846,
+          "tasa_4": 0.3846,
+          "tasa_5": 0.2308
+        },
+        "2018": {
+          "evaluables": 33,
+          "tasa_3": 0.0303,
+          "tasa_4": 0.0303,
+          "tasa_5": 0.0
+        },
+        "2019": {
+          "evaluables": 42,
+          "tasa_3": 0.2619,
+          "tasa_4": 0.2381,
+          "tasa_5": 0.1429
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0833,
+          "tasa_5": 0.0833
+        },
+        "2021": {
+          "evaluables": 60,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.05,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0167
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.0678,
+          "tasa_4": 0.0339,
+          "tasa_5": 0.0
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.0667,
+          "tasa_4": 0.0333,
+          "tasa_5": 0.0
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.1,
+          "tasa_4": 0.05,
+          "tasa_5": 0.05
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.08,
+          "tasa_4": 0.02,
+          "tasa_5": 0.0
+        }
+      }
+    },
+    "z_neg_m4_ppi_v0": {
+      "total": {
+        "evaluables": 484,
+        "tasa_3": 0.1074,
+        "tasa_4": 0.0661,
+        "tasa_5": 0.0455
+      },
+      "por_banco": {
+        "AZTECA": {
+          "evaluables": 101,
+          "tasa_3": 0.0792,
+          "tasa_4": 0.0594,
+          "tasa_5": 0.0495
+        },
+        "BANORTE": {
+          "evaluables": 104,
+          "tasa_3": 0.1058,
+          "tasa_4": 0.0577,
+          "tasa_5": 0.0288
+        },
+        "BBVA": {
+          "evaluables": 121,
+          "tasa_3": 0.1653,
+          "tasa_4": 0.0909,
+          "tasa_5": 0.0579
+        },
+        "NUBANK": {
+          "evaluables": 67,
+          "tasa_3": 0.1045,
+          "tasa_4": 0.0448,
+          "tasa_5": 0.0299
+        },
+        "SANTANDER": {
+          "evaluables": 91,
+          "tasa_3": 0.0659,
+          "tasa_4": 0.0659,
+          "tasa_5": 0.0549
+        }
+      },
+      "por_anio": {
+        "2016": {
+          "evaluables": 3,
+          "tasa_3": 0.0,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2017": {
+          "evaluables": 12,
+          "tasa_3": 0.3333,
+          "tasa_4": 0.25,
+          "tasa_5": 0.25
+        },
+        "2018": {
+          "evaluables": 32,
+          "tasa_3": 0.0938,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2019": {
+          "evaluables": 42,
+          "tasa_3": 0.2619,
+          "tasa_4": 0.1905,
+          "tasa_5": 0.119
+        },
+        "2020": {
+          "evaluables": 48,
+          "tasa_3": 0.0833,
+          "tasa_4": 0.0833,
+          "tasa_5": 0.0625
+        },
+        "2021": {
+          "evaluables": 58,
+          "tasa_3": 0.069,
+          "tasa_4": 0.0517,
+          "tasa_5": 0.0345
+        },
+        "2022": {
+          "evaluables": 60,
+          "tasa_3": 0.0167,
+          "tasa_4": 0.0167,
+          "tasa_5": 0.0167
+        },
+        "2023": {
+          "evaluables": 59,
+          "tasa_3": 0.1356,
+          "tasa_4": 0.0678,
+          "tasa_5": 0.0339
+        },
+        "2024": {
+          "evaluables": 60,
+          "tasa_3": 0.0667,
+          "tasa_4": 0.0,
+          "tasa_5": 0.0
+        },
+        "2025": {
+          "evaluables": 60,
+          "tasa_3": 0.1667,
+          "tasa_4": 0.1,
+          "tasa_5": 0.05
+        },
+        "2026": {
+          "evaluables": 50,
+          "tasa_3": 0.06,
+          "tasa_4": 0.06,
+          "tasa_5": 0.06
+        }
+      }
+    }
+  },
+  "entrada_por_banco": {
+    "AZTECA": "2018-09",
+    "BANORTE": "2018-10",
+    "BBVA": "2016-04",
+    "NUBANK": "2021-12",
+    "SANTANDER": "2019-04"
+  },
+  "tasa_por_banco_desde_entrada": {
+    "z_palabras_media": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_3": 0.0928,
+        "tasa_4": 0.0515,
+        "tasa_5": 0.0309,
+        "meses_por_anio_3": 1.1,
+        "meses_por_anio_4": 0.6,
+        "meses_por_anio_5": 0.4
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.1458,
+        "tasa_4": 0.0938,
+        "tasa_5": 0.0625,
+        "meses_por_anio_3": 1.8,
+        "meses_por_anio_4": 1.1,
+        "meses_por_anio_5": 0.8
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_3": 0.1349,
+        "tasa_4": 0.0794,
+        "tasa_5": 0.0397,
+        "meses_por_anio_3": 1.6,
+        "meses_por_anio_4": 1.0,
+        "meses_por_anio_5": 0.5
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0526,
+        "tasa_4": 0.0351,
+        "tasa_5": 0.0175,
+        "meses_por_anio_3": 0.6,
+        "meses_por_anio_4": 0.4,
+        "meses_por_anio_5": 0.2
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.1222,
+        "tasa_4": 0.0889,
+        "tasa_5": 0.0667,
+        "meses_por_anio_3": 1.5,
+        "meses_por_anio_4": 1.1,
+        "meses_por_anio_5": 0.8
+      }
+    },
+    "z_una_palabra": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_3": 0.1031,
+        "tasa_4": 0.0619,
+        "tasa_5": 0.0206,
+        "meses_por_anio_3": 1.2,
+        "meses_por_anio_4": 0.7,
+        "meses_por_anio_5": 0.2
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.0938,
+        "tasa_4": 0.0625,
+        "tasa_5": 0.0312,
+        "meses_por_anio_3": 1.1,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.4
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_3": 0.127,
+        "tasa_4": 0.0714,
+        "tasa_5": 0.0556,
+        "meses_por_anio_3": 1.5,
+        "meses_por_anio_4": 0.9,
+        "meses_por_anio_5": 0.7
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0175,
+        "tasa_4": 0.0,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.2,
+        "meses_por_anio_4": 0.0,
+        "meses_por_anio_5": 0.0
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.0889,
+        "tasa_4": 0.0444,
+        "tasa_5": 0.0333,
+        "meses_por_anio_3": 1.1,
+        "meses_por_anio_4": 0.5,
+        "meses_por_anio_5": 0.4
+      }
+    },
+    "z_mas_de_60": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_3": 0.0515,
+        "tasa_4": 0.0103,
+        "tasa_5": 0.0103,
+        "meses_por_anio_3": 0.6,
+        "meses_por_anio_4": 0.1,
+        "meses_por_anio_5": 0.1
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.1562,
+        "tasa_4": 0.1146,
+        "tasa_5": 0.0729,
+        "meses_por_anio_3": 1.9,
+        "meses_por_anio_4": 1.4,
+        "meses_por_anio_5": 0.9
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_3": 0.1111,
+        "tasa_4": 0.0635,
+        "tasa_5": 0.0397,
+        "meses_por_anio_3": 1.3,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.5
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0702,
+        "tasa_4": 0.0351,
+        "tasa_5": 0.0175,
+        "meses_por_anio_3": 0.8,
+        "meses_por_anio_4": 0.4,
+        "meses_por_anio_5": 0.2
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.0556,
+        "tasa_4": 0.0333,
+        "tasa_5": 0.0222,
+        "meses_por_anio_3": 0.7,
+        "meses_por_anio_4": 0.4,
+        "meses_por_anio_5": 0.3
+      }
+    },
+    "z_no_predecible": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_3": 0.0206,
+        "tasa_4": 0.0,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.2,
+        "meses_por_anio_4": 0.0,
+        "meses_por_anio_5": 0.0
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.0417,
+        "tasa_4": 0.0208,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.5,
+        "meses_por_anio_4": 0.2,
+        "meses_por_anio_5": 0.0
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_3": 0.0794,
+        "tasa_4": 0.0317,
+        "tasa_5": 0.0079,
+        "meses_por_anio_3": 1.0,
+        "meses_por_anio_4": 0.4,
+        "meses_por_anio_5": 0.1
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0175,
+        "tasa_4": 0.0,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.2,
+        "meses_por_anio_4": 0.0,
+        "meses_por_anio_5": 0.0
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.0222,
+        "tasa_4": 0.0111,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.3,
+        "meses_por_anio_4": 0.1,
+        "meses_por_anio_5": 0.0
+      }
+    },
+    "z_vocab_fuera": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_3": 0.0515,
+        "tasa_4": 0.0412,
+        "tasa_5": 0.0206,
+        "meses_por_anio_3": 0.6,
+        "meses_por_anio_4": 0.5,
+        "meses_por_anio_5": 0.2
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.0625,
+        "tasa_4": 0.0104,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.8,
+        "meses_por_anio_4": 0.1,
+        "meses_por_anio_5": 0.0
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_3": 0.1349,
+        "tasa_4": 0.0635,
+        "tasa_5": 0.0476,
+        "meses_por_anio_3": 1.6,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.6
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0,
+        "tasa_4": 0.0,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.0,
+        "meses_por_anio_4": 0.0,
+        "meses_por_anio_5": 0.0
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.0222,
+        "tasa_4": 0.0,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.3,
+        "meses_por_anio_4": 0.0,
+        "meses_por_anio_5": 0.0
+      }
+    },
+    "psi_palabras": {
+      "AZTECA": {
+        "evaluables": 97,
+        "tasa_0.1": 0.0825,
+        "tasa_0.25": 0.0103,
+        "meses_por_anio_0.1": 1.0,
+        "meses_por_anio_0.25": 0.1
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_0.1": 0.0833,
+        "tasa_0.25": 0.0312,
+        "meses_por_anio_0.1": 1.0,
+        "meses_por_anio_0.25": 0.4
+      },
+      "BBVA": {
+        "evaluables": 126,
+        "tasa_0.1": 0.1667,
+        "tasa_0.25": 0.0238,
+        "meses_por_anio_0.1": 2.0,
+        "meses_por_anio_0.25": 0.3
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_0.1": 0.1053,
+        "tasa_0.25": 0.0351,
+        "meses_por_anio_0.1": 1.3,
+        "meses_por_anio_0.25": 0.4
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_0.1": 0.0222,
+        "tasa_0.25": 0.0,
+        "meses_por_anio_0.1": 0.3,
+        "meses_por_anio_0.25": 0.0
+      }
+    },
+    "z_neg_gemini_plata": {
+      "AZTECA": {
+        "evaluables": 95,
+        "tasa_3": 0.1053,
+        "tasa_4": 0.0632,
+        "tasa_5": 0.0105,
+        "meses_por_anio_3": 1.3,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.1
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.0833,
+        "tasa_4": 0.0625,
+        "tasa_5": 0.0625,
+        "meses_por_anio_3": 1.0,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.8
+      },
+      "BBVA": {
+        "evaluables": 120,
+        "tasa_3": 0.1167,
+        "tasa_4": 0.0917,
+        "tasa_5": 0.0583,
+        "meses_por_anio_3": 1.4,
+        "meses_por_anio_4": 1.1,
+        "meses_por_anio_5": 0.7
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.0702,
+        "tasa_4": 0.0526,
+        "tasa_5": 0.0,
+        "meses_por_anio_3": 0.8,
+        "meses_por_anio_4": 0.6,
+        "meses_por_anio_5": 0.0
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.1111,
+        "tasa_4": 0.0556,
+        "tasa_5": 0.0333,
+        "meses_por_anio_3": 1.3,
+        "meses_por_anio_4": 0.7,
+        "meses_por_anio_5": 0.4
+      }
+    },
+    "z_neg_m4_ppi_v0": {
+      "AZTECA": {
+        "evaluables": 94,
+        "tasa_3": 0.0851,
+        "tasa_4": 0.0638,
+        "tasa_5": 0.0532,
+        "meses_por_anio_3": 1.0,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.6
+      },
+      "BANORTE": {
+        "evaluables": 96,
+        "tasa_3": 0.1146,
+        "tasa_4": 0.0625,
+        "tasa_5": 0.0312,
+        "meses_por_anio_3": 1.4,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.4
+      },
+      "BBVA": {
+        "evaluables": 121,
+        "tasa_3": 0.1653,
+        "tasa_4": 0.0909,
+        "tasa_5": 0.0579,
+        "meses_por_anio_3": 2.0,
+        "meses_por_anio_4": 1.1,
+        "meses_por_anio_5": 0.7
+      },
+      "NUBANK": {
+        "evaluables": 57,
+        "tasa_3": 0.1228,
+        "tasa_4": 0.0526,
+        "tasa_5": 0.0351,
+        "meses_por_anio_3": 1.5,
+        "meses_por_anio_4": 0.6,
+        "meses_por_anio_5": 0.4
+      },
+      "SANTANDER": {
+        "evaluables": 90,
+        "tasa_3": 0.0667,
+        "tasa_4": 0.0667,
+        "tasa_5": 0.0556,
+        "meses_por_anio_3": 0.8,
+        "meses_por_anio_4": 0.8,
+        "meses_por_anio_5": 0.7
+      }
+    }
+  },
+  "valor_en_incidentes_bbva": {
+    "z_palabras_media": {
+      "2024-07": 2.6,
+      "2025-10": 4.3,
+      "2025-11": 3.32
+    },
+    "z_una_palabra": {
+      "2024-07": -1.74,
+      "2025-10": -6.91,
+      "2025-11": -4.95
+    },
+    "z_mas_de_60": {
+      "2024-07": 1.7,
+      "2025-10": 2.88,
+      "2025-11": 1.68
+    },
+    "z_no_predecible": {
+      "2024-07": -2.7,
+      "2025-10": -2.8,
+      "2025-11": -2.52
+    },
+    "z_vocab_fuera": {
+      "2024-07": -0.96,
+      "2025-10": 5.38,
+      "2025-11": 3.15
+    },
+    "psi_palabras": {
+      "2024-07": 0.05,
+      "2025-10": 0.3,
+      "2025-11": 0.14
+    },
+    "z_neg_gemini_plata": {
+      "2024-07": 4.52,
+      "2025-10": 6.09,
+      "2025-11": 3.11
+    },
+    "z_neg_m4_ppi_v0": {
+      "2024-07": 3.59,
+      "2025-10": 4.31,
+      "2025-11": 3.66
+    }
+  }
+}

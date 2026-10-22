@@ -33,9 +33,11 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 5.2 EDA | Datos y EDA | `experiments/analytics/src/voc_analytics/eda/`, `experiments/analytics/src/voc_analytics/snapshot/`, `docs/analytics/eda/` |
 | 5.5 Tópicos e incidencias | Tópicos | `experiments/analytics/src/voc_analytics/topics/`, `docs/analytics/topics/` y la sección de la feature 5.5 en `docs/backlog/epic_5.md`. Consume `eda/prompts/aspects_v2_1.md` y `docs/analytics/eda/eda_aspects_guideline.md` (`v2.1`) (área Datos y EDA) |
 | 5.6 Calibración, HITL, PPI y priorización | Calibración | `experiments/analytics/src/voc_analytics/calibration/`, `experiments/analytics/src/voc_analytics/sampling/sample_ppi.py`, `docs/analytics/calibration/` y la sección de la feature 5.6 en `docs/backlog/epic_5.md` |
+| 5.7 Escala, ciclo de vida y monitoreo | Escala | `experiments/analytics/src/voc_analytics/scale/`, `docs/analytics/scale/` y la sección de la feature 5.7 en `docs/backlog/epic_5.md` |
+| 5.8 Registro de decisión | Decisión | `docs/analytics/decision_record.md`, el registro de decisiones de `docs/backlog/epic_5.md` y `docs/contracts/analytics_outputs_v3_draft.md` |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
-Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6, que cambiará `packages/` e `infra/`. Las features 5.7 y 5.8, EPIC-6 y EPIC-7 se agregan a esta tabla cuando arranquen.
+Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6, que cambiará `packages/` e `infra/`. La feature 5.9, EPIC-6 y EPIC-7 se agregan a esta tabla cuando arranquen.
 
 El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/src/`) y su evidencia en `docs/analytics/`, con una carpeta por etapa del paquete; el mapa de rutas anteriores está en [`experiments/analytics/MIGRATION.md`](experiments/analytics/MIGRATION.md). Los módulos compartidos de abajo son relativos a `voc_analytics/`.
 

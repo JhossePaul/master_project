@@ -121,7 +121,7 @@ Revisión del autor de los ~20 tópicos principales (coherencia 1–5, utilidad 
 
 ## 11. Entregables
 1. `topics/`: muestra estratificada, embeddings, BERTopic global y por ventana, alineación con familias, barrido de `TOPIC_TOO_SHORT`, normalización de versiones, señal de incidentes.
-2. `docs/analytics/topics/topics_report.md` y `topics_metrics.json` (solo agregados y ejemplos sintéticos).
+2. `docs/analytics/topics/topics_report.md` y sus métricas (solo agregados y ejemplos sintéticos; al implementarse quedaron como `topics_working_v0_metrics.json`, `topics_pilot_v0_metrics.json`, `topics_phase2_v0_metrics.json` y `topics_aspects_scale_v0_metrics.json`).
 3. Sección 5.5 de `epic_5.md` con la recomendación y su costo de operación.
 4. Nota de entrada para el registro de decisión (5.8).
 

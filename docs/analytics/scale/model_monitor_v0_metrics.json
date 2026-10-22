@@ -1,0 +1,188 @@
+{
+  "generado": "2026-10-22T20:40:31+00:00",
+  "modelo": "M4_robertuito_s1_ppi",
+  "kappa_m4_por_tamano_de_muestra": {
+    "kappa_poblacional_dev": 0.9329,
+    "n_dev": 794,
+    "100": {
+      "ic95": [
+        0.8454,
+        1.0
+      ],
+      "semiancho": 0.0773,
+      "p5": 0.8617
+    },
+    "200": {
+      "ic95": [
+        0.875,
+        0.9783
+      ],
+      "semiancho": 0.0516,
+      "p5": 0.8851
+    },
+    "300": {
+      "ic95": [
+        0.8863,
+        0.9701
+      ],
+      "semiancho": 0.0419,
+      "p5": 0.8941
+    },
+    "500": {
+      "ic95": [
+        0.8972,
+        0.9636
+      ],
+      "semiancho": 0.0332,
+      "p5": 0.9029
+    }
+  },
+  "tasa_de_correccion_hitl": {
+    "esperada": 0.2488,
+    "revisiones_por_semana": 350,
+    "error_estandar_semanal": 0.0231,
+    "limite_superior_99_semanal": 0.3083,
+    "error_estandar_4_semanas": 0.0116,
+    "limite_superior_99_4_semanas": 0.2786
+  },
+  "acuerdo_m4_gemini": {
+    "holdout_por_mes": {
+      "2026-04": {
+        "n": 695,
+        "acuerdo": 0.9861
+      },
+      "2026-05": {
+        "n": 914,
+        "acuerdo": 0.9751
+      },
+      "2026-06": {
+        "n": 715,
+        "acuerdo": 0.9671
+      },
+      "2026-07": {
+        "n": 1143,
+        "acuerdo": 0.9734
+      },
+      "2026-08": {
+        "n": 633,
+        "acuerdo": 0.9691
+      },
+      "2026-09": {
+        "n": 964,
+        "acuerdo": 0.9532
+      },
+      "2026-10": {
+        "n": 241,
+        "acuerdo": 0.9612
+      }
+    },
+    "media": 0.9693,
+    "rango_mensual": [
+      0.9532,
+      0.9861
+    ],
+    "muestra_semanal_propuesta": 500,
+    "error_estandar_semanal": 0.0077,
+    "costo_semanal_usd": 0.024
+  },
+  "familias_gemini_muestra_v21": {
+    "items": 300,
+    "por_familia": {
+      "AC": {
+        "kappa": 0.701,
+        "ic95": [
+          0.5982,
+          0.7947
+        ],
+        "prevalencia_autor": 0.23
+      },
+      "TR": {
+        "kappa": 0.683,
+        "ic95": [
+          0.5439,
+          0.7984
+        ],
+        "prevalencia_autor": 0.13
+      },
+      "DI": {
+        "kappa": 0.615,
+        "ic95": [
+          0.2405,
+          0.8716
+        ],
+        "prevalencia_autor": 0.023
+      },
+      "PR": {
+        "kappa": 0.617,
+        "ic95": [
+          0.4708,
+          0.7418
+        ],
+        "prevalencia_autor": 0.127
+      },
+      "AT": {
+        "kappa": 0.679,
+        "ic95": [
+          0.4842,
+          0.8315
+        ],
+        "prevalencia_autor": 0.063
+      },
+      "FA": {
+        "kappa": 0.549,
+        "ic95": [
+          0.4385,
+          0.655
+        ],
+        "prevalencia_autor": 0.17
+      },
+      "LE": {
+        "kappa": 0.864,
+        "ic95": [
+          0.7409,
+          0.951
+        ],
+        "prevalencia_autor": 0.097
+      },
+      "CO": {
+        "kappa": 0.766,
+        "ic95": [
+          0.6378,
+          0.8716
+        ],
+        "prevalencia_autor": 0.127
+      },
+      "DV": {
+        "kappa": 0.737,
+        "ic95": [
+          0.5174,
+          0.8929
+        ],
+        "prevalencia_autor": 0.067
+      },
+      "UX": {
+        "kappa": 0.74,
+        "ic95": [
+          0.6208,
+          0.8431
+        ],
+        "prevalencia_autor": 0.15
+      },
+      "OT": {
+        "kappa": 0.0,
+        "ic95": [
+          0.0,
+          0.0
+        ],
+        "prevalencia_autor": 0.003
+      }
+    },
+    "acuerdo_exacto": {
+      "valor": 0.583,
+      "ic95": [
+        0.5267,
+        0.64
+      ]
+    }
+  }
+}

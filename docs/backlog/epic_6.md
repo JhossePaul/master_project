@@ -4,9 +4,9 @@
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
-* **Antes de empezar:** decidir P7-1 a P7-8 y P8-1 a P8-12 del [registro de decisiones](epic_5.md#decisiones-pendientes) y resolver o aceptar las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia). Las filas de la tabla de insumos que siguen abiertas dicen qué decisión esperan.
+* **Antes de empezar:** aprobar el [registro de decisión de 5.8](../analytics/decision_record.md) (hoy faltan la evaluación en el oro *test*, P8-9 y P8-12, y comprobar que el esquema aprobado cubre el frontal de EPIC-7; ver el [registro de decisiones](epic_5.md#decisiones-pendientes)) y resolver o aceptar las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia). Las filas de la tabla de insumos que siguen abiertas dicen qué decisión esperan.
 * **Semanas Objetivo:** tras 5.8 y antes de [EPIC-7](epic_7.md).
-* **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
+* **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión; 5.9, incidentes y versiones, solo para 6.4) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
 * **La consume:** [EPIC-7](epic_7.md), cuya API y portal leen las tablas de salida, escriben en la base de curadurías y muestran las alertas.
 * **Directorios (provisionales):**
   * `packages/voc-common/`: contratos de predicción, elegibilidad y curaduría;
@@ -36,7 +36,7 @@ Lo implementado en EPIC-1 y EPIC-2 sigue en el código hasta que esta épica lo 
 | Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Probabilidad máxima de M4 calibrado; **90 % de cobertura por defecto** (se revisa el ~10 % menos seguro, ~350 textos por semana), como parámetro configurable. La curva de cobertura y riesgo y el parámetro son estado de la aplicación: se guardan versionados y el frontal los muestra ([plan de 5.6](../analytics/calibration/calibration_design.md#31-decisión-del-autor-2026-10-22)) | 5.6 (decidido 2026-10-22) | 6.1 a 6.4 |
 | Calibración | Ninguna | *Temperature scaling* con una T por semilla de M4 (≈ 1.7) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
 | Priorización | Fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` | Se descartan: ordenan los incidentes igual que contar negativas, y los votos empeoran el orden. Se prioriza por volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto ([reporte de 5.6](../analytics/calibration/calibration_report.md#4-priorización-q4-decidido)) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
-| *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA | 5.7 (P7-5, P7-6) | 6.4 |
+| *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA | 5.9 (P9-1); 5.7 (P7-6) | 6.4 |
 | Curaduría | `hitl_triage_audit_log` (sentimiento y un tópico) | Curadurías de sentimiento, aspectos y tópicos, inmutables, con versión de guía, modelo y prompt | 5.5 (aprobado); tabla de sentimiento en 5.8 (P8-11) | 6.2 |
 | Entorno de cómputo | Sin definir | M4 infiere ~2 500 textos/s en la T4 y 39–53 en CPU; el backfill en Kaggle sacaría el corpus de GCP | 5.7 (P7-1, P7-2) | 6.2, 6.3 |
 | Etiquetador y M9 | `enable_vertex_ai_api`; `enable_dedicated_vertex_endpoints = False` | Gemini por Vertex AI dentro del proyecto, sin endpoints dedicados; las familias en producción dependen de quién las etiquete | 5.3; 5.8 (P8-1, P8-7) | 6.2 |
@@ -66,7 +66,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 * `AnalyzedReviewPrediction` con el modelo elegido, versión de modelo y de corrida, familias multi-etiqueta, marcas `u` y `s`, y estado de elegibilidad con su código.
 * Quitar `priority_weight_score` y `tnss_numeric_calibrated` (5.6). Retirar o versionar `ABSATopic`, `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS` y `cumple_umbral_palabras`; revisar `IncidentAlertMessage` y `HitlTriageAuditRecord`, que hoy usan `ABSATopic`.
 * Contratos de las curadurías (6.2) y del registro de corridas.
-* **Política HITL** (`HitlPolicy`), versionada y de solo inserción: versión de modelo y de calibración (T), señal (`prob_max`), cobertura objetivo, umbral equivalente, fecha de vigencia, quién la fijó (hash) y motivo. Y **curva de cobertura y riesgo** (`HitlCoverageCurve`) por versión de modelo: puntos de cobertura, riesgo con su IC, umbral, errores atrapados, revisiones por semana y minutos estimados. El valor por defecto es el de 5.6 (90 %) y reemplaza a `hitl_entropy_threshold` de `Settings`.
+* **Dos políticas versionadas y de solo inserción:** el **apetito de riesgo HITL** (`RiskPolicy`, tabla `risk_policy`), **global**, con las subidas temporales por banco en `hitl_boosts`; y la **configuración de alertas de deriva** (`DriftPolicy`, tabla `drift_policy`), **por banco**, creada desde `drift_policy_template`. Los parámetros HITL son: versión de modelo y de calibración (T), señal (`prob_max`), cobertura objetivo, umbral equivalente, fecha de vigencia, quién la fijó (hash) y motivo. Y **curva de cobertura y riesgo** (`HitlCoverageCurve`) por versión de modelo: puntos de cobertura, riesgo con su IC, umbral, errores atrapados, revisiones por semana y minutos estimados. El valor por defecto es el de 5.6 (90 %) y reemplaza a `hitl_entropy_threshold` de `Settings`.
 * Contrato documentado en `docs/contracts/`.
 * **Terminado cuando:** contratos con pruebas, cobertura ≥ 85 % y consumidores actualizados; EPIC-1 anota qué contratos quedaron reemplazados.
 
@@ -76,7 +76,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 
 * Tablas de salida que reemplazan `delora_predictions`, con un plan de migración (la tabla está vacía).
 * Base de curadurías para el reentrenamiento. Punto de partida: el [borrador de tablas de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría) (`curation_sentiment` o ampliar `hitl_triage_audit_log`, `curation_aspects`, `topic_model_versions`, `topic_catalog`, `curation_topics`, `topic_assignments`). Principios: registros inmutables (solo inserción); revisor como hash SHA-256; cada registro guarda la versión de la guía, del modelo y del prompt que produjo la predicción revisada; solo texto sanitizado.
-* Tablas `hitl_policy` (una fila por versión; la vigente es la última) y `hitl_coverage_curves` (una curva por versión de modelo y de calibración), en BigQuery y de solo inserción, con los contratos de 6.1. Las lee la inferencia (6.3) y la API de EPIC-7.
+* Tablas `risk_policy` (global), `hitl_boosts`, `drift_policy` y `drift_policy_template` (por banco) y `hitl_coverage_curves` y `hitl_coverage_curves` (una curva por versión de modelo y de calibración), en BigQuery y de solo inserción, con los contratos de 6.1. Las lee la inferencia (6.3) y la API de EPIC-7.
 * Cloud Run Job de inferencia y su Scheduler, IAM de `voc-sa-ml-backend` (Vertex AI si 5.8 elige M9) y el registro de versiones de modelo que proponga 5.7.
 * **Terminado cuando:** `pulumi preview` con mocks pasa, EPIC-2 anota qué recursos quedaron reemplazados y la matriz FMEA tiene su fila si se almacena texto.
 
@@ -93,12 +93,15 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 
 **Objetivo:** el plan de monitoreo y de ciclo de vida de 5.7, en producción.
 
-* Monitor de *drift*: entrada (longitud, vocabulario, `version_app`, proporción de no predecibles), predicción (proporción de `NEG` por banco y versión) y familias con la marca `u`. Publica en `voc-incident-alerts-topic`. La especificación anterior está en el [anexo, A.7](#a7-monitor-de-drift-antes-tarea-651-del-portal).
+* Monitor de *drift*: entrada (longitud, vocabulario, `version_app`, proporción de no predecibles), predicción (proporción de `NEG` por banco y versión) y familias con la marca `u`, con los umbrales y la regla de entrada de la `drift_policy` de cada banco (plantilla de 5.7: z ≥ 4, PSI ≥ 0.25, 12 meses con 200 filas). Publica en `voc-incident-alerts-topic`. La especificación anterior está en el [anexo, A.7](#a7-monitor-de-drift-antes-tarea-651-del-portal).
 * Regla de promoción y rollback de modelos, y política de *re-scoring* del histórico.
 * **Al promover o recalibrar un modelo,** se recalcula la curva de cobertura y riesgo sobre el oro *dev* (como `voc_analytics.calibration.selective`), se guarda en `hitl_coverage_curves` y se propone el umbral equivalente a la cobertura vigente. El volumen semanal y los minutos estimados se actualizan con el volumen real y el tiempo medido por revisión en las curadurías.
-* Cuándo la deriva o un tema nuevo suben temporalmente la revisión (D1 de 5.6, pendiente de 5.7): como una nueva versión de la política, nunca como un cambio silencioso.
+* Una alerta de deriva sube temporalmente la revisión HITL **solo del banco que alertó** (P7-6): se registra en `hitl_boosts` con las reglas de `risk_policy` (cobertura, duración y tope), nunca como un cambio silencioso.
 * Re-ajuste trimestral de tópicos con emparejamiento de identificadores entre versiones.
-* **Terminado cuando:** las alertas llegan al tópico con umbrales de 5.7 y el portal de EPIC-7 puede consultarlas.
+* **Desempeño de M4 y reentrenamiento (P7-10):** el κ de M4 en la muestra humana trimestral (`monitor_sample`, 300 revisiones) se guarda en `model_quality`; si queda debajo de 0.89, se pide reentrenar (candidato en Kaggle, registro en Vertex, promoción con la regla de 5.4). Dos avisos semanales que no disparan solos: la tasa de corrección de la cola HITL (> 28 % en 4 semanas) y el acuerdo M4–Gemini sobre 500 textos por semana (< 94 % en 4 semanas; ~$0.02 por semana).
+* **Calidad de las familias (P7-11):** al cambiar el modelo o el prompt de Gemini se repite el prompt sobre las 300 reseñas de `muestra_v21` (~$0.03) y el cambio se acepta solo si el acuerdo exacto es ≥ 53 % y ninguna familia con prevalencia ≥ 5 % baja del límite inferior de su IC.
+* **Depende de 5.9:** los umbrales de la señal y de las alertas salen de la lista de incidentes validada (P9-1).
+* **Terminado cuando:** las alertas llegan al tópico con los umbrales de 5.9, `model_quality` registra cada medición de P7-10 y P7-11, y el portal de EPIC-7 puede consultarlas.
 
 ---
 
