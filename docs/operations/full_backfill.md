@@ -107,6 +107,18 @@ El replay rápido cargó **2 649 047 filas**, todas únicas por `(bank_id, id_re
 - **La reseña más reciente** de cada banco es del 2026-10-14 (la carga corrió
   el 2026-10-15): el retraso de ~24 h sigue sin explicarse.
 
+## Incidentes de la puesta en marcha (resumen)
+
+Venía del cierre de EPIC-1 a EPIC-4 (ahora en [`epics.md`](../backlog/epics.md#cierre-de-las-épicas-1-a-4)).
+
+| Incidente | Causa | Cambio |
+| --- | --- | --- |
+| Estado cruzado entre bancos (`protocol_shape`, `app_id does not match`) | IDs de AZTECA/BANORTE incorrectos | IDs corregidos; aislamiento por banco |
+| Páginas finales rechazadas (`protocol_shape`) en los 5 bancos | El parser exigía bloque de paginación en la última página | Se acepta sin cursor solo con filas (`END_CANDIDATE`) |
+| 1 645 filas cerradas como `STAGING_EXPIRED` sin estarlo | La imagen de sanitización traía el parser viejo y el cierre es irreversible | `CaptureUnreadable` deja la página abierta; `tools/deploy_images.py` exige el mismo SHA en las dos imágenes |
+| 401 al invocar la ingesta con token de usuario | Sin determinar | `ingest --impersonate` con una cuenta de servicio |
+| Diff permanente en `pulumi preview` | Valor por defecto de la API no declarado | `scaling` a nivel de servicio declarado |
+
 ## Estimación (previa a la ingesta; ver resultados arriba)
 
 | | BBVA (788 k) | Total (~2.0 M) | Estado |
@@ -153,7 +165,7 @@ crecimiento de la tabla, no una mejora observada.
 
 El worker pide **500 reseñas por solicitud** (antes 199). Es política local, no
 un máximo del origen: `PLAYSTORE_PAGE_SIZE_POLICY_LIMIT=500` la impone en
-Settings y en la API. En `evidence/` se probaron 20, 50, 199, 200 y 500, y todas
+Settings y en la API. En `experiments/playstore/evidence/` se probaron 20, 50, 199, 200 y 500, y todas
 devolvieron lo pedido (HTTP 200, con cursor); esa evidencia es una sola
 observación del 500.
 
@@ -357,7 +369,7 @@ cambios manuales producen deriva en el stack.
 - [ ] Sin duplicados:
       `SELECT bank_id, COUNT(*) - COUNT(DISTINCT id_resena) FROM … GROUP BY 1` = 0.
 - [ ] Rango de fechas por banco desde el origen del histórico hasta hoy.
-- [x] Descartes: 100 de 2 649 145 filas (0.004 %), todas sin texto, medidas sumando `discarded_count` de los manifiestos (la auditoría de la corrida reporta 0, por lo que no sirve para esto). Ver `docs/backlog/closure_epics_1_4.md`.
+- [x] Descartes: 100 de 2 649 145 filas (0.004 %), todas sin texto, medidas sumando `discarded_count` de los manifiestos (la auditoría de la corrida reporta 0, por lo que no sirve para esto). Ver el [cierre de EPIC-1 a EPIC-4](../backlog/epics.md#cierre-de-las-épicas-1-a-4).
 - [ ] 0 filas con título o respuesta; `SUM(pii_findings_count)` revisado.
 - [ ] Cola de Pub/Sub y DLQ vacías; `raw_staging/` expira solo a los 7 días.
 

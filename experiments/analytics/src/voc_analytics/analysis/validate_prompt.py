@@ -15,7 +15,7 @@ Compara contra las anotaciones humanas (última fila por `item_id`):
   candidato.
 
 Con dos corridas del candidato mide además su estabilidad. Escribe
-`docs/analytics/prompt_validation_<candidato>.json`, solo agregados.
+`docs/analytics/labeling/prompt_validation_<candidato>.json`, solo agregados.
 """
 
 import json
@@ -110,7 +110,7 @@ def main(run_v0: str, runs: list[str]) -> None:
     if len(runs) > 1:
         both = labels(runs[0], "a").join(labels(runs[1], "b"), on="item_id")
         result["estabilidad"] = kappa(both["a"].to_list(), both["b"].to_list())
-    out = DOCS / f"prompt_validation_{candidate}.json"
+    out = DOCS / "labeling" / f"prompt_validation_{candidate}.json"
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
     print(json.dumps(result, indent=2, ensure_ascii=False))
 

@@ -9,7 +9,7 @@ Uso (desde experiments/analytics):
 
 Une `annotations.csv` (última fila por `item_id`), la cola, las estrellas del
 snapshot y las etiquetas de Gemini (`prompt_v1` en la cola y `prompt_v0` de la
-corrida indicada). Escribe `docs/analytics/gold_v0_metrics.json`.
+corrida indicada). Escribe `docs/analytics/labeling/gold_v0_metrics.json`.
 
 * Estimaciones poblacionales: solo bloque `aleatorio`, ponderado por
   1 / probabilidad de inclusión, con error estándar de muestreo estratificado.
@@ -31,7 +31,7 @@ from voc_analytics.labeling.agreement import (
 from voc_analytics.paths import DOCS, LABELS
 
 GOLD = LABELS / "gold_v0"
-OUT = DOCS / "gold_v0_metrics.json"
+OUT = DOCS / "labeling" / "gold_v0_metrics.json"
 
 
 def main(snapshot: str, run_v0: str) -> None:

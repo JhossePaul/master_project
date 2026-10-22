@@ -1,6 +1,6 @@
 # Piloto de etiquetado con Gemini Flash (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): histórico.** Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): histórico.** Índice: [`README.md`](../README.md).
 > * **Sigue vigente:** el modelo `gemini-3.6-flash` con razonamiento mínimo, la estructura de costo (la salida compacta) y el tope de $25 por corrida de plata.
 > * **Reemplazado por:**
 >   * prompt candidato `prompt_v1` → `prompt_v3`, elegido en la [re-anotación](gold_v0_r2_report.md), sección 5;
@@ -10,13 +10,13 @@
 * **Corridas:** `20261018T050027Z` (`prompt_v0`, secciones 1–3) y `20261018T052510Z` (`prompt_v1`, sección 4). Muestra del snapshot `tds_20261016T054714Z` con `eligibility_rules_v0.1`.
 * **Configuración:**
   * modelo `gemini-3.6-flash` en Vertex AI, región `global`, mismo proyecto GCP;
-  * `prompt_v0` ([`prompt_v0.md`](../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v0.md)), condensado de `annotation_guideline_v0`;
+  * `prompt_v0` ([`prompt_v0.md`](../../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v0.md)), condensado de `annotation_guideline_v0`;
   * temperatura 0, `thinking_level=minimal`, salida JSON con esquema (`i`, `s`, `f`, `d`);
   * 50 textos por petición, peticiones en línea (sin Batch API).
 * **Código:**
-  * [`sample_pilot.py`](../../experiments/analytics/src/voc_analytics/sampling/sample_pilot.py) arma la muestra;
-  * [`label_gemini.py`](../../experiments/analytics/src/voc_analytics/labeling/label_gemini.py) etiqueta;
-  * [`eligibility.py`](../../experiments/analytics/src/voc_analytics/labeling/eligibility.py) implementa las reglas TNSS.
+  * [`sample_pilot.py`](../../../experiments/analytics/src/voc_analytics/sampling/sample_pilot.py) arma la muestra;
+  * [`label_gemini.py`](../../../experiments/analytics/src/voc_analytics/labeling/label_gemini.py) etiqueta;
+  * [`eligibility.py`](../../../experiments/analytics/src/voc_analytics/labeling/eligibility.py) implementa las reglas TNSS.
 * **Datos:** la muestra, las etiquetas y la metadata de la corrida están en `experiments/analytics/data/labels/pilot_v0/`, fuera de git. Este reporte solo tiene agregados.
 * **Pendiente:** el acuerdo con humanos se mide cuando exista la app de anotación.
 
@@ -106,7 +106,7 @@ Se usan 0.299 tokens por carácter de texto y 24.4 de salida por texto, medidos 
 ## 4. Segundo piloto: salida compacta (`prompt_v1`)
 
 * **Corridas:** `20261018T052510Z` y su repetición `20261018T052534Z`, sobre las mismas 500 muestras.
-* **Qué cambia:** `prompt_v1` ([`prompt_v1.md`](../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v1.md)) tiene **las mismas reglas** que v0. Solo cambia la salida y el lote:
+* **Qué cambia:** `prompt_v1` ([`prompt_v1.md`](../../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v1.md)) tiene **las mismas reglas** que v0. Solo cambia la salida y el lote:
   * texto plano, una línea `i etiqueta f` por texto;
   * sin `d`, que no aportaba señal;
   * sin esquema JSON (el esquema también se cobra como entrada);
@@ -149,7 +149,7 @@ Se usan 0.272 tokens por carácter, 6.9 de salida por texto y 628 de instrucció
 
 * **Modelo (decidido 2026-10-18):** se mantiene `gemini-3.6-flash` con razonamiento mínimo. Solo se cambia si el κ humano–Gemini del bloque a ciegas resulta bajo.
 * **Prompt de producción candidato:** `prompt_v1`, por costo. El oro lleva propuestas de v1, y el bloque a ciegas permite comparar v0 y v1 contra el humano antes de fijarlo.
-* **Oro, primera ronda** ([`sample_gold_v0.py`](../../experiments/analytics/src/voc_analytics/sampling/sample_gold_v0.py)), en este orden:
+* **Oro, primera ronda** ([`sample_gold_v0.py`](../../../experiments/analytics/src/voc_analytics/sampling/sample_gold_v0.py)), en este orden:
   1. 30 de calibración del piloto, la mitad donde las corridas de Gemini discrepan;
   2. 400 aleatorias, muestreo aleatorio simple en banco × periodo (80 por banco), con probabilidad de inclusión; 201 a ciegas y 199 asistidas;
   3. 20 de re-anotación.

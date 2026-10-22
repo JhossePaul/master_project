@@ -16,7 +16,8 @@ Uso (desde experiments/analytics):
   muestra estiman las de la población sin pesos.
 * **label:** Gemini (Vertex AI dentro de GCP) codifica cada texto único con
   los aspectos de la queja, con el prompt `--prompt` (por defecto
-  `aspects_v1`, que sigue `docs/analytics/eda_aspects_guideline_v1.md`);
+  `aspects_v1`, que sigue
+  `docs/analytics/eda/archive/eda_aspects_guideline_v1.md`);
   reutiliza `label_batch` de `labeling.label_gemini` sin modificarlo.
 * **validation:** exporta a ciegas (sin la salida de Gemini) `VALIDATION_N`
   textos; el autor los codifica con `aspects_app.py`.
@@ -57,7 +58,8 @@ SILVER = LABELS / "silver_v0"
 OUT = DATA / "eda" / "aspects_v0"
 PROMPTS = Path(__file__).parent / "prompts"
 PROMPT_VERSIONS = ["aspects_v0", "aspects_v1"]
-# `docs/analytics/eda_aspects_guideline_v1.md`; la sigue `aspects_v1`.
+# `docs/analytics/eda/archive/eda_aspects_guideline_v1.md`; la sigue
+# `aspects_v1`.
 GUIDELINE = "aspects_guideline_v1"
 # Codificaciones de `aspects_app.py`; gana la última fila por `item`.
 ANNOTATIONS = OUT / "validation_annotations.csv"  # primera pasada, guía v0

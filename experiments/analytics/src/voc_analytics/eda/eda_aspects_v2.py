@@ -4,7 +4,7 @@
 pasa a la marca ortogonal `u` (problema atribuido a una actualización). La
 marca ortogonal `s` señala las quejas de seguridad (hackeo, fraude con la
 app, desconfianza, biometría como seguridad). Guía:
-`docs/analytics/eda_aspects_guideline.md`; prompt `aspects_v2` (el de la
+`docs/analytics/eda/eda_aspects_guideline.md`; prompt `aspects_v2` (el de la
 primera ronda de calibración está congelado en `aspects_v2_r1`).
 
 Uso (desde experiments/analytics), en este orden:

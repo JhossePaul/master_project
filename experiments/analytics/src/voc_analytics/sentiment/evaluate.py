@@ -26,7 +26,7 @@ protocolo (ver `metrics.py` y el plan en `docs/backlog/epic_5.md`, 5.4):
   sus filas.
 * **Costo:** lo que cada modelo registró al predecir.
 
-Escribe `docs/analytics/sentiment_models_gold_v1_metrics.json`, solo
+Escribe `docs/analytics/sentiment/sentiment_models_gold_v1_metrics.json`, solo
 agregados. `sentiment_models_metrics.json` queda como registro de la primera
 ronda (*dev* de 199).
 """
@@ -46,7 +46,7 @@ from voc_analytics.sentiment.data import (
 )
 from voc_analytics.sentiment.metrics import ece, evaluate, quality
 
-OUT = DOCS / "sentiment_models_gold_v1_metrics.json"
+OUT = DOCS / "sentiment" / "sentiment_models_gold_v1_metrics.json"
 REFERENCES = ["M0", "M1", "M3", "M4_robertuito_mac"]
 HOLDOUT_BOOT = 500
 

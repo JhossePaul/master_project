@@ -1,11 +1,11 @@
 # Oro, segunda ronda: diseño de `gold_v1` (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): vigente; la cola se armó y se anotó.** Resultados en el [reporte de `gold_v1`](gold_v1_report.md). Índice: [`README.md`](README.md).
-> Este diseño estaba en [`epic_5.md`](../backlog/epic_5.md), feature 5.3, punto 3, y se movió aquí sin cambiar cifras. Los pasos de "Después de anotar" ya se hicieron ([reporte](gold_v1_report.md), secciones 6 y 7).
+> **Estado (2026-10-19): vigente; la cola se armó y se anotó.** Resultados en el [reporte de `gold_v1`](gold_v1_report.md). Índice: [`README.md`](../README.md).
+> Este diseño estaba en [`epic_5.md`](../../backlog/epic_5.md), feature 5.3, punto 3, y se movió aquí sin cambiar cifras. Los pasos de "Después de anotar" ya se hicieron ([reporte](gold_v1_report.md), secciones 6 y 7).
 
 **Motivo (2026-10-19):** sustituye al *active learning* puro. La primera ronda de 5.4 mostró que el oro chico ya no separa a los buenos modelos: *dev* tiene 199 ítems, el IC de κ mide ±0.06, hay 7 `NEU` y M9 − M1 = +0.03 [−0.01, 0.08].
 
-* **Código:** [`sampling/sample_gold_v1.py`](../../experiments/analytics/src/voc_analytics/sampling/sample_gold_v1.py).
+* **Código:** [`sampling/sample_gold_v1.py`](../../../experiments/analytics/src/voc_analytics/sampling/sample_gold_v1.py).
   * `plan` no gasta ni arma cola; deja los agregados en `data/labels/gold_v1/plan.json` (fuera de git).
   * `queue --option X` arma la cola y corre Gemini sobre el bloque aleatorio (~$0.05).
 * **Bloque aleatorio estratificado:** el único válido para cifras poblacionales y el único que entra a *test*.
@@ -30,7 +30,7 @@
   * En los textos de entrenamiento, M1 da probabilidades **fuera de partición** (la misma CV de 5 particiones de `sentiment/models/baselines.py`), para no subestimar la incertidumbre por memorización. En `holdout_nuevo` usa el modelo completo.
   * El desacuerdo con las estrellas ya lo cubren `cinco_neg` y `pico_3_4`. Cada ítem guarda todas las marcas que cumple.
   * Se reporta aparte (*dev* dirigido). Sirve para las diferencias pareadas en los casos difíciles y para `NEU`, no para el κ poblacional.
-* **Segundo anotador:** 100 ítems del bloque aleatorio, proporcionales por estrato y a ciegas, en `gold_v1_a2` con la misma app y la misma guía. Mide el acuerdo entre personas sin la contaminación por Gemini que describe el [reporte de la re-anotación](../analytics/gold_v0_r2_report.md).
+* **Segundo anotador:** 100 ítems del bloque aleatorio, proporcionales por estrato y a ciegas, en `gold_v1_a2` con la misma app y la misma guía. Mide el acuerdo entre personas sin la contaminación por Gemini que describe el [reporte de la re-anotación](gold_v0_r2_report.md).
 * **Re-anotación:** 5 % del bloque aleatorio, al final de la cola.
 * **Reglas de la cola:**
   * todo a ciegas;
@@ -53,7 +53,7 @@
   * **Lectura:**
     * **≥ 30 `NEU` en *dev*:** las tres opciones llegan, casi solo por el bloque dirigido. Con solo el aleatorio (~2.8 % de `NEU`) harían falta ~800 ítems más en *dev*.
     * **IC de κ de ±0.03–0.04:** A apenas llega a ±0.04, B queda en ±0.034 (*dev*) y ±0.037 (*test*), y C llega a ±0.03.
-    * **M9 contra M1:** el IC pareado de la diferencia (+0.026 hoy) mide ±0.049 con 199 ítems, ~±0.025 con 800 y ~±0.022 con 1 000. Ni C garantiza separarlos si la diferencia real es de ese tamaño. Para eso está el bloque dirigido; si aun así no se separan, la regla 8 del [protocolo de 5.4](sentiment_models_protocol.md) favorece al más barato.
+    * **M9 contra M1:** el IC pareado de la diferencia (+0.026 hoy) mide ±0.049 con 199 ítems, ~±0.025 con 800 y ~±0.022 con 1 000. Ni C garantiza separarlos si la diferencia real es de ese tamaño. Para eso está el bloque dirigido; si aun así no se separan, la regla 8 del [protocolo de 5.4](../sentiment/sentiment_models_protocol.md) favorece al más barato.
     * **Se recomienda B:** cumple los dos objetivos con ~2 horas en 2–3 sesiones y deja el oro en 1 730, dentro del rango de 1 000–2 000. C cuesta 25 minutos más por 0.005 de IC.
 * **Después de anotar** (pendiente):
   * `data.py`: `gold()` lee `gold_v1` con su partición y su π. Las cifras poblacionales combinan las dos muestras aleatorias, cada una con su diseño, ponderadas por su tamaño efectivo.

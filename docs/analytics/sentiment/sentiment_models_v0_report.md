@@ -1,6 +1,6 @@
 # Competencia de sentimiento (EPIC-5, feature 5.4)
 
-> **Estado (2026-10-20).** Índice: [`README.md`](README.md). El reporte es cronológico: las secciones 1 a 10 son la primera ronda y su *dev* de 199 ítems; desde la sección 11, las corridas en Kaggle contra el *dev* de `gold_v1`.
+> **Estado (2026-10-20).** Índice: [`README.md`](../README.md). El reporte es cronológico: las secciones 1 a 10 son la primera ronda y su *dev* de 199 ítems; desde la sección 11, las corridas en Kaggle contra el *dev* de `gold_v1`.
 >
 > **Resultado vigente** (κ en el *dev* aleatorio de `gold_v1`, n = 794; media de 3 semillas en los encoders ajustados):
 >
@@ -33,7 +33,7 @@
     * La validación cruzada eligió ahora `class_weight="balanced"` (macro-F1 0.819 contra 0.817 sin balancear); M1 conserva κ 0.91 en *dev*.
     * Cambian dentro del ruido las ablaciones (sección 2, actualizada) y M7 (sección 9). Las cifras de calibración y velocidad de la sección 6 son de la primera corrida.
 * **Métricas:** [`sentiment_models_metrics.json`](sentiment_models_metrics.json) para la primera ronda y [`sentiment_models_gold_v1_metrics.json`](sentiment_models_gold_v1_metrics.json) para el *dev* de `gold_v1` (secciones 12 en adelante); solo agregados.
-  * Código en [`voc_analytics.sentiment`](../../experiments/analytics/src/voc_analytics/sentiment/): `models/baselines.py`, `models/pretrained.py`, `models/noisy.py`, `models/finetune.py` (M4 y M5), `models/delora.py` (M8), `kaggle/` y `evaluate.py`.
+  * Código en [`voc_analytics.sentiment`](../../../experiments/analytics/src/voc_analytics/sentiment/): `models/baselines.py`, `models/pretrained.py`, `models/noisy.py`, `models/finetune.py` (M4 y M5), `models/delora.py` (M8), `kaggle/` y `evaluate.py`.
   * Las predicciones quedan fuera de git.
 * **Datos:**
   * Entrenamiento: 63 720 textos únicos de la plata (`entrenamiento`), sin `NA` ni reseñas del oro.
@@ -152,7 +152,7 @@ M1 encuentra 4 de cada 5 quejas o elogios que las estrellas esconden. Es el caso
 ## 7. Límites
 
 * ***Dev* es chico:** 199 ítems y 7 `NEU`. Los IC de macro-F1 se traslapan entre casi todos los modelos buenos; κ discrimina mejor.
-* **M1 aprende el criterio de Gemini, incluidos sus sesgos.** Su techo práctico es el acuerdo Gemini–oro. El oro *dev* se anotó a ciegas en la segunda ronda, pero en la primera esos textos fueron asistidos con la propuesta de Gemini: un residuo de anclaje (≤ 2 puntos, [reporte](gold_v0_r2_report.md)) favorece a los modelos entrenados con la plata. El oro *test*, siempre a ciegas, no tiene ese sesgo.
+* **M1 aprende el criterio de Gemini, incluidos sus sesgos.** Su techo práctico es el acuerdo Gemini–oro. El oro *dev* se anotó a ciegas en la segunda ronda, pero en la primera esos textos fueron asistidos con la propuesta de Gemini: un residuo de anclaje (≤ 2 puntos, [reporte](../labeling/gold_v0_r2_report.md)) favorece a los modelos entrenados con la plata. El oro *test*, siempre a ciegas, no tiene ese sesgo.
 * **El C elegido para M1 (16) quedó en el borde de la cuadrícula** (macro-F1 de validación cruzada 0.821 con palabras + caracteres; 0.802 solo con palabras). Ampliar a C ≥ 64 es barato y queda pendiente.
 * **Licencia:** los modelos de `pysentimiento` son solo para uso no comercial e investigación, y heredan la licencia de TASS.
 

@@ -1,6 +1,6 @@
 # Conjunto de oro, primera ronda (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): histórico.** Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): histórico.** Índice: [`README.md`](../README.md).
 > * **Sigue vigente:** la medición del anclaje (sección 1.4) y la decisión de anotar todo a ciegas; la elección de `gemini-3.6-flash`.
 > * **Reemplazado por:**
 >   * las etiquetas de esta ronda → la [re-anotación a ciegas](gold_v0_r2_report.md) con la guía v2, que a su vez forma parte del oro junto con [`gold_v1`](gold_v1_report.md);
@@ -12,7 +12,7 @@
 * **Anotación:** un anotador (el autor) con `annotation_guideline_v0`.
 * **Volumen:** 450 ítems en 39.8 minutos efectivos, con 13 correcciones.
 * **Datos:** cola y anotaciones en `experiments/analytics/data/labels/gold_v0/`, fuera de git.
-* **Métricas:** [`gold_v0_metrics.json`](gold_v0_metrics.json), calculadas con [`analyze_gold_v0.py`](../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v0.py).
+* **Métricas:** [`gold_v0_metrics.json`](gold_v0_metrics.json), calculadas con [`analyze_gold_v0.py`](../../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v0.py).
 * **Este reporte solo tiene agregados.**
 
 | Bloque | Ítems | Modo | Uso |
@@ -107,7 +107,7 @@ El bloque aleatorio es un muestreo aleatorio simple dentro de banco × periodo, 
 
 * **Qué cambia:**
   * Se aplicó [`annotation_guideline_v1`](annotation_guideline.md) con la regla 2 amplia: cualquier queja concreta es `NEG`, aunque sea menor u ocasional. Las palabras sueltas con valencia son evaluables.
-  * [`prompt_v2`](../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v2.md) usa la salida compacta de v1 con esas reglas y ejemplos sintéticos nuevos.
+  * [`prompt_v2`](../../../experiments/analytics/src/voc_analytics/labeling/prompts/prompt_v2.md) usa la salida compacta de v1 con esas reglas y ejemplos sintéticos nuevos.
 * **Validación:** dos corridas sobre la calibración y el bloque aleatorio (430 textos, $0.045 por 1 000), con métricas en [`prompt_validation_prompt_v2.json`](prompt_validation_prompt_v2.json).
 
 | Prompt | κ a ciegas (n = 201) | Acuerdo a ciegas | κ calibración (n = 30) | Fronterizos v0≠v1 que acierta (de 10) |

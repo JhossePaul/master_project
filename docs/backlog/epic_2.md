@@ -1,7 +1,7 @@
 # EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC con Pulumi)
 
 * **Estado:** IMPLEMENTADO — Features 2.1–2.10 verificadas localmente con mocks. Contrato único de estado/auditoría. Preview con proveedor y despliegue pendientes de stack/backend y credenciales reales.
-* **Recursos de predicción condicionados (2026-10-18):** la tabla `delora_predictions` (15 columnas, agrupada por `topico`) y el flag `enable_dedicated_vertex_endpoints` quedan sujetos al registro de decisión de EPIC-5 (5.8); no se reescriben antes. En la primera ronda de 5.4, M1 (TF-IDF + LR, κ 0.91 contra el oro *dev*) procesa ~9 100 textos/s en CPU con 6.8 MB, así que cabría en un Cloud Run Job de 1 Gi sin endpoint dedicado ([reporte](../analytics/sentiment_models_v0_report.md)).
+* **Recursos de predicción condicionados (2026-10-18; actualizado 2026-10-22):** la tabla `delora_predictions` (15 columnas, agrupada por `topico`), `hitl_triage_audit_log` y el flag `enable_dedicated_vertex_endpoints` se reemplazan o amplían en [EPIC-6](epic_6.md) (feature 6.2), junto con las tablas de curaduría y el Job de inferencia, cuando se apruebe el registro de decisión de EPIC-5 (5.8); no se reescriben antes. Qué cambia y qué lo decide: [insumos de EPIC-5 en EPIC-6](epic_6.md#-insumos-de-epic-5-que-cambian-epic-1-y-epic-2).
 * **Semanas Objetivo:** Semanas 1 - 2
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/src/voc_common/config.py` (Ampliación de variables para Scraper Propio y Flags de Infraestructura)
@@ -830,7 +830,7 @@ confundir mocks con validación de recuperación del scraper.
 >   aliases, fixture y pruebas específicas. No hay import de compatibilidad ni
 >   caminos de lectura alternativos; el estado inicial es el contrato actual vacío.
 > * CI ejecuta la suite completa con los umbrales vigentes. Ver
->   [guía de activación](../deployment.md): recursos primero, runtime de EPIC-3
+>   [guía de activación](../operations/deployment.md): recursos primero, runtime de EPIC-3
 >   después y habilitación explícita tras validar la imagen/entrypoint.
 > * Mocks no validan cuotas, permisos efectivos ni ejecución real de GCP. El
 >   último preview se detuvo por ausencia de stack `dev` en el backend; la

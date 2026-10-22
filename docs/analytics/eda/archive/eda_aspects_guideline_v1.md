@@ -1,6 +1,6 @@
 # Guía de codificación de aspectos de las reseñas negativas (EPIC-5, 5.2)
 
-> **Estado (2026-10-20): congelada, `aspects_guideline_v1`; la sustituye la [guía `v2`](eda_aspects_guideline.md).** Se conserva porque la siguen el prompt [`aspects_v1`](../../experiments/analytics/src/voc_analytics/eda/prompts/aspects_v1.md), la app [`aspects_app.py`](../../experiments/analytics/src/voc_analytics/eda/aspects_app.py) y las cifras de la sección 5.2 del [reporte del EDA](eda_report.md). Índice: [`README.md`](README.md).
+> **Estado (2026-10-20): congelada, `aspects_guideline_v1`; la sustituye la [guía `v2`](../eda_aspects_guideline.md).** Se conserva porque la siguen el prompt [`aspects_v1`](../../../../experiments/analytics/src/voc_analytics/eda/prompts/aspects_v1.md), la app [`aspects_app.py`](../../../../experiments/analytics/src/voc_analytics/eda/aspects_app.py) y las cifras de la sección 5.2 del [reporte del EDA](../eda_report.md). Índice: [`README.md`](../../README.md).
 > * **Cambios contra `v0`** (el prompt `aspects_v0`, sin guía escrita): la opción "sin problema concreto" es explícita y tiene ejemplos (en `v0` el autor no sabía que existía y codificó esos casos como `FA`), y un problema atribuido a una actualización suma `DS` (regla 3).
 
 ## 1. Qué se codifica

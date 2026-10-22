@@ -19,7 +19,7 @@ Uso (desde experiments/analytics):
   en `emb_<modelo>.npy` (MPS si está disponible).
 
 Escribe en `data/topics/working_v0/` (fuera de git) y solo agregados en
-`docs/analytics/topics_working_v0_metrics.json`.
+`docs/analytics/topics/topics_working_v0_metrics.json`.
 """
 
 import argparse
@@ -36,7 +36,7 @@ from voc_analytics.topics.versions import group_small, normalize
 
 SILVER = LABELS / "silver_v0"
 OUT = DATA / "topics" / "working_v0"
-METRICS = DOCS / "topics_working_v0_metrics.json"
+METRICS = DOCS / "topics" / "topics_working_v0_metrics.json"
 MODELS = {
     "minilm": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "robertuito": "pysentimiento/robertuito-base-uncased",

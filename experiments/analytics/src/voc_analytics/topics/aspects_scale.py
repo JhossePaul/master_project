@@ -23,7 +23,7 @@ Uso (desde experiments/analytics):
 Escribe en `data/topics/aspects_scale_v0/` (fuera de git): etiquetas por texto
 (`labels_aspects_v2_1.parquet`, columnas `text_id`, `codes`, `actualizacion`,
 `seguridad` y `elogio`, como en 5.2) y la meta de la corrida; solo agregados
-en `docs/analytics/topics_aspects_scale_v0_metrics.json`.
+en `docs/analytics/topics/topics_aspects_scale_v0_metrics.json`.
 """
 
 import argparse
@@ -53,7 +53,7 @@ CODES = ["AC", "TR", "DI", "PR", "AT", "FA", "LE", "CO", "DV", "UX", "OT"]
 EDA_LABELS = (
     DATA / "eda" / "aspects_v2" / "labels_aspects_v2_1_extracciones.parquet"
 )
-METRICS = DOCS / "topics_aspects_scale_v0_metrics.json"
+METRICS = DOCS / "topics" / "topics_aspects_scale_v0_metrics.json"
 OUT = DATA / "topics" / "aspects_scale_v0"
 CHECKPOINT = OUT / "checkpoint.jsonl"
 SCHEMA = {

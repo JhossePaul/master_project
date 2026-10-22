@@ -9,7 +9,7 @@ Lee la cola `data/labels/gold_v0/queue.parquet` (ver
 `data/labels/gold_v0/annotations.csv`, ambos fuera de git. Corregir una
 reseña agrega otra fila; al analizar gana la última por `item_id`.
 
-Sigue `docs/analytics/annotation_guideline.md`: no muestra estrellas ni
+Sigue `docs/analytics/labeling/annotation_guideline.md`: no muestra estrellas ni
 banco; en modo `ciego` oculta la propuesta de Gemini y en `asistido` la
 precarga para aceptarla o corregirla. En `calibracion` muestra lo que dijo
 Gemini después de guardar. Solo muestra el bloque en la calibración, para

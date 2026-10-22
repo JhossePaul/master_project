@@ -1,6 +1,6 @@
 # Competencia de sentimiento: candidatos y protocolo (EPIC-5, feature 5.4)
 
-> **Estado (2026-10-19): vigente.** Es el protocolo con el que se evalúan todos los modelos. Estaba en [`epic_5.md`](../backlog/epic_5.md), feature 5.4, y se movió aquí sin cambios de fondo; las particiones del punto 4 ya incluyen `gold_v1`. Desde 2026-10-19 salen del entrenamiento las reseñas de **todas** las colas del oro, no solo las 430 de `gold_v0` que menciona el punto 3. Resultados: [primera ronda](sentiment_models_v0_report.md) y [comparación con `gold_v1`](gold_v1_report.md), sección 6. Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): vigente.** Es el protocolo con el que se evalúan todos los modelos. Estaba en [`epic_5.md`](../../backlog/epic_5.md), feature 5.4, y se movió aquí sin cambios de fondo; las particiones del punto 4 ya incluyen `gold_v1`. Desde 2026-10-19 salen del entrenamiento las reseñas de **todas** las colas del oro, no solo las 430 de `gold_v0` que menciona el punto 3. Resultados: [primera ronda](sentiment_models_v0_report.md) y [comparación con `gold_v1`](../labeling/gold_v1_report.md), sección 6. Índice: [`README.md`](../README.md).
 
 **Objetivo:** elegir el modelo de Q1 por evidencia, con el mismo protocolo para todos.
 
@@ -40,7 +40,7 @@
   * tamaño del artefacto;
   * memoria.
 
-**Plan experimental (2026-10-19):** concreta el protocolo de arriba con la plata v0 y el oro vigente. El código está en [`voc_analytics.sentiment`](../../experiments/analytics/src/voc_analytics/sentiment/):
+**Plan experimental (2026-10-19):** concreta el protocolo de arriba con la plata v0 y el oro vigente. El código está en [`voc_analytics.sentiment`](../../../experiments/analytics/src/voc_analytics/sentiment/):
 * `data.py` y `metrics.py`, comunes a todos los modelos;
 * un script por familia en `models/`, que solo guarda predicciones (`baselines.py`, `pretrained.py`, `noisy.py`, `finetune.py`, `delora.py`);
 * `evaluate.py`, que calcula todas las métricas con el mismo protocolo.
@@ -49,7 +49,7 @@
    * **Fase A, Mac y $0 (primera ronda):**
      * M0 y M1;
      * M2 con los dos encoders de `pysentimiento` en español: RoBERTuito (`pysentimiento/robertuito-sentiment-analysis`) y BETO (`finiteautomata/beto-sentiment-analysis`). BERTweet es su analizador en **inglés** y no se evalúa sobre español;
-     * **T0, el léxico de `TextBlob` del EDA preliminar** ([`experiments/project_viability/`](../../experiments/project_viability/README.md)), por continuidad y con su misma receta: polaridad sobre el texto sin limpiar, umbral ±0.1. Su léxico es en inglés;
+     * **T0, el léxico de `TextBlob` del EDA preliminar** ([`experiments/project_viability/`](../../../experiments/project_viability/README.md)), por continuidad y con su misma receta: polaridad sobre el texto sin limpiar, umbral ±0.1. Su léxico es en inglés;
      * M9 (Gemini, `prompt_v3`), ya medido en 5.3 (κ 0.93 contra el oro), se recalcula con las mismas métricas y particiones como techo.
    * **Licencias:** los modelos de `pysentimiento` son solo para uso no comercial e investigación, y heredan la licencia de TASS. Sirven para la tesis; para producción (5.8) cuentan como restricción.
    * **Fase B, ajuste de encoders:** M3–M7 sobre el encoder que mejor salga de M2 y uno de español general. Primero en el Mac (MPS); Kaggle si no cabe. **Nada de GPU en GCP sin aprobación del autor.**

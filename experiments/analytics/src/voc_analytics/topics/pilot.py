@@ -28,7 +28,7 @@ Uso (desde experiments/analytics):
 
 Escribe en `data/topics/pilot_v0/` (fuera de git: asignaciones y palabras de
 cada tópico, que pueden contener nombres no sanitizados, FMEA F-01) y solo
-agregados en `docs/analytics/topics_pilot_v0_metrics.json`.
+agregados en `docs/analytics/topics/topics_pilot_v0_metrics.json`.
 """
 
 import argparse
@@ -71,7 +71,7 @@ ASPECTS = {
 }
 VIGENTE = "aspects_v2_1"
 OUT = DATA / "topics" / "pilot_v0"
-METRICS = DOCS / "topics_pilot_v0_metrics.json"
+METRICS = DOCS / "topics" / "topics_pilot_v0_metrics.json"
 SEEDS = (0, 1, 2)
 MCS = (25, 50, 100)
 MS = (5, 10, None)  # None = igual a min_cluster_size (valor por defecto)

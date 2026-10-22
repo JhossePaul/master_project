@@ -1,10 +1,10 @@
 # Tópicos de las reseñas negativas (EPIC-5, feature 5.5)
 
-> **Estado (2026-10-22): cerrada.** Fases 0 a 4 hechas, incluida la vía B a escala; recomendación aprobada por el autor con el agregado de la curaduría HITL en EPIC-6 (sección 5 y [nota para 5.8](topics_decision_note.md)). Plan aprobado: [`topics_design.md`](topics_design.md). Métricas: [`topics_working_v0_metrics.json`](topics_working_v0_metrics.json), [`topics_pilot_v0_metrics.json`](topics_pilot_v0_metrics.json) y [`topics_phase2_v0_metrics.json`](topics_phase2_v0_metrics.json). Solo agregados; los términos de cada tópico quedan en `data/topics/` (fuera de git) hasta la revisión del autor, porque la sanitización no detecta nombres (FMEA F-01). Este reporte nombra algunos tópicos con etiquetas descriptivas genéricas ("actualizaciones", "interfaz"), no con sus términos. Índice: [`README.md`](README.md).
+> **Estado (2026-10-22): cerrada.** Fases 0 a 4 hechas, incluida la vía B a escala; recomendación aprobada por el autor con el agregado de la curaduría HITL en EPIC-6 y EPIC-7 (sección 5 y [nota para 5.8](topics_decision_note.md)). Plan aprobado: [`topics_design.md`](topics_design.md). Métricas: [`topics_working_v0_metrics.json`](topics_working_v0_metrics.json), [`topics_pilot_v0_metrics.json`](topics_pilot_v0_metrics.json) y [`topics_phase2_v0_metrics.json`](topics_phase2_v0_metrics.json). Solo agregados; los términos de cada tópico quedan en `data/topics/` (fuera de git) hasta la revisión del autor, porque la sanitización no detecta nombres (FMEA F-01). Este reporte nombra algunos tópicos con etiquetas descriptivas genéricas ("actualizaciones", "interfaz"), no con sus términos. Índice: [`README.md`](../README.md).
 
 ## 1. Fase 0: conjunto de trabajo
 
-[`working_set.py`](../../experiments/analytics/src/voc_analytics/topics/working_set.py), [`versions.py`](../../experiments/analytics/src/voc_analytics/topics/versions.py).
+[`working_set.py`](../../../experiments/analytics/src/voc_analytics/topics/working_set.py), [`versions.py`](../../../experiments/analytics/src/voc_analytics/topics/versions.py).
 
 * **Fuente:** las filas `NEG` de la plata `silver_v0` (`prompt_v3`), sin backfill de sentimiento (el backfill es de 5.7, 5.8 y EPIC-6). La plata está estratificada por banco × periodo y cada fila pesa 1 / π.
 * **Tamaño:** 42 573 filas, 40 382 textos únicos, que representan 706 197 filas negativas elegibles (igual que el EDA). Mediana de 18 palabras; p10 de 6.
@@ -13,7 +13,7 @@
 
 ## 2. Fase 1: piloto en BBVA y NUBANK
 
-[`pilot.py`](../../experiments/analytics/src/voc_analytics/topics/pilot.py). ~17 000 textos `NEG` únicos. UMAP 5d (15 vecinos, coseno) con 3 semillas; HDBSCAN `min_cluster_size` ∈ {25, 50, 100} × `min_samples` ∈ {5, 10, igual}; c-TF-IDF de unigramas y bigramas sin acentos, con las negaciones fuera de las stopwords. La alineación con familias usa los textos codificados en 5.2 (`aspects_v1` y `aspects_v2` provisional) ponderados por número de extracciones.
+[`pilot.py`](../../../experiments/analytics/src/voc_analytics/topics/pilot.py). ~17 000 textos `NEG` únicos. UMAP 5d (15 vecinos, coseno) con 3 semillas; HDBSCAN `min_cluster_size` ∈ {25, 50, 100} × `min_samples` ∈ {5, 10, igual}; c-TF-IDF de unigramas y bigramas sin acentos, con las negaciones fuera de las stopwords. La alineación con familias usa los textos codificados en 5.2 (`aspects_v1` y `aspects_v2` provisional) ponderados por número de extracciones.
 
 ### 2.1 Embeddings: MiniLM sí, RoBERTuito base no
 
@@ -62,7 +62,7 @@ Barrido en el piloto (MiniLM 50 / 10, re-ajustando sin las reseñas de k palabra
 
 ## 3. Fase 2: unidad de análisis, lectura temporal y señal (5 bancos)
 
-[`units.py`](../../experiments/analytics/src/voc_analytics/topics/units.py), [`dynamics.py`](../../experiments/analytics/src/voc_analytics/topics/dynamics.py). Los 40 382 textos `NEG` de la plata; MiniLM; HDBSCAN con `min_samples` 10. Referencia: `aspects_v2` provisional (27 % multi-aspecto en los textos codificados).
+[`units.py`](../../../experiments/analytics/src/voc_analytics/topics/units.py), [`dynamics.py`](../../../experiments/analytics/src/voc_analytics/topics/dynamics.py). Los 40 382 textos `NEG` de la plata; MiniLM; HDBSCAN con `min_samples` 10. Referencia: `aspects_v2` provisional (27 % multi-aspecto en los textos codificados).
 
 ### 3.1 Ninguna unidad recupera el multi-aspecto
 
@@ -181,7 +181,7 @@ Proporción de negativas con la marca `u` (problema atribuido a una actualizaci�
 
 ### 4.5 Vía B a escala: las 40 382 negativas de la plata codificadas
 
-[`aspects_scale.py`](../../experiments/analytics/src/voc_analytics/topics/aspects_scale.py) → [`topics_aspects_scale_v0_metrics.json`](topics_aspects_scale_v0_metrics.json). Aprobada por el autor el 2026-10-22. Gemini (`gemini-3.6-flash`, Vertex AI dentro de GCP) con el prompt `aspects_v2_1` de 5.2, sin cambios.
+[`aspects_scale.py`](../../../experiments/analytics/src/voc_analytics/topics/aspects_scale.py) → [`topics_aspects_scale_v0_metrics.json`](topics_aspects_scale_v0_metrics.json). Aprobada por el autor el 2026-10-22. Gemini (`gemini-3.6-flash`, Vertex AI dentro de GCP) con el prompt `aspects_v2_1` de 5.2, sin cambios.
 
 * **Corrida:** 404 lotes de 100 textos. Tres lotes fallaron porque Gemini omitió líneas y se completaron con `--solo-faltantes`. **Costo real: $3.64**, incluidos los intentos fallidos (estimado: $3.80).
 * **Proporciones poblacionales** (filas `NEG` ponderadas por 1 / π, ~706 000): multi-aspecto 24.7 % (igual que 5.2), sin problema concreto 9.5 %, marca `u` 17.0 %. Familias: `FA` 27.2 %, `AC` 26.5 %, `TR` 13.6 %, `PR` 12.1 %, `LE` 10.1 %, `CO` 8.6 %, `AT` 8.4 %, `UX` 7.9 %, `DI` 2.7 %, `DV` 1.3 %, `OT` 0.7 %. Todas cerca de las cifras de 5.2.
@@ -241,7 +241,7 @@ El autor revisó 35 tópicos el 2026-10-22: los 20 de más peso, que suman el 57
 
 ## 5. Recomendación (aprobada por el autor, 2026-10-22)
 
-**Híbrido con roles separados: las familias miden y alertan, y los tópicos detallan.** Aprobada por el autor el 2026-10-22, con el agregado de la curaduría HITL en EPIC-6 (sección 6). Nota para el registro de decisión de 5.8: [`topics_decision_note.md`](topics_decision_note.md).
+**Híbrido con roles separados: las familias miden y alertan, y los tópicos detallan.** Aprobada por el autor el 2026-10-22, con el agregado de la curaduría HITL en EPIC-6 y EPIC-7 (sección 6). Nota para el registro de decisión de 5.8: [`topics_decision_note.md`](topics_decision_note.md).
 
 ### 5.1 Qué se recomienda y por qué
 
@@ -284,5 +284,5 @@ Las familias no tienen problema de identidad: son fijas. Su riesgo es el cambio 
 
 ## 6. Pendiente
 
-* **Agregado del autor al aprobar:** los flujos de curaduría (sentimiento, aspectos y tópicos) pasan al frontal HITL de EPIC-6, con una base de datos de curadurías para el reentrenamiento; requisitos y borrador del modelo de datos en la [nota para 5.8](topics_decision_note.md#agregado-del-autor-2026-10-22-curaduría-hitl-en-epic-6).
+* **Agregado del autor al aprobar:** los flujos de curaduría (sentimiento, aspectos y tópicos) pasan al frontal HITL de EPIC-7, con una base de datos de curadurías en EPIC-6 para el reentrenamiento; requisitos y borrador del modelo de datos en la [nota para 5.8](topics_decision_note.md#agregado-del-autor-2026-10-22-curaduría-hitl-en-epic-6-y-epic-7).
 * Confirmar las hipótesis H-T1 y H-T2 con las fichas de `revision_hipotesis.md`, si el autor lo considera necesario.

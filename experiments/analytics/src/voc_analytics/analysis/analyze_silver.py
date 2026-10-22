@@ -5,7 +5,7 @@ Uso (desde experiments/analytics):
 
 Une `rows.parquet` (filas muestreadas, con estrato y contexto temporal) con
 `labels_prompt_v3.parquet` (una etiqueta por texto único) y escribe
-`docs/analytics/silver_v0_metrics.json`.
+`docs/analytics/labeling/silver_v0_metrics.json`.
 
 * **Estimaciones poblacionales:** ponderadas por 1 / probabilidad de inclusión
   (Horvitz-Thompson). Heredan el error de Gemini (κ 0.84–0.93 contra el
@@ -25,7 +25,7 @@ import polars as pl
 from voc_analytics.paths import DOCS, LABELS
 
 SILVER = LABELS / "silver_v0"
-OUT = DOCS / "silver_v0_metrics.json"
+OUT = DOCS / "labeling" / "silver_v0_metrics.json"
 CLASSES = ["NEG", "NEU", "POS", "NA"]
 
 

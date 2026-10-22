@@ -1,7 +1,7 @@
 # Matriz Ethical FMEA
 
 Análisis de modos de falla del manejo de datos personales y de la ingesta,
-sanitización y almacenamiento (EPIC-1 a EPIC-4). Las filas de EPIC-5 y EPIC-6
+sanitización y almacenamiento (EPIC-1 a EPIC-4). Las filas de EPIC-5 a EPIC-7
 (modelo, explicabilidad y HITL) se añaden cuando esas épicas tengan diseño
 cerrado; ver la sección final. La experimentación de EPIC-5 (etiquetado,
 copias locales y entrenamiento) ya tiene filas propias, F-10 a F-13.
@@ -24,7 +24,7 @@ una acción con responsable antes del siguiente despliegue.
 
 ## Evidencia usada
 
-* **Medición de PII** sobre `evidence/` (798 reseñas únicas de BBVA, muestra no
+* **Medición de PII** sobre `experiments/playstore/evidence/` (798 reseñas únicas de BBVA, muestra no
   aleatoria, mediana de 4 palabras): `experiments/pii_measurement/measure_pii.py`.
   Reproducible con `uv run python experiments/pii_measurement/measure_pii.py`;
   imprime solo conteos. Los resultados y su interpretación están en el
@@ -42,7 +42,7 @@ una acción con responsable antes del siguiente despliegue.
 | **F-03** | Falso positivo de la regex altera el texto | Pérdida de señal (p. ej. un monto de 10 dígitos se vuelve `[BBVA_ACCOUNT_NUMBER]`); sesgo menor en el modelo | Reglas numéricas sin contexto suficiente | El contexto (`cuenta`, `cel`…) decide entre cuenta y teléfono; pruebas con corpus adversarial; se conserva `ref: 3702…` | 3 | 3 | 5 | 45 | Monitorear: medir la tasa en el conjunto de oro |
 | **F-04** | Re-identificación a partir de `usuario_hash` | Un atacante con la sal puede confirmar si un usuario conocido está en el TDS | Sin `user_hash_salt`, el stack usa `DEV_USER_HASH_SALT`, una constante pública del repositorio; además la sal viaja como variable de entorno de Cloud Run, no como secreto | SHA-256 salado e irreversible; prod exige sal propia (validador); la sal de `dev` se fijó el 2026-10-15 cifrada con Cloud KMS (el repositorio es público) | 6 | 2 | 6 | 72 | Parcialmente controlado: queda la variable de entorno en claro |
 | **F-05** | Acceso indebido al crudo retenido (`raw_staging/` y Pub/Sub, 7 días) | Quien lo lea ve `usuario`, `imagen_usuario`, respuesta y texto sin sanitizar | La sanitización ocurre después de publicar el sobre crudo | TTL de 7 días en GCS y retención de 7 días en Pub/Sub; IAM por recurso (`voc-sa-sanitization`, `voc-sa-ingestion`); sin invocación pública | 5 | 2 | 5 | 50 | Monitorear; reducir si la ingesta deja de capturar usuario y respuesta |
-| **F-06** | `evidence/` y `.env` con datos sensibles fuera de control | Nombres y URL de avatares en respuestas crudas; el `.env` local contiene una passphrase y la sal | Artefactos de trabajo en el árbol del repositorio | `evidence/` y `.env` en `.gitignore`, `.dockerignore` y `.gcloudignore`; no se versionan | 5 | 2 | 4 | 40 | Monitorear; borrar `evidence/` al terminar el análisis |
+| **F-06** | `experiments/playstore/evidence/` y `.env` con datos sensibles fuera de control | Nombres y URL de avatares en respuestas crudas; el `.env` local contiene una passphrase y la sal | Artefactos de trabajo en el árbol del repositorio | `evidence/` (cualquier nivel) y `.env` en `.gitignore` y `.gcloudignore`, y fuera de la lista de permitidos de `.dockerignore`; no se versionan | 5 | 2 | 4 | 40 | Monitorear; borrar `experiments/playstore/evidence/` al terminar el análisis |
 | **F-07** | La política real deja de coincidir con el compromiso del caso de uso | El caso de uso promete "sanitización del 100 % de PII" y un KPI de PII; el sistema cumple con regex local y no almacena la respuesta | Cambio de política (Cloud DLP pasó a opcional) sin actualizar el documento comprometido | Nota de revisión en `epic_4.md`, README del servicio, este análisis | 6 | 4 | 3 | 72 | Actualizar el objetivo 3 y el KPI del caso de uso con la redacción medible |
 | **F-08** | Una página queda cerrada con hueco por un error del lector y no por expiración | Pérdida silenciosa de reseñas en el TDS (1 645 filas, las páginas finales de los cinco bancos, el 2026-10-16) | El replay rápido cierra la página de forma irreversible (el primero gana) y trataba cualquier captura ilegible como `STAGING_EXPIRED`; la imagen de sanitización traía un parser anterior a la ingesta | Conteo esperado frente a TDS, evento `Page closed` con `GAPS_DETECTED`; ahora `CaptureUnreadable` deja la página abierta y el Job sale con error | 2 | 4 | 3 | 24 | Controlado; desplegar siempre juntas las imágenes que comparten código |
 | **F-09** | Crudo sin sanitizar acumulado en la cola de Pub/Sub durante la carga histórica, y permisos de invocación ampliados | ~2.6 M de mensajes con `usuario`, `imagen_usuario` y respuesta retenidos hasta 7 días (ver F-05); `serviceAccountTokenCreator` y `run.invoker` concedidos a cuentas de usuario | El replay rápido no consume Pub/Sub; el token de usuario da 401 y se usó una cuenta de servicio | DLQ vacía; IAM por recurso; `seek` y revocación de permisos en las etapas 4 y 4c del plan | 5 | 3 | 4 | 60 | Abierto hasta hacer el `seek` y revocar los permisos |
@@ -81,10 +81,10 @@ de `gold_v1` y no encontró ningún nombre: 0 en las 1 000 del bloque aleatorio
 y 0 en las 300 del dirigido. La cota superior al 95 % es de ~0.4 %: la regla del
 tres con el tamaño efectivo de ~720, porque el bloque aleatorio es estratificado
 con pesos desiguales (efecto de diseño de Kish de ~1.4, ver el
-[diseño de `gold_v1`](../analytics/gold_v1_design.md)). Sin el efecto de diseño
+[diseño de `gold_v1`](../analytics/labeling/gold_v1_design.md)). Sin el efecto de diseño
 sería 0.3 %. Las dos quedan bajo el 1 % del disparador. El
 segundo anotador tampoco marcó nombres en sus 100 ítems. No se cumple el
-disparador. Ver el [reporte de `gold_v1`](../analytics/gold_v1_report.md),
+disparador. Ver el [reporte de `gold_v1`](../analytics/labeling/gold_v1_report.md),
 secciones 5 y 7.
 
 **Calificación (decisión del autor, 2026-10-20):** O baja de 3 a 2 (no
@@ -108,7 +108,7 @@ desde Secret Manager, así que quien pueda leer el servicio la ve. Valorar Secre
 Manager para entornos que no sean sandbox. Cambiar la sal tras escribir datos
 deja hashes inconsistentes entre sí.
 
-## Pendiente: EPIC-5 y EPIC-6
+## Pendiente: EPIC-5 a EPIC-7
 
 Modos de falla ya conocidos que se calificarán cuando exista el diseño:
 
@@ -141,8 +141,8 @@ Las demás quedan **por calificar** hasta que exista el dato que falta.
 ### Propuesta de calificación: *Label Noise Bias* (5.4, *dev* ampliado)
 
 **Propuesta del autor**, no validada. Usa el *dev* aleatorio ampliado con
-`gold_v1` ([reporte](../analytics/gold_v1_report.md), métricas en
-[`sentiment_models_gold_v1_metrics.json`](../analytics/sentiment_models_gold_v1_metrics.json),
+`gold_v1` ([reporte](../analytics/labeling/gold_v1_report.md), métricas en
+[`sentiment_models_gold_v1_metrics.json`](../analytics/sentiment/sentiment_models_gold_v1_metrics.json),
 commits `56786f4` y `763b63a`). Queda abierta hasta el registro de decisión (5.8), que
 evaluará el oro *test*.
 
@@ -164,7 +164,7 @@ evaluará el oro *test*.
   inflada por el anclaje: esos textos se anotaron primero viendo la propuesta de
   Gemini, de la que M1 aprende.
 * Las quejas que las estrellas esconden están en 3★ y 4★: en la plata, el 73.3 %
-  de las 3★ y el 28.5 % de las 4★ son `NEG` ([reporte](../analytics/silver_v0_report.md)).
+  de las 3★ y el 28.5 % de las 4★ son `NEG` ([reporte](../analytics/labeling/silver_v0_report.md)).
 * El efecto no es de privacidad, sino de omisión: quien se queja con 3★ o 4★ no
   aparece en los agregados de quejas ni llega a priorización.
 

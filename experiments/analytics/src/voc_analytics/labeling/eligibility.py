@@ -1,8 +1,8 @@
 """Reglas deterministas de elegibilidad TNSS (`eligibility_rules_v0.1`).
 
-Implementa la tabla de `docs/analytics/eligibility_rules.md`: gana la primera
-regla que coincide; `None` significa elegible. `TNSS_SINGLE_WORD` se calcula
-pero no excluye mientras su decisión siga pendiente (5.8).
+Implementa la tabla de `docs/analytics/eda/eligibility_rules.md`: gana la
+primera regla que coincide; `None` significa elegible. `TNSS_SINGLE_WORD` se
+calcula pero no excluye mientras su decisión siga pendiente (5.8).
 """
 
 from datetime import datetime

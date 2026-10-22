@@ -1,8 +1,8 @@
 # Oro, segunda ronda: `gold_v1` (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): vigente.** Es el oro actual y la sección 6 es la comparación de modelos vigente. Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): vigente.** Es el oro actual y la sección 6 es la comparación de modelos vigente. Índice: [`README.md`](../README.md).
 > * **Segundo anotador (2026-10-20):** κ 0.81 entre personas (sección 7).
-> * **F-01 (2026-10-20):** actualizada en la [matriz FMEA](../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) con 0 nombres en 1 300 anotadas; RPN 105 → 70, en monitoreo (sección 8).
+> * **F-01 (2026-10-20):** actualizada en la [matriz FMEA](../../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) con 0 nombres en 1 300 anotadas; RPN 105 → 70, en monitoreo (sección 8).
 
 * **Qué es:** 1 350 ítems anotados a ciegas por el autor con la guía `v2.1`, con el diseño de la opción B ([diseño](gold_v1_design.md)).
 
@@ -12,7 +12,7 @@
   | Dirigido | 300 (*dev*) | Casos difíciles y `NEU`; sin cifras poblacionales |
   | Re-anotación | 50 | Consistencia del anotador |
 
-* **Métricas:** [`gold_v1_metrics.json`](gold_v1_metrics.json), calculadas con [`analyze_gold_v1.py`](../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v1.py). Solo agregados.
+* **Métricas:** [`gold_v1_metrics.json`](gold_v1_metrics.json), calculadas con [`analyze_gold_v1.py`](../../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v1.py). Solo agregados.
 * **El oro *test* no se comparó con ningún modelo**, ni con Gemini ni con las estrellas: queda para 5.8. De *test* solo se usan el tiempo, la consistencia y `nombre_persona`.
 * **Tiempo:** 173.6 minutos efectivos (se estimaron ~124). La mediana es 3.8 s por ítem; la media truncada, 6.7 s en el aleatorio y 10.9 s en el dirigido. Los textos nuevos y difíciles cuestan más que en la primera ronda (4.4 s).
 
@@ -83,11 +83,11 @@
 | Dirigido | 0 | 300 | 0 % | 1.0 % |
 
 * El único caso marcado (`G0170`) fue un error de dedo: el anotador lo revisó, no tiene información personal y corrigió la marca en la app.
-* **Lectura para F-01:** la tasa poblacional de nombres que la regex no detecta es menor que 0.3 %. El disparador de F-01 ("al menos un nombre en una muestra de ≥ 500") se definió para una muestra aleatoria, y en ella no hubo ninguno. En las 1 300 reseñas anotadas no apareció ningún nombre. La acción 1 de F-01 queda hecha y la [matriz FMEA](../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) ya la registra (RPN 105 → 70).
+* **Lectura para F-01:** la tasa poblacional de nombres que la regex no detecta es menor que 0.3 %. El disparador de F-01 ("al menos un nombre en una muestra de ≥ 500") se definió para una muestra aleatoria, y en ella no hubo ninguno. En las 1 300 reseñas anotadas no apareció ningún nombre. La acción 1 de F-01 queda hecha y la [matriz FMEA](../../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) ya la registra (RPN 105 → 70).
 
 ## 6. Comparación de modelos con *dev* ampliado
 
-* **Métricas:** [`sentiment_models_gold_v1_metrics.json`](sentiment_models_gold_v1_metrics.json), con [`evaluate.py`](../../experiments/analytics/src/voc_analytics/sentiment/evaluate.py).
+* **Métricas:** [`sentiment_models_gold_v1_metrics.json`](../sentiment/sentiment_models_gold_v1_metrics.json), con [`evaluate.py`](../../../experiments/analytics/src/voc_analytics/sentiment/evaluate.py).
   * *Dev* aleatorio: 794 evaluables (199 de `gold_v0` y 595 de `gold_v1`), con 30 `NEU`.
   * *Dev* dirigido: 297 evaluables, con 75 `NEU`.
   * `sentiment_models_metrics.json` queda como registro de la primera ronda.
@@ -141,7 +141,7 @@
 * **Qué es:** una segunda persona, independiente del autor, anotó a ciegas 100 ítems del bloque aleatorio de `gold_v1` con la guía `v2.2`, la misma app y sin ver las etiquetas del autor ni las de Gemini.
   * Son 68 ítems de *dev* y 32 de *test*. El acuerdo entre personas no evalúa ningún modelo, así que usa los 100; Gemini y las estrellas solo se comparan en los 68 de *dev*.
   * Tardó 78 minutos efectivos (mediana 24.7 s por ítem; el autor, 3.0 s en los mismos ítems). Era su primera vez con la guía.
-* **Métricas:** [`gold_v1_a2_metrics.json`](gold_v1_a2_metrics.json), con [`analyze_gold_v1_a2.py`](../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v1_a2.py). Solo agregados; el nombre del segundo anotador no se registra en `docs/`.
+* **Métricas:** [`gold_v1_a2_metrics.json`](gold_v1_a2_metrics.json), con [`analyze_gold_v1_a2.py`](../../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v1_a2.py). Solo agregados; el nombre del segundo anotador no se registra en `docs/`.
 
 | Acuerdo autor – segundo anotador | n | Acuerdo | κ (IC 95 %) |
 | :--- | ---: | ---: | :---: |
@@ -175,4 +175,4 @@
 1. **`gold_v1` entra al oro vigente.** Con él, Gemini supera a M1 y M4 queda a 0.02 de Gemini sin diferencia significativa (sección 6). *Dev* aleatorio pasa de 199 a 799 ítems (794 evaluables), *test* de 201 a 601, y *dev* dirigido suma 300. `data.py` los integra con `bloque_oro` y pesos combinados.
 2. **Guía `v2.2` (adoptada):** la falta de claridad o comunicación del banco sobre una decisión que molesta al cliente cuenta como queja concreta de servicio. Es `NEG` y lleva `menciona_falla` = sí, aunque la medida venga de la regulación. Codifica lo que el anotador ya hizo; no cambia ninguna etiqueta.
 3. **Segundo anotador (hecho):** κ 0.81 (4 clases) y 0.87 (3 clases) con el autor en 100 ítems. La diferencia entre los mejores modelos queda por debajo de ese ruido (sección 7).
-4. **F-01 (hecho, 2026-10-20):** `G0170` fue un error de dedo (corregido). La [matriz FMEA](../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) registra 0 nombres en 1 300 reseñas: O 3 → 2 y RPN 105 → 70, y la fila pasa a monitoreo.
+4. **F-01 (hecho, 2026-10-20):** `G0170` fue un error de dedo (corregido). La [matriz FMEA](../../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) registra 0 nombres en 1 300 reseñas: O 3 → 2 y RPN 105 → 70, y la fila pasa a monitoreo.

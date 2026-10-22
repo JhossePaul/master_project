@@ -93,24 +93,24 @@ uv run python -m $M.eda.eda_aspects analyze --prompt aspects_v1
 Solo escriben agregados en `docs/analytics/eda/`. `eda_aspects` guarda su
 muestra, las etiquetas por prompt y la cola de validación en
 `data/eda/aspects_v0/` (fuera de git). La codificación sigue la
-[guía de aspectos](../../docs/analytics/eda_aspects_guideline.md); `analyze`
+[guía de aspectos](../../docs/analytics/eda/eda_aspects_guideline.md); `analyze`
 incluye el acuerdo con el autor (gana la pasada con la guía `v1`,
 `validation_annotations_v1.csv`, sobre la primera). Reportes:
-[`eda_report.md`](../../docs/analytics/eda_report.md) y
-[`eda_temporal_report.md`](../../docs/analytics/eda_temporal_report.md).
+[`eda_report.md`](../../docs/analytics/eda/eda_report.md) y
+[`eda_temporal_report.md`](../../docs/analytics/eda/eda_temporal_report.md).
 
 ### 2. Etiquetado (5.3)
 
 Las etapas con Gemini requieren ADC (`gcloud auth application-default
 login`) y la API de Vertex AI habilitada (`enable_vertex_ai_api` en Pulumi).
 La app de anotación sigue la
-[guía de anotación](../../docs/analytics/annotation_guideline.md), no muestra
+[guía de anotación](../../docs/analytics/labeling/annotation_guideline.md), no muestra
 estrellas ni banco y agrega cada anotación a
 `data/labels/<GOLD_DIR>/annotations.csv` (al corregir, gana la última fila
 por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
 
 1. **Piloto\*:** muestra y etiquetas con cada prompt
-   ([`labeling_pilot_v0.md`](../../docs/analytics/labeling_pilot_v0.md)).
+   ([`labeling_pilot_v0.md`](../../docs/analytics/labeling/labeling_pilot_v0.md)).
 
    ```sh
    uv run python -m $M.sampling.sample_pilot data/tds_<SNAPSHOT>.parquet
@@ -119,7 +119,7 @@ por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
 
 2. **Oro, primera ronda\*:** cola `gold_v0` (calibración, aleatorio ciego y
    asistido, re-anotación), anotación, métricas y validación de `prompt_v2`
-   ([`gold_v0_report.md`](../../docs/analytics/gold_v0_report.md)).
+   ([`gold_v0_report.md`](../../docs/analytics/labeling/gold_v0_report.md)).
    `sample_gold_v0` no regenera la cola si ya existe `annotations.csv`.
 
    ```sh
@@ -130,7 +130,7 @@ por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
    ```
 
 3. **Re-anotación a ciegas\*** con la guía vigente; de aquí sale la elección
-   de `prompt_v3` ([`gold_v0_r2_report.md`](../../docs/analytics/gold_v0_r2_report.md)).
+   de `prompt_v3` ([`gold_v0_r2_report.md`](../../docs/analytics/labeling/gold_v0_r2_report.md)).
 
    ```sh
    uv run python -m $M.sampling.sample_gold_v0_r2
@@ -139,7 +139,7 @@ por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
    ```
 
 4. **Plata** con `prompt_v3`
-   ([`silver_v0_report.md`](../../docs/analytics/silver_v0_report.md)).
+   ([`silver_v0_report.md`](../../docs/analytics/labeling/silver_v0_report.md)).
 
    ```sh
    uv run python -m $M.sampling.sample_silver sample data/tds_<SNAPSHOT>.parquet
@@ -150,7 +150,7 @@ por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
 5. **Oro, segunda ronda (`gold_v1`):** necesita la plata y M1 (paso 3.1,
    `baselines`). `plan` no gasta; `queue` etiqueta el bloque aleatorio con
    `prompt_v3` (~$0.05)
-   ([`gold_v1_report.md`](../../docs/analytics/gold_v1_report.md)).
+   ([`gold_v1_report.md`](../../docs/analytics/labeling/gold_v1_report.md)).
 
    ```sh
    uv run python -m $M.sampling.sample_gold_v1 plan
@@ -161,7 +161,7 @@ por `item_id`). `.streamlit/config.toml` la limita a `localhost`.
 
 ### 3. Competencia de sentimiento (5.4)
 
-Protocolo en [`sentiment_models_protocol.md`](../../docs/analytics/sentiment_models_protocol.md). Cada modelo
+Protocolo en [`sentiment_models_protocol.md`](../../docs/analytics/sentiment/sentiment_models_protocol.md). Cada modelo
 solo guarda predicciones del oro *dev* y de `holdout_nuevo` en
 `data/models/preds/`; `evaluate` calcula todas las métricas con el mismo
 protocolo. El oro *test* no se predice.
@@ -207,4 +207,4 @@ protocolo. El oro *test* no se predice.
    uv run python -m $M.sentiment.evaluate
    ```
 
-Reporte: [`sentiment_models_v0_report.md`](../../docs/analytics/sentiment_models_v0_report.md).
+Reporte: [`sentiment_models_v0_report.md`](../../docs/analytics/sentiment/sentiment_models_v0_report.md).

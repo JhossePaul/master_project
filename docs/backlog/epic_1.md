@@ -1,7 +1,7 @@
 # EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
 
 * **Estado:** IMPLEMENTADO — Features 1.1–1.8 completadas y verificadas localmente. Contratos, eventos, reducer, configuración v2 disponibles; activación de recursos/consumidores corresponde a EPIC-2/EPIC-3/EPIC-4.
-* **Contratos de predicción condicionados (2026-10-18):** quedan sujetos al registro de decisión de EPIC-5 (5.8), que puede cambiar modelo, tópicos y esquema; no se reescriben antes. Aplica a `AnalyzedReviewPrediction` (campo `sentimiento_roberta`, docstring "DeLoRA" en `schemas.py`, `topico: ABSATopic` obligatorio, `embedding_vector` y `prediction_entropy`) y a `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` con `cumple_umbral_palabras`. Motivo: en la primera ronda de 5.4 el mejor candidato barato es TF-IDF + LR (κ 0.91 contra el oro *dev*), RoBERTuito sin ajuste queda debajo de las estrellas (κ 0.47 contra 0.69) y el filtro de 2 a 60 palabras no se aplica ([reporte](../analytics/sentiment_models_v0_report.md)).
+* **Contratos de predicción condicionados (2026-10-18; actualizado 2026-10-22):** se reemplazan en [EPIC-6](epic_6.md) (feature 6.1) cuando se apruebe el registro de decisión de EPIC-5 (5.8); no se reescriben antes. Aplica a `AnalyzedReviewPrediction` (campo `sentimiento_roberta`, docstring "DeLoRA" en `schemas.py`, `topico: ABSATopic` obligatorio, `embedding_vector` y `prediction_entropy`) y a `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` con `cumple_umbral_palabras`. Qué cambia y qué lo decide: [insumos de EPIC-5 en EPIC-6](epic_6.md#-insumos-de-epic-5-que-cambian-epic-1-y-epic-2).
 * **Semanas Objetivo:** Semana 1
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/pyproject.toml`

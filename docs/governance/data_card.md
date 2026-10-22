@@ -4,7 +4,7 @@
   * **0.2:** EDA completo (5.2: tokens, multi-aspecto y léxico), oro y plata vigentes (5.3) y etiquetas de aspecto.
   * **0.1** (2026-10-17): primera versión, con el EDA global y las reglas de elegibilidad.
 * **Formato:** sigue la estructura de *Datasheets for Datasets* (Gebru et al., 2021); ver [`references.md`](references.md).
-* **Fuentes de esta versión:** [cierre de EPIC-1–4](../backlog/closure_epics_1_4.md), [EDA global](../analytics/eda_report.md) (incluida la sección 5), [patrones temporales](../analytics/eda_temporal_report.md), [reglas de elegibilidad](../analytics/eligibility_rules.md), [`gold_v1`](../analytics/gold_v1_report.md), [plata](../analytics/silver_v0_report.md) y [guía de aspectos](../analytics/eda_aspects_guideline.md).
+* **Fuentes de esta versión:** [cierre de EPIC-1–4](../backlog/epics.md#cierre-de-las-épicas-1-a-4) y [carga del histórico](../operations/full_backfill.md), [EDA global](../analytics/eda/eda_report.md) (incluida la sección 5), [patrones temporales](../analytics/eda/eda_temporal_report.md), [reglas de elegibilidad](../analytics/eda/eligibility_rules.md), [`gold_v1`](../analytics/labeling/gold_v1_report.md), [plata](../analytics/labeling/silver_v0_report.md) y [guía de aspectos](../analytics/eda/eda_aspects_guideline.md).
 
 ## 1. Motivación
 
@@ -44,10 +44,10 @@
   * **Oro** (5.3): 1 730 reseñas anotadas a ciegas por el autor, en dos rondas (`gold_v0_r2` y `gold_v1`): *dev* aleatorio 799, *dev* dirigido 300, *test* 601 y 30 de calibración. Solo los bloques aleatorios, estratificados por banco × periodo (y estrellas en `gold_v1`), dan cifras poblacionales. Guía vigente: `annotation_guideline_v2.2`.
     * Las estrellas difieren del oro en el 12.5 % de las filas elegibles (EE 1.3).
     * Gemini (`prompt_v3`) coincide con el oro con κ 0.92 en 600 textos nuevos.
-    * Ver el [reporte de `gold_v1`](../analytics/gold_v1_report.md) y la [historia del etiquetado](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata).
-  * **Plata:** 99 926 filas (70 284 textos únicos) etiquetadas por Gemini 3.6 Flash con `prompt_v3`; κ contra el oro de 0.84 a 0.93. Ver [reporte](../analytics/silver_v0_report.md).
+    * Ver el [reporte de `gold_v1`](../analytics/labeling/gold_v1_report.md) y la [historia del etiquetado](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata).
+  * **Plata:** 99 926 filas (70 284 textos únicos) etiquetadas por Gemini 3.6 Flash con `prompt_v3`; κ contra el oro de 0.84 a 0.93. Ver [reporte](../analytics/labeling/silver_v0_report.md).
   * **Acuerdo entre personas:** un segundo anotador independiente etiquetó a ciegas 100 ítems de `gold_v1`; κ con el autor 0.81 [0.70, 0.91] con 4 clases y 0.87 con 3. El desacuerdo principal es la regla 2 amplia (cualquier queja concreta es `NEG`), que el segundo anotador tendía a decidir por el tono.
-  * **Aspectos de las negativas** (5.2): 1 434 textos negativos de la plata, codificados por Gemini con la [guía de aspectos `v2.1`](../analytics/eda_aspects_guideline.md) (`aspects_v2_1`). Multi-aspecto: 24.7 % [22.6, 26.8] según Gemini. Contra el autor: κ de `UX` 0.74, marca `u` κ 0.70 (usable); la marca `s` no es concluyente (6–8 positivos). Antecedente: con la [guía `v1`](../analytics/eda_aspects_guideline_v1.md) (`aspects_v1`) era 32.1 % y el autor, a ciegas en 100 textos, marcaba 44 % (κ 0.42). Son una medición exploratoria, no una etiqueta para entrenar. Ver el [EDA](../analytics/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55), sección 5.2.1.
+  * **Aspectos de las negativas** (5.2): 1 434 textos negativos de la plata, codificados por Gemini con la [guía de aspectos `v2.1`](../analytics/eda/eda_aspects_guideline.md) (`aspects_v2_1`). Multi-aspecto: 24.7 % [22.6, 26.8] según Gemini. Contra el autor: κ de `UX` 0.74, marca `u` κ 0.70 (usable); la marca `s` no es concluyente (6–8 positivos). Antecedente: con la [guía `v1`](../analytics/eda/archive/eda_aspects_guideline_v1.md) (`aspects_v1`) era 32.1 % y el autor, a ciegas en 100 textos, marcaba 44 % (κ 0.42). Son una medición exploratoria, no una etiqueta para entrenar. Ver el [EDA](../analytics/eda/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55), sección 5.2.1.
   * **Limitación:** el oro refleja cómo aplica la guía un anotador, el autor, cuya calibración no es del todo independiente de Gemini. Los modelos con κ 0.91–0.93 contra ese oro ya están al nivel del acuerdo entre personas.
 * **Características relevantes** (EDA):
   * Muy concentrado en textos cortos: 18.3 % de una palabra; mediana anual de 3–19 palabras; p99 de 50–89; 1.46 % supera 60 palabras.
@@ -74,7 +74,7 @@
 * **Sanitización de PII:** solo regex local (Cloud DLP desactivado por defecto).
   * Detecta correos, teléfonos, tarjetas, CLABE, cuentas, RFC y CURP, y los reemplaza por tokens `[TIPO]`. Se encontraron 15 filas con hallazgos.
   * **No detecta nombres de personas:** solo Cloud DLP lo hacía. Los nombres que el usuario escriba en el texto pueden seguir presentes.
-  * Por eso **puede quedar PII residual** (FMEA F-01/F-03): no publicar ejemplos sin revisión. En 1 000 reseñas aleatorias del oro no apareció ningún nombre propio (cota 95 %: 0.3 %; [`gold_v1`](../analytics/gold_v1_report.md), sección 5). Gemini se usa en Vertex AI, dentro de GCP; enviar texto fuera de GCP requiere la autorización del autor y una fila en la [matriz FMEA](ethical_fmea_matrix.md).
+  * Por eso **puede quedar PII residual** (FMEA F-01/F-03): no publicar ejemplos sin revisión. En 1 000 reseñas aleatorias del oro no apareció ningún nombre propio (cota 95 %: 0.3 %; [`gold_v1`](../analytics/labeling/gold_v1_report.md), sección 5). Gemini se usa en Vertex AI, dentro de GCP; enviar texto fuera de GCP requiere la autorización del autor y una fila en la [matriz FMEA](ethical_fmea_matrix.md).
 * **Limpieza:** `texto_limpio` pasa a minúsculas y quita URLs, menciones y hashtags, y repeticiones de 3 o más caracteres (`limpiar_texto_bancario`). El texto sanitizado sin limpiar se conserva en `texto_sanitizado`, que es el que usan los modelos de sentimiento (5.4); `texto_limpio` solo define las reglas de longitud.
 * **Sin filtro de longitud en el almacenamiento:** el rango 2–60 palabras del EDA inicial se aplica, si acaso, en el análisis.
 * **Elegibilidad por tarea** (`eligibility_rules_v0.1`, reglas deterministas):
@@ -87,7 +87,7 @@
 * **Previstos:**
   * estimar el sentimiento real frente a las estrellas;
   * descubrir y seguir tópicos de quejas por banco, versión y periodo;
-  * priorizar incidencias en un portal con revisión humana (EPIC-6).
+  * priorizar incidencias en un portal con revisión humana (EPIC-7).
 * **No previstos o desaconsejados:**
   * identificar o perfilar usuarios;
   * comparar bancos como medición oficial de satisfacción;

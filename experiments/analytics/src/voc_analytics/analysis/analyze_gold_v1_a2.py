@@ -6,7 +6,7 @@ Uso (desde experiments/analytics):
 Un segundo anotador, independiente del autor, etiquetó a ciegas 100 ítems
 del bloque aleatorio de `gold_v1` con la guía `v2.2`. Compara sus etiquetas
 con las del autor (la última por ítem en `gold_v1`) y escribe
-`docs/analytics/gold_v1_a2_metrics.json`, solo agregados.
+`docs/analytics/labeling/gold_v1_a2_metrics.json`, solo agregados.
 
 * **Acuerdo entre personas:** los 100 ítems (68 de *dev* y 32 de *test*).
   No evalúa ningún modelo, así que no toca la reserva de *test*.
@@ -25,7 +25,7 @@ from voc_analytics.paths import DATA, DOCS, LABELS
 GOLD = LABELS / "gold_v1"
 A2 = LABELS / "gold_v1_a2"
 SNAPSHOT = DATA / "tds_20261016T054714Z.parquet"
-OUT = DOCS / "gold_v1_a2_metrics.json"
+OUT = DOCS / "labeling" / "gold_v1_a2_metrics.json"
 BOOTSTRAP = 2000
 SEED = 20261021
 

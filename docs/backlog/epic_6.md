@@ -1,103 +1,161 @@
-# EPIC-6: Exposición (FastAPI), Búsqueda Vectorial, Explicabilidad (SHAP/LIME), Portal Web HITL y Gobernanza MLOps
+# EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado:** Pendiente. Especificación sincronizada con contratos v2 (`EPIC-1`), recursos IAM/BigQuery/Cloud Run (`EPIC-2`), recibos TDS (`EPIC-4`) y predicciones Dual LoRA (`EPIC-5`)[cite: 23, 24, 26, 27].
-* **Semanas Objetivo:** Semanas 7 - 8[cite: 1, 14, 27]
-* **Dependencias:** `EPIC-1` (`HitlTriageAuditRecord`, `AnalyzedReviewPrediction`, `IncidentAlertMessage`)[cite: 23], `EPIC-2` (`voc-api-backend`, `voc-sa-ml-backend`, tabla `hitl_triage_audit_log`)[cite: 24], `EPIC-4` (`sanitized_reviews_tds`)[cite: 24, 26] y `EPIC-5` (`delora_predictions` con `embedding_vector` de 768 dimensiones)[cite: 24, 27].
-* **Directorios y Archivos Afectados:**
-  * `services/api-backend/pyproject.toml`
-  * `services/api-backend/Dockerfile`
-  * `services/api-backend/src/api_backend/__init__.py`
-  * `services/api-backend/src/api_backend/main.py`
-  * `services/api-backend/src/api_backend/routes.py`
-  * `services/api-backend/src/api_backend/bq_Vector_and_analytics.py`
-  * `services/api-backend/src/api_backend/explainability.py`
-  * `services/api-backend/src/api_backend/hitl_service.py`
-  * `services/api-backend/tests/__init__.py`
-  * `services/api-backend/tests/test_api_routes.py`
-  * `services/api-backend/tests/test_explainability_and_hitl.py`
-  * `services/ml-delora/src/ml_delora/drift_monitor.py`[cite: 27]
-  * `services/ml-delora/tests/test_drift_monitor.py`
-  * `web/hitl-portal/package.json`
-  * `web/hitl-portal/vite.config.ts`
-  * `web/hitl-portal/Dockerfile`
-  * `web/hitl-portal/src/App.tsx`
-  * `web/hitl-portal/src/api/client.ts`
-  * `web/hitl-portal/src/components/SatisfactionGapDashboard.tsx`
-  * `web/hitl-portal/src/components/VectorRootCauseExplorer.tsx`
-  * `web/hitl-portal/src/components/HitlTriageQueue.tsx`
-  * `docs/governance/data_card.md`[cite: 8, 14, 17, 27]
-  * `docs/governance/model_card.md`[cite: 8, 14, 19, 27]
-  * `docs/governance/ethical_fmea_matrix.md`[cite: 8, 14, 17, 27]
+* **Estado (2026-10-22):** Pendiente. Las features están delimitadas, pero su detalle está **condicionado al registro de decisión de EPIC-5** (5.8): no se implementa nada antes. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
+  * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
+  * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
+  * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
+* **Semanas Objetivo:** tras 5.8 y antes de [EPIC-7](epic_7.md).
+* **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
+* **La consume:** [EPIC-7](epic_7.md), cuya API y portal leen las tablas de salida, escriben en la base de curadurías y muestran las alertas.
+* **Directorios (provisionales):**
+  * `packages/voc-common/`: contratos de predicción, elegibilidad y curaduría;
+  * `infra/`: tablas de BigQuery, Cloud Run Jobs, Scheduler e IAM;
+  * `services/ml-<nombre>/`: servicio de inferencia. El nombre `ml-delora` queda obsoleto porque 5.4 descartó Delora; se fija en 6.3;
+  * `docs/contracts/`: contrato de predicción, como `ingestion_v2.md` para la ingesta.
 
 ---
 
-## 🎯 Objetivo y Límites de la Garantía
+## 🎯 Objetivo
 
-Construir la capa de consumo analítico, explicabilidad e intervención humana (**HITL**) que permite a los equipos de *Client Solutions*, *Customer Experience (CX)*, *Program Managers* y *Product Owners* explorar la brecha de satisfacción real (**Satisfaction Gap**: Rating Oficial vs. **TNSS**), buscar causas raíz semánticamente mediante *embeddings* de 768 dimensiones, inspeccionar mapas de atribución de tokens (**SHAP / LIME**), auditar y reclasificar predicciones de alta entropía hacia el backlog de ingeniería, monitorear el *Data Drift* y *Concept Drift* entre versiones de la app, y entregar la documentación normativa alineada a los estándares de BBVA [*Norma Data Governance* y *Norma de Gobierno de Modelos de Analítica Avanzada*](cite: 1, 8, 17, 18, 19, 27).
-
-* **Límite de Explicabilidad Local:** Los valores de atribución por token (SHAP/LIME/oclusión de perturbación) explican qué palabras o tokens DLP (`ref: 3702`, `[MX_CLABE_BANCARIA]`, `"pantalla azul"`) empujaron la predicción local del modelo hacia `NEG` o hacia un `ABSATopic` específico, pero no constituyen prueba de causalidad técnica en el código fuente móvil [el cual debe correlacionarse con telemetría APM en sistemas de ingeniería](cite: 6, 8, 27).
-* **Agencia Humana (HITL):** Ninguna predicción con `requires_hitl = True` (`prediction_entropy >= 0.65` o sesgo *Obligatory 5-Star* de alto impacto) modifica automáticamente prioridades definitivas sin registrar un `HitlTriageAuditRecord` firmado por un revisor humano autenticado (almacenando únicamente `reviewer_email_hash` SHA-256 para cumplir con minimización de PII)[cite: 17, 23, 24].
+Llevar a producción la estrategia que fije 5.8: un backfill único sobre los textos únicos elegibles y un delta diario, con salidas versionadas en BigQuery, alertas por familia de aspectos y marca `u`, y una base de curadurías que alimente el reentrenamiento. Esta épica no decide modelos ni umbrales; implementa los que decida EPIC-5.
 
 ---
 
-## 🔗 Alineación Estricta con Contratos e Infraestructura Existente (EPIC-1 a EPIC-5)
+## 🧭 Insumos de EPIC-5 que cambian EPIC-1 y EPIC-2
 
-El Agente IA **DEBE** acatar las siguientes 5 reglas de integración con lo ya construido en el monorepo:
+Lo implementado en EPIC-1 y EPIC-2 sigue en el código hasta que esta épica lo reemplace. Cada fila dice qué cambia y qué feature de EPIC-5 lo decide.
 
-1. **Inmutabilidad del Historial del Modelo vs. Bitácora HITL (`hitl_triage_audit_log`):**
-   * En `EPIC-2` (Feature 2.4.2), se aprovisionaron dos tablas separadas en el dataset `bbva_voc_tds`: `delora_predictions` (15 columnas) y `hitl_triage_audit_log` (10 columnas: `audit_id`, `id_resena`, `bank_id`, `original_tnss`, `validated_tnss`, `original_topic`, `validated_topic`, `reviewer_email_hash`, `backlog_jira_ticket`, `reviewed_at`)[cite: 23, 24].
-   * Cuando un Product Owner o líder de CX aprueba o corrige una predicción en el portal HITL, el backend **NO** sobrescribe destructivamente `original_tnss` ni `original_topic`: inserta un registro inmutable `HitlTriageAuditRecord` en `hitl_triage_audit_log`[cite: 23, 24]. Las consultas analíticas del backend hacen un `LEFT JOIN` con la última decisión de `hitl_triage_audit_log` (`COALESCE(h.validated_tnss, p.tnss_score)`) para reflejar la verdad validada por humanos preservando la trazabilidad para auditoría de QA y recálculo de desempeño del modelo[cite: 17, 19, 24].
-2. **Búsqueda Vectorial Dual (BigQuery Cosine Distance en Free Tier vs. Vertex AI Vector Search):**
-   * En `EPIC-2` (Feature 2.5.3), `enable_dedicated_vertex_endpoints` es `False` por defecto[cite: 23, 24].
-   * Si `settings.enable_dedicated_vertex_endpoints` es `False`, el motor de búsqueda semántica ejecuta el cálculo de distancia coseno directamente en **BigQuery** sobre la columna `embedding_vector` (`ARRAY<FLOAT64>` de 768 dimensiones en `delora_predictions`) unida con `sanitized_reviews_tds`[cite: 24], logrando latencias sub-segundo sobre decenas de miles de reseñas a **$0.00 USD de costo fijo en reposo**. Si el flag es `True`, delega la consulta de vecinos más cercanos al `AiEndpoint` / `AiIndex` de Vertex AI[cite: 24, 27].
-3. **Cero Exposición de PII en la API y en el Portal Web:**
-   * La API en FastAPI (`voc-api-backend`) lee exclusivamente de `sanitized_reviews_tds`, `delora_predictions`, `hitl_triage_audit_log` e `ingestion_runs_log_v2`[cite: 24]. Jamás accede a `raw_staging/` ni expone `usuario` o correos de revisores sin hashear (`hash_username_pii` de `voc-common`)[cite: 23, 24].
-4. **Explicabilidad Ligera Compatible con Cloud Run (`1 vCPU / 1 GiB RAM`):**
-   * En `EPIC-2` (Feature 2.5.1), `voc-api-backend` tiene límites de `cpu="1"` y `memory="1Gi"`[cite: 24]. Ejecutar miles de permutaciones pesadas de KernelSHAP sobre un modelo Transformer completo por cada petición HTTP agotaría la RAM o el timeout.
-   * Por tanto, `explainability.py` debe implementar un **Explicador de Atribución por Oclusión/Perturbación Léxica Rápida (LIME / Leave-One-Out Token Attribution)** que evalúa la caída/subida marginal de probabilidad $\Delta P(\text{NEG})$ y $\Delta P(\text{topico})$ al enmascarar cada token o sintagma clave de `texto_limpio`, devolviendo pesos normalizados en $< 150\text{ ms}$ y garantizando contraste de "negativos pertinentes" [qué palabras habrían cambiado la predicción si no estuvieran presentes](cite: 8, 20, 27).
-5. **Monitoreo de *Data Drift* y *Concept Drift* con Disparo de Fallback Plan vía Pub/Sub:**
-   * El módulo `drift_monitor.py` evalúa estadísticamente:
-     * **Data Drift:** Divergencia de Jensen-Shannon (JSD) / PSI en la distribución de longitud de palabras y vocabulario de entrada entre la versión entrante de la app (ej. `26.90.12`) y el baseline de entrenamiento (`26.80.11`, etc.)[cite: 5, 10, 18].
-     * **Concept Drift:** Mutación aguda en la distribución de tópicos ABSA o divergencia entre la tasa histórica de *Label Noise Bias* y la versión actual[cite: 10, 18].
-   * Cuando el índice de *Drift* supera el umbral crítico, publica una alerta estructurada en `voc-incident-alerts-topic` (usando `voc-sa-ml-backend`) para activar el *Fallback Plan* y el reentrenamiento[cite: 15, 16, 18, 24, 27].
+| Tema | Hoy (EPIC-1 y EPIC-2) | Evidencia o decisión de EPIC-5 | Decide | Feature aquí |
+| :--- | :--- | :--- | :---: | :---: |
+| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | M4 RoBERTuito es el mejor modelo propio (κ 0.917); M9 Gemini queda a +0.021. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial | 5.8 | 6.1, 6.3 |
+| Taxonomía | 8 `ABSATopic`; `topico` obligatorio y único por reseña | 11 familias `aspects_v2_1` multi-etiqueta más las marcas `u` y `s`; los tópicos son una capa aparte, con versión y curada | 5.5 (aprobado) | 6.1, 6.2 |
+| Filtro de longitud | `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` y `cumple_umbral_palabras` | Sin filtro de longitud, porque la longitud predice las estrellas. Elegibilidad por reglas deterministas con código (`NOT_PREDICTED`); `TOPIC_TOO_SHORT` con k = 1 | 5.1, 5.2; `TNSS_SINGLE_WORD` en 5.8 | 6.1 |
+| Tabla de salida | `delora_predictions`: 15 columnas, agrupada por `topico` | Predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con ciclo de vida; estado de elegibilidad; registro de corridas | 5.8 | 6.2 |
+| Embeddings | `embedding_vector` de 768 dimensiones | Delora descartado; los tópicos usan MiniLM (384). La búsqueda semántica de EPIC-7 necesita su propio encoder | 5.7 o 5.8 | 6.2 |
+| Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Se elige con la curva cobertura–riesgo en el oro *dev* | 5.6 | 6.1, 6.3 |
+| Priorización | Fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` | Son hipótesis; se evalúan contra un criterio observable | 5.6 | 6.3 |
+| *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA | Umbrales en 5.7 | 6.4 |
+| Curaduría | `hitl_triage_audit_log` (sentimiento y un tópico) | Curadurías de sentimiento, aspectos y tópicos, inmutables, con versión de guía, modelo y prompt | 5.5 (aprobado) | 6.2 |
+| Etiquetador y M9 | `enable_vertex_ai_api`; `enable_dedicated_vertex_endpoints = False` | Gemini por Vertex AI dentro del proyecto, sin endpoints dedicados | 5.3; M9 en 5.8 | 6.2 |
 
----
+## 🔒 Restricciones de despliegue que siguen vigentes
 
-## 🧭 Decisiones heredadas de 5.5 (2026-10-22)
+Vienen de la especificación anterior y no dependen del modelo:
 
-El autor aprobó la recomendación híbrida de 5.5 ([nota de decisión](../analytics/topics_decision_note.md)). Donde el texto original de esta épica la contradice, se conserva para trazabilidad y rige lo siguiente:
-
-| Texto original de EPIC-6 | Decisión heredada de 5.5 | Se fija en |
-| :--- | :--- | :--- |
-| Taxonomía de los 8 `ABSATopic` (ranking de backlog, `predicted_topic`, `validated_topic`, filtros) | Núcleo: las 11 familias multi-etiqueta de `aspects_v2_1` más las marcas `u` y `s`; una reseña puede tener varias familias. Los tópicos de BERTopic son una capa de detalle aparte, con versión y curada. | 6.1 a 6.4 al implementarlas; contratos de `voc_common` (EPIC-1, sin hilo) |
-| `embedding_vector` de 768 dimensiones del modelo Delora (búsqueda semántica) | 5.4 descartó Delora (M8); los tópicos usan MiniLM (384 dimensiones). La búsqueda semántica debe decidir su encoder. | 5.7 o 5.8 |
-| *Concept drift* con JSD de la distribución de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA. | Umbrales en 5.7 |
-| Umbral HITL `prediction_entropy >= 0.65` fijado a priori | Lo fija 5.6 con la curva cobertura–riesgo en el oro *dev*. | 5.6 |
+* inferencia batch incremental sobre BigQuery en CPU (Cloud Run Job), con Vertex Endpoints solo como opción;
+* persistencia por tabla temporal y `MERGE` idempotente, sin *Streaming Inserts* (patrón de EPIC-4);
+* alertas validadas con `IncidentAlertMessage`, sin texto ni PII;
+* inferencia una vez por texto único elegible, propagada a sus filas; la fila excluida queda `NOT_PREDICTED` con su código;
+* el backfill de tópicos va después del de sentimiento, porque `TOPIC_NOT_NEGATIVE` usa el TNSS predicho;
+* paquete en el workspace `uv`, imagen multi-stage sin root;
+* pruebas deterministas sin red ni descargas de modelos.
 
 ---
 
-## 📦 Desglose de Features e Historias Técnicas
+## 📦 Features
 
-### FEATURE 6.1: Configuración del Paquete `api-backend` y Servicio Analítico/Vectorial en BigQuery (`bq_vector_and_analytics.py`)
+Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 
-**Objetivo:** Configurar el microservicio FastAPI dentro del workspace de `uv` e implementar las consultas parametrizadas a BigQuery para KPIs ejecutivos (*Satisfaction Gap*, evolución por versión y comparación competitiva frente a Nubank, Santander, Azteca y Banorte) y búsqueda semántica de causa raíz[cite: 8, 10, 23, 27].
+### FEATURE 6.1: Contratos de predicción v3 en `voc-common`
 
-#### Tarea 6.1.1: Configurar `services/api-backend/pyproject.toml`
+**Objetivo:** reemplazar los contratos de predicción de EPIC-1 por los que fije 5.8.
 
-Escribir `services/api-backend/pyproject.toml`:
+* `AnalyzedReviewPrediction` con el modelo elegido, versión de modelo y de corrida, familias multi-etiqueta, marcas `u` y `s`, y estado de elegibilidad con su código.
+* Retirar o versionar `ABSATopic`, `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS` y `cumple_umbral_palabras`; revisar `IncidentAlertMessage` y `HitlTriageAuditRecord`, que hoy usan `ABSATopic`.
+* Contratos de las curadurías (6.2) y del registro de corridas.
+* Contrato documentado en `docs/contracts/`.
+* **Terminado cuando:** contratos con pruebas, cobertura ≥ 85 % y consumidores actualizados; EPIC-1 anota qué contratos quedaron reemplazados.
+
+### FEATURE 6.2: Infraestructura de salidas y curadurías (Pulumi)
+
+**Objetivo:** aprovisionar en `infra/` las tablas y los recursos que necesita la inferencia.
+
+* Tablas de salida que reemplazan `delora_predictions`, con un plan de migración (la tabla está vacía).
+* Base de curadurías para el reentrenamiento. Punto de partida: el [borrador de tablas de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría) (`curation_sentiment` o ampliar `hitl_triage_audit_log`, `curation_aspects`, `topic_model_versions`, `topic_catalog`, `curation_topics`, `topic_assignments`). Principios: registros inmutables (solo inserción); revisor como hash SHA-256; cada registro guarda la versión de la guía, del modelo y del prompt que produjo la predicción revisada; solo texto sanitizado.
+* Cloud Run Job de inferencia y su Scheduler, IAM de `voc-sa-ml-backend` (Vertex AI si 5.8 elige M9) y el registro de versiones de modelo que proponga 5.7.
+* **Terminado cuando:** `pulumi preview` con mocks pasa, EPIC-2 anota qué recursos quedaron reemplazados y la matriz FMEA tiene su fila si se almacena texto.
+
+### FEATURE 6.3: Servicio de inferencia batch
+
+**Objetivo:** el paquete desplegable que antes describía la fase 3 de EPIC-5.
+
+* Backfill único y delta diario sobre `sanitized_reviews_tds`, con las reglas de elegibilidad aprobadas en 5.8.
+* Sentimiento con el modelo elegido, calibración y marca HITL de 5.6, familias `aspects_v2_1` y asignación de tópicos con versión.
+* Persistencia por `MERGE` en las tablas de 6.2 y alertas `IncidentAlertMessage` por familia y marca `u`.
+* **Terminado cuando:** el backfill cabe en el tiempo y costo medidos en 5.7, el delta corre en el Job programado y los *quality gates* pasan sin red.
+
+### FEATURE 6.4: Monitoreo y ciclo de vida
+
+**Objetivo:** el plan de monitoreo y de ciclo de vida de 5.7, en producción.
+
+* Monitor de *drift*: entrada (longitud, vocabulario, `version_app`, proporción de no predecibles), predicción (proporción de `NEG` por banco y versión) y familias con la marca `u`. Publica en `voc-incident-alerts-topic`. La especificación anterior está en el [anexo, A.7](#a7-monitor-de-drift-antes-tarea-651-del-portal).
+* Regla de promoción y rollback de modelos, y política de *re-scoring* del histórico.
+* Re-ajuste trimestral de tópicos con emparejamiento de identificadores entre versiones.
+* **Terminado cuando:** las alertas llegan al tópico con umbrales de 5.7 y el portal de EPIC-7 puede consultarlas.
+
+---
+
+## ✅ Checklist de Aceptación de la Épica 6
+
+* [ ] Contratos de predicción, elegibilidad y curaduría v3 en `voc-common`, con su documento en `docs/contracts/` (6.1).
+* [ ] Tablas de salida y de curaduría, Job de inferencia e IAM aprovisionados con Pulumi; `delora_predictions` migrada o retirada (6.2).
+* [ ] Backfill del corpus y delta diario en operación, dentro del costo medido en 5.7 (6.3).
+* [ ] Monitor de *drift*, promoción y rollback, y *re-scoring* documentados y probados (6.4).
+* [ ] *Quality gates* del monorepo (`ruff`, `pyrefly`, `bandit`, `pytest` con cobertura ≥ 85 %) sin errores.
+
+---
+
+## Anexo: especificación anterior de la fase 3 (no vigente)
+
+> Es la especificación original de EPIC-5, escrita antes de tener evidencia (antes `epic_5_deployment.md`, "borrador condicionado"). Se conserva por trazabilidad. Sus features se renombraron de 5.1–5.6 a A.1–A.6 para no confundirlas con las de `epic_5.md`; A.7 viene de la tarea 6.5.1 del portal. Lo que contradice la tabla de [insumos de EPIC-5](#-insumos-de-epic-5-que-cambian-epic-1-y-epic-2) **no se implementa**: los 8 `ABSATopic`, la arquitectura Dual LoRA, el filtro de 2 a 60 palabras, las 15 columnas de `delora_predictions` con 768 dimensiones, el umbral de 0.65 y la paridad dialectal con corpus sintético (se sustituye por paridad entre bancos y periodos).
+
+### A.0: Objetivo y límites de la garantía
+
+Consumir las reseñas curadas y desidentificadas desde `bbva_voc_tds.sanitized_reviews_tds` (`texto_limpio`, `estrellas`, `votos_utilidad`, `version_app`), ejecutar el modelo baseline (**RoBERTa** en español), aplicar la arquitectura **Dual LoRA (*Delora*)** para desacoplar el *Label Noise Bias* (*Obligatory 5-Star*) y obtener el **True Net Satisfaction Score (TNSS)**, clasificar la categoría de fallo operativo (**ABSA**), generar *embeddings* densos de **768 dimensiones**, persistir de forma idempotente en `bbva_voc_tds.delora_predictions` y emitir alertas hacia `voc-incident-alerts-topic` cuando se detecten picos de quejas con alta tracción comunitaria.
+
+* **Límite de inferencia y generalización:** La separación entre la rama *Clean* (`θ + Δθ_c`) y la rama *Noisy* (`Δθ_n` condicionada a `estrellas`) reduce la contaminación por etiquetas ruidosas, pero no certifica verdad absoluta sobre la intención subjetiva del usuario. Por ello, las predicciones con entropía normalizada `prediction_entropy >= hitl_entropy_threshold` (`0.65`) o alta severidad activan obligatoriamente `requires_hitl = True` para validación humana en `EPIC-7`.
+* **No re-inspeccionar ni alterar tokens DLP:** El modelo recibe `texto_limpio` junto con los tokens semánticos entre corchetes (`[PERSON_NAME]`, `[MX_CLABE_BANCARIA]`, `[BBVA_ACCOUNT_NUMBER]`, etc.) y códigos técnicos conservados (`ref: 3702:65c5:9xhchi`). El tokenizador debe tratar dichos tokens como vocabulario válido sin eliminarlos, ya que aportan contexto semántico directo para tópicos como `BLOQUEO_SEGURIDAD_3702` o `TRANSFERENCIAS_SPEI`.
+
+### A.0b: Alineación con contratos e infraestructura (EPIC-1, EPIC-2 y EPIC-4)
+
+El Agente IA **DEBE** acatar las siguientes 5 restricciones de acoplamiento con lo ya implementado en el monorepo:
+
+1. **Esquema Fijo de 15 Columnas en `bbva_voc_tds.delora_predictions` (EPIC-1 Feature 1.3.5 y EPIC-2 Feature 2.4.2):**
+   * Prohibido añadir o renombrar columnas al escribir en BigQuery. Toda fila insertada debe validarse previamente con `AnalyzedReviewPrediction` de `voc_common` (`extra="forbid"`), respetando exactamente las 15 columnas aprovisionadas en `storage_bq.py`:
+     `id_resena`, `bank_id`, `version_app`, `fecha`, `estrellas`, `votos_utilidad`, `sentimiento_roberta`, `tnss_score`, `tnss_numeric_calibrated`, `is_obligatory_5_star_bias`, `topico`, `priority_weight_score`, `prediction_entropy`, `requires_hitl`, y `embedding_vector` (`FLOAT REPEATED` de longitud **768**, coincidiendo con la dimensión declarada en `infra/modules/vertex_ai.py`).
+2. **Invariante del Sesgo *Obligatory 5-Star* (`is_obligatory_5_star_bias`):**
+   * En `AnalyzedReviewPrediction` (EPIC-1), `is_obligatory_5_star_bias` se recalcula automáticamente como `bool(estrellas >= 4 and tnss_score == SentimentLabel.NEG)`. El motor analítico no debe sobreescribir esta regla con heurísticas contradictorias.
+3. **Ejecución Batch Serverless Compatible con GCP Free Tier (`enable_dedicated_vertex_endpoints: false`):**
+   * En `EPIC-2`, los endpoints dedicados de Vertex AI y Vertex Vector Search están desactivados por defecto (`enable_dedicated_vertex_endpoints=False`) para evitar cargos de nodos encendidos 24/7.
+   * Por tanto, `inference_pipeline.py` debe operar por defecto en modo **`BATCH_BIGQUERY_INCREMENTAL`** (ejecutable en CPU local/Cloud Run Job bajo la identidad `voc-sa-ml-backend`), seleccionando únicamente las filas de `sanitized_reviews_tds` que aún no tienen predicción vigente en `delora_predictions`, y dejando el modo `VERTEX_ENDPOINT_ONLINE` como adaptador opt-in cuando el flag esté activo.
+4. **Persistencia Idempotente vía Tabla Temporal y `MERGE` (Sin *Streaming Inserts*):**
+   * Siguiendo el mismo patrón de `EPIC-4`, las predicciones no se insertan mediante `insert_all` (streaming). Se cargan en una tabla efímera `bbva_voc_tds._staging_predictions_{run_id}` (con expiración de 1 hora) vía `load_table_from_json` (`FILE_LOADS`) y se consolidan en `bbva_voc_tds.delora_predictions` mediante una sentencia `MERGE` por `(bank_id, id_resena)`.
+5. **Emisión de Alertas Estrictamente Tipadas (`IncidentAlertMessage`):**
+   * La cuenta `voc-sa-ml-backend` ya cuenta con `roles/pubsub.publisher` (EPIC-2 Feature 2.2). Las alertas enviadas a `voc-incident-alerts-topic` deben serializarse con `IncidentAlertMessage` de `voc-common`, sin incluir jamás textos crudos ni PII en el payload.
+
+### A.1: Configuración del Paquete `ml-delora` y Baseline RoBERTa (`baseline_roberta.py`)
+
+**Objetivo:** Configurar el paquete dentro del workspace de `uv` (usando ruedas de PyTorch CPU ligeras en CI/Docker para no exceder límites de imagen ni memoria en Cloud Run) e implementar el evaluador base con RoBERTa en español (`pysentimiento` / `robertuito-sentiment-analysis`) validado en el notebook del EDA.
+
+#### Tarea A.1.1: Configurar `services/ml-delora/pyproject.toml`
+
+Escribir `services/ml-delora/pyproject.toml` integrando `voc-common` desde el workspace:
 
 ```toml
 [project]
-name = "api-backend"
+name = "ml-delora"
 version = "0.1.0"
-description = "API RESTful FastAPI para Consumo de Predicciones TNSS, Busqueda Vectorial, Explicabilidad SHAP/LIME y Triaje HITL"
+description = "Core Analitico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (Delora), ABSA e Inferencia hacia BigQuery"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.110.0,<1.0.0",
-    "uvicorn[standard]>=0.28.0,<1.0.0",
-    "google-cloud-bigquery>=3.20.0,<4.0.0",
-    "google-cloud-pubsub>=2.21.0,<3.0.0",
+    "torch>=2.2.0,<3.0.0",
+    "transformers>=4.40.0,<5.0.0",
+    "peft>=0.10.0,<1.0.0",
     "numpy>=1.26.0,<3.0.0",
+    "scikit-learn>=1.4.0,<2.0.0",
+    "google-cloud-bigquery>=3.20.0,<4.0.0",
+    "google-cloud-storage>=2.16.0,<3.0.0",
+    "google-cloud-pubsub>=2.21.0,<3.0.0",
     "pydantic>=2.6.0,<3.0.0",
     "voc-common",
 ]
@@ -111,142 +169,177 @@ build-backend = "hatchling.build"
 
 ```
 
-#### Tarea 6.1.2: Implementar Consultas de KPIs y Búsqueda Semántica en `bq_vector_and_analytics.py`
+#### Tarea A.1.2: Implementar `BaselineRobertaEvaluator` en `baseline_roberta.py`
 
-Crear la clase `VocAnalyticsAndVectorRepository`:
+1. **Modelo Base Fundacional:**
 
-1. **`get_satisfaction_gap_kpis(self, bank_id: BankKey = BankKey.BBVA, days_window: int = 30) -> SatisfactionGapReport`**:
+* Utilizar el checkpoint en español `pysentimiento/robertuito-sentiment-analysis` (basado en RoBERTa con dimensión oculta $d = 768$) a través de `AutoTokenizer` y `AutoModelForSequenceClassification` de `transformers`.
+* Soportar carga desde caché local o ruta en Cloud Storage (`gs://voc-datalake-{project_id}/ml_artifacts/roberta_base/`) y permitir inyección de un modelo/tokenizador *mock* ligero para pruebas unitarias en CI sin descargas de red.
 
-* Calcula sobre la unión de `sanitized_reviews_tds` (`s`), `delora_predictions` (`p`) y la última validación humana en `hitl_triage_audit_log` (`h`):
-* `official_avg_stars: float` ($\overline{\text{estrellas}}$ reportado en tienda).
+1. **Inferencia en Batch y Extracción de Embeddings (768-d):**
 
-* `recalibrated_tnss_avg: float` ($\overline{\text{tnss\_numeric\_calibrated}}$).
+* Implementar `predict_batch(self, texts: list[str], batch_size: int = 32) -> list[BaselineOutput]`:
+* Devuelve para cada `texto_limpio`:
+* `label: SentimentLabel` (`NEG`, `NEU`, `POS`).
+* `probabilities: tuple[float, float, float]` ($P(\text{NEG}), P(\text{NEU}), P(\text{POS})$ tras `softmax`).
+* `pooled_embedding: list[float]` (Vector normalizado $L_2$ de **768 dimensiones** extraído del estado oculto del token `<s>` / mean pooling de la última capa, listo para almacenarse en `embedding_vector`).
 
-* `satisfaction_gap: float` (`recalibrated_tnss_avg - official_avg_stars`, ej. `-1.11` pts).
+### A.2: Arquitectura Dual LoRA (*Delora*) para Desacoplamiento de Ruido y Cálculo de TNSS (`model.py`, `scoring_and_entropy.py`)
 
-* `obligatory_5_star_ratio: float` (Porcentaje de reseñas de 4 y 5 estrellas con sentimiento real `NEG`).
+**Objetivo:** Implementar la arquitectura matemática **Dual LoRA (*Delora*)** en PyTorch para separar la polaridad semántica real (**TNSS**) del sesgo conductual de calificación por estrellas (*Label Noise Bias*), junto con las funciones puras de calibración numérica, entropía de Shannon y ponderación de severidad.
 
-* `competitor_benchmark: list[BankBenchmarkItem]` (Comparativa lado a lado de `BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`).
+#### Tarea A.2.1: Implementar `DeloraDualAdapterModel(nn.Module)` en `model.py`
 
-1. **`get_version_concept_drift_series(self, bank_id: BankKey = BankKey.BBVA, top_n_versions: int = 8) -> list[VersionTimeseriesPoint]`**:
+1. **Estructura de Doble Rama sobre el Encoder Base ($d = 768$):**
 
-* Devuelve la serie temporal diaria de quejas negativas fragmentada por `version_app` (replicando y automatizando la gráfica *"Volumen reviews negativos por Versión de App (Top 8)"* del EDA para detectar migración de quejas tras un release como `26.90.12`).
+* **Rama Limpia (*Clean Adapter* — $\Delta\theta_{\text{clean}}$):** Adaptador LoRA ($r=8, \alpha=16$, aplicado sobre proyecciones `query` y `value`) conectado al cabezal de clasificación limpio $W_{\text{clean}} \in \mathbb{R}^{768 \times 3}$. Esta rama recibe **únicamente el texto** (`input_ids`, `attention_mask`) y produce los logits depurados $z_{\text{clean}} = (z_{\text{NEG}}, z_{\text{NEU}}, z_{\text{POS}})$ que determinan el **`tnss_score`** (`SentimentLabel`).
+* **Rama de Ruido (*Noisy Adapter / Transition Matrix* — $\Delta\theta_{\text{noisy}}$):** Segundo adaptador LoRA + módulo de transición condicional $T(h, y_{\text{stars}})$ que recibe la representación oculta $h$ y el embedding de `estrellas` ($1..5$) durante el entrenamiento para absorber la discrepancia sistemática donde textos con quejas operativas fueron etiquetados con 4 o 5 estrellas (*Obligatory 5-Star*).
+* **Desacoplamiento en Tiempo de Inferencia (`forward_clean_inference`):** Durante la inferencia en producción para calcular el **TNSS**, se desactiva la rama de ruido ($\Delta\theta_{\text{noisy}}$) y se evalúa exclusivamente la rama limpia ($\theta_0 + \Delta\theta_{\text{clean}}$), aislando el sentimiento real del texto sin contaminación de la calificación inercial.
 
-1. **`get_prioritized_backlog_topics(self, bank_id: BankKey = BankKey.BBVA, version_app: str | None = None) -> list[BacklogTopicSummary]`**:
+#### Tarea A.2.2: Implementar Fórmulas de Calibración, Entropía y Priorización en `scoring_and_entropy.py`
 
-* Agrupa por `ABSATopic` ordenando descendentemente por `SUM(priority_weight_score)` y `SUM(votos_utilidad)`, entregando a los Product Owners el ranking objetivo de severidad transaccional.
+Implementar funciones matemáticas puras, deterministas y 100% testeables sin GPU:
 
-1. **`semantic_vector_search(self, query_embedding: list[float], bank_id: BankKey | None = None, topico: ABSATopic | None = None, top_k: int = 20) -> list[SemanticSearchHit]`**:
+1. **Score Continuo Recalibrado (`compute_tnss_numeric_calibrated`):**
 
-* Valida que `len(query_embedding) == 768`.
+* Dadas las probabilidades limpias $p = (p_{\text{NEG}}, p_{\text{NEU}}, p_{\text{POS}})$ donde $\sum p_i = 1$:
 
-* Ejecuta en BigQuery el cálculo de similitud coseno entre `@query_embedding` y `p.embedding_vector` (filtrando por `bank_id` y `topico` si se especifican), devolviendo las `top_k` reseñas sanitizadas (`texto_sanitizado`, `version_app`, `estrellas`, `tnss_score`, `votos_utilidad`, `cosine_similarity`) para exploración de causa raíz.
+$$\text{tnss\_numeric\_calibrated} = \text{clip}\left(1.0 \cdot p_{\text{NEG}} + 3.0 \cdot p_{\text{NEU}} + 5.0 \cdot p_{\text{POS}},\, 1.0,\, 5.0\right)$$
 
----
+* Permite calcular directamente el **Satisfaction Gap** ($\overline{\text{TNSS}}_{\text{calibrado}} - \overline{\text{Estrellas}}_{\text{oficial}}$) en escala de 1.0 a 5.0 para los dashboards de `EPIC-7`.
 
-### FEATURE 6.2: Motor de Explicabilidad Local (SHAP / LIME Token Attribution) y Servicio HITL (`explainability.py`, `hitl_service.py`)
+1. **Entropía Normalizada de Shannon y Disparo HITL (`compute_entropy_and_hitl_flag`):**
 
-**Objetivo:** Dotar a los analistas de CX y Product Owners de mapas de atribución de palabras sobre cualquier reseña individual y gestionar la bandeja de validación humana HITL con persistencia auditada en `bbva_voc_tds.hitl_triage_audit_log`.
+* Calcula la entropía sobre la distribución de probabilidad limpia $p \in \Delta^2$ normalizada por $\ln(3)$ para que viva estrictamente en el intervalo $[0.0, 1.0]$ requerido por `AnalyzedReviewPrediction`:
 
-#### Tarea 6.2.1: Implementar `LocalTokenAttributionExplainer` en `explainability.py`
+$$H_{\text{norm}}(p) = -\frac{1}{\ln(3)} \sum_{c \in \{\text{NEG, NEU, POS}\}} p_c \ln(\max(p_c, 10^{-12}))$$
 
-Definir los modelos de respuesta:
+* Determina `requires_hitl: bool`:
+* Retorna `True` si `prediction_entropy >= hitl_entropy_threshold` (`0.65` por defecto en `Settings`), **o** si `is_obligatory_5_star_bias is True and votos_utilidad >= 5`, asegurando que tanto las predicciones inciertas como las quejas graves ocultas en 5 estrellas con tracción comunitaria pasen a validación humana.
 
-```python
-class TokenAttributionItem(BaseModel):
-    token: str
-    position: int
-    attribution_weight: float = Field(..., ge=-1.0, le=1.0)
-    direction: Literal["TOWARDS_NEG_INCIDENT", "TOWARDS_POS_SATISFACTION", "NEUTRAL"]
-    is_pertinent_negative_trigger: bool
+1. **Ponderador de Severidad para el Backlog (`compute_priority_weight_score`):**
 
-class ReviewExplanationResponse(BaseModel):
-    id_resena: str
-    bank_id: BankKey
-    texto_limpio: str
-    predicted_tnss: SentimentLabel
-    predicted_topic: ABSATopic
-    prediction_entropy: float
-    token_attributions: list[TokenAttributionItem]
-    top_incident_drivers: list[str]
+* Basado en el hallazgo del gráfico de violín del EDA (donde las reseñas negativas concentran picos de hasta ~100 votos de utilidad, validando tracción comunitaria):
+
+$$\text{priority\_weight\_score} = \text{round}\left( \left(p_{\text{NEG}} + 0.5 \cdot \mathbb{I}[\text{is\_obligatory\_5\_star\_bias}]\right) \cdot \left(1.0 + \ln(1 + \text{votos\_utilidad})\right),\, 4 \right)$$
+
+* Si `tnss_score == SentimentLabel.POS`, el multiplicador de severidad se atenúa por $(1 - p_{\text{POS}})$ para no inflar el backlog de ingeniería con comentarios positivos.
+
+### A.3: Clasificador por Aspectos (ABSA) Híbrido para Dominio Bancario (`absa_classifier.py`)
+
+**Objetivo:** Asignar cada reseña a uno de los 8 tópicos de `ABSATopic` (`voc-common`) combinando reglas léxicas de alta precisión para códigos/fallos bancarios explícitos con clasificación basada en similitud de embeddings / cabezal neuronal.
+
+#### Tarea A.3.1: Implementar `BankingABSAClassifier` en `absa_classifier.py`
+
+Clasificar el `texto_limpio` hacia las 8 categorías exactas de `ABSATopic`:
+
+1. **`BLOQUEO_SEGURIDAD_3702`:** Prioridad alta ante presencia de códigos `ref: 3702`, `"suspendimos temporalmente tu acceso"`, `"motivos de seguridad"`, `"restaurar de fábrica"`, `"formatear"`, `"antivirus"`, `"opciones de accesibilidad"`, `"app sospechosa"`.
+2. **`BIOMETRIA_RECONOCIMIENTO`:** Patrones y semántica de `"reconocimiento facial"`, `"huella dactilar"`, `"face id"`, `"biométrico"`, `"escaneo de mi cara"`, `"selfie"`, `"lector de huella"`.
+3. **`TRANSFERENCIAS_SPEI`:** `"spei"`, `"transferencia"`, `"pago en tránsito"`, `"no llega el depósito"`, `"clabe"`, `"enviar dinero"`, `"codi"`, `[MX_CLABE_BANCARIA]`.
+4. **`RENDIMIENTO_CRASH_POST_RELEASE`:** `"pantalla azul"`, `"pantalla en blanco"`, `"pantalla negra"`, `"se congela"`, `"se cierra forzosamente"`, `"borrar caché"`, `"forzar cierre"`, `"consume mucha batería"`, `"segundo plano"`, `"muy lenta"`.
+5. **`SALDOS_Y_APARTADOS`:** `"apartados"`, `"aparecen unos puntitos"`, `"no veo mi saldo"`, `"desapareció mi dinero"`, `"historial de movimientos"`, `"saldo negativo"`.
+6. **`TOKEN_Y_NOTIFICACIONES`:** `"token móvil"`, `"activar el token"`, `"notificaciones"`, `"no me avisa"`, `"código sms"`.
+7. **`UX_INTERFAZ_Y_PUBLICIDAD`:** `"interfaz"`, `"nuevo diseño"`, `"publicidad"`, `"anuncios"`, `"ofertas de préstamos"`, `"versión anterior era más sencilla"`, `"poco intuitiva"`.
+8. **`OTROS_SERVICIOS_GENERALES`:** Categoría por defecto o cuando el sentimiento es puramente elogioso general (`"excelente app"`, `"muy buen banco"`) sin fricción específica.
+
+* **Mecanismo de respaldo semántico:** Cuando ninguna regla léxica de alta precisión dispara un match directo, calcular la similitud coseno entre el `embedding_vector` (768-d) de la reseña y los centroides prototípicos de cada `ABSATopic` (o cabezal lineal entrenado), seleccionando el `argmax`.
+
+### A.4: Entrenamiento, Evaluación EDD y Paridad Dialectal (`train.py`, `evaluate.py`)
+
+**Objetivo:** Proveer los scripts de entrenamiento de los adaptadores Dual LoRA y la suite de **Eval-Driven Development (EDD)** que audita los KPIs técnicos exigidos por la gobernanza de modelos de BBVA: *Negative Recall*, *Eficacia de Desacoplamiento de Ruido* y *Paridad Dialectal* en español mexicano.
+
+#### Tarea A.4.1: Implementar `train.py` y Gestión de Artefactos en GCS
+
+* Permitir entrenar los adaptadores `clean_adapter` y `noisy_adapter` a partir de un dataset en formato Parquet/JSONL o tabla de BigQuery (`sanitized_reviews_tds`), utilizando una función de pérdida conjunta con regularización de separación para que el adaptador limpio maximice la coherencia semántica con el texto mientras el adaptador ruidoso absorbe la transición hacia `estrellas`.
+* Guardar y cargar los pesos de los adaptadores en `gs://voc-datalake-{project_id}/ml_artifacts/delora_v1/`.
+
+#### Tarea A.4.2: Implementar `evaluate.py` con las 3 Métricas de Gobernanza (KPIs)
+
+Implementar la función `evaluate_delora_governance_metrics(...) -> GovernanceEvaluationReport`:
+
+1. **`negative_recall` ($\ge 0.85$ objetivo):** Recall de la clase `SentimentLabel.NEG` sobre el conjunto de evaluación curado, asegurando mínima omisión de quejas legítimas.
+2. **`noise_decoupling_efficacy`:** Porcentaje de reseñas en el subconjunto ruidoso (*Obligatory 5-Star*: texto comprobadamente negativo pero con `estrellas` $\in \{4, 5\}$) donde `tnss_score` predice correctamente `SentimentLabel.NEG` en contraste con un clasificador condicionado a las estrellas.
+3. **`dialect_parity_gap` (*Ethics by Design — Paridad Dialectal*):**
+
+* Evalúa la diferencia absoluta de *Negative Recall* y *F1-Score* entre reseñas en **español estándar** (ej. `"la aplicación no funciona correctamente y presenta errores"`) y reseñas equivalentes con **modismos regionales mexicanos** reales presentes en el corpus del EDA (ej. `"no jala"`, `"se traba bien feo"`, `"chafa"`, `"un batallar"`, `"no pasa de ahí"`, `"a lo menso"`).
+* Verifica que la brecha de precisión $\vert{}\text{Recall}_{\text{estándar}} - \text{Recall}_{\text{modismos\_mx}}\vert{} \le 0.05$ (degradación menor al 5%).
+
+### A.5: Pipeline de Inferencia Incremental hacia BigQuery y Motor de Alertas Pub/Sub (`inference_pipeline.py`, `Dockerfile`)
+
+**Objetivo:** Ejecutar la inferencia por lotes sobre las reseñas nuevas en `sanitized_reviews_tds`, persistir las 15 columnas en `delora_predictions` mediante `MERGE` y emitir alertas `IncidentAlertMessage` hacia `voc-incident-alerts-topic` cuando se detecten anomalías operativas post-release.
+
+#### Tarea A.5.1: Implementar `DeloraBatchInferenceRunner` en `inference_pipeline.py`
+
+1. **Consulta Incremental (Delta de Inferencia):**
+
+* Consultar en BigQuery únicamente los registros de `bbva_voc_tds.sanitized_reviews_tds` (`s`) que no existan aún en `bbva_voc_tds.delora_predictions` (`p`) o cuya `s.sanitized_at > p.fecha` (acotado por `--limit`, default `2000` reseñas por ejecución):
+
+```sql
+SELECT s.id_resena, s.bank_id, s.version_app, s.fecha, s.estrellas, s.votos_utilidad, s.texto_limpio
+FROM `{project}.{dataset}.sanitized_reviews_tds` s
+LEFT JOIN `{project}.{dataset}.delora_predictions` p
+  ON s.bank_id = p.bank_id AND s.id_resena = p.id_resena
+WHERE p.id_resena IS NULL
+ORDER BY s.fecha DESC
+LIMIT @batch_limit
 
 ```
 
-* **Algoritmo de atribución local (LIME / Leave-One-Out Perturbation):**
-* Dado el `texto_limpio` de una reseña (de 2 a 60 palabras según el umbral del EDA), genera las variantes perturbadas ocultando un token (o n-grama de dominio bancario como `ref: 3702`, `reconocimiento facial`, `pantalla azul`, `[MX_CLABE_BANCARIA]`) a la vez.
+1. **Ejecución del Core Analítico y Validación Pydantic:**
 
-* Calcula el cambio marginal en el puntaje de negatividad/severidad $\Delta S_i = S(\text{texto completo}) - S(\text{texto sin token}_i)$ y normaliza los pesos al intervalo $[-1.0, 1.0]$.
-* Identifica qué tokens son los detonantes críticos (*top incident drivers*) cuya ausencia cambiaría la clasificación (explicación contrastiva).
+* Procesar los textos en micro-lotes obteniendo `sentimiento_roberta`, `embedding_vector` (768 floats), `tnss_score`, `tnss_numeric_calibrated`, `is_obligatory_5_star_bias`, `topico`, `priority_weight_score`, `prediction_entropy` y `requires_hitl`.
+* Instanciar y validar cada fila con `AnalyzedReviewPrediction` de `voc-common`.
 
-#### Tarea 6.2.2: Implementar `HitlTriageService` en `hitl_service.py`
+1. **Upsert Idempotente en `bbva_voc_tds.delora_predictions`:**
 
-1. **`list_pending_hitl_reviews(self, bank_id: BankKey | None = None, limit: int = 50) -> list[HitlQueueItem]`**:
+* Crear tabla temporal `bbva_voc_tds._staging_predictions_{run_id}` con TTL de 1 hora, cargar el lote mediante `load_table_from_json` (`FILE_LOADS`), ejecutar `MERGE INTO bbva_voc_tds.delora_predictions` por `ON target.bank_id = source.bank_id AND target.id_resena = source.id_resena` y borrar la tabla temporal en un bloque `finally`.
 
-* Consulta en BigQuery las reseñas donde `p.requires_hitl = TRUE` que aún **no** tengan un registro en `hitl_triage_audit_log`, ordenadas por `p.priority_weight_score DESC, p.prediction_entropy DESC`.
+1. **Detector de Picos de Incidencias y Publicación en `voc-incident-alerts-topic`:**
 
-1. **`submit_human_validation(self, request: HitlDecisionRequest) -> HitlTriageAuditRecord`**:
+* Agrupar las predicciones recién procesadas por `(bank_id, version_app, topico)` donde `tnss_score == SentimentLabel.NEG`.
+* Si para una tupla `(bank_id, version_app, topico)` el conteo de quejas negativas en la ventana supera `spike_min_reviews_threshold` (default `10`) **y** la suma de `votos_utilidad` supera `spike_min_utility_votes` (default `25`, reflejando validación comunitaria alta), construir un `IncidentAlertMessage` con hasta 10 `sample_review_ids` y publicarlo en `projects/{project_id}/topics/{pubsub_alerts_topic}`.
 
-* Recibe la decisión del usuario humano (`id_resena`, `bank_id`, `validated_tnss: SentimentLabel`, `validated_topic: ABSATopic`, `reviewer_email: str`, `backlog_jira_ticket: str | None`).
-* Aplica inmediatamente `hash_username_pii(request.reviewer_email, settings.user_hash_salt)` de `voc-common` para obtener `reviewer_email_hash` (jamás guarda el email en texto plano en BigQuery).
+#### Tarea A.5.2: Implementar `services/ml-delora/Dockerfile`
 
-* Construye y valida `HitlTriageAuditRecord` (EPIC-1 Feature 1.3.5) y lo persiste en `bbva_voc_tds.hitl_triage_audit_log`.
+Construir un `Dockerfile` multi-stage con `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`, usuario no-root (`appuser`), instalando PyTorch CPU y el paquete `ml-delora` desde el workspace, con `ENTRYPOINT ["python", "-m", "ml_delora.inference_pipeline"]`.
 
----
+### A.6: Suite de Pruebas Unitarias, Matemáticas y de Paridad Dialectal (`tests/`)
 
-### FEATURE 6.3: Rutas RESTful en FastAPI y Contenedor Docker (`routes.py`, `main.py`, `Dockerfile`)
+**Objetivo:** Verificar determinísticamente en CI (en menos de 10 segundos y sin descargar modelos pesados de HuggingFace ni conectarse a GCP) toda la arquitectura Dual LoRA, las ecuaciones de calibración/entropía/severidad, el clasificador ABSA y el disparo de alertas.
 
-**Objetivo:** Exponer la API de alto rendimiento con validación estricta Pydantic, CORS configurado para la SPA en React y empaquetado Docker seguro.
+#### Tarea A.6.1: Implementar `test_model_and_scoring.py`, `test_absa_and_dialect.py` y `test_inference_and_alerts.py`
 
-#### Tarea 6.3.1: Implementar Endpoints en `routes.py` y `main.py`
+Escribir pruebas con `pytest` que verifiquen obligatoriamente:
 
-Exponer bajo el prefijo `/api/v1`:
+1. **`test_delora_dual_branch_decoupling_and_dimensions`**:
 
-1. `GET /health`: Estado de salud del servicio `api-backend`.
-2. `GET /api/v1/analytics/satisfaction-gap`: Devuelve `SatisfactionGapReport` (filtrable por `bank_id` y `days_window`).
+* Instanciar `DeloraDualAdapterModel` con una configuración mini/sintética ($d=768$ en la salida de proyección). Verificar que `forward_clean_inference` produzca logits de 3 clases (`NEG`, `NEU`, `POS`), probabilidades que sumen `1.0` y un `embedding_vector` de exactamente **768 floats** sin requerir la entrada `estrellas`.
 
-3. `GET /api/v1/analytics/version-drift`: Devuelve la evolución temporal de quejas por `version_app`.
+1. **`test_tnss_calibration_entropy_and_hitl_thresholds`**:
 
-4. `GET /api/v1/analytics/backlog-ranking`: Devuelve el ranking de tópicos `ABSATopic` ponderado por severidad y votos de utilidad.
+* Para una distribución uniforme $p = (1/3, 1/3, 1/3)$, comprobar que `prediction_entropy` sea `1.0` (`>= 0.65`) y active `requires_hitl = True`.
+* Para una distribución segura $p = (0.95, 0.03, 0.02)$ con `estrellas = 5` (*Obligatory 5-Star*) y `votos_utilidad = 20`, comprobar que `tnss_score == SentimentLabel.NEG`, `is_obligatory_5_star_bias is True`, `tnss_numeric_calibrated` sea cercano a `1.14` (evidenciando un *Satisfaction Gap* de `-3.86` puntos frente a las 5 estrellas) y que `priority_weight_score` pondere logarítmicamente los votos de utilidad.
 
-5. `POST /api/v1/search/semantic`: Recibe una consulta en lenguaje natural (`query_text: str`, `bank_id`, `topico`, `top_k`), genera su vector de 768 dimensiones y retorna los `SemanticSearchHit` más cercanos.
+1. **`test_absa_classification_on_real_eda_examples`**:
 
-6. `GET /api/v1/reviews/{bank_id}/{id_resena}/explanation`: Devuelve `ReviewExplanationResponse` con el mapa de atribución de tokens SHAP/LIME.
+* Probar ejemplos reales del notebook del EDA:
+* `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi"` $\rightarrow$ `ABSATopic.BLOQUEO_SEGURIDAD_3702`.
+* `"pide reconocimiento facial y no la valida dice que es incorrecto"` $\rightarrow$ `ABSATopic.BIOMETRIA_RECONOCIMIENTO`.
+* `"las transferencias spei a otros bancos son muy tardías"` $\rightarrow$ `ABSATopic.TRANSFERENCIAS_SPEI`.
+* `"se queda congelada en la pantalla azul y tengo que borrar caché"` $\rightarrow$ `ABSATopic.RENDIMIENTO_CRASH_POST_RELEASE`.
+* `"desapareció mis apartados y solo se ven unos puntitos en mi saldo"` $\rightarrow$ `ABSATopic.SALDOS_Y_APARTADOS`.
 
-7. `GET /api/v1/hitl/queue`: Lista las reseñas pendientes de validación humana (`requires_hitl = True`).
+1. **`test_mexican_dialect_parity_evaluation`**:
 
-8. `POST /api/v1/hitl/validate`: Registra la decisión humana y devuelve el `HitlTriageAuditRecord` confirmado.
+* Ejecutar `evaluate_delora_governance_metrics` sobre un corpus sintético pareado (español estándar vs. modismos mexicanos como `"no jala la app"`, `"está bien chafa"`, `"puro batallar"`), verificando el cálculo de `negative_recall`, `noise_decoupling_efficacy` y `dialect_parity_gap`.
 
-#### Tarea 6.3.2: Implementar `services/api-backend/Dockerfile`
+1. **`test_bigquery_merge_schema_and_pubsub_spike_alert`**:
 
-Construir `Dockerfile` multi-stage con `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`, usuario no-root `appuser`, instalando `voc-common` y `api-backend` desde `uv.lock`, exponiendo el puerto `8080` con `uvicorn api_backend.main:app --host 0.0.0.0 --port 8080`.
+* Verificar con mocks de BigQuery y Pub/Sub que `DeloraBatchInferenceRunner` serialice exactamente las **15 columnas** de `delora_predictions`, limpie la tabla temporal `_staging_predictions_*` en el bloque `finally`, y emita un `IncidentAlertMessage` válido en `voc-incident-alerts-topic` cuando un tópico supere los umbrales de quejas y votos de utilidad.
 
----
+### A.7: Monitor de *drift* (antes tarea 6.5.1 del portal)
 
-### FEATURE 6.4: Portal Interactivo React SPA para Triaje HITL (`web/hitl-portal/`)
-
-**Objetivo:** Desarrollar la Single Page Application (React + TypeScript + Vite) utilizando la paleta institucional definida en el notebook del EDA (`Azul: #002D72`, `Verde: #215347`, `Vino: #7A1A37`, `Dorado: #B9975B`) para que los stakeholders naveguen por las incidencias y ejecuten el protocolo HITL.
-
-#### Tarea 6.4.1: Implementar los 3 Módulos Visuales en `web/hitl-portal/src/`
-
-1. **`SatisfactionGapDashboard.tsx`:**
-
-* Tarjetas ejecutivas mostrando el Rating Oficial Inercial vs. **TNSS Recalibrado**, el *Satisfaction Gap*, el porcentaje de *Obligatory 5-Star* detectado, la comparativa frente a `NUBANK`, `SANTANDER`, `AZTECA` y `BANORTE`, y el gráfico apilado de quejas por `version_app`.
-
-1. **`VectorRootCauseExplorer.tsx`:**
-
-* Buscador semántico donde el Product Owner escribe una hipótesis de fallo (ej. *"bloqueo por antivirus o accesibilidad código 3702"*), visualiza las reseñas semánticamente más cercanas con sus votos de utilidad y, al hacer clic en una reseña, despliega el **Mapa de Calor de Atribución SHAP/LIME** resaltando en color Vino (`#7A1A37`) los tokens que impulsan la polaridad negativa y en Verde (`#215347`) los positivos.
-
-1. **`HitlTriageQueue.tsx`:**
-
-* Bandeja interactiva que muestra las reseñas con `requires_hitl = True` (alta entropía o alto impacto), permitiendo al revisor confirmar o reclasificar el `tnss_score` (`NEG`/`NEU`/`POS`) y el `ABSATopic`, vincular opcionalmente un ID de ticket de Jira/Backlog y enviar la validación hacia `POST /api/v1/hitl/validate`.
-
----
-
-### FEATURE 6.5: Monitoreo de *Data/Concept Drift* (`drift_monitor.py`) y Artefactos Normativos de Gobernanza (`docs/governance/`)
-
-**Objetivo:** Implementar el monitor estadístico de *Data Drift* y *Concept Drift* con disparo de *Fallback Plan* vía Pub/Sub, y redactar los 3 documentos normativos obligatorios para la auditoría de *Data Governance*, *QA Responsible* y *Compliance* de BBVA.
-
-#### Tarea 6.5.1: Implementar `ModelDriftMonitor` en `services/ml-delora/src/ml_delora/drift_monitor.py`
+#### Tarea A.7.1: Implementar `ModelDriftMonitor` en `services/ml-delora/src/ml_delora/drift_monitor.py`
 
 1. **Detección de *Data Drift* (Divergencia de Entrada):**
 
@@ -260,99 +353,17 @@ Construir `Dockerfile` multi-stage con `ghcr.io/astral-sh/uv:python3.11-bookworm
 
 * Si `data_drift_psi >= 0.25` o `concept_drift_jsd >= 0.20`, construye una alerta crítica y la publica en `voc-incident-alerts-topic` recomendando congelar pesos adaptativos, activar ruteo conservador a HITL y detonar reentrenamiento en Vertex AI.
 
-#### Tarea 6.5.2: Redactar los 3 Artefactos de Gobernanza en `docs/governance/`
-
-Completar con rigor técnico y normativo:
-
-1. **`docs/governance/data_card.md`** (Estándar Gebru et al. / Hutchinson et al. y Norma Data Governance BBVA Código N.º 0000010007):
-
-* Documentar el origen público (Google Play Store México para los 5 bancos), clasificación como *Trusted Data Source (TDS)* en `bbva_voc_tds.sanitized_reviews_tds`, roles asignados (*Data Owner*, *Service Line Owner*), flujo End-to-End de sanitización PII (Cloud DLP NER + 3 detectores REGEX bancarios + regla de exclusión `ref: 3702` + anonimización SHA-256 de usuarios), recorte de colas pesadas (2 a 60 palabras) y análisis de desbalances dialectales.
-
-1. **`docs/governance/model_card.md`** (Estándar Mitchell et al. y Norma de Gobierno de Modelos BBVA NCDATA0001_18):
-
-* Especificar la arquitectura del modelo baseline (`pysentimiento/robertuito-sentiment-analysis`) y la arquitectura **Dual LoRA (*Delora*)** ($\Delta\theta_{\text{clean}}$ vs. $\Delta\theta_{\text{noisy}}$), definición matemática del **TNSS**, métricas auditables (*Negative Recall*, *Eficacia de Desacoplamiento de Ruido*, *Paridad Dialectal* en modismos mexicanos), umbrales de entropía para disparo de HITL (`0.65`) y limitaciones conocidas.
-
-1. **`docs/governance/ethical_fmea_matrix.md`** (Matriz de Análisis de Modos y Efectos de Falla Ética alineada a NIST AI RMF 1.0 e INAI/LFPDPPP):
-
-* Incluir tabla FMEA completa con Severidad ($S$), Ocurrencia ($O$), Detectabilidad ($D$), Número Prioritario de Riesgo ($RPN = S \times O \times D$) y Controles de Mitigación implementados en el monorepo para al menos 6 modos de falla críticos:
-
-1. *Fuga inadvertida de PII bancario (CLABE/Cuenta/Nombre) en reseñas abiertas* $\rightarrow$ Mitigado por Cloud DLP + `LocalRegexFallbackSanitizer` *fail-closed* en `EPIC-4`.
-
-2. *Sesgo de confirmación por Obligatory 5-Star (Label Noise Bias)* $\rightarrow$ Mitigado por desacoplamiento Dual LoRA en `EPIC-5`.
-
-3. *Sesgo dialectal contra modismos regionales mexicanos* $\rightarrow$ Mitigado por pruebas de Paridad Dialectal en `evaluate.py`.
-
-4. *Ocultamiento de códigos diagnósticos de ciberseguridad (`ref: 3702`) por sobre-enmascaramiento DLP* $\rightarrow$ Mitigado por `ExclusionRule` en `EPIC-2` y placeholder con nonce en `EPIC-4`.
-
-5. *Priorización errónea del backlog en predicciones de alta incertidumbre* $\rightarrow$ Mitigado por umbral de entropía (`>= 0.65`) y protocolo obligatorio HITL en `EPIC-6`.
-
-6. *Degradación silenciosa tras nueva actualización de la App (Concept Drift)* $\rightarrow$ Mitigado por `drift_monitor.py` y alertas Pub/Sub.
-
----
-
-### FEATURE 6.6: Suite de Pruebas Unitarias de API, Explicabilidad, HITL y Drift (`tests/`)
-
-**Objetivo:** Certificar con `pytest` y `fastapi.testclient.TestClient` (sin requerir conexión a GCP en CI) todos los endpoints del backend, el motor de atribución de tokens, la bitácora HITL y el detector de *Drift*.
-
-#### Tarea 6.6.1: Implementar `test_api_routes.py`, `test_explainability_and_hitl.py` y `test_drift_monitor.py`
-
-Escribir pruebas deterministas que validen:
-
-1. **`test_satisfaction_gap_and_competitor_benchmark_endpoint`**:
-
-* Verificar que `GET /api/v1/analytics/satisfaction-gap` calcule correctamente el diferencial negativo entre el rating oficial (ej. `4.68`) y el TNSS recalibrado (ej. `3.57`, gap `-1.11`) y devuelva la comparativa de los 5 bancos de `BankKey`.
-
-1. **`test_semantic_vector_search_validation_and_ranking`**:
-
-* Comprobar que `POST /api/v1/search/semantic` valide dimensiones (`768`), filtre por `bank_id` y `ABSATopic`, y ordene los resultados por similitud coseno descendente.
-
-1. **`test_token_attribution_explainer_identifies_incident_keywords`**:
-
-* Pasar la reseña `"pésima actualización se traba la pantalla azul y marca error ref: 3702:65c5:9xhchi"` a `LocalTokenAttributionExplainer`. Verificar que los tokens `"pésima"`, `"traba"` y `"ref: 3702:65c5:9xhchi"` reciban los pesos de atribución más altos con dirección `"TOWARDS_NEG_INCIDENT"`.
-
-1. **`test_hitl_validation_hashes_reviewer_email_and_creates_audit_record`**:
-
-* Enviar una decisión humana a `POST /api/v1/hitl/validate` con `reviewer_email="claudia.martinez@bbva.com"`. Comprobar que el `HitlTriageAuditRecord` insertado en `hitl_triage_audit_log` contenga un `reviewer_email_hash` SHA-256 de 64 caracteres, nunca el email en texto plano, y que refleje el cambio de tópico/TNSS validado.
+#### Prueba (antes en la tarea 6.6.1)
 
 1. **`test_drift_monitor_detects_concept_shift_and_publishes_alert`**:
 
 * Simular un cambio drástico en la distribución de tópicos entre la versión `26.80.11` y `26.90.12` (ej. `BLOQUEO_SEGURIDAD_3702` pasa del 5% al 65% de las quejas). Comprobar que `ModelDriftMonitor` calcule `concept_drift_jsd >= 0.20` y publique una alerta en `voc-incident-alerts-topic`.
 
----
+### Checklist anterior (no vigente)
 
-### FEATURE 6.7: Frontales de Curaduría HITL y Base de Datos de Curadurías (agregado del autor, 2026-10-22)
-
-**Decisión del autor:** todos los aplicativos de curaduría desarrollados en EPIC-5 (sentimiento y tópicos) pertenecen también al frontal de EPIC-6, y se diseña la base de datos que guarda las curadurías para el reentrenamiento. Insumo: sección final de la [nota de decisión](../analytics/topics_decision_note.md).
-
-#### Tarea 6.7.1: Frontales de curaduría en `web/hitl-portal/`
-
-| Prototipo actual (local, EPIC-5) | Pantalla en el portal |
-| :--- | :--- |
-| `annotation/app.py` (Streamlit, 5.3): etiqueta de sentimiento, `menciona_falla`, duda | Cola de sentimiento (`HitlTriageQueue`) |
-| `eda/aspects_app.py` y `eda/aspects_v2_app.py` (Streamlit, 5.2): familias `v2.1`, marcas `u` y `s` | Codificación de aspectos (nueva) |
-| Fichas y CSV de `data/topics/phase4_v0/` (5.5) | Curaduría de tópicos en la revisión trimestral de la fase 4 (nueva) |
-
-* Criterio de terminado: cada pantalla reproduce el flujo del prototipo, escribe en la base de la tarea 6.7.2 y muestra solo texto sanitizado.
-
-#### Tarea 6.7.2: Diseñar la base de datos de curadurías para el reentrenamiento
-
-* Punto de partida: el borrador de tablas de la nota (`curation_sentiment` o ampliar `hitl_triage_audit_log`, `curation_aspects`, `topic_model_versions`, `topic_catalog`, `curation_topics`, `topic_assignments`).
-* Principios: registros inmutables (solo inserción, como `hitl_triage_audit_log`); revisor como hash SHA-256; cada registro guarda la versión de la guía, del modelo y del prompt que produjo la predicción revisada; solo texto sanitizado.
-* Criterio de terminado: esquema con contratos Pydantic, uso en el reentrenamiento (5.4 y 5.7) y fila en la matriz FMEA si almacena texto.
-
----
-
-## ✅ Checklist de Aceptación de la Épica 6 (Cierre del Proyecto)
-
-* [ ] `api-backend` expone los endpoints de KPIs (*Satisfaction Gap*), series de tiempo por versión, búsqueda vectorial de 768 dimensiones, explicabilidad SHAP/LIME y cola de validación HITL.
-
-* [ ] Las decisiones humanas del protocolo HITL se registran de forma inmutable en `bbva_voc_tds.hitl_triage_audit_log` usando `HitlTriageAuditRecord` con el correo del revisor hasheado con SHA-256.
-
-* [ ] `drift_monitor.py` evalúa estadísticamente *Data Drift* (PSI/JSD) y *Concept Drift* entre versiones de la app y emite alertas a `voc-incident-alerts-topic`.
-
-* [ ] Los 3 artefactos de gobernanza (`data_card.md`, `model_card.md` y `ethical_fmea_matrix.md`) están redactados y completos en `docs/governance/`.
-
-* [ ] El portal web en `web/hitl-portal/` compila sin errores de TypeScript (`npm run build`).
-* [ ] Todos los *Quality Gates* del monorepo (`uv run ruff check .`, `uv run ruff format --check .`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r .` y `uv run pytest --cov-fail-under=85`) pasan con **0 errores**.
-
-* [ ] Los frontales de curaduría de sentimiento, aspectos y tópicos están en el portal y escriben en la base de curadurías para el reentrenamiento (6.7).
+* [ ] Genera objetos `AnalyzedReviewPrediction` 100% compatibles con las 15 columnas de `bbva_voc_tds.delora_predictions` en BigQuery, incluyendo `embedding_vector` de 768 dimensiones.
+* [ ] Aísla el sesgo *Obligatory 5-Star* (`is_obligatory_5_star_bias = True` cuando `estrellas >= 4` y `tnss_score == NEG`) y calcula el score continuo `tnss_numeric_calibrated` en escala `[1.0, 5.0]`.
+* [ ] Clasifica los 8 tópicos de `ABSATopic` aprovechando tanto códigos preservados (`ref: 3702`) y tokens DLP (`[MX_CLABE_BANCARIA]`) como similitud semántica.
+* [ ] Opera por defecto en modo batch incremental sobre BigQuery (`FILE_LOADS` + `MERGE` sin *Streaming Inserts*), respetando el modo *Free Tier* (`enable_dedicated_vertex_endpoints: false`).
+* [ ] Emite alertas `IncidentAlertMessage` hacia `voc-incident-alerts-topic` sin exponer PII ni texto crudo.
+* [ ] Los comandos `uv run ruff check services/ml-delora`, `uv run ruff format --check services/ml-delora`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/ml-delora` y `uv run pytest services/ml-delora/tests --cov=services/ml-delora/src --cov-fail-under=85` pasan con **0 errores**.

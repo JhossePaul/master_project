@@ -1,11 +1,11 @@
 # Patrones temporales: trimestres, sprints y quincena (EPIC-5, feature 5.2)
 
-> **Estado (2026-10-19): vigente** (versión 2, que reemplaza a la 1 descrita en el historial). La sección "Respuesta con la plata" ya incorpora el sentimiento del texto. Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): vigente** (versión 2, que reemplaza a la 1 descrita en el historial). La sección "Respuesta con la plata" ya incorpora el sentimiento del texto. Índice: [`README.md`](../README.md).
 
 * **Fecha:** 2026-10-18 (versión 2).
 * **Snapshot:** `tds_20261016T054714Z`, periodo 2020-01-01 a 2026-10-13, con los cinco bancos presentes.
-* **Código:** [`eda_temporal.py`](../../experiments/analytics/src/voc_analytics/eda/eda_temporal.py), con las definiciones compartidas en [`temporal_context.py`](../../experiments/analytics/src/voc_analytics/labeling/temporal_context.py).
-* **Métricas:** [`temporal_metrics.json`](eda/temporal_metrics.json).
+* **Código:** [`eda_temporal.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_temporal.py), con las definiciones compartidas en [`temporal_context.py`](../../../experiments/analytics/src/voc_analytics/labeling/temporal_context.py).
+* **Métricas:** [`temporal_metrics.json`](temporal_metrics.json).
 * **Pregunta:** ¿hay ciclos trimestrales, quincenales o de release que obliguen a cambiar el diseño muestral de la plata?
 
 ## Hipótesis del autor
@@ -75,7 +75,7 @@
 2. **La mezcla de estrellas cambia distinto según el banco:**
    * **BBVA y AZTECA:** la quincena es igual en todas las estrellas y la mezcla no cambia (BBVA: 28.2 % de 1★ en quincena y en el resto).
    * **SANTANDER:** suben más las estrellas bajas, y el 1★ pasa de 16.4 % a 19.5 %.
-   * **NUBANK:** suben más las altas. El 5★ pasa de 72.1 % a 76.4 % y el 1★ baja de 15.2 % a 12.0 %. El efecto es irregular entre años (4 de 7) y concentrado en el día 1 y del 13 al 17 ([figura](eda/figures/temporal_day_of_month.png)). Es compatible con campañas o peticiones de calificación ligadas al depósito, no con incidencias.
+   * **NUBANK:** suben más las altas. El 5★ pasa de 72.1 % a 76.4 % y el 1★ baja de 15.2 % a 12.0 %. El efecto es irregular entre años (4 de 7) y concentrado en el día 1 y del 13 al 17 ([figura](figures/temporal_day_of_month.png)). Es compatible con campañas o peticiones de calificación ligadas al depósito, no con incidencias.
    * Como advierte el autor, **nada de esto dice si esas reseñas son negativas**: un 5★ de quincena puede describir una falla.
 3. **Los días pico se concentran en quincena en todas las series** (los cinco bancos juntos, 19.7 % esperado):
 
@@ -121,7 +121,7 @@
 
 ## Respuesta con la plata
 
-Con el sentimiento del texto y dentro de cada banco × estrellas ([reporte de la plata](silver_v0_report.md)):
+Con el sentimiento del texto y dentro de cada banco × estrellas ([reporte de la plata](../labeling/silver_v0_report.md)):
 
 * **Quincena:** las 5★ de quincena no son más negativas.
 * **Días pico:** en SANTANDER y AZTECA las 5★ y las 3★ esconden más quejas, un patrón de incidencia.

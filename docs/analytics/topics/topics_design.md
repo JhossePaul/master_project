@@ -1,6 +1,6 @@
 # Plan de diseño de 5.5: tópicos y decisión sobre ABSA
 
-> **Estado (2026-10-20): aprobado por el autor (`v1`).** Aún no implementado. Dueño: hilo "Tópicos". Código futuro en `experiments/analytics/src/voc_analytics/topics/`. Contexto: [feature 5.5 en `epic_5.md`](../backlog/epic_5.md), [EDA 5.2](eda_report.md#52-proporción-multi-aspecto-de-las-negativas), [EDA temporal](eda_temporal_report.md), [guía de aspectos `v1`](eda_aspects_guideline.md), [reglas de elegibilidad](eligibility_rules.md).
+> **Estado (2026-10-20): aprobado por el autor (`v1`).** Aún no implementado. Dueño: hilo "Tópicos". Código futuro en `experiments/analytics/src/voc_analytics/topics/`. Contexto: [feature 5.5 en `epic_5.md`](../../backlog/epic_5.md), [EDA 5.2](../eda/eda_report.md#52-proporción-multi-aspecto-de-las-negativas), [EDA temporal](../eda/eda_temporal_report.md), [guía de aspectos `v1`](../eda/eda_aspects_guideline.md), [reglas de elegibilidad](../eda/eligibility_rules.md).
 > * **Cambios contra el borrador (`v0`):** ajuste global de BERTopic con `topics_over_time` como vía principal; las 10 familias pasan de alternativa a referencia de evaluación y núcleo estable; `DS` se reemplaza por `DV`, `UX` y `FQ` más una marca `u` de actualización, con una prueba de separación con regla de decisión fijada de antemano; análisis por versión con normalización por banco; hipótesis temporales declaradas de antemano. Se tomó en cuenta una revisión externa (Gemini) que proponía tópicos dinámicos sin ABSA; se adoptaron sus puntos de ingeniería y se rechazó descartar la taxonomía (sección 4.4).
 
 ## 1. Qué hay que decidir
@@ -53,7 +53,7 @@ Barrer el umbral k (1–10 palabras) y medir por k: fracción con problema concr
 
 **Aprobado por el autor (2026-10-20):** se reabre 5.2 en un *fork* de Datos y EDA para la guía de aspectos `v2` y el prompt `aspects_v2`. Este hilo fija los criterios y consume el resultado.
 
-> **Resultado (2026-10-21): taxonomía final `v2.1`** ([EDA, sección 5.2.1](eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55)). Con `v2`, `DV` cumplió la regla y `UX` no (κ 0.55), y `FQ` se fusionó con `UX`. Como el bajo acuerdo de `UX` venía de su frontera con `CO`, `AC` y `PR`, y no de `DV`, el autor decidió (desviación documentada) mover la instalación y la actualización a `CO` y todo el token a `AC`, en lugar de fusionar `DV` con `UX`. Con `v2.1`, `UX` tiene κ 0.74 y `DV` κ 0.74; `DV` queda separado aunque su prevalencia es 1.8 %. Son 11 familias y dos marcas ortogonales: `u` (actualización, κ 0.70, usable como señal) y `s` (seguridad, no concluyente). Multi-aspecto: 24.7 % [22.6, 26.8]. Las subsecciones 6.1 a 6.4 quedan como registro del plan.
+> **Resultado (2026-10-21): taxonomía final `v2.1`** ([EDA, sección 5.2.1](../eda/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55)). Con `v2`, `DV` cumplió la regla y `UX` no (κ 0.55), y `FQ` se fusionó con `UX`. Como el bajo acuerdo de `UX` venía de su frontera con `CO`, `AC` y `PR`, y no de `DV`, el autor decidió (desviación documentada) mover la instalación y la actualización a `CO` y todo el token a `AC`, en lugar de fusionar `DV` con `UX`. Con `v2.1`, `UX` tiene κ 0.74 y `DV` κ 0.74; `DV` queda separado aunque su prevalencia es 1.8 %. Son 11 familias y dos marcas ortogonales: `u` (actualización, κ 0.70, usable como señal) y `s` (seguridad, no concluyente). Multi-aspecto: 24.7 % [22.6, 26.8]. Las subsecciones 6.1 a 6.4 quedan como registro del plan.
 
 ### 6.1 Códigos de prueba (guía `v2-draft`)
 
@@ -92,7 +92,7 @@ La vía A no depende de la guía y arranca de inmediato. La vía B espera a `asp
 * Normalización **por banco** según su esquema (NUBANK publica semanalmente; `Major.Minor` no es comparable entre bancos); se excluyen `BETA`.
 * Análisis por versión solo con ≥ 50 negativas; las demás se agrupan. Cobertura de `UNKNOWN` reportada (8.8 %).
 * `version_app` ya es la versión instalada al escribir; no se imputa salvo en `UNKNOWN`.
-* La comparación entre versiones consecutivas se hace contra una línea base temporal (tendencia, quincena, jueves en NUBANK; ver [EDA temporal](eda_temporal_report.md)), no solo versión n contra n−1.
+* La comparación entre versiones consecutivas se hace contra una línea base temporal (tendencia, quincena, jueves en NUBANK; ver [EDA temporal](../eda/eda_temporal_report.md)), no solo versión n contra n−1.
 
 ### 7.2 Señal
 Crecimiento anómalo de la proporción de un tópico o familia (con y sin marca `u`) por banco × versión y en ventana de 7 días contra su línea base móvil (z robusto o EWMA/Poisson sobre conteos). Prueba hacia atrás con los picos del EDA (BBVA 2024-07, 2025-10, 2025-11) y los días pico de SANTANDER y AZTECA con 5★ que esconden quejas, en dos escalones: (1) por mes y versión con la plata ponderada, sin costo; (2) solo si (1) no basta y con aprobación del autor, M4 en local (MPS) únicamente sobre esas ventanas con ~60 días de línea base (decenas de miles de textos, minutos). Los umbrales operativos se calibran en 5.7. Métricas: recall de picos conocidos, días de adelanto contra el pico de volumen de negativas, falsos positivos por banco-mes. Con pocos incidentes conocidos, el resultado es ilustrativo y se declara.
@@ -121,7 +121,7 @@ Revisión del autor de los ~20 tópicos principales (coherencia 1–5, utilidad 
 
 ## 11. Entregables
 1. `topics/`: muestra estratificada, embeddings, BERTopic global y por ventana, alineación con familias, barrido de `TOPIC_TOO_SHORT`, normalización de versiones, señal de incidentes.
-2. `docs/analytics/topics_report.md` y `topics_metrics.json` (solo agregados y ejemplos sintéticos).
+2. `docs/analytics/topics/topics_report.md` y `topics_metrics.json` (solo agregados y ejemplos sintéticos).
 3. Sección 5.5 de `epic_5.md` con la recomendación y su costo de operación.
 4. Nota de entrada para el registro de decisión (5.8).
 

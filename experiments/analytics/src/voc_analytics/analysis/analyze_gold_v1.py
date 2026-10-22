@@ -4,7 +4,7 @@ Uso (desde experiments/analytics):
     uv run python -m voc_analytics.analysis.analyze_gold_v1
 
 Lee la cola, el diseño y las anotaciones de `data/labels/gold_v1/` (fuera de
-git) y escribe `docs/analytics/gold_v1_metrics.json`, solo agregados.
+git) y escribe `docs/analytics/labeling/gold_v1_metrics.json`, solo agregados.
 
 * **El oro *test* no se compara con ningún modelo** (ni Gemini ni estrellas):
   queda para 5.8. De *test* solo se usan medidas del etiquetado que no
@@ -28,7 +28,7 @@ from voc_analytics.paths import DATA, DOCS, LABELS
 
 GOLD = LABELS / "gold_v1"
 SNAPSHOT = DATA / "tds_20261016T054714Z.parquet"
-OUT = DOCS / "gold_v1_metrics.json"
+OUT = DOCS / "labeling" / "gold_v1_metrics.json"
 CRITERIA = ["neu", "cinco_neg", "pico_3_4", "desacuerdo", "incertidumbre_m1"]
 # Notas del anotador sobre quejas por falta de claridad o comunicación del
 # banco (decisiones que parecen unilaterales: ubicación, montos, bloqueos).

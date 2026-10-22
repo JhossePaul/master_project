@@ -104,6 +104,7 @@ gcp-key*.json
 
 # ======================================================
 # Evidencia de experimentos de explotación del endpoint
+# (experiments/playstore/evidence/; el patrón cubre cualquier nivel)
 # ======================================================
 evidence/
 

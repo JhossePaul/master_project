@@ -1,12 +1,12 @@
 # EDA global del TDS (EPIC-5, feature 5.2) — primera pasada
 
-> **Estado (2026-10-20): vigente.** Los hallazgos H1–H10 y los conteos siguen valiendo para el snapshot `tds_20261016T054714Z`. Índice: [`README.md`](README.md).
-> * **Resuelto después:** el proxy de incongruencia lo midieron el oro y la plata (estrellas distintas del texto en 10–13 %; ver [`gold_v1`](gold_v1_report.md), sección 2, y la [plata](silver_v0_report.md)); la limpieza por familia la cerró 5.4 (`texto_sanitizado`; [competencia de modelos](sentiment_models_v0_report.md), sección 2).
+> **Estado (2026-10-20): vigente.** Los hallazgos H1–H10 y los conteos siguen valiendo para el snapshot `tds_20261016T054714Z`. Índice: [`README.md`](../README.md).
+> * **Resuelto después:** el proxy de incongruencia lo midieron el oro y la plata (estrellas distintas del texto en 10–13 %; ver [`gold_v1`](../labeling/gold_v1_report.md), sección 2, y la [plata](../labeling/silver_v0_report.md)); la limpieza por familia la cerró 5.4 (`texto_sanitizado`; [competencia de modelos](../sentiment/sentiment_models_v0_report.md), sección 2).
 > * **Cerrado el 2026-10-20 ([sección 5](#5-pendientes-cerrados-tokens-multi-aspecto-y-léxico)):** longitud en tokens, proporción multi-aspecto de las negativas y cobertura del léxico para reseñas de una palabra.
-> * **Feature 5.2 cerrada (2026-10-21), incluida la guía de aspectos `v2.1` ([sección 5.2.1](#521-guía-de-aspectos-v2-y-v21-reapertura-para-55)):** la [*Data Card*](../governance/data_card.md) `v0.2` incorpora la sección 5. 5.2 se reabrió el 2026-10-20 porque 5.5 va a usar a Gemini para codificar aspectos, y se cerró con la taxonomía final `v2.1`. Se reabre otra vez si hay un snapshot nuevo.
+> * **Feature 5.2 cerrada (2026-10-21), incluida la guía de aspectos `v2.1` ([sección 5.2.1](#521-guía-de-aspectos-v2-y-v21-reapertura-para-55)):** la [*Data Card*](../../governance/data_card.md) `v0.2` incorpora la sección 5. 5.2 se reabrió el 2026-10-20 porque 5.5 va a usar a Gemini para codificar aspectos, y se cerró con la taxonomía final `v2.1`. Se reabre otra vez si hay un snapshot nuevo.
 
-* **Snapshot:** `tds_20261016T054714Z` (2 649 047 reseñas, 5 bancos, 2011-04-01 a 2026-10-14). Ver [`experiments/analytics/README.md`](../../experiments/analytics/README.md).
-* **Reproducible:** [`eda_global.py`](../../experiments/analytics/src/voc_analytics/eda/eda_global.py) genera [`eda/metrics.json`](eda/metrics.json) y las figuras. Solo publica agregados y frases genéricas repetidas al menos 500 veces y de hasta 4 palabras.
+* **Snapshot:** `tds_20261016T054714Z` (2 649 047 reseñas, 5 bancos, 2011-04-01 a 2026-10-14). Ver [`experiments/analytics/README.md`](../../../experiments/analytics/README.md).
+* **Reproducible:** [`eda_global.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_global.py) genera [`eda/metrics.json`](metrics.json) y las figuras. Solo publica agregados y frases genéricas repetidas al menos 500 veces y de hasta 4 palabras.
 * **Alcance de esta pasada:** volumen, duplicados, longitud, contenido, idioma, estrellas, votos, deriva temporal y parámetros de las reglas de elegibilidad (5.1).
 * **Pendiente para 5.2:**
   * proxy de incongruencia estrellas–texto y estimación de reseñas multi-aspecto (requieren el piloto de etiquetado de 5.3);
@@ -38,11 +38,11 @@ Distribución de estrellas por banco (% de filas):
 | NUBANK | 14.4 | 3.0 | 3.6 | 5.8 | 73.2 |
 | SANTANDER | 15.9 | 3.6 | 5.2 | 12.0 | 63.3 |
 
-![Reseñas por mes y banco](eda/figures/monthly_volume.png)
+![Reseñas por mes y banco](figures/monthly_volume.png)
 
-![Estrellas promedio por año](eda/figures/yearly_stars.png)
+![Estrellas promedio por año](figures/yearly_stars.png)
 
-![Reseñas de una sola palabra por año](eda/figures/yearly_single_word.png)
+![Reseñas de una sola palabra por año](figures/yearly_single_word.png)
 
 Las tablas de cada figura están en `eda/metrics.json` (`yearly`, `stars_by_bank` y los conteos mensuales que produce el script).
 
@@ -107,7 +107,7 @@ Segunda pasada (2026-10-20), con el mismo snapshot. Cada análisis es un módulo
 
 ### 5.1 Longitud en tokens
 
-[`eda_tokens.py`](../../experiments/analytics/src/voc_analytics/eda/eda_tokens.py) → [`eda/tokens_metrics.json`](eda/tokens_metrics.json). Mide `texto_sanitizado` con el preprocesamiento de los modelos (`preprocess_tweet`) y sin truncar, en los 1 427 640 textos únicos de ese campo, ponderando por filas. Corre en ~3 min de CPU.
+[`eda_tokens.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_tokens.py) → [`eda/tokens_metrics.json`](tokens_metrics.json). Mide `texto_sanitizado` con el preprocesamiento de los modelos (`preprocess_tweet`) y sin truncar, en los 1 427 640 textos únicos de ese campo, ponderando por filas. Corre en ~3 min de CPU.
 
 | Tokenizador | p50 | p95 | p99 | p99.9 | Máx. | Filas > 128 | Filas > 512 | Tokens por palabra |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -118,19 +118,19 @@ Segunda pasada (2026-10-20), con el mismo snapshot. Cada análisis es un módulo
 * **Por banco × periodo** (`sampling.strata`), el p99 va de 64 a 126 tokens con RoBERTuito y de 67 a 146 con BETO. El estrato con más truncado es NUBANK `<=2019` (0.6 % y 1.1 %), que de todos modos queda fuera por `TNSS_TIME_OUTLIER`.
 * **Por texto único** la cola es más larga (p99 97 con RoBERTuito) porque los textos cortos se repiten. El costo de inferencia por texto único casi no cambia con el tope.
 
-![Cola de la longitud en tokens](eda/figures/tokens_ccdf.png)
+![Cola de la longitud en tokens](figures/tokens_ccdf.png)
 
 ### 5.2 Proporción multi-aspecto de las negativas
 
-[`eda_aspects.py`](../../experiments/analytics/src/voc_analytics/eda/eda_aspects.py) → [`eda/aspects_v0_metrics.json`](eda/aspects_v0_metrics.json) y [`eda/aspects_v1_metrics.json`](eda/aspects_v1_metrics.json); guía: [`eda_aspects_guideline_v1.md`](eda_aspects_guideline_v1.md). Informa la elección entre ABSA y tópicos de 5.5.
+[`eda_aspects.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_aspects.py) → [`eda/aspects_v0_metrics.json`](aspects_v0_metrics.json) y [`eda/aspects_v1_metrics.json`](aspects_v1_metrics.json); guía: [`eda_aspects_guideline_v1.md`](archive/eda_aspects_guideline_v1.md). Informa la elección entre ABSA y tópicos de 5.5.
 
 > **Reabierta y cerrada con la guía `v2.1` (2026-10-21).** Las cifras de esta sección son de `v1`. La guía de aspectos se rehízo para 5.5: los resultados y la taxonomía final están en la [sección 5.2.1](#521-guía-de-aspectos-v2-y-v21-reapertura-para-55). El multi-aspecto de `v1` estaba inflado por su regla 3 (32.1 %); con `v2.1` es 24.7 %.
 
 * **Muestra:** 1 500 extracciones con reemplazo de las filas `NEG` de la plata (`prompt_v3`), con probabilidad proporcional a 1 / π. Representan ~706 000 filas negativas elegibles y sus proporciones estiman las de la población sin pesos. Son 1 434 textos únicos.
-* **Codificación:** Gemini (`gemini-3.6-flash`, Vertex AI dentro de GCP) con 10 familias de problema (acceso, falla general, lentitud, transferencias y pagos, dinero y cargos, productos, atención, diseño y actualizaciones, compatibilidad, otro), según la [guía de aspectos `v1`](eda_aspects_guideline_v1.md). Un mismo problema cuenta una vez, con su familia más específica, y se marca aparte si la queja trae un elogio concreto. Dos rondas, $0.17 en total:
+* **Codificación:** Gemini (`gemini-3.6-flash`, Vertex AI dentro de GCP) con 10 familias de problema (acceso, falla general, lentitud, transferencias y pagos, dinero y cargos, productos, atención, diseño y actualizaciones, compatibilidad, otro), según la [guía de aspectos `v1`](archive/eda_aspects_guideline_v1.md). Un mismo problema cuenta una vez, con su familia más específica, y se marca aparte si la queja trae un elogio concreto. Dos rondas, $0.17 en total:
   * `aspects_v0` (prompt sin guía escrita);
   * **`aspects_v1` (vigente):** sigue la guía `v1`, que hace explícito "sin problema concreto" y suma `DS` cuando el texto culpa a una actualización. Las cifras de abajo son de `v1`; `v0` dio la misma proporción poblacional (32.1 %).
-* **Validación del autor:** 100 de esos textos, codificados a ciegas con [`aspects_app.py`](../../experiments/analytics/src/voc_analytics/eda/aspects_app.py) (ver abajo).
+* **Validación del autor:** 100 de esos textos, codificados a ciegas con [`aspects_app.py`](../../../experiments/analytics/src/voc_analytics/eda/aspects_app.py) (ver abajo).
 
 | Medida (filas `NEG` elegibles) | Proporción | IC 95 % |
 | :--- | ---: | :--- |
@@ -154,11 +154,11 @@ Segunda pasada (2026-10-20), con el mismo snapshot. Cada análisis es un módulo
   * **Por código** el acuerdo es bueno en lentitud (κ 0.81), acceso (0.70), transferencias (0.67) y productos (0.65), y bajo en diseño (0.39), dinero y cargos (0.26) y compatibilidad (≈ 0, casi sin casos).
   * **Lectura:** el 32 % de Gemini es una **cota inferior**. Con el criterio del autor la proporción ronda el 44 %, con un IC amplio por n = 100. La conclusión para 5.5 no cambia: un tercio o más de las negativas mezcla problemas. Para usar a Gemini como codificador de aspectos a escala, falta afinar la definición de `DS` (guía `v2`).
 * **La cota por palabras clave** (expresiones regulares, sin modelo) da 38 % sobre toda la plata `NEG`, pero coincide poco con Gemini (κ 0.42 en la decisión multi o no). No sirve como medición, solo como cota.
-* **Implicación para 5.5:** un tercio de las quejas mezcla problemas, y la mitad de las de 20 palabras o más. Un modelo de un tópico por reseña asignaría mal esas reseñas, así que conviene un esquema que permita varios aspectos (ABSA o tópicos por oración o cláusula). Las negativas de 1 a 5 palabras casi nunca son multi-aspecto. **Corregido (2026-10-21):** antes decía que casi nunca tienen un problema concreto, y no se sostiene. Según 5.5, nombran un problema concreto el 4 % [1, 18] de las negativas de una palabra, el 46 % [33, 60] de las de 2 y el 77 % [70, 83] de las de 3 a 5; lo que casi nunca son es multi-aspecto (0–4 %) ([`topics_report.md`](topics_report.md#43-topic_too_short-k--1-se-confirma-con-v21-y-los-5-bancos), sección 4.3; confirmadas con `aspects_v2_1` y los 5 bancos). Para `TOPIC_TOO_SHORT`, 5.5 recomienda k = 1, pendiente de la decisión del autor.
+* **Implicación para 5.5:** un tercio de las quejas mezcla problemas, y la mitad de las de 20 palabras o más. Un modelo de un tópico por reseña asignaría mal esas reseñas, así que conviene un esquema que permita varios aspectos (ABSA o tópicos por oración o cláusula). Las negativas de 1 a 5 palabras casi nunca son multi-aspecto. **Corregido (2026-10-21):** antes decía que casi nunca tienen un problema concreto, y no se sostiene. Según 5.5, nombran un problema concreto el 4 % [1, 18] de las negativas de una palabra, el 46 % [33, 60] de las de 2 y el 77 % [70, 83] de las de 3 a 5; lo que casi nunca son es multi-aspecto (0–4 %) ([`topics_report.md`](../topics/topics_report.md#43-topic_too_short-k--1-se-confirma-con-v21-y-los-5-bancos), sección 4.3; confirmadas con `aspects_v2_1` y los 5 bancos). Para `TOPIC_TOO_SHORT`, 5.5 recomienda k = 1, pendiente de la decisión del autor.
 
 #### 5.2.1 Guía de aspectos `v2` y `v2.1` (reapertura para 5.5)
 
-[`eda_aspects_v2.py`](../../experiments/analytics/src/voc_analytics/eda/eda_aspects_v2.py) → [`eda/aspects_v2_metrics.json`](eda/aspects_v2_metrics.json) (regla de decisión, tal como se fijó) y [`eda/aspects_v2_1_metrics.json`](eda/aspects_v2_1_metrics.json) (taxonomía final). Guía: [`eda_aspects_guideline.md`](eda_aspects_guideline.md) (`v2.1`). La `v2` está congelada en [`eda_aspects_guideline_v2.md`](eda_aspects_guideline_v2.md).
+[`eda_aspects_v2.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_aspects_v2.py) → [`eda/aspects_v2_metrics.json`](aspects_v2_metrics.json) (regla de decisión, tal como se fijó) y [`eda/aspects_v2_1_metrics.json`](aspects_v2_1_metrics.json) (taxonomía final). Guía: [`eda_aspects_guideline.md`](eda_aspects_guideline.md) (`v2.1`). La `v2` está congelada en [`eda_aspects_guideline_v2.md`](archive/eda_aspects_guideline_v2.md).
 
 * **Por qué se reabrió:** 5.5 va a usar a Gemini para codificar aspectos, y `DS` (diseño y actualizaciones) tenía κ 0.39 con `v1`. Además, la regla 3 de `v1` sumaba `DS` a todo problema atribuido a una actualización, lo que inflaba el multi-aspecto.
 * **Taxonomía final (`v2.1`), 11 familias y dos marcas:**
@@ -210,7 +210,7 @@ Segunda pasada (2026-10-20), con el mismo snapshot. Cada análisis es un módulo
 
 ### 5.3 Léxico determinista para reseñas de una palabra
 
-[`eda_lexicon.py`](../../experiments/analytics/src/voc_analytics/eda/eda_lexicon.py) → [`eda/lexicon_metrics.json`](eda/lexicon_metrics.json). Insumo para la decisión de `TNSS_SINGLE_WORD` en 5.8.
+[`eda_lexicon.py`](../../../experiments/analytics/src/voc_analytics/eda/eda_lexicon.py) → [`eda/lexicon_metrics.json`](lexicon_metrics.json). Insumo para la decisión de `TNSS_SINGLE_WORD` en 5.8.
 
 * **Forma:** `texto_limpio` en minúsculas, sin acentos ni signos y sin letras repetidas seguidas ("Excelenteee!!" → "excelente").
 * **Léxico:** formas de una palabra de la plata, sin reseñas del oro, con al menos 3 filas y una pureza ponderada de al menos 0.9. La etiqueta es la mayoritaria de Gemini. Resultan **151 formas**: 117 `POS`, 22 `NEG`, 7 `NEU` y 5 no evaluables.

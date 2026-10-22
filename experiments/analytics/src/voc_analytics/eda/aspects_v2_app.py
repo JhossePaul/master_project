@@ -11,7 +11,7 @@ cada codificación a `data/eda/aspects_v2/<cola>_annotations.csv`, fuera de
 git. Corregir un texto agrega otra fila; al analizar gana la última por
 `item`.
 
-Sigue `docs/analytics/eda_aspects_guideline.md`. Las familias se muestran
+Sigue `docs/analytics/eda/eda_aspects_guideline.md`. Las familias se muestran
 agrupadas en el orden de decisión de la guía `v2.1`, para bajar la carga
 cognitiva. No muestra la salida de Gemini, ni estrellas, ni banco, ni el
 origen del texto (enriquecido o aleatorio). En una recodificación no
@@ -71,7 +71,7 @@ GROUPS = [
     ("4 · Último recurso", ["OT"]),
 ]
 # Guía `v2.1` en tablas para el pie; resume
-# docs/analytics/eda_aspects_guideline.md.
+# docs/analytics/eda/eda_aspects_guideline.md.
 FAMILIES = [
     (
         "AC",
@@ -229,7 +229,7 @@ def guide_footer(guideline: str) -> None:
         st.markdown("**Reglas**")
         st.markdown(table(("Regla", "Cómo"), RULES))
         st.caption(
-            "Guía completa: docs/analytics/eda_aspects_guideline.md. Esta "
+            "Guía completa: docs/analytics/eda/eda_aspects_guideline.md. Esta "
             f"cola se codifica con {guideline}."
         )
 

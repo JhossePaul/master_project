@@ -11,7 +11,7 @@ Compara la primera ronda (`gold_v0`, guía v0) con la re-anotación
 (`gold_v0_r2`, guía vigente, todo a ciegas) y evalúa cada prompt contra el oro
 re-anotado. Las corridas de Gemini se toman de `gold_v0/run_*.json` (la primera
 corrida de cada versión es la principal; la segunda mide estabilidad). Escribe
-`docs/analytics/gold_v0_r2_metrics.json`, solo agregados.
+`docs/analytics/labeling/gold_v0_r2_metrics.json`, solo agregados.
 """
 
 import json
@@ -30,7 +30,7 @@ from voc_analytics.labeling.agreement import (
 from voc_analytics.paths import DOCS, LABELS
 
 FIRST, SECOND = LABELS / "gold_v0", LABELS / "gold_v0_r2"
-OUT = DOCS / "gold_v0_r2_metrics.json"
+OUT = DOCS / "labeling" / "gold_v0_r2_metrics.json"
 BOOTSTRAP = 2000
 SEED = 20261018
 

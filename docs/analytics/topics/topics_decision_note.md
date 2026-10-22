@@ -1,12 +1,12 @@
 # Nota para el registro de decisión: estrategia de tópicos e incidentes (5.5 → 5.8)
 
-> **Estado (2026-10-22): aprobada por el autor, con un agregado: los flujos de curaduría y su almacenamiento son requisitos de EPIC-6 (sección final).** Resume la recomendación de 5.5 para `decision_record.md` (5.8). Evidencia completa: [`topics_report.md`](topics_report.md); plan: [`topics_design.md`](topics_design.md). Solo agregados.
+> **Estado (2026-10-22): aprobada por el autor, con un agregado: los flujos de curaduría son requisitos de EPIC-7 y su almacenamiento de EPIC-6 (sección final; numeración del backlog reorganizado el 2026-10-22).** Resume la recomendación de 5.5 para `decision_record.md` (5.8). Evidencia completa: [`topics_report.md`](topics_report.md); plan: [`topics_design.md`](topics_design.md). Solo agregados.
 
 ## Decisión (aprobada el 2026-10-22)
 
 **Híbrido con roles separados:**
 
-1. **Núcleo de medición:** familias de aspectos `aspects_v2_1` (Gemini, multi-etiqueta, 11 familias; [guía](eda_aspects_guideline.md)) sobre cada reseña negativa elegible, con métricas por banco × periodo.
+1. **Núcleo de medición:** familias de aspectos `aspects_v2_1` (Gemini, multi-etiqueta, 11 familias; [guía](../eda/eda_aspects_guideline.md)) sobre cada reseña negativa elegible, con métricas por banco × periodo.
 2. **Alerta de regresión:** la marca `u` (problema atribuido a una actualización), complementada por las series de las familias, que explican el incidente.
 3. **Capa de detalle:** tópicos BERTopic por cláusulas (MiniLM), reajustados cada trimestre y curados por una persona, para dos audiencias: producto (negocio) e ingeniería.
 
@@ -57,9 +57,9 @@ Los tópicos **no demostraron** descubrir temas fuera de la taxonomía en este c
 
 Todo se midió sobre la plata `silver_v0` (40 382 negativas únicas, ponderadas por 1 / π). Las familias son etiquetas de Gemini (κ con el autor de 0.55 a 0.86; entre corridas de Gemini, `DV` 0.58 y `OT` 0.22). Solo hay 3 incidentes conocidos para la prueba hacia atrás, así que la señal es ilustrativa. Hay un único anotador humano.
 
-## Agregado del autor (2026-10-22): curaduría HITL en EPIC-6
+## Agregado del autor (2026-10-22): curaduría HITL en EPIC-6 y EPIC-7
 
-**Decisión del autor:** las aplicaciones de curaduría que se usaron para el sentimiento, los aspectos y los tópicos forman parte del frontal HITL de [EPIC-6](../backlog/epic_6.md). Además, se diseña una base de datos que guarde cada curaduría para el reentrenamiento. Esta sección es el insumo de 5.5. La especificación de EPIC-6 (`docs/backlog/`), los contratos (`docs/contracts/`) y la infraestructura no son rutas de 5.5: los adopta su dueño.
+**Decisión del autor:** las aplicaciones de curaduría que se usaron para el sentimiento, los aspectos y los tópicos forman parte del frontal HITL de [EPIC-7](../../backlog/epic_7.md) (feature 7.7). Además, se diseña una base de datos que guarde cada curaduría para el reentrenamiento ([EPIC-6](../../backlog/epic_6.md), feature 6.2). Esta sección es el insumo de 5.5. La especificación de EPIC-6 y EPIC-7 (`docs/backlog/`), los contratos (`docs/contracts/`) y la infraestructura no son rutas de 5.5: los adopta su dueño.
 
 ### Prototipos que pasan al frontal
 
@@ -82,7 +82,7 @@ Principios: los registros son inmutables (solo se inserta, como en `hitl_triage_
 | `curation_topics` | Tópico × versión × decisión | `topic_model_version`, `topic_id`, `curated_name`, `coherence_1_5`, `audience` (producto, ingeniería, sin valor), `families[]`, `is_new_theme`, `mapping_confirmed`, `curator_hash`, `curated_at` | Conservar nombres y audiencias entre reajustes; descartar el ruido; detectar temas nuevos |
 | `topic_assignments` | Reseña (o cláusula) × versión | `id_resena`, `segment_index`, `topic_model_version`, `topic_id` | Series por tópico y señal |
 
-### Discrepancias de `epic_6.md` con la evidencia de 5.5 (a reconciliar por su dueño)
+### Discrepancias de `epic_7.md` (antes `epic_6.md`) con la evidencia de 5.5 (registradas en las tablas de decisiones heredadas de `epic_6.md` y `epic_7.md`)
 
 * **Tópicos:** asume los 8 `ABSATopic` de `voc_common.constants` como taxonomía (`get_prioritized_backlog_topics`, `predicted_topic` y el *concept drift*). La taxonomía validada son las 11 familias multi-etiqueta de `v2.1` más las marcas `u` y `s`, y una reseña puede tener varias familias; los tópicos son una capa aparte con versión.
 * **Embeddings:** asume `embedding_vector` de 768 dimensiones del modelo Delora. 5.4 descartó Delora (M8), y los tópicos usan MiniLM (384 dimensiones). La búsqueda semántica necesita decidir su encoder (5.7 o 5.8).

@@ -1,17 +1,17 @@
 # Conjunto de plata, primera versión (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): vigente.** `silver_v0` es la plata con la que se entrenan los modelos de 5.4. Índice: [`README.md`](README.md).
-> * **Cambio posterior:** 5.4 excluye del entrenamiento las reseñas de todas las colas del oro, incluida `gold_v1` ([competencia de modelos](sentiment_models_v0_report.md), al inicio). Las cifras de este reporte no cambian.
+> **Estado (2026-10-19): vigente.** `silver_v0` es la plata con la que se entrenan los modelos de 5.4. Índice: [`README.md`](../README.md).
+> * **Cambio posterior:** 5.4 excluye del entrenamiento las reseñas de todas las colas del oro, incluida `gold_v1` ([competencia de modelos](../sentiment/sentiment_models_v0_report.md), al inicio). Las cifras de este reporte no cambian.
 
 * **Corrida:** `20261019T011518Z`.
   * Modelo `gemini-3.6-flash` con `prompt_v3` (`annotation_guideline_v2`), en lotes de 100 y 8 peticiones en paralelo.
   * 70 284 textos únicos de 99 926 filas, sin lotes fallidos ni reintentos.
 * **Costo:** **$3.37** ($0.048 por 1 000 textos), más $0.016 de la prueba de 300 textos.
-* **Diseño:** ver [`sample_silver.py`](../../experiments/analytics/src/voc_analytics/sampling/sample_silver.py).
+* **Diseño:** ver [`sample_silver.py`](../../../experiments/analytics/src/voc_analytics/sampling/sample_silver.py).
   * 20 000 filas por banco, asignadas por raíz cuadrada dentro de banco × periodo × estrellas.
   * Holdout desde 2026-04-01 con reglas antifuga, que no tienen violaciones.
   * Contexto temporal por fila.
-* **Métricas:** [`silver_v0_metrics.json`](silver_v0_metrics.json), calculadas con [`analyze_silver.py`](../../experiments/analytics/src/voc_analytics/analysis/analyze_silver.py). Solo agregados; las etiquetas están en `experiments/analytics/data/labels/silver_v0/`, fuera de git.
+* **Métricas:** [`silver_v0_metrics.json`](silver_v0_metrics.json), calculadas con [`analyze_silver.py`](../../../experiments/analytics/src/voc_analytics/analysis/analyze_silver.py). Solo agregados; las etiquetas están en `experiments/analytics/data/labels/silver_v0/`, fuera de git.
 * **Cómo leer las cifras:**
   * Las estimaciones poblacionales se ponderan por 1 / probabilidad de inclusión.
   * **Heredan el error de Gemini** (κ 0.84–0.93 contra el oro). Las cifras sin ese sesgo son las del oro, o las de PPI en 5.6.
@@ -61,7 +61,7 @@ Las dos fuentes son independientes en su muestreo y coinciden dentro del error d
 
 ## 2. Contexto temporal: ¿las estrellas esconden quejas en quincena o en incidencias?
 
-Pregunta del autor, que surgió en el análisis temporal ([reporte](eda_temporal_report.md)): ¿hay más reseñas de 5★ con texto negativo en quincena, o semanalmente en NUBANK?
+Pregunta del autor, que surgió en el análisis temporal ([reporte](../eda/eda_temporal_report.md)): ¿hay más reseñas de 5★ con texto negativo en quincena, o semanalmente en NUBANK?
 
 **Método:**
 * Se compara la proporción de `NEG` del texto **dentro de cada banco × nivel de estrellas**: con la marca contra sin ella. Así la mezcla de estrellas no confunde el resultado.

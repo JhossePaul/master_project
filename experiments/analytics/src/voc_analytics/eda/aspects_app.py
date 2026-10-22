@@ -11,10 +11,11 @@ un texto agrega otra fila; al analizar gana la última por `item`, y las de
 este archivo ganan a las de la primera pasada (`validation_annotations.csv`,
 guía `v0`).
 
-Sigue `docs/analytics/eda_aspects_guideline_v1.md`. No muestra la salida de
-Gemini, ni estrellas ni banco. `--revisar-fa` muestra solo los textos que la
-primera pasada codificó con `FA` y precarga esa respuesta: en `v0` la opción
-"sin problema concreto" no estaba explícita y esos casos quedaron como `FA`.
+Sigue `docs/analytics/eda/archive/eda_aspects_guideline_v1.md`. No muestra la
+salida de Gemini, ni estrellas ni banco. `--revisar-fa` muestra solo los textos
+que la primera pasada codificó con `FA` y precarga esa respuesta: en `v0` la
+opción "sin problema concreto" no estaba explícita y esos casos quedaron
+como `FA`.
 """
 
 import csv
@@ -78,7 +79,7 @@ RULES = """
 5. **Elogio concreto:** "el diseño está bien, pero...". "Buena app,
    pero..." no cuenta.
 
-Guía completa: `docs/analytics/eda_aspects_guideline_v1.md`.
+Guía completa: `docs/analytics/eda/archive/eda_aspects_guideline_v1.md`.
 """
 
 

@@ -1,102 +1,126 @@
 # Mapa de Épicas del Proyecto (App Store Label Noise & Incident Analyzer)
 
-Este documento define las **6 Épicas Técnicas** necesarias para construir y
-desplegar el motor analítico de NLP en Google Cloud Platform (GCP), diseñado
-para corregir el *Label Noise Bias (LNB)* (sesgo de *Obligatory 5-Star*),
-recalibrar la satisfacción hacia el **True Net Satisfaction Score (TNSS)** y
-automatizar el triaje del backlog de ingeniería bajo lineamientos de *Ethics by
-Design* y *Human-In-The-Loop (HITL)*[cite: 1, 8, 27].
+El proyecto se divide en **7 épicas técnicas** para construir y desplegar en Google Cloud Platform (GCP) el motor analítico de NLP: medir el sentimiento real del texto separado de las estrellas (*Label Noise Bias*, sesgo de *Obligatory 5-Star*), detectar y priorizar incidencias, y exponerlo con revisión humana (HITL) bajo lineamientos de *Ethics by Design*.
+
+* **Estado (2026-10-22):** EPIC-1 a EPIC-4 cerradas; EPIC-5 en curso (fase 2: 5.6–5.8); EPIC-6 y EPIC-7 pendientes.
+* **Reorganización (2026-10-22):** se agregó EPIC-6 (despliegue del core analítico), que absorbe la antigua fase 3 de EPIC-5 (`epic_5_deployment.md`) y los cambios a los contratos de EPIC-1 y a la infraestructura de EPIC-2. El portal pasó de EPIC-6 a EPIC-7 (features 6.x → 7.x). El cierre de EPIC-1 a EPIC-4, que estaba en `closure_epics_1_4.md`, quedó en la sección [Cierre de las épicas 1 a 4](#cierre-de-las-épicas-1-a-4).
 
 ---
 
-## Resumen de Épicas, Estado y Cronograma
+## Resumen de épicas
 
-| ID | Nombre de la Épica | Estado Actual | Semanas | Directorios Principales Afectados | Archivo de Detalle |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| **EPIC-1** | Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates | **IMPLEMENTADO** [Features 1.1–1.8](cite: 23) | Sem 1[cite: 23, 27] | `packages/voc-common/`, `docs/contracts/`, `.github/`[cite: 23] | `epic_1.md`[cite: 27] |
-| **EPIC-2** | Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC) | **IMPLEMENTADO** [Features 2.1–2.10 en Mocks](cite: 24) | Sem 1 - 2[cite: 24, 27] | `infra/`[cite: 24, 27] | `epic_2.md`[cite: 27] |
-| **EPIC-3** | Ingesta Multibanco Reanudable desde Google Play (`batchexecute`) | **IMPLEMENTADO** [Features 3.1–3.5; sin despliegue](cite: 25) | Sem 2[cite: 27] | `services/ingestion-worker/`, `experiments/playstore/`[cite: 25] | `epic_3.md`[cite: 27] |
-| **EPIC-4** | Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS | **IMPLEMENTADO** [Features 4.1–4.5; sin despliegue](cite: 26) | Sem 3 - 4[cite: 14, 27] | `services/sanitization-pipeline/`[cite: 26, 27] | `epic_4.md`[cite: 27] |
-| **EPIC-5** | Core Analítico NLP: planteamiento, experimentación y despliegue | **EN CURSO** (fase 2: etiquetado y competencia de modelos; despliegue condicionado al registro de decisión) | Sem 4 - 6[cite: 27] | `experiments/analytics/`, `docs/analytics/`; después `services/ml-delora/`[cite: 27] | `epic_5.md`, `epic_5_deployment.md`[cite: 27] |
-| **EPIC-6** | Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps | **PENDIENTE** (Especificación v2 lista) | Sem 7 - 8[cite: 14, 27] | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/`[cite: 27] | `epic_6.md`[cite: 27] |
+| ID | Nombre | Estado | Directorios principales | Detalle |
+| :--- | :--- | :---: | :--- | :--- |
+| **EPIC-1** | Fundamentos del monorepo, contratos de datos v2 (`voc-common`) y *quality gates* | **Cerrada** | `packages/voc-common/`, `docs/contracts/`, `.github/` | [`epic_1.md`](epic_1.md) |
+| **EPIC-2** | Infraestructura *serverless* y seguridad en GCP (Pulumi) | **Cerrada** | `infra/` | [`epic_2.md`](epic_2.md) |
+| **EPIC-3** | Ingesta multibanco reanudable desde Google Play (`batchexecute`) | **Cerrada** | `services/ingestion-worker/`, `experiments/playstore/` | [`epic_3.md`](epic_3.md) |
+| **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
+| **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **En curso** (5.1–5.5 cerradas o casi; faltan 5.6–5.8) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
+| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **Pendiente** (condicionada a 5.8) | `packages/voc-common/`, `infra/`, `services/ml-*/` | [`epic_6.md`](epic_6.md) |
+| **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Pendiente** | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/` | [`epic_7.md`](epic_7.md) |
+
+Orden: cada épica usa los contratos y recursos de las anteriores. EPIC-6 empieza al aprobarse el registro de decisión de EPIC-5 (5.8), y EPIC-7 lee lo que despliega EPIC-6.
 
 ---
 
-## Descripción Detallada de las Épicas (Sincronizada con Arquitectura v2)
+## Cierre de las épicas 1 a 4
+
+Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico está cargado y verificado, la operación diaria funciona sin intervención y los accesos temporales se retiraron.
+
+| Épica | Entregado | Verificado en producción (stack `dev`) |
+| :--- | :--- | :--- |
+| 1. `voc-common` y CI | Contratos, constantes, configuración, estado v2, logs estructurados, CI (ruff, pyrefly, bandit, pytest) | Los cuatro gates pasan; se usó en las 5 ingestas históricas y en la sanitización |
+| 2. Infraestructura (Pulumi) | APIs, IAM, KMS, Pub/Sub (+DLQ), GCS, BigQuery, Cloud Run Service/Jobs, Schedulers | `pulumi preview` sin cambios (54 recursos); desplegado con imágenes fijadas por digest |
+| 3. Ingesta | Cliente `batchexecute`, lease + CAS, páginas duraderas, runner, API incremental, Job histórico | Los 5 bancos recorridos hasta agotar el cursor (reseñas hasta el 2026-10-14) |
+| 4. Sanitización | Pipeline Pub/Sub → regex local → BigQuery `MERGE`, ledger de recibos, replay desde GCS | El replay rápido (`GCS_FAST_REPLAY`) cargó el histórico completo |
+
+* **Resultado:** 2 649 047 filas únicas en `bbva_voc_tds.sanitized_reviews_tds`, sin duplicados por `(bank_id, id_resena)`. Conteos por banco y ritmos de la carga en [`full_backfill.md`](../operations/full_backfill.md#resultado-de-la-carga-al-tds-2026-10-16).
+* **Límites del corpus** (reseñas sin texto, NUBANK antes de 2020, retraso de ~24 h, PII residual, cobertura inferida, `fecha` de última edición): [*Data Card*](../governance/data_card.md).
+* **Incidentes de la puesta en marcha:** [`full_backfill.md`](../operations/full_backfill.md#incidentes-de-la-puesta-en-marcha-resumen). **Validación de la operación diaria** y observaciones abiertas (contador `PENDING` del informe, tres cuentas con `roles/owner`): [`deployment.md`](../operations/deployment.md#validación-de-la-operación-diaria-2026-10-18).
+* **Herramientas de operación:** `tools/backfill_controller.py` (`drain`, `ingest`) y `tools/deploy_images.py`; ver [`deployment.md`](../operations/deployment.md).
+
+---
+
+## Descripción de las épicas
 
 ### EPIC-1: Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates
 
-* **Estado:** **IMPLEMENTADO** [Features 1.1 a 1.8 verificadas localmente con cobertura del 100%](cite: 23).
-* **Objetivo Técnico:** Establecer la columna vertebral de tipado, contratos inmutables (`extra="forbid"`, normalización UTC), reducer de estado por página y tubería de integración continua (CI) antes de acoplar servicios o infraestructura[cite: 23, 27].
+* **Estado:** **Cerrada.** Features 1.1 a 1.8 verificadas localmente con cobertura del 100 % y usadas en producción. Los contratos de predicción se reemplazan en EPIC-6 (6.1).
+* **Objetivo Técnico:** Establecer la columna vertebral de tipado, contratos inmutables (`extra="forbid"`, normalización UTC), reducer de estado por página y tubería de integración continua (CI) antes de acoplar servicios o infraestructura.
 * **Alcance y Componentes Implementados:**
-  * **Catálogo y Constantes (`constants.py`):** Definición de instituciones (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), modos de ingesta (`INCREMENTAL`, `BACKFILL` anual, `FULL_BACKFILL`), tópicos `ABSATopic`, parámetros del protocolo interno `batchexecute` (RPC `oCPfdb`, tamaño inicial de política `199`) y umbrales del EDA [2 a 60 palabras](cite: 23).
-  * **Utilidades de Limpieza y Privacidad (`text_utils.py`):** Limpieza determinista de textos bancarios preservando emojis y códigos diagnósticos (`ref: 3702:65c5:9xhchi`), conteo de palabras y anonimización irreversible `hash_username_pii` [SHA-256 con sal](cite: 23).
+  * **Catálogo y Constantes (`constants.py`):** Definición de instituciones (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), modos de ingesta (`INCREMENTAL`, `BACKFILL` anual, `FULL_BACKFILL`), tópicos `ABSATopic`, parámetros del protocolo interno `batchexecute` (RPC `oCPfdb`, tamaño inicial de política `199`) y umbrales del EDA 2 a 60 palabras.
+  * **Utilidades de Limpieza y Privacidad (`text_utils.py`):** Limpieza determinista de textos bancarios preservando emojis y códigos diagnósticos (`ref: 3702:65c5:9xhchi`), conteo de palabras y anonimización irreversible `hash_username_pii` SHA-256 con sal.
   * **Contratos de Datos y Sobres Versionados (`schemas.py`):**
-    1. `RawReviewEvent` y `RawReviewEnvelope`: Evento crudo en tránsito con identidad determinista (`event_id`, `source_revision` derivado del contenido, nunca de `ingested_at`)[cite: 23].
-    2. `SanitizedReviewRecord` y `SanitizedReviewEnvelope`: Registro post-DLP con 0% de `usuario` o `imagen_usuario` en texto plano, listo para las 17 columnas de BigQuery [*Trusted Data Source - TDS*](cite: 23, 24).
-    3. `IngestionWatermarkState` (v2), `IncrementalProgress`, `HistoricalPlan`, `ScanContext`, `ScanStreamState`, `PageManifest` y `ProcessingReceipt`: Separación estricta entre límites observados, progreso incremental comprometido, planes históricos con ancla $T_0$ fija y recibos de procesamiento por fase[cite: 23, 25].
-    4. `AnalyzedReviewPrediction`, `IncidentAlertMessage`, `HitlTriageAuditRecord` e `IngestionRunAudit`[cite: 23].
-  * **Reducer Puro y Quality Gates (`ingestion_state.py`, `.github/workflows/ci.yaml`):** Transiciones verificables por página confirmada y validación automatizada con `Ruff`, `Pyrefly`, `Bandit` y `Pytest`[cite: 23].
+    1. `RawReviewEvent` y `RawReviewEnvelope`: Evento crudo en tránsito con identidad determinista (`event_id`, `source_revision` derivado del contenido, nunca de `ingested_at`).
+    2. `SanitizedReviewRecord` y `SanitizedReviewEnvelope`: Registro post-DLP con 0% de `usuario` o `imagen_usuario` en texto plano, listo para las 17 columnas de BigQuery *Trusted Data Source - TDS*.
+    3. `IngestionWatermarkState` (v2), `IncrementalProgress`, `HistoricalPlan`, `ScanContext`, `ScanStreamState`, `PageManifest` y `ProcessingReceipt`: Separación estricta entre límites observados, progreso incremental comprometido, planes históricos con ancla $T_0$ fija y recibos de procesamiento por fase.
+    4. `AnalyzedReviewPrediction`, `IncidentAlertMessage`, `HitlTriageAuditRecord` e `IngestionRunAudit`.
+  * **Reducer Puro y Quality Gates (`ingestion_state.py`, `.github/workflows/ci.yaml`):** Transiciones verificables por página confirmada y validación automatizada con `Ruff`, `Pyrefly`, `Bandit` y `Pytest`.
+
+---
 
 ---
 
 ### EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC)
 
-* **Estado:** **IMPLEMENTADO** [Features 2.1 a 2.10 verificadas localmente con Pulumi Mocks; preview/despliegue real sujeto a inicialización del stack en GCP](cite: 24).
-* **Objetivo Técnico:** Codificar en **Pulumi (Python)** el despliegue reproducible, de mínimo privilegio y compatible con **GCP Free Tier** de las 5 capas de la solución[cite: 24, 27].
+* **Estado:** **Cerrada.** Features 2.1 a 2.10; desplegada en el stack `dev` (54 recursos, `pulumi preview` sin cambios). Los recursos de predicción se reemplazan en EPIC-6 (6.2).
+* **Objetivo Técnico:** Codificar en **Pulumi (Python)** el despliegue reproducible, de mínimo privilegio y compatible con **GCP Free Tier** de las 5 capas de la solución.
 * **Alcance y Componentes Implementados:**
-  * **Seguridad e IAM (`kms_iam.py`):** 4 *Service Accounts* dedicadas (`voc-sa-ingestion`, `voc-sa-scheduler`, `voc-sa-sanitization`, `voc-sa-ml-backend`) con permisos acotados por recurso (`roles/storage.objectUser` a nivel bucket, `roles/run.jobsExecutorWithOverrides` sobre el Job histórico) y soporte condicional para llaves KMS/CMEK (`enable_cmek`)[cite: 24].
-  * **Privacidad por Diseño (`dlp.py`):** Plantillas regionales de inspección y desidentificación en **Cloud DLP** con 5 detectores NER nativos, 3 detectores REGEX bancarios mexicanos (`MX_CLABE_BANCARIA`, `MX_RFC_TAX_ID`, `BBVA_ACCOUNT_NUMBER`), reemplazo explícito por tokens entre corchetes (`[<INFO_TYPE>]`) y regla de exclusión parcial (`ExclusionRule`) para preservar códigos técnicos `ref: 3702`[cite: 24].
+  * **Seguridad e IAM (`kms_iam.py`):** 4 *Service Accounts* dedicadas (`voc-sa-ingestion`, `voc-sa-scheduler`, `voc-sa-sanitization`, `voc-sa-ml-backend`) con permisos acotados por recurso (`roles/storage.objectUser` a nivel bucket, `roles/run.jobsExecutorWithOverrides` sobre el Job histórico) y soporte condicional para llaves KMS/CMEK (`enable_cmek`).
+  * **Privacidad por Diseño (`dlp.py`):** Plantillas regionales de inspección y desidentificación en **Cloud DLP** con 5 detectores NER nativos, 3 detectores REGEX bancarios mexicanos (`MX_CLABE_BANCARIA`, `MX_RFC_TAX_ID`, `BBVA_ACCOUNT_NUMBER`), reemplazo explícito por tokens entre corchetes (`[<INFO_TYPE>]`) y regla de exclusión parcial (`ExclusionRule`) para preservar códigos técnicos `ref: 3702`.
   * **Mensajería y Almacenamiento (`pubsub.py`, `storage_bq.py`):**
-    * Tópicos y suscripciones Pull en Cloud Pub/Sub (`voc-raw-reviews-topic`, `voc-raw-reviews-dlq` con 5 intentos, `voc-incident-alerts-topic`)[cite: 24].
-    * Bucket `voc-datalake-{project_id}` con `IngestionStorageLayout` que aplica TTL de 7 días exclusivamente a `raw_staging/` y `temp_beam/`, preservando indefinidamente `state/watermarks/` y `state/ingestion/` [manifiestos, ledgers y recibos](cite: 24).
-    * Dataset `bbva_voc_tds` en **BigQuery** sin tablas de texto crudo, aprovisionando 4 tablas estrictas particionadas y clusterizadas: `sanitized_reviews_tds` (17 columnas, incluida `source_observed_at`), `delora_predictions` (15 columnas incluyendo `embedding_vector` `FLOAT REPEATED`), `ingestion_runs_log_v2` (20 columnas) y `hitl_triage_audit_log` [10 columnas](cite: 24).
-  * **Cómputo Serverless y Orquestación (`cloud_run.py`, `cloud_scheduler.py`, `vertex_ai.py`):** Servicios *scale-to-zero* (`voc-ingestion-worker`, `voc-api-backend`), 2 Cloud Run Jobs privados (`voc-sanitization-job` y `voc-ingestion-history-job` para backfills largos fuera del ciclo HTTP), programación en Cloud Scheduler optimizada a 2 jobs en modo *Free Tier* (o 6 en modo normal) y recursos de Vertex AI condicionales (`enable_dedicated_vertex_endpoints`)[cite: 24].
+    * Tópicos y suscripciones Pull en Cloud Pub/Sub (`voc-raw-reviews-topic`, `voc-raw-reviews-dlq` con 5 intentos, `voc-incident-alerts-topic`).
+    * Bucket `voc-datalake-{project_id}` con `IngestionStorageLayout` que aplica TTL de 7 días exclusivamente a `raw_staging/` y `temp_beam/`, preservando indefinidamente `state/watermarks/` y `state/ingestion/` manifiestos, ledgers y recibos.
+    * Dataset `bbva_voc_tds` en **BigQuery** sin tablas de texto crudo, aprovisionando 4 tablas estrictas particionadas y clusterizadas: `sanitized_reviews_tds` (17 columnas, incluida `source_observed_at`), `delora_predictions` (15 columnas incluyendo `embedding_vector` `FLOAT REPEATED`), `ingestion_runs_log_v2` (20 columnas) y `hitl_triage_audit_log` 10 columnas.
+  * **Cómputo Serverless y Orquestación (`cloud_run.py`, `cloud_scheduler.py`, `vertex_ai.py`):** Servicios *scale-to-zero* (`voc-ingestion-worker`, `voc-api-backend`), 2 Cloud Run Jobs privados (`voc-sanitization-job` y `voc-ingestion-history-job` para backfills largos fuera del ciclo HTTP), programación en Cloud Scheduler optimizada a 2 jobs en modo *Free Tier* (o 6 en modo normal) y recursos de Vertex AI condicionales (`enable_dedicated_vertex_endpoints`).
+
+---
 
 ---
 
 ### EPIC-3: Ingesta Multibanco Reanudable desde Google Play (`batchexecute`)
 
-* **Estado:** **IMPLEMENTADO** [Features 3.1–3.5 completadas y validadas localmente; despliegue pendiente](cite: 25).
-* **Objetivo Técnico:** Construir el servicio y Job contenerizado en `services/ingestion-worker/` capaz de extraer reseñas públicas de Google Play Store mediante un cliente propio sobre el protocolo interno `batchexecute` (`oCPfdb`), con respaldo duradero por página, control de concurrencia CAS/lease y recuperación verificable[cite: 25, 27].
+* **Estado:** **Cerrada.** Features 3.1 a 3.5; desplegada y con el histórico de los 5 bancos recorrido hasta agotar el cursor.
+* **Objetivo Técnico:** Construir el servicio y Job contenerizado en `services/ingestion-worker/` capaz de extraer reseñas públicas de Google Play Store mediante un cliente propio sobre el protocolo interno `batchexecute` (`oCPfdb`), con respaldo duradero por página, control de concurrencia CAS/lease y recuperación verificable.
 * **Alcance y Componentes:**
-  * **Adaptador de Protocolo (`playstore_protocol.py` — Implementado):** Serialización estructural de peticiones `batchexecute`, parser posicional validado contra respuestas reales de BBVA (`ocpfdb-2026-10-15.1`) y clasificación estricta de estados y errores (`PAGE_WITH_CURSOR`, `END_CANDIDATE`, `EMPTY_WITH_CURSOR`, `RateLimitedError`, `ProtocolError`)[cite: 25].
-  * **Repositorio de Estado y Auditoría (`watermark_store.py`, `audit.py` — Implementado):** Persistencia en GCS con precondiciones `if_generation_match` (CAS), lease por banco con *fencing epoch*, snapshots de planes/streams/manifiestos/ledgers y entrega durable de `IngestionRunAudit` hacia `ingestion_runs_log_v2`[cite: 25].
-  * **Publicación Duradera por Página (`publisher.py` — Implementado):** Escritura condicional de capturas reproducibles `.jsonl.gz` en `raw_staging/`, registro de `PageManifest` pendiente y emisión de sobres `RawReviewEnvelope` a Pub/Sub verificando cada `future.result()` antes de avanzar el estado a `PUBLISHED`[cite: 25].
-  * **Motor de Extracción, Políticas de Recuperación, API y Job Histórico (`extractor.py`, `main.py`, `job.py` — Features 3.4 y 3.5):** Ejecución de modos `INCREMENTAL`, `BACKFILL` (anual con $T_0$ fijo) y `FULL_BACKFILL` (extensión del mismo plan y replay de página ancla), escalera de recuperación de coste creciente, control de presupuestos y exposición de endpoints HTTP más CLI para `voc-ingestion-history-job`[cite: 24, 25].
+  * **Adaptador de Protocolo (`playstore_protocol.py` — Implementado):** Serialización estructural de peticiones `batchexecute`, parser posicional validado contra respuestas reales de BBVA (`ocpfdb-2026-10-15.1`) y clasificación estricta de estados y errores (`PAGE_WITH_CURSOR`, `END_CANDIDATE`, `EMPTY_WITH_CURSOR`, `RateLimitedError`, `ProtocolError`).
+  * **Repositorio de Estado y Auditoría (`watermark_store.py`, `audit.py` — Implementado):** Persistencia en GCS con precondiciones `if_generation_match` (CAS), lease por banco con *fencing epoch*, snapshots de planes/streams/manifiestos/ledgers y entrega durable de `IngestionRunAudit` hacia `ingestion_runs_log_v2`.
+  * **Publicación Duradera por Página (`publisher.py` — Implementado):** Escritura condicional de capturas reproducibles `.jsonl.gz` en `raw_staging/`, registro de `PageManifest` pendiente y emisión de sobres `RawReviewEnvelope` a Pub/Sub verificando cada `future.result()` antes de avanzar el estado a `PUBLISHED`.
+  * **Motor de Extracción, Políticas de Recuperación, API y Job Histórico (`extractor.py`, `main.py`, `job.py` — Features 3.4 y 3.5):** Ejecución de modos `INCREMENTAL`, `BACKFILL` (anual con $T_0$ fijo) y `FULL_BACKFILL` (extensión del mismo plan y replay de página ancla), escalera de recuperación de coste creciente, control de presupuestos y exposición de endpoints HTTP más CLI para `voc-ingestion-history-job`.
+
+---
 
 ---
 
 ### EPIC-4: Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** **IMPLEMENTADO** [Features 4.1–4.5 completadas y validadas localmente; despliegue pendiente](cite: 26).
-* **Objetivo Técnico:** Desarrollar el pipeline en **Apache Beam** (`services/sanitization-pipeline/`) ejecutable con `DirectRunner` dentro de `voc-sanitization-job` (`DataflowRunner` queda opt-in hasta aprovisionar Dataflow) que drena los sobres `RawReviewEnvelope`, desidentifica PII mediante **Cloud DLP + Regex de segunda barrera**, filtra el umbral de 2 a 60 palabras del EDA, actualiza `bbva_voc_tds.sanitized_reviews_tds` de forma idempotente y emite recibos `ProcessingReceipt` para cerrar la cobertura TDS por página[cite: 24, 26, 27].
+* **Estado:** **Cerrada.** Features 4.1 a 4.5; desplegada; el replay rápido cargó el histórico y la operación diaria corre sin intervención.
+* **Objetivo Técnico:** Desarrollar el pipeline en **Apache Beam** (`services/sanitization-pipeline/`) ejecutable con `DirectRunner` dentro de `voc-sanitization-job` (`DataflowRunner` queda opt-in hasta aprovisionar Dataflow) que drena los sobres `RawReviewEnvelope`, desidentifica PII mediante **Cloud DLP + Regex de segunda barrera**, filtra el umbral de 2 a 60 palabras del EDA, actualiza `bbva_voc_tds.sanitized_reviews_tds` de forma idempotente y emite recibos `ProcessingReceipt` para cerrar la cobertura TDS por página.
 * **Alcance y Componentes:**
-  * **Transformación DLP Tabular y *Fail-Closed* (`dlp_transforms.py`):** Empaquetador dual ($\le 250$ filas y $\le 400\text{ KB}$) con *sidecar* posicional para no enviar IDs a DLP, protección de códigos diagnósticos `ref: 3702` mediante nonce, segunda barrera `LocalRegexFallbackSanitizer`, conteo exacto de tokens `[<INFO_TYPE>]` por fila (`pii_findings_count: int`) y política *fail-closed* en producción[cite: 24, 26].
-  * **Upsert Idempotente en BigQuery (`bq_writer.py`):** Carga de lotes sanitizados en tablas temporales con expiración de 1 hora dentro de `bbva_voc_tds` mediante `FILE_LOADS` (`load_table_from_json`) seguida de `MERGE` determinista hacia las 17 columnas de `sanitized_reviews_tds` sin usar *Streaming Inserts* y sin revertir revisiones más recientes[cite: 24, 26].
-  * **Ledger de Procesamiento y Leases de Ack (`processing_ledger.py`, `pipeline.py`):** Renovación periódica de `ack_deadline` (>600s), deduplicación preservando todos los `ack_ids` de redeliveries, gestión de cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), confirmación (`ack`) exclusiva tras persistencia en BigQuery + GCS, y cierre de páginas publicadas como `RESOLVED` o `GAPS_DETECTED` sin escribir en el estado de la ingesta[cite: 24, 25, 26].
+  * **Transformación DLP Tabular y *Fail-Closed* (`dlp_transforms.py`):** Empaquetador dual ($\le 250$ filas y $\le 400\text{ KB}$) con *sidecar* posicional para no enviar IDs a DLP, protección de códigos diagnósticos `ref: 3702` mediante nonce, segunda barrera `LocalRegexFallbackSanitizer`, conteo exacto de tokens `[<INFO_TYPE>]` por fila (`pii_findings_count: int`) y política *fail-closed* en producción.
+  * **Upsert Idempotente en BigQuery (`bq_writer.py`):** Carga de lotes sanitizados en tablas temporales con expiración de 1 hora dentro de `bbva_voc_tds` mediante `FILE_LOADS` (`load_table_from_json`) seguida de `MERGE` determinista hacia las 17 columnas de `sanitized_reviews_tds` sin usar *Streaming Inserts* y sin revertir revisiones más recientes.
+  * **Ledger de Procesamiento y Leases de Ack (`processing_ledger.py`, `pipeline.py`):** Renovación periódica de `ack_deadline` (>600s), deduplicación preservando todos los `ack_ids` de redeliveries, gestión de cuarentena en GCS (acorde a los permisos IAM de `voc-sa-sanitization`), confirmación (`ack`) exclusiva tras persistencia en BigQuery + GCS, y cierre de páginas publicadas como `RESOLVED` o `GAPS_DETECTED` sin escribir en el estado de la ingesta.
 
 ---
 
-### EPIC-5: Core Analítico NLP — Planteamiento, Experimentación y Despliegue
+### EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado:** **EN CURSO** (fase 2). Estado por feature y siguientes pasos en `epic_5.md`; historia de los resultados en [`docs/analytics/`](../analytics/README.md). El despliegue (`epic_5_deployment.md`) es un borrador condicionado al registro de decisión.
-* **Objetivo Técnico:** Decidir con evidencia el pipeline analítico sobre las 2 649 047 reseñas de los 5 bancos antes de construir el paquete desplegable: sentimiento real separado de las estrellas, tópicos recurrentes y su evolución, detección de incidentes y priorización.
-* **Alcance y Componentes:**
-  * **Planteamiento y EDA (5.1–5.2):** etiquetas y guía de anotación, elegibilidad por tarea (con motivo para lo no predecible), envolvente de volumetría y costo, EDA de 15 años × 5 bancos y reglas de limpieza.
-  * **Etiquetado (5.3):** plata con Gemini Flash (deduplicada, por lotes y con tope de gasto) y oro humano de 1 000–2 000 reseñas (40 % aleatorio estratificado, 60 % dirigido, submuestra a ciegas).
-  * **Competencia de modelos (5.4):** de las estrellas como referencia y TF-IDF hasta encoders ajustados, métodos de ruido (*label smoothing*, corrección *forward*, *Confident Learning*), Delora adaptado y Gemini como clasificador; mismo protocolo y métricas de calidad y costo.
-  * **Tópicos (5.5):** descubrimiento dinámico sobre negativos y decisión entre ABSA, tópicos dinámicos o híbrido, con señal de incidentes probada hacia atrás.
-  * **Calibración, escala y ciclo de vida (5.6–5.7)** y **registro de decisión (5.8)**, que habilita el despliegue (fase 3).
+* **Estado:** **En curso** (fase 2). Estado por feature y siguientes pasos en [`epic_5.md`](epic_5.md); historia de los resultados en [`docs/analytics/`](../analytics/README.md).
+* **Objetivo técnico:** decidir con evidencia el pipeline analítico sobre las 2 649 047 reseñas antes de construir el paquete desplegable: sentimiento real separado de las estrellas, temas recurrentes y su evolución, detección de incidentes y priorización.
+* **Alcance:** planteamiento y elegibilidad (5.1), EDA (5.2), etiquetado oro y plata (5.3), competencia de modelos de sentimiento (5.4), tópicos e incidencias (5.5), calibración y HITL (5.6), escala y monitoreo (5.7) y registro de decisión (5.8).
 
 ---
 
-### EPIC-6: Exposición (FastAPI), Búsqueda Vectorial, Portal Web HITL y Gobernanza MLOps
+### EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado:** **PENDIENTE** (Especificación técnica actualizada a contratos v2).
-* **Objetivo Técnico:** Construir la capa de exposición e interpretabilidad (`services/api-backend/` y `web/hitl-portal/`) para consulta del *Satisfaction Gap*, búsqueda vectorial de causa raíz, explicabilidad local (**SHAP / LIME**) y ejecución del protocolo **Human-In-The-Loop (HITL)**, junto con el monitoreo estadístico de *Drift* y los artefactos normativos de BBVA[cite: 8, 11, 16, 17, 18, 27].
-* **Alcance y Componentes:**
-  * **API Backend y Búsqueda Vectorial (`services/api-backend/`):** Endpoints RESTful en FastAPI conectados a BigQuery para métricas del *Satisfaction Gap* (BBVA vs. `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), series de tiempo de quejas por `version_app`, ranking de backlog y búsqueda semántica por distancia coseno sobre `embedding_vector` (768-d) en BigQuery [con soporte condicional para Vertex AI Vector Search](cite: 5, 8, 10, 11, 24, 27).
-  * **Explicabilidad Local y Bitácora HITL (`explainability.py`, `hitl_service.py`):** Motor ligero de atribución por perturbación/oclusión de tokens (LIME / SHAP contrastivo compatible con `1 vCPU / 1 GiB RAM` en Cloud Run) y servicio de validación humana que persiste decisiones inmutables `HitlTriageAuditRecord` en `bbva_voc_tds.hitl_triage_audit_log` hasheando el correo del revisor con SHA-256[cite: 8, 17, 20, 23, 24, 27].
-  * **Portal Interactivo React SPA (`web/hitl-portal/`):** Interfaz con paleta institucional (`#002D72`, `#215347`, `#7A1A37`, `#B9975B`) integrada por `SatisfactionGapDashboard`, `VectorRootCauseExplorer` (con visor de calor de atribuciones por palabra) y `HitlTriageQueue`[cite: 2, 8, 11, 27].
-  * **Monitoreo de Drift y Gobernanza (`drift_monitor.py`, `docs/governance/`):** Cálculo de *Data Drift* (PSI/JSD) y *Concept Drift* entre versiones de la app con alerta hacia `voc-incident-alerts-topic` para activar el *Fallback Plan*, y entrega formal de la **Data Card**, **Model Card** y **Matriz Ethical FMEA**[cite: 8, 14, 15, 16, 17, 18, 27].
+* **Estado:** **Pendiente**, condicionada al registro de decisión de EPIC-5 (5.8).
+* **Objetivo técnico:** llevar a producción la estrategia de 5.8 con un backfill único y un delta diario.
+* **Alcance:** contratos de predicción v3 en `voc-common` (6.1), tablas de salida y de curaduría en Pulumi (6.2), servicio de inferencia batch con `MERGE` y alertas (6.3), y monitor de *drift* y ciclo de vida de modelos (6.4).
+
+---
+
+### EPIC-7: Exposición (FastAPI), Búsqueda Vectorial, Explicabilidad, Portal Web HITL y Gobernanza
+
+* **Estado:** **Pendiente** (antes EPIC-6).
+* **Objetivo técnico:** construir la capa de consumo (`services/api-backend/` y `web/hitl-portal/`): *Satisfaction Gap*, búsqueda semántica de causa raíz, explicabilidad local (atribución por oclusión), protocolo HITL, frontales de curaduría y artefactos normativos (*Data Card*, *Model Card*, matriz FMEA).
+* **Alcance:** API y consultas a BigQuery (7.1), explicabilidad y servicio HITL (7.2), rutas y contenedor (7.3), portal React (7.4), gobernanza (7.5), pruebas (7.6) y frontales de curaduría (7.7).

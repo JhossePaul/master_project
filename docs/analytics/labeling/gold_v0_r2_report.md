@@ -1,6 +1,6 @@
 # Re-anotación a ciegas del oro (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): vigente en parte.** Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): vigente en parte.** Índice: [`README.md`](../README.md).
 > * **Sigue vigente:** `prompt_v3` como prompt de la plata, y estas 400 etiquetas como parte del oro (199 en *dev* y 201 en *test*).
 > * **Reemplazado por** [`gold_v1`](gold_v1_report.md):
 >   * "oro vigente = 400 aleatorias" → oro de 1 730 ítems (*dev* aleatorio 799, *dev* dirigido 300, *test* 601 y 30 de calibración);
@@ -11,7 +11,7 @@
 * **Qué es:** el autor re-anotó los 430 ítems del oro con `annotation_guideline_v2`, todo a ciegas y en un orden nuevo.
   * Fue ~14 horas después de la primera ronda ([reporte](gold_v0_report.md)).
   * Tomó 23.7 minutos efectivos, con 2 correcciones.
-* **Métricas:** [`gold_v0_r2_metrics.json`](gold_v0_r2_metrics.json), calculadas con [`analyze_gold_v0_r2.py`](../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v0_r2.py). Solo agregados.
+* **Métricas:** [`gold_v0_r2_metrics.json`](gold_v0_r2_metrics.json), calculadas con [`analyze_gold_v0_r2.py`](../../../experiments/analytics/src/voc_analytics/analysis/analyze_gold_v0_r2.py). Solo agregados.
 * **Oro vigente:** desde ahora el **oro es la re-anotación**. Las 400 reseñas aleatorias quedan anotadas a ciegas con la guía v2; la primera ronda se conserva para medir consistencia y anclaje.
 
 | Sección | Ítems | Origen en la primera ronda |

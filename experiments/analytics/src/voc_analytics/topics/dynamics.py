@@ -49,7 +49,7 @@ Uso (desde experiments/analytics):
 
 Escribe en `data/topics/phase2_v0/` (fuera de git: asignaciones, términos y
 series por tópico) y solo agregados en
-`docs/analytics/topics_phase2_v0_metrics.json`.
+`docs/analytics/topics/topics_phase2_v0_metrics.json`.
 """
 
 import argparse
@@ -75,7 +75,7 @@ from voc_analytics.topics.pilot import (
 from voc_analytics.topics.working_set import OUT as WORKING
 
 OUT = DATA / "topics" / "phase2_v0"
-METRICS = DOCS / "topics_phase2_v0_metrics.json"
+METRICS = DOCS / "topics" / "topics_phase2_v0_metrics.json"
 REF = VIGENTE
 MCS = (50, 100, 150)
 MS = 10

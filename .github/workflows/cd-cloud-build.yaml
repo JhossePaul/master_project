@@ -47,7 +47,7 @@ jobs:
           REQUESTED: ${{ inputs.services }}
         run: |
           set -euo pipefail
-          # Servicios desplegables por infra/ (ver docs/deployment.md).
+          # Servicios desplegables por infra/ (ver docs/operations/deployment.md).
           known="ingestion-worker sanitization-pipeline api-backend"
           requested="${REQUESTED:-$known}"
           selected=()

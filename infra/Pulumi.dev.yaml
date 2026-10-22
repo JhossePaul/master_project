@@ -11,7 +11,7 @@ config:
   bbva-voc-infra:enable_vertex_ai_api: "true"
   # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
   # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
-  # por digest; ver docs/deployment.md. Requeridas en fase 2:
+  # por digest; ver docs/operations/deployment.md. Requeridas en fase 2:
   #   bbva-voc-infra:ingestion_worker_image: "<registry>/ingestion-worker:<sha>@sha256:<digest>"
   #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
   # Opcional (sin ella no se crea voc-api-backend):

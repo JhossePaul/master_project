@@ -1,6 +1,6 @@
 # Guía de anotación de sentimiento (EPIC-5, feature 5.3)
 
-> **Estado (2026-10-19): vigente,** `v2.2`. Las versiones anteriores solo se conservan en el registro de cambios (sección 6). Índice: [`README.md`](README.md).
+> **Estado (2026-10-19): vigente,** `v2.2`. Las versiones anteriores solo se conservan en el registro de cambios (sección 6). Índice: [`README.md`](../README.md).
 
 * **Versión:** `annotation_guideline_v2.2` (2026-10-19). Agrega a la regla 2 las quejas por decisiones del banco que no se explican, como el anotador ya las etiquetó en `gold_v1` ([reporte](gold_v1_report.md), sección 4). `v2.1` agregó el campo `nombre_persona`. `v2` sustituyó a `v1` (y esta a `v0`) tras la calibración y la validación de la primera ronda del oro ([reporte](gold_v0_report.md)); los cambios están en el registro al final. Cualquier cambio posterior crea una versión nueva, y cada etiqueta registra la versión con la que se hizo.
 * **Aplica a:** el conjunto de oro (humano) y el de plata (Gemini Flash). El prompt de Gemini es una versión condensada de esta guía y se versiona junto con ella.
@@ -28,7 +28,7 @@
 | `duda` | sí / no: la decisión fue difícil | Sí |
 | `nombre_persona` | sí / no: el texto contiene el nombre propio de una persona (nombre o apellido, del autor o de otra persona). No cuentan los tokens de sanitización (`[PERSON_NAME]`) ni los nombres de bancos, apps o comercios | Sí, desde `v2.1` |
 
-`nombre_persona` mide la tasa real de nombres que la regex de sanitización no detecta (acción 1 de F-01 en la [matriz FMEA ética](../governance/ethical_fmea_matrix.md)). La tasa se estima solo con el bloque aleatorio; no cambia la etiqueta de sentimiento.
+`nombre_persona` mide la tasa real de nombres que la regex de sanitización no detecta (acción 1 de F-01 en la [matriz FMEA ética](../../governance/ethical_fmea_matrix.md)). La tasa se estima solo con el bloque aleatorio; no cambia la etiqueta de sentimiento.
 
 `menciona_falla` alimenta la evaluación de tópicos (5.5) y de detección de incidencias. Es independiente del sentimiento: una reseña puede ser `POS` y mencionar una falla resuelta.
 
