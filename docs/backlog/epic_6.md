@@ -4,6 +4,7 @@
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
+* **Antes de empezar:** decidir P7-1 a P7-8 y P8-1 a P8-12 del [registro de decisiones](epic_5.md#decisiones-pendientes) y resolver o aceptar las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia). Las filas de la tabla de insumos que siguen abiertas dicen qué decisión esperan.
 * **Semanas Objetivo:** tras 5.8 y antes de [EPIC-7](epic_7.md).
 * **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
 * **La consume:** [EPIC-7](epic_7.md), cuya API y portal leen las tablas de salida, escriben en la base de curadurías y muestran las alertas.
@@ -27,16 +28,18 @@ Lo implementado en EPIC-1 y EPIC-2 sigue en el código hasta que esta épica lo 
 
 | Tema | Hoy (EPIC-1 y EPIC-2) | Evidencia o decisión de EPIC-5 | Decide | Feature aquí |
 | :--- | :--- | :--- | :---: | :---: |
-| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | M4 RoBERTuito es el mejor modelo propio (κ 0.917); M9 Gemini queda a +0.021. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial | 5.8 | 6.1, 6.3 |
+| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | M4 RoBERTuito es el mejor modelo propio (κ 0.917); M9 Gemini queda a +0.021. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial. M4 ya tiene pesos guardados (lote `m4_ppi`, 5.6) | 5.8 (P8-1, P8-2) | 6.1, 6.3 |
 | Taxonomía | 8 `ABSATopic`; `topico` obligatorio y único por reseña | 11 familias `aspects_v2_1` multi-etiqueta más las marcas `u` y `s`; los tópicos son una capa aparte, con versión y curada | 5.5 (aprobado) | 6.1, 6.2 |
 | Filtro de longitud | `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` y `cumple_umbral_palabras` | Sin filtro de longitud, porque la longitud predice las estrellas. Elegibilidad por reglas deterministas con código (`NOT_PREDICTED`); `TOPIC_TOO_SHORT` con k = 1 | 5.1, 5.2; `TNSS_SINGLE_WORD` en 5.8 | 6.1 |
-| Tabla de salida | `delora_predictions`: 15 columnas, agrupada por `topico` | Predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con ciclo de vida; estado de elegibilidad; registro de corridas | 5.8 | 6.2 |
-| Embeddings | `embedding_vector` de 768 dimensiones | Delora descartado; los tópicos usan MiniLM (384). La búsqueda semántica de EPIC-7 necesita su propio encoder | 5.7 o 5.8 | 6.2 |
-| Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Se elige con la curva cobertura–riesgo en el oro *dev* | 5.6 | 6.1, 6.3 |
-| Priorización | Fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` | Son hipótesis; se evalúan contra un criterio observable | 5.6 | 6.3 |
-| *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA | Umbrales en 5.7 | 6.4 |
-| Curaduría | `hitl_triage_audit_log` (sentimiento y un tópico) | Curadurías de sentimiento, aspectos y tópicos, inmutables, con versión de guía, modelo y prompt | 5.5 (aprobado) | 6.2 |
-| Etiquetador y M9 | `enable_vertex_ai_api`; `enable_dedicated_vertex_endpoints = False` | Gemini por Vertex AI dentro del proyecto, sin endpoints dedicados | 5.3; M9 en 5.8 | 6.2 |
+| Tabla de salida | `delora_predictions`: 15 columnas, agrupada por `topico` | Predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con ciclo de vida; estado de elegibilidad; registro de corridas | 5.8 (P8-5) | 6.2 |
+| Embeddings | `embedding_vector` de 768 dimensiones | Delora descartado; los tópicos usan MiniLM (384). La búsqueda semántica de EPIC-7 necesita su propio encoder | 5.8 (P8-6) | 6.2 |
+| Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Probabilidad máxima de M4 calibrado; **90 % de cobertura por defecto** (se revisa el ~10 % menos seguro, ~350 textos por semana), como parámetro configurable. La curva de cobertura y riesgo y el parámetro son estado de la aplicación: se guardan versionados y el frontal los muestra ([plan de 5.6](../analytics/calibration/calibration_design.md#31-decisión-del-autor-2026-10-22)) | 5.6 (decidido 2026-10-22) | 6.1 a 6.4 |
+| Calibración | Ninguna | *Temperature scaling* con una T por semilla de M4 (≈ 1.7) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
+| Priorización | Fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` | Se descartan: ordenan los incidentes igual que contar negativas, y los votos empeoran el orden. Se prioriza por volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto ([reporte de 5.6](../analytics/calibration/calibration_report.md#4-priorización-q4-decidido)) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
+| *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA | 5.7 (P7-5, P7-6) | 6.4 |
+| Curaduría | `hitl_triage_audit_log` (sentimiento y un tópico) | Curadurías de sentimiento, aspectos y tópicos, inmutables, con versión de guía, modelo y prompt | 5.5 (aprobado); tabla de sentimiento en 5.8 (P8-11) | 6.2 |
+| Entorno de cómputo | Sin definir | M4 infiere ~2 500 textos/s en la T4 y 39–53 en CPU; el backfill en Kaggle sacaría el corpus de GCP | 5.7 (P7-1, P7-2) | 6.2, 6.3 |
+| Etiquetador y M9 | `enable_vertex_ai_api`; `enable_dedicated_vertex_endpoints = False` | Gemini por Vertex AI dentro del proyecto, sin endpoints dedicados; las familias en producción dependen de quién las etiquete | 5.3; 5.8 (P8-1, P8-7) | 6.2 |
 
 ## 🔒 Restricciones de despliegue que siguen vigentes
 
@@ -61,8 +64,9 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 **Objetivo:** reemplazar los contratos de predicción de EPIC-1 por los que fije 5.8.
 
 * `AnalyzedReviewPrediction` con el modelo elegido, versión de modelo y de corrida, familias multi-etiqueta, marcas `u` y `s`, y estado de elegibilidad con su código.
-* Retirar o versionar `ABSATopic`, `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS` y `cumple_umbral_palabras`; revisar `IncidentAlertMessage` y `HitlTriageAuditRecord`, que hoy usan `ABSATopic`.
+* Quitar `priority_weight_score` y `tnss_numeric_calibrated` (5.6). Retirar o versionar `ABSATopic`, `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS` y `cumple_umbral_palabras`; revisar `IncidentAlertMessage` y `HitlTriageAuditRecord`, que hoy usan `ABSATopic`.
 * Contratos de las curadurías (6.2) y del registro de corridas.
+* **Política HITL** (`HitlPolicy`), versionada y de solo inserción: versión de modelo y de calibración (T), señal (`prob_max`), cobertura objetivo, umbral equivalente, fecha de vigencia, quién la fijó (hash) y motivo. Y **curva de cobertura y riesgo** (`HitlCoverageCurve`) por versión de modelo: puntos de cobertura, riesgo con su IC, umbral, errores atrapados, revisiones por semana y minutos estimados. El valor por defecto es el de 5.6 (90 %) y reemplaza a `hitl_entropy_threshold` de `Settings`.
 * Contrato documentado en `docs/contracts/`.
 * **Terminado cuando:** contratos con pruebas, cobertura ≥ 85 % y consumidores actualizados; EPIC-1 anota qué contratos quedaron reemplazados.
 
@@ -72,6 +76,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 
 * Tablas de salida que reemplazan `delora_predictions`, con un plan de migración (la tabla está vacía).
 * Base de curadurías para el reentrenamiento. Punto de partida: el [borrador de tablas de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría) (`curation_sentiment` o ampliar `hitl_triage_audit_log`, `curation_aspects`, `topic_model_versions`, `topic_catalog`, `curation_topics`, `topic_assignments`). Principios: registros inmutables (solo inserción); revisor como hash SHA-256; cada registro guarda la versión de la guía, del modelo y del prompt que produjo la predicción revisada; solo texto sanitizado.
+* Tablas `hitl_policy` (una fila por versión; la vigente es la última) y `hitl_coverage_curves` (una curva por versión de modelo y de calibración), en BigQuery y de solo inserción, con los contratos de 6.1. Las lee la inferencia (6.3) y la API de EPIC-7.
 * Cloud Run Job de inferencia y su Scheduler, IAM de `voc-sa-ml-backend` (Vertex AI si 5.8 elige M9) y el registro de versiones de modelo que proponga 5.7.
 * **Terminado cuando:** `pulumi preview` con mocks pasa, EPIC-2 anota qué recursos quedaron reemplazados y la matriz FMEA tiene su fila si se almacena texto.
 
@@ -80,7 +85,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 **Objetivo:** el paquete desplegable que antes describía la fase 3 de EPIC-5.
 
 * Backfill único y delta diario sobre `sanitized_reviews_tds`, con las reglas de elegibilidad aprobadas en 5.8.
-* Sentimiento con el modelo elegido, calibración y marca HITL de 5.6, familias `aspects_v2_1` y asignación de tópicos con versión.
+* Sentimiento con el modelo elegido y su calibración. La marca `requires_hitl` sale de la política HITL vigente (6.2), y cada predicción guarda la versión de política con la que se marcó, familias `aspects_v2_1` y asignación de tópicos con versión.
 * Persistencia por `MERGE` en las tablas de 6.2 y alertas `IncidentAlertMessage` por familia y marca `u`.
 * **Terminado cuando:** el backfill cabe en el tiempo y costo medidos en 5.7, el delta corre en el Job programado y los *quality gates* pasan sin red.
 
@@ -90,6 +95,8 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 
 * Monitor de *drift*: entrada (longitud, vocabulario, `version_app`, proporción de no predecibles), predicción (proporción de `NEG` por banco y versión) y familias con la marca `u`. Publica en `voc-incident-alerts-topic`. La especificación anterior está en el [anexo, A.7](#a7-monitor-de-drift-antes-tarea-651-del-portal).
 * Regla de promoción y rollback de modelos, y política de *re-scoring* del histórico.
+* **Al promover o recalibrar un modelo,** se recalcula la curva de cobertura y riesgo sobre el oro *dev* (como `voc_analytics.calibration.selective`), se guarda en `hitl_coverage_curves` y se propone el umbral equivalente a la cobertura vigente. El volumen semanal y los minutos estimados se actualizan con el volumen real y el tiempo medido por revisión en las curadurías.
+* Cuándo la deriva o un tema nuevo suben temporalmente la revisión (D1 de 5.6, pendiente de 5.7): como una nueva versión de la política, nunca como un cambio silencioso.
 * Re-ajuste trimestral de tópicos con emparejamiento de identificadores entre versiones.
 * **Terminado cuando:** las alertas llegan al tópico con umbrales de 5.7 y el portal de EPIC-7 puede consultarlas.
 
@@ -100,7 +107,8 @@ Cada feature se detalla (archivos, firmas y pruebas) al aprobarse 5.8.
 * [ ] Contratos de predicción, elegibilidad y curaduría v3 en `voc-common`, con su documento en `docs/contracts/` (6.1).
 * [ ] Tablas de salida y de curaduría, Job de inferencia e IAM aprovisionados con Pulumi; `delora_predictions` migrada o retirada (6.2).
 * [ ] Backfill del corpus y delta diario en operación, dentro del costo medido en 5.7 (6.3).
-* [ ] Monitor de *drift*, promoción y rollback, y *re-scoring* documentados y probados (6.4).
+* [ ] Política HITL y curva de cobertura y riesgo versionadas en BigQuery; la inferencia marca con la política vigente (6.1 a 6.3).
+* [ ] Monitor de *drift*, promoción y rollback, recálculo de la curva al promover un modelo y *re-scoring* documentados y probados (6.4).
 * [ ] *Quality gates* del monorepo (`ruff`, `pyrefly`, `bandit`, `pytest` con cobertura ≥ 85 %) sin errores.
 
 ---

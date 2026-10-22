@@ -1,6 +1,6 @@
 # EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado (2026-10-22):** En curso, fase 2. Cerradas: el EDA (5.2, 2026-10-21, con la guía de aspectos `v2.1`), el etiquetado (5.3: oro de 1 730 ítems y plata `silver_v0`), la experimentación de modelos (5.4: M4 RoBERTuito, κ 0.917; M4 contra M9 se decide en 5.8) y los tópicos (5.5, 2026-10-22: híbrido aprobado por el autor y `TOPIC_TOO_SHORT` k = 1). Siguen 5.6–5.8. Los frontales de curaduría HITL (sentimiento, aspectos y tópicos) pasan a EPIC-7 (7.7) y su base de datos a EPIC-6 (6.2). Ver [estado por feature](#-estado-por-feature) y [siguientes pasos](#siguientes-pasos).
+* **Estado (2026-10-22):** En curso, fase 2. Cerradas: el EDA (5.2, 2026-10-21, con la guía de aspectos `v2.1`), el etiquetado (5.3: oro de 1 730 ítems y plata `silver_v0`), la experimentación de modelos (5.4: M4 RoBERTuito, κ 0.917; M4 contra M9 se decide en 5.8) y los tópicos (5.5, 2026-10-22: híbrido aprobado por el autor y `TOPIC_TOO_SHORT` k = 1). 5.6 cerrada (2026-10-22: calibración, HITL al 90 %, PPI y priorización). Siguen 5.7 y 5.8, que dependen de las decisiones del [registro](#decisiones-pendientes). Los frontales de curaduría HITL (sentimiento, aspectos y tópicos) pasan a EPIC-7 (7.7) y su base de datos a EPIC-6 (6.2). Ver [estado por feature](#-estado-por-feature) y [siguientes pasos](#siguientes-pasos).
 * **Historia de los resultados:** [`docs/analytics/README.md`](../analytics/README.md) ordena los reportes como una historia y dice qué cifra está vigente. Este documento solo guarda el planteamiento, el estado y lo que falta; la cronología detallada está en los reportes.
 * **Fases:** (1) planteamiento analítico viable → (2) experimentación para elegir la estrategia de producción → (3) despliegue de la estrategia elegida. Desde la reorganización del backlog (2026-10-22), la fase 3 es [EPIC-6](epic_6.md), que conserva la especificación anterior como anexo no vigente y se detalla tras el registro de decisión (5.8).
 * **Semanas Objetivo:** Semanas 4 - 6 (fases 1 y 2).
@@ -21,7 +21,7 @@ Diseñar, con evidencia, el pipeline analítico que responde a cuatro preguntas 
 | Q1. ¿Cuál es el sentimiento real del texto, separado de las estrellas? | Polaridad por reseña, score continuo y brecha frente a las estrellas (*Satisfaction Gap*) | 5.4 |
 | Q2. ¿Qué temas recurrentes hay en las quejas y cómo cambian en el tiempo? | Familias de aspectos `v2.1` (núcleo) y tópicos curados (detalle) sobre las reseñas negativas, por banco y periodo. **Resuelta en 5.5** | 5.5 |
 | Q3. ¿Cómo detectamos rápido un incidente nuevo? | Marca `u` (problema atribuido a una actualización) y series por familia, por banco y mes; la prueba hacia atrás detecta 2 de 3 incidentes de BBVA. **Resuelta en 5.5** (umbrales en 5.7) | 5.5 |
-| Q4. ¿Qué atender primero? | Priorización que combine severidad, volumen y votos de utilidad | 5.6 |
+| Q4. ¿Qué atender primero? | Volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto. **Resuelta en 5.6** | 5.6 |
 
 Principios:
 
@@ -44,9 +44,9 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 | 5.3 Etiquetado | **Cerrada (2026-10-20).** Oro (1 730 ítems) y plata vigentes; acuerdo entre personas medido (κ 0.81). 5.5 cerró sin usar `menciona_falla` (`prompt_v4` no se necesita). Se reabre si 5.6 o 5.8 necesitan más oro, o si se suman anotadores (guía `v2.3`) | [Capítulo 3](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata) |
 | 5.4 Modelos de sentimiento | **Cerrada la experimentación (2026-10-20):** M0–M9 evaluados; M4 RoBERTuito es el mejor modelo propio; M4 contra M9 se decide en 5.8 | [Protocolo](../analytics/sentiment/sentiment_models_protocol.md), [capítulo 4](../analytics/README.md#4-competencia-de-modelos-de-sentimiento) |
 | 5.5 Tópicos y ABSA | **Cerrada (2026-10-22).** Recomendación aprobada por el autor, con el agregado de llevar los frontales de curaduría HITL (sentimiento, aspectos y tópicos) a EPIC-7 y su base de datos a EPIC-6. Híbrido: familias `aspects_v2_1` y la marca `u` como núcleo de medición y alerta (la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas; `DV` y `UX` avisaron del rediseño de BBVA un mes antes), y tópicos por cláusulas como capa de detalle curada para producto e ingeniería. Los tópicos no encontraron temas fuera de la taxonomía; cerca de un tercio de su peso es ruido. `TOPIC_TOO_SHORT` con k = 1 (decidido). Costo: ~$0.60 al mes de Gemini y ~30–60 min de curaduría por trimestre | [Plan](../analytics/topics/topics_design.md), [reporte](../analytics/topics/topics_report.md), [nota para 5.8](../analytics/topics/topics_decision_note.md) |
-| 5.6 Calibración, HITL y priorización | Sin iniciar | — |
-| 5.7 Escala, ciclo de vida y monitoreo | Sin iniciar | — |
-| 5.8 Registro de decisión | Sin iniciar | — |
+| 5.6 Calibración, HITL y priorización | **Cerrada (2026-10-22).** *temperature scaling* adoptado; umbral HITL al 90 % de cobertura (parámetro configurable); PPI con Gemini y con M4 hecho; M4 reentrenado con pesos guardados (lote `m4_ppi`); priorización por volumen de negativas por familia y marca `u`, sin fórmula anterior ni votos (decisión del autor) | [Plan](../analytics/calibration/calibration_design.md), [reporte](../analytics/calibration/calibration_report.md) |
+| 5.7 Escala, ciclo de vida y monitoreo | Sin iniciar, con avances de 5.6 (velocidad de M4 en T4 y CPU, pesos guardados); faltan [P7-1 a P7-8](#decisiones-pendientes) | [Reporte de 5.6](../analytics/calibration/calibration_report.md), §3.3 |
+| 5.8 Registro de decisión | Sin iniciar; faltan [P8-1 a P8-12](#decisiones-pendientes) y las incompatibilidades con EPIC-6 y EPIC-7 | — |
 
 ### FEATURE 5.1: Planteamiento, Volumetría y Contrato Analítico
 
@@ -150,15 +150,28 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 
 ### FEATURE 5.6: Calibración, Incertidumbre, HITL y Priorización
 
-* **Calibración:** *temperature scaling* (Guo et al., 2017) sobre el oro *dev*, antes de cualquier uso de probabilidades o entropía. En el *dev* de 199, M1 tenía ECE 0.02 y M4 0.017 sin calibrar; se re-mide con el *dev* ampliado.
-* **Umbral de revisión humana:** elegido por la curva cobertura–riesgo en el oro *dev*, no fijado a priori en 0.65.
-* **Estimaciones poblacionales:** PPI con la plata y el oro aleatorio para la incongruencia por banco y periodo con intervalos válidos.
-* **Priorización (Q4):** las fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` de la especificación anterior son hipótesis. Se evalúan contra un criterio observable (por ejemplo, ordenar incidentes conocidos) antes de adoptarlas. Los votos de utilidad son escasos y de cola larga (EDA, H7): conviene transformarlos.
+> **Cerrada (2026-10-22).** [Plan](../analytics/calibration/calibration_design.md) y [reporte](../analytics/calibration/calibration_report.md). Todo se hizo con el oro *dev* (el *test* sigue intacto), la plata y una muestra nueva sin etiqueta; código en `voc_analytics.calibration`.
+
+**Objetivo:** dejar calibradas las probabilidades, fijar la revisión humana, estimar proporciones poblacionales con intervalos válidos y decidir cómo se prioriza (Q4).
+
+* **Calibración (decisión del autor):** *temperature scaling* con una T por semilla de M4 (≈ 1.7). M4 está sobreconfiado (confianza 0.995 y acierto 0.972); el ECE baja de ~0.025 a ~0.01 sin cambiar la exactitud. *Vector scaling* se descartó.
+* **Umbral HITL de sentimiento (decisión del autor):** probabilidad máxima calibrada, **90 % de cobertura por defecto** como parámetro configurable. Se revisa el ~10 % menos seguro (~350 textos únicos por semana, 40–60 min) y el error entre lo aceptado baja de 2.8 % a 0.4 %. Revisar más del 10 % casi no mejora. Es un costo de operación del escenario de producción, no una carga semanal del autor; para la tesis basta una validación única. La curva y el parámetro son estado de la aplicación (EPIC-6, 6.1 a 6.4; EPIC-7, 7.7.2).
+* **Descartes:** el ensamble de 3 semillas, BETO para el HITL, el disparador por impacto (4–5★, `NEG` y votos ≥ 5) como señal de error y la marca `duda` de Gemini (0 de 199).
+* **PPI** (decisión del autor: medir con Gemini y con M4): los intervalos poblacionales son 2 a 4 veces más estrechos que con el oro solo, con cualquiera de los dos predictores (estrellas distintas del texto: 11.6 % [10.5, 12.6] con Gemini y 11.7 % [10.6, 12.8] con M4). Para M4 se usó una muestra nueva del snapshot (`ppi_v0`, 69 534 textos sin plata ni oro), porque M4 se entrenó con la plata.
+* **Modelos con pesos:** el lote `m4_ppi` de Kaggle reentrenó M4 RoBERTuito con las semillas 1 a 3 y **guardó los pesos** (218 MB cada uno en fp16, `data/models/weights/`, fuera de git). Reproducen a 5.4 (κ 0.912–0.923) y son los candidatos desplegables.
+* **Priorización, Q4 (decisión del autor):** volumen de negativas por familia y marca `u`, en nivel y en anomalía. La fórmula anterior (`priority_weight_score`) ordena los incidentes igual que contar negativas, y los votos empeoran el orden (se acumulan con el tiempo), así que salen del contrato; los votos se muestran como contexto.
+* **Límite:** en los casos difíciles (*dev* dirigido) el error sigue en 17–23 % aun revisando el 20 %.
+* **Pasa a otras features:** D1 (cuándo la deriva o un tema nuevo suben la revisión) a 5.7 ([P7-6](#decisiones-pendientes)); la fila de la FMEA sobre la priorización errónea y la validación única de la cola HITL, al autor.
 
 ### FEATURE 5.7: Escala, Ciclo de Vida y Monitoreo
 
+> **Sin iniciar formalmente, con avances (2026-10-22)** que dejó 5.6. Las decisiones que faltan para cerrarla están en el [registro de decisiones](#decisiones-pendientes) (P7-1 a P7-8).
+
 * **Benchmark de escala:** tiempo y costo del backfill sobre los textos únicos y del delta diario para los finalistas (Kaggle T4 y Cloud Run CPU), aplicando deduplicación, orden por longitud y adaptadores fusionados.
+  * **Medido en 5.6 (indicativo):** M4 RoBERTuito infiere ~2 500 textos/s en la T4 (los 1 383 138 textos únicos en ~9 min de GPU) y 39–53 textos/s en CPU (Mac M2, fp32, sin ordenar por longitud): el backfill tomaría ~7–10 h en CPU y el delta diario (~500 textos únicos) ~10–15 s. El ajuste tomó ~6 min por semilla en la T4.
+  * **Falta:** repetir la medición en Cloud Run (1 y 2 vCPU, memoria pico), probar el orden por longitud, y medir el costo de las familias `aspects_v2_1` con Gemini sobre las negativas del corpus (5.5 midió $3.64 por 40 382 negativas).
 * **Ciclo de vida de artefactos:** registro de versiones (GCS versionado o Vertex Model Registry), Model Card por versión, regla de promoción y rollback, y política de **re-scoring** al cambiar de modelo (todo el histórico o solo lo nuevo).
+  * **Ya existe:** pesos de 3 semillas en fp16 con su tokenizador, una T por semilla y el procedimiento para recalcular la curva HITL al promover un modelo (`calibration.selective`, EPIC-6 6.4).
 * **Monitoreo (sin y con etiquetas):**
 
   | Nivel | Qué se mide | ¿Requiere etiquetas? |
@@ -168,6 +181,8 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
   | Concepto | Desempeño sobre una muestra humana periódica pequeña | Sí |
   | Tópicos | Aparición y crecimiento de tópicos; esperado, no un fallo | No |
 
+* **Heredado de 5.5:** umbrales de la señal de incidentes, análisis por versión, emparejamiento de tópicos entre reajustes y monitoreo de `OT`. **De 5.6:** D1 y la ventana de deriva por cadencia de cada banco (5.2).
+
 ### FEATURE 5.8: Registro de Decisión
 
 `docs/analytics/decision_record.md`, con la evidencia de 5.2–5.7. Fija:
@@ -176,13 +191,72 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 * estrategia de tópicos y detección de incidentes;
 * reglas de limpieza y elegibilidad, incluida `TNSS_SINGLE_WORD`;
 * esquema de las tablas de salida y migración desde `delora_predictions`;
-* umbral HITL y priorización;
+* umbral HITL y priorización (decididos en 5.6);
 * plan de backfill, operación diaria, ciclo de vida y monitoreo;
 * límites y riesgos para la Model Card y la FMEA.
 
-Al aprobarlo se detalla [EPIC-6](epic_6.md) (despliegue) con las dependencias, tablas y pruebas que correspondan.
+**Antes de montar la infraestructura hay que tomar varias decisiones.** EPIC-6 (contratos, tablas, Jobs) y EPIC-7 (API y portal) se especificaron antes de la evidencia, y varias de sus piezas chocan con lo que decidió EPIC-5: el modelo, la licencia, el encoder de la búsqueda, la definición del *Satisfaction Gap*, la explicabilidad y quién etiqueta las familias en producción. Ninguna de las dos épicas empieza hasta que el [registro de decisiones](#decisiones-pendientes) tenga resueltas las de 5.8 (P8-1 a P8-12) y estén cerradas o aceptadas las [incompatibilidades](#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia). Al aprobarse el registro se detalla [EPIC-6](epic_6.md) con las dependencias, tablas y pruebas que correspondan.
+
+<a id="decisiones-pendientes"></a>
+
+## 🗂️ Registro de decisiones pendientes
+
+Seguimiento de lo que falta decidir para cerrar 5.7 y 5.8 y empezar EPIC-6 y EPIC-7. Cada decisión es del autor; la columna "Propuesta" es la recomendación con la evidencia que hay hoy, no una decisión. Al decidirse, la fila se marca y pasa al reporte de su feature o a `decision_record.md`. Actualizado: 2026-10-22.
+
+### Para cerrar 5.7
+
+| ID | Decisión | Opciones | Evidencia hoy | Propuesta | Bloquea |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| P7-1 | Entorno del backfill | Kaggle T4; Cloud Run CPU; GPU Spot en GCP | T4: ~9 min, pero sube **todo** el corpus a Kaggle (F-13 cubre el entrenamiento, no el corpus completo). CPU: ~7–10 h estimadas. GPU en GCP: requiere pasar la cuenta a pago | Cloud Run Job en CPU, por tramos y con el orden por longitud: el corpus no sale de GCP y el costo cabe en el free tier; medirlo antes de decidir | 6.2, 6.3 |
+| P7-2 | Recursos del delta diario | 1 o 2 vCPU; 1 o 2 GiB | Modelo de 218 MB en fp16 (~435 MB en fp32); ~500 textos únicos por día | Cloud Run Job de 1 vCPU y 2 GiB; medir la memoria pico | 6.2 |
+| P7-3 | Registro de artefactos | GCS versionado; Vertex Model Registry | Pesos en fp16 + tokenizador + T + curva HITL por versión | GCS versionado (sin costo fijo), con un manifiesto por versión | 6.2, 6.4 |
+| P7-4 | Promoción, rollback y *re-scoring* | Re-predecir todo el histórico o solo lo nuevo al cambiar de modelo | El backfill en CPU tomaría horas; las series históricas se rompen si se mezclan modelos | Promover solo si mejora en el oro *dev* con la regla de 5.4; *re-scoring* completo al promover, versionado por `model_version` | 6.3, 6.4 |
+| P7-5 | Umbrales de la señal de incidentes | z, línea base, mínimo de filas por mes | 5.5: la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas; solo 3 incidentes etiquetados | Fijar con más filas por mes (el backfill) y documentar que es ilustrativo; armar una lista de incidentes conocidos | 6.4 |
+| P7-6 | D1: cuándo la deriva o un tema nuevo suben la revisión HITL | Automático, sugerido al revisor o manual | Curva de cobertura y riesgo por versión (5.6) | Que el monitor sugiera una nueva versión de la política HITL y que una persona la apruebe en el portal | 6.4, 7.7.2 |
+| P7-7 | Monitoreo de concepto | Tamaño y frecuencia de la muestra humana periódica | Única fuente con etiquetas; cuesta tiempo humano | Para la tesis, la validación única de la cola HITL; en producción, ~100 reseñas aleatorias por trimestre | 6.4 |
+| P7-8 | Re-ajuste de tópicos | Frecuencia, emparejamiento de identificadores y vigilancia de `OT` | 5.5: curaduría de ~30–60 min por trimestre | Trimestral, con emparejamiento por similitud de centroides | 6.4, 7.7.1 |
+
+### Para 5.8 y antes de EPIC-6 y EPIC-7
+
+| ID | Decisión | Opciones | Evidencia hoy | Propuesta | Bloquea |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| P8-1 | Modelo de sentimiento | M4 RoBERTuito (`_ppi`, con pesos); M9 Gemini | κ 0.917 contra 0.93 (M9 − M4 = +0.021 [−0.000, 0.043]); M4 sin costo por texto y calibrado; M9 ~$72 el backfill, sin probabilidades ni señal HITL útil | Se decide con el oro *test* (una sola vez) y con P8-2 | 6.1–6.3, 7.1, 7.2 |
+| P8-2 | Licencia del modelo | Aceptar la licencia no comercial de `pysentimiento` (tesis); reentrenar desde un checkpoint base sin esa restricción; M9 | Los dos M4 parten de checkpoints de `pysentimiento` (RoBERTuito y BETO), con licencia solo para investigación | Aceptarla para la tesis y declararla en la Model Card como límite de un uso comercial | P8-1, 7.5 |
+| P8-3 | `TNSS_SINGLE_WORD` | Excluir y reportar cobertura; asignar por léxico (`RULE_BASED`) | El léxico cubre el 95.3 % con 99 % de exactitud; excluir solo lo no cubierto deja un sesgo de −0.001 a −0.007 | Léxico determinista para las cubiertas y excluir el resto | 6.1, 6.3 |
+| P8-4 | Aprobar las reglas de elegibilidad | `v0.1` (borrador) a `v1` | Corte de NUBANK, `TNSS_NOT_SPANISH` descartada, `TOPIC_TOO_SHORT` k = 1 | Aprobar `v1` junto con P8-3 | 6.1, 6.3 |
+| P8-5 | Esquema de salida y migración | Columnas de las tablas que reemplazan `delora_predictions` | Borrador de 5.1; 5.6 quitó `priority_weight_score` y `tnss_numeric_calibrated` | Predicción por texto único y por fila, con `model_version`, `calibration_version` y `hitl_policy_version`; la tabla vieja se retira (está vacía) | 6.1, 6.2, 7.1 |
+| P8-6 | Búsqueda semántica | Encoder MiniLM (384), otro encoder, o sacarla del alcance | Delora descartado; los tópicos ya usan MiniLM; la infraestructura de EPIC-2 declara 768 dimensiones | MiniLM de 384 en BigQuery (`VECTOR_SEARCH`), sin Vertex Vector Search | 6.2, 7.1, 7.3, 7.4 |
+| P8-7 | Familias en producción | Gemini (`aspects_v2_1`) sobre todas las negativas; clasificador propio entrenado con esas etiquetas | Gemini κ 0.55–0.86 contra el autor según la familia; ~$0.60 al mes en el delta; el backfill de las negativas no está medido | Gemini dentro de GCP, como en 5.5, con costo del backfill medido en 5.7 | 6.1, 6.3 |
+| P8-8 | Explicabilidad | Oclusión por token con el modelo elegido; explicación por familias y términos de tópico; sacarla del alcance | La meta de < 150 ms en 1 vCPU no es realista: M4 hace 39–53 textos/s en CPU, y una explicación por oclusión necesita una pasada por token | Oclusión asíncrona o precalculada para la cola HITL, sin la meta de 150 ms | 7.2, 7.3 |
+| P8-9 | Definición del *Satisfaction Gap* | Diferencia entre estrellas y `tnss_numeric_calibrated` (descartado en 5.6); proporción de `NEG` contra la de estrellas 1–2; estrellas distintas del texto | PPI ya da estas proporciones con intervalos por banco | Reportar las proporciones de PPI (`NEG` por texto contra `NEG` por estrellas, y estrellas distintas del texto) con su intervalo | 7.1, 7.4, 7.6 |
+| P8-10 | Estimaciones del portal | Proporciones crudas sobre las predicciones o corregidas por PPI | PPI necesita el oro aleatorio; las proporciones crudas tienen el sesgo del modelo | Crudas para las series diarias y PPI para los KPI por banco y periodo | 7.1, 7.4 |
+| P8-11 | Registro de las revisiones de sentimiento | Ampliar `hitl_triage_audit_log` o crear `curation_sentiment` | La bitácora actual guarda un `ABSATopic`, que ya no existe | Crear `curation_sentiment` y dejar la bitácora vieja sin uso | 6.1, 6.2, 7.2 |
+| P8-12 | Alcance de EPIC-7 para la presentación | Todas las features o un subconjunto | Tiempo disponible antes de la presentación | Decidir al cerrar 5.8, con la lista de features que entran a la demo | 7.1–7.7 |
+
+### Incompatibilidades entre el diseño de EPIC-6 y EPIC-7 y la evidencia
+
+Piezas del texto original de EPIC-1, EPIC-2 y EPIC-7 que chocan con lo decidido en EPIC-5. Las "resueltas" ya tienen decisión y solo falta reescribir la especificación; las "pendientes" dependen de una decisión del registro.
+
+| Pieza (dónde) | Choca con | Estado |
+| :--- | :--- | :--- |
+| `AnalyzedReviewPrediction` con `sentimiento_roberta` y docstring "DeLoRA" (EPIC-1) | Delora descartado (5.4) | Pendiente de P8-1 |
+| `ABSATopic` único por reseña (EPIC-1; EPIC-7 7.1, 7.2, 7.4, 7.6) | Familias multi-etiqueta `v2.1` y marcas `u` y `s` (5.5) | Resuelta en 5.5; se reescribe en 6.1 |
+| `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` (EPIC-1; EPIC-7 7.2 "de 2 a 60 palabras") | Sin filtro de longitud (5.2); elegibilidad por reglas | Resuelta; falta P8-3 y P8-4 |
+| `priority_weight_score`, `tnss_numeric_calibrated` y `prediction_entropy` (EPIC-1; EPIC-7 7.1, 7.2) | Priorización por volumen y marca `u`; HITL por probabilidad máxima calibrada (5.6) | Resuelta en 5.6; se reescribe en 6.1 |
+| `delora_predictions` de 15 columnas agrupada por `topico` (EPIC-2) | Esquema versionado por modelo, calibración y política HITL | Pendiente de P8-5 |
+| `embedding_vector` de 768 dimensiones e índice de Vertex de 768 (EPIC-2; EPIC-7 7.1, 7.3, 7.6) | Delora descartado; MiniLM de 384 en tópicos | Pendiente de P8-6 |
+| `hitl_entropy_threshold = 0.65` en `Settings` (EPIC-1; EPIC-7 objetivo y 7.5) | 90 % de cobertura como política versionada (5.6) | Resuelta en 5.6; se reescribe en 6.1 y 7.5 |
+| `hitl_triage_audit_log` con `original_topic`/`validated_topic` (EPIC-2; EPIC-7 7.2) | Curadurías de sentimiento, aspectos y tópicos (5.5) | Pendiente de P8-11 |
+| *Satisfaction Gap* como estrellas menos TNSS continuo, prueba con gap −1.11 (EPIC-7 7.1, 7.6) | `tnss_numeric_calibrated` descartado (5.6) | Pendiente de P8-9 |
+| Explicador de < 150 ms en 1 vCPU y 1 GiB (EPIC-7 7.2) | Velocidad medida de M4 en CPU | Pendiente de P8-8 |
+| Model Card con Delora, paridad dialectal sintética y umbral 0.65 (EPIC-7 7.5) | 5.4 y 5.6 | Resuelta; se reescribe al cerrar 5.8 |
+| FMEA: "Label Noise mitigado por Dual LoRA" y "priorización mitigada por entropía ≥ 0.65" (EPIC-7 7.5) | M4 ajustado con la plata; HITL por cobertura | Resuelta; la fila nueva de priorización la califica el autor |
+| *Concept drift* con JSD de 8 tópicos y umbrales PSI 0.25 / JSD 0.20 (anexo de EPIC-6, A.7) | Familias y marca `u` (5.5) | Pendiente de P7-5 |
+| Backfill "dentro de GCP" contra la medición en Kaggle | Principio de que los datos no salen de GCP | Pendiente de P7-1 |
+| IAM de Vertex AI para el modelo de producción (EPIC-6 6.2) | Depende de si se usa M9 o solo las familias con Gemini | Pendiente de P8-1 y P8-7 |
 
 ---
+
 
 <a id="siguientes-pasos"></a>
 
@@ -192,9 +266,9 @@ En orden. Cada paso sale de un pendiente de los reportes o del alcance de su fea
 
 | # | Paso | Dueña | Depende de | Terminado cuando |
 | :---: | :--- | :---: | :--- | :--- |
-| 11 | **5.6:** calibración, umbral HITL por cobertura–riesgo, PPI y priorización | 5.6 (al arrancar) | Modelo finalista (2–4) | Umbral y calibración elegidos en el oro *dev* |
-| 12 | **5.7:** benchmark de escala de los finalistas, ciclo de vida y plan de monitoreo | 5.7 (al arrancar) | Finalistas (2–4) | Tiempo y costo del backfill y del delta medidos; propuesta de ciclo de vida y monitoreo. Heredado de 5.5: umbrales de la señal, análisis por versión, emparejamiento de tópicos entre reajustes y monitoreo de `OT` |
-| 13 | **5.8:** registro de decisión, evaluación única en el oro *test*, decisión de `TNSS_SINGLE_WORD` y aprobación de las reglas | 5.8 (al arrancar) | 2–12 | `decision_record.md` aprobado y EPIC-6 detallada. Heredado de 5.5: registrar la estrategia híbrida ([nota](../analytics/topics/topics_decision_note.md)) y la elección M4/M9, de la que dependen las familias |
+| 11 | ~~**5.6:** calibración, umbral HITL, PPI y priorización~~ **Hecho (2026-10-22):** ver el [reporte](../analytics/calibration/calibration_report.md) | 5.6 | — | — |
+| 12 | **5.7:** benchmark de escala en Cloud Run, ciclo de vida y plan de monitoreo | 5.7 (al arrancar) | 5.6 (hecho) | Decisiones P7-1 a P7-8 del [registro](#decisiones-pendientes) tomadas; tiempo y costo del backfill y del delta medidos en Cloud Run; propuesta de ciclo de vida y monitoreo |
+| 13 | **5.8:** registro de decisión, evaluación única en el oro *test* y aprobación de las reglas | 5.8 (al arrancar) | 12 | Decisiones P8-1 a P8-12 tomadas, incompatibilidades resueltas o aceptadas, `decision_record.md` aprobado y EPIC-6 detallada |
 
 ---
 
@@ -236,7 +310,7 @@ Crédito disponible: ~$5 000 MXN. La restricción del etiquetado es el tiempo hu
 * [x] Conjunto de plata con prompt, modelo y costo versionados; conjunto de oro con bloque aleatorio documentado y medición de anclaje (5.3).
 * [x] Al menos M0–M7 evaluados con el mismo protocolo; M8 y M9 evaluados o descartados con motivo (5.4). *M4 RoBERTuito es el mejor modelo propio; M5 y M8 descartados con motivo; M4 contra M9 se decide en 5.8.*
 * [x] Decisión sobre ABSA, tópicos dinámicos o híbrido, con una señal de incidentes probada hacia atrás (5.5). *Híbrido aprobado por el autor (2026-10-22): familias `v2.1` y marca `u` como núcleo y alerta, tópicos como capa de detalle curada; señal probada con los 3 incidentes de BBVA ([reporte](../analytics/topics/topics_report.md), sección 5).*
-* [ ] Calibración y umbral HITL elegidos por cobertura–riesgo (5.6).
-* [ ] Benchmark de escala, propuesta de ciclo de vida y plan de monitoreo (5.7).
-* [ ] Registro de decisión aprobado y [EPIC-6](epic_6.md) detallada a partir de él (5.8).
+* [x] Calibración y umbral HITL elegidos por cobertura–riesgo (5.6). *Temperature scaling (T ≈ 1.7) y 90 % de cobertura por defecto como parámetro configurable; PPI y priorización decididos ([reporte](../analytics/calibration/calibration_report.md)).*
+* [ ] Benchmark de escala, propuesta de ciclo de vida y plan de monitoreo (5.7). *Avance: velocidad de M4 medida en la T4 y en CPU; pesos guardados (5.6). Faltan P7-1 a P7-8.*
+* [ ] Registro de decisión aprobado, con P8-1 a P8-12 decididas, y [EPIC-6](epic_6.md) detallada a partir de él (5.8).
 * [x] Experimentos reproducibles en `experiments/analytics/` (proyecto `uv` propio, semillas fijas), sin dependencias de experimentación en el `uv.lock` de producción.

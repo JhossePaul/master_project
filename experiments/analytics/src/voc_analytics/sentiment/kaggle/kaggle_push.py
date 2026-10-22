@@ -19,7 +19,8 @@ Uso (desde experiments/analytics):
 
 Cada lote es una lista de comandos de `LOTES`. El kernel instala
 `pysentimiento`, corre los comandos sobre la GPU (T4) y deja en su salida
-`preds/`, `detectores/` y un log por comando. Las predicciones descargadas se
+`preds/`, `detectores/`, `weights/` (si el lote los guarda) y un log por
+comando. Las predicciones descargadas se
 copian a `data/models/preds/` y se evalúan en el Mac con `evaluate.py`.
 Dataset y kernel son privados.
 """
@@ -71,6 +72,15 @@ LOTES = {
         for eps in (0.1, 0.2)
         for seed in (1, 2, 3)
     ],
+    # 5.6, PPI opción B1: M4 RoBERTuito con tres semillas que además predice
+    # la muestra sin etiqueta (`sample_ppi`) y guarda los pesos (fp16). El
+    # sufijo `_ppi` evita pisar las predicciones de 5.4 con las que se
+    # calibró; estos son los modelos con pesos para 5.7 y 5.8.
+    "m4_ppi": [
+        f"{FINETUNE} robertuito --seed {seed} --tag _s{seed}_ppi "
+        "--ppi --save-weights"
+        for seed in (1, 2, 3)
+    ],
     # M8 completo con la configuración ganadora del grid (F1 del detector
     # contra la plata fuera de muestra): h1=1, h2=2, r=16; detector con todos
     # los pares, 8 épocas con 2 de warm-up y tres semillas.
@@ -94,7 +104,8 @@ if (src / "code").is_dir():
 else:  # Kaggle puede dejar la carpeta como code.zip sin descomprimir.
     shutil.unpack_archive(src / "code.zip", work / "code")
 print(sorted(str(p.relative_to(src)) for p in src.rglob("*"))[:40], flush=True)
-env = dict(os.environ, VOC_BUNDLE=str(src), VOC_PREDS=str(work / "preds"))
+env = dict(os.environ, VOC_BUNDLE=str(src), VOC_PREDS=str(work / "preds"),
+           VOC_WEIGHTS=str(work / "weights"))
 logs = work / "logs"
 logs.mkdir(exist_ok=True)
 for i, cmd in enumerate(COMMANDS):

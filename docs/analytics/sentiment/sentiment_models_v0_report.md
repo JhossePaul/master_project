@@ -20,6 +20,7 @@
 > * **Superado:** las cifras de κ sobre el *dev* de 199 (secciones 1, 4, 9 y 10), infladas por el anclaje, y las implicaciones de la sección 8, que ponían a M1 como referencia a vencer.
 > * **Sigue vigente:** la decisión de limpieza y ponderación (sección 2), la lectura por longitud (sección 3), las cifras de costo (secciones 6, 10 y 12) y la conclusión de la escalera de ruido.
 > * **Escalera completa:** M0–M9 evaluados. Un sesgo de `NEU` sobre M4, elegido con la plata, tampoco mejora en el oro (sección 14). La experimentación de 5.4 se cierra con M4 RoBERTuito; la elección entre M4 y M9 queda para 5.8.
+> * **Después (5.6, 2026-10-22):** M4 RoBERTuito se reentrenó con las semillas 1 a 3 guardando los pesos (`M4_robertuito_s*_ppi`); reproduce estas cifras (κ 0.912–0.923 sin ponderar). Ver el [reporte de 5.6](../calibration/calibration_report.md). La elección M4/M9 y la licencia son P8-1 y P8-2 del [registro de decisiones](../../backlog/epic_5.md#decisiones-pendientes).
 
 * **Qué es:** la fase A del [plan de 5.4](sentiment_models_protocol.md): líneas base y encoders sin ajuste, todo en el Mac y sin gasto.
   * M0: estrellas.

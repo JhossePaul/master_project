@@ -22,7 +22,12 @@ Uso (desde experiments/analytics):
   limita la confianza en la plata cuando se equivoca. Se llama
   `M5_<encoder>_ls<ε><tag>`. ε se elige con la validación sobre la plata.
 * Predice el oro *dev* y `holdout_nuevo`, y escribe en `data/models/preds/`
-  (`M4_<encoder>`). Los pesos no se guardan (~0.5 GB por modelo).
+  (`M4_<encoder>`).
+* `--ppi` predice además la muestra sin etiqueta de 5.6 (`sample_ppi`) y la
+  guarda como `<modelo>__ppi.parquet`, por `text_id`.
+* `--save-weights` guarda el modelo elegido (mejor época) en fp16 con su
+  tokenizador en `data/models/weights/<modelo>/` (~250 MB; en Kaggle, en la
+  salida del kernel). Sin la opción, los pesos no se guardan.
 """
 
 import argparse
@@ -36,9 +41,12 @@ import torch
 
 from voc_analytics.sentiment.data import (
     CLASSES,
+    PREDS,
+    WEIGHTS,
     gold,
     holdout_rows,
     holdout_texts,
+    ppi_texts,
     save_predictions,
     silver_rows,
     training_texts,
@@ -89,6 +97,12 @@ def main() -> None:
     )
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--tag", default="", help="sufijo del nombre del modelo")
+    ap.add_argument(
+        "--ppi", action="store_true", help="predice la muestra de PPI (5.6)"
+    )
+    ap.add_argument(
+        "--save-weights", action="store_true", help="guarda el modelo en fp16"
+    )
     ap.add_argument(
         "--limit",
         type=int,
@@ -234,6 +248,19 @@ def main() -> None:
             "inferencia": speed,
         },
     )
+    if args.ppi:
+        ppi = ppi_texts()
+        p_ppi, _ = predict_proba(
+            model, tok, encode(tok, ppi["texto_sanitizado"].to_list())
+        )
+        frame(ppi.select("text_id"), p_ppi).write_parquet(
+            PREDS / f"{name}__ppi.parquet"
+        )
+    if args.save_weights:
+        out = WEIGHTS / name
+        model.half().save_pretrained(out, safe_serialization=True)
+        tok.save_pretrained(out)
+        print(f"pesos en {out}", flush=True)
     print(name, "listo", flush=True)
 
 

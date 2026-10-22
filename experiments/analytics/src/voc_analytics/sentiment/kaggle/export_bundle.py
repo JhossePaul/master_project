@@ -27,7 +27,7 @@ from pathlib import Path
 import polars as pl
 
 from voc_analytics.paths import DATA
-from voc_analytics.sentiment.data import gold, gold_ids, silver_rows
+from voc_analytics.sentiment.data import gold, gold_ids, ppi_texts, silver_rows
 
 OUT = DATA / "kaggle_bundle"
 # Rutas relativas a `src/`; en Kaggle se corren con `python -m` desde `code/`.
@@ -58,6 +58,7 @@ def main() -> None:
     pl.DataFrame({"id_resena": sorted(gold_ids())}).write_parquet(
         OUT / "gold_ids.parquet"
     )
+    ppi_texts().write_parquet(OUT / "ppi_texts.parquet")
     code = OUT / "code"
     code.mkdir(exist_ok=True)
     src = Path(__file__).resolve().parents[3]

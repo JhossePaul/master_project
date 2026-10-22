@@ -38,6 +38,9 @@ from voc_analytics.paths import DATA, LABELS, MODELS
 
 SILVER = LABELS / "silver_v0"
 PREDS = Path(os.environ.get("VOC_PREDS", MODELS / "preds"))
+# Pesos de los modelos ajustados (fuera de git; en Kaggle, la salida).
+WEIGHTS = Path(os.environ.get("VOC_WEIGHTS", MODELS / "weights"))
+PPI_TEXTS = LABELS / "ppi_v0" / "texts.parquet"
 # En Kaggle, `VOC_BUNDLE` apunta al paquete de `export_bundle.py`: las mismas
 # tablas que devuelven `silver_rows`, `gold` (solo *dev*) y `gold_ids`.
 BUNDLE = Path(os.environ["VOC_BUNDLE"]) if "VOC_BUNDLE" in os.environ else None
@@ -269,6 +272,12 @@ def silver_rows() -> pl.DataFrame:
         .with_columns(peso=1 / pl.col("prob_inclusion"), palabras=words())
         .with_columns(length_bin())
     )
+
+
+def ppi_texts() -> pl.DataFrame:
+    """Textos únicos de la muestra sin etiqueta de PPI (5.6, `sample_ppi`)."""
+    path = BUNDLE / "ppi_texts.parquet" if BUNDLE else PPI_TEXTS
+    return pl.read_parquet(path).select("text_id", "texto_sanitizado")
 
 
 def training_texts(rows: pl.DataFrame) -> pl.DataFrame:

@@ -1,0 +1,1517 @@
+{
+  "generado": "2026-10-22T09:49:15+00:00",
+  "n_dev_aleatorio": 794,
+  "n_dev_dirigido": 297,
+  "coberturas": [
+    1.0,
+    0.98,
+    0.95,
+    0.9,
+    0.85,
+    0.8
+  ],
+  "bootstrap": 1000,
+  "volumen": {
+    "desde": "2026-08-17",
+    "hasta": "2026-10-12",
+    "resenas_por_semana": 5398.9,
+    "textos_unicos_por_semana": 3492.8
+  },
+  "m9_duda_gold_v0": {
+    "n": 199,
+    "proporcion_con_duda": 0.0,
+    "riesgo_sin_duda": 0.0205,
+    "riesgo_total": 0.0205,
+    "errores_atrapados": 0.0
+  },
+  "modelos": {
+    "M4_robertuito_s1": {
+      "riesgo_total": 0.0279,
+      "aurc": {
+        "prob_max": 0.00211,
+        "entropia": 0.00212,
+        "margen": 0.00208
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0279,
+          "umbral": 0.4358,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9805,
+          "riesgo": 0.0201,
+          "umbral": 0.8551,
+          "error_en_revision": 0.4186,
+          "errores_atrapados": 0.2933,
+          "ic_riesgo": [
+            0.0095,
+            0.0325
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.95,
+          "riesgo": 0.0053,
+          "umbral": 0.9352,
+          "error_en_revision": 0.4577,
+          "errores_atrapados": 0.8206,
+          "ic_riesgo": [
+            0.0011,
+            0.0164
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9002,
+          "riesgo": 0.0042,
+          "umbral": 0.9737,
+          "error_en_revision": 0.2409,
+          "errores_atrapados": 0.8627,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8505,
+          "riesgo": 0.0045,
+          "umbral": 0.9827,
+          "error_en_revision": 0.1608,
+          "errores_atrapados": 0.8627,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.004,
+          "umbral": 0.9849,
+          "error_en_revision": 0.1257,
+          "errores_atrapados": 0.8848,
+          "ic_riesgo": [
+            0.0,
+            0.0109
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2256,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2256,
+            "umbral": 0.3757,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2192,
+            "umbral": 0.471,
+            "error_en_revision": 0.6,
+            "errores_atrapados": 0.0448
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2049,
+            "umbral": 0.5056,
+            "error_en_revision": 0.6429,
+            "errores_atrapados": 0.1343
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.1828,
+            "umbral": 0.5518,
+            "error_en_revision": 0.6207,
+            "errores_atrapados": 0.2687
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1818,
+            "umbral": 0.6324,
+            "error_en_revision": 0.4773,
+            "errores_atrapados": 0.3134
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1681,
+            "umbral": 0.7322,
+            "error_en_revision": 0.4576,
+            "errores_atrapados": 0.403
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_s2": {
+      "riesgo_total": 0.0284,
+      "aurc": {
+        "prob_max": 0.0019,
+        "entropia": 0.00189,
+        "margen": 0.00198
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0284,
+          "umbral": 0.4285,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9802,
+          "riesgo": 0.022,
+          "umbral": 0.7875,
+          "error_en_revision": 0.3462,
+          "errores_atrapados": 0.2413,
+          "ic_riesgo": [
+            0.0105,
+            0.034
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9511,
+          "riesgo": 0.0072,
+          "umbral": 0.9298,
+          "error_en_revision": 0.44,
+          "errores_atrapados": 0.7578,
+          "ic_riesgo": [
+            0.0016,
+            0.0185
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9003,
+          "riesgo": 0.0042,
+          "umbral": 0.9745,
+          "error_en_revision": 0.2463,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8516,
+          "riesgo": 0.0045,
+          "umbral": 0.9821,
+          "error_en_revision": 0.1655,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.0048,
+          "umbral": 0.9852,
+          "error_en_revision": 0.123,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0118
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2323,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2323,
+            "umbral": 0.358,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2295,
+            "umbral": 0.4675,
+            "error_en_revision": 0.4,
+            "errores_atrapados": 0.029
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.212,
+            "umbral": 0.5118,
+            "error_en_revision": 0.6429,
+            "errores_atrapados": 0.1304
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2052,
+            "umbral": 0.5719,
+            "error_en_revision": 0.4828,
+            "errores_atrapados": 0.2029
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1937,
+            "umbral": 0.6675,
+            "error_en_revision": 0.4545,
+            "errores_atrapados": 0.2899
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1849,
+            "umbral": 0.7347,
+            "error_en_revision": 0.4237,
+            "errores_atrapados": 0.3623
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 2,
+        "proporcion": 0.0031,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_s3": {
+      "riesgo_total": 0.0275,
+      "aurc": {
+        "prob_max": 0.00242,
+        "entropia": 0.00247,
+        "margen": 0.00219
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0275,
+          "umbral": 0.4686,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9805,
+          "riesgo": 0.0214,
+          "umbral": 0.792,
+          "error_en_revision": 0.3327,
+          "errores_atrapados": 0.2361,
+          "ic_riesgo": [
+            0.0097,
+            0.0343
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9508,
+          "riesgo": 0.011,
+          "umbral": 0.9207,
+          "error_en_revision": 0.3477,
+          "errores_atrapados": 0.6212,
+          "ic_riesgo": [
+            0.0026,
+            0.0206
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9001,
+          "riesgo": 0.0042,
+          "umbral": 0.9734,
+          "error_en_revision": 0.2371,
+          "errores_atrapados": 0.861,
+          "ic_riesgo": [
+            0.0003,
+            0.011
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8513,
+          "riesgo": 0.0042,
+          "umbral": 0.9824,
+          "error_en_revision": 0.1609,
+          "errores_atrapados": 0.8696,
+          "ic_riesgo": [
+            0.0,
+            0.0105
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.0037,
+          "umbral": 0.985,
+          "error_en_revision": 0.1228,
+          "errores_atrapados": 0.8919,
+          "ic_riesgo": [
+            0.0,
+            0.0106
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2323,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2323,
+            "umbral": 0.4186,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2295,
+            "umbral": 0.4702,
+            "error_en_revision": 0.4,
+            "errores_atrapados": 0.029
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2226,
+            "umbral": 0.5174,
+            "error_en_revision": 0.4286,
+            "errores_atrapados": 0.087
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2164,
+            "umbral": 0.6142,
+            "error_en_revision": 0.3793,
+            "errores_atrapados": 0.1594
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2055,
+            "umbral": 0.6856,
+            "error_en_revision": 0.3864,
+            "errores_atrapados": 0.2464
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1765,
+            "umbral": 0.7265,
+            "error_en_revision": 0.4576,
+            "errores_atrapados": 0.3913
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_ensamble": {
+      "riesgo_total": 0.0284,
+      "aurc": {
+        "prob_max": 0.00195,
+        "entropia": 0.00195,
+        "margen": 0.00195
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0284,
+          "umbral": 0.4142,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9802,
+          "riesgo": 0.0202,
+          "umbral": 0.7493,
+          "error_en_revision": 0.4346,
+          "errores_atrapados": 0.3036,
+          "ic_riesgo": [
+            0.0091,
+            0.0312
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.95,
+          "riesgo": 0.0067,
+          "umbral": 0.934,
+          "error_en_revision": 0.4406,
+          "errores_atrapados": 0.776,
+          "ic_riesgo": [
+            0.0014,
+            0.0181
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9001,
+          "riesgo": 0.0042,
+          "umbral": 0.973,
+          "error_en_revision": 0.2458,
+          "errores_atrapados": 0.8652,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8514,
+          "riesgo": 0.0045,
+          "umbral": 0.9821,
+          "error_en_revision": 0.1653,
+          "errores_atrapados": 0.8652,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.004,
+          "umbral": 0.9853,
+          "error_en_revision": 0.1259,
+          "errores_atrapados": 0.8868,
+          "ic_riesgo": [
+            0.0,
+            0.0111
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2189,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2189,
+            "umbral": 0.3838,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2192,
+            "umbral": 0.471,
+            "error_en_revision": 0.2,
+            "errores_atrapados": 0.0154
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2155,
+            "umbral": 0.4965,
+            "error_en_revision": 0.2857,
+            "errores_atrapados": 0.0615
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2015,
+            "umbral": 0.573,
+            "error_en_revision": 0.3793,
+            "errores_atrapados": 0.1692
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1897,
+            "umbral": 0.6455,
+            "error_en_revision": 0.3864,
+            "errores_atrapados": 0.2615
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1681,
+            "umbral": 0.724,
+            "error_en_revision": 0.4237,
+            "errores_atrapados": 0.3846
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_beto_s1": {
+      "riesgo_total": 0.0321,
+      "aurc": {
+        "prob_max": 0.00361,
+        "entropia": 0.00363,
+        "margen": 0.00344
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0321,
+          "umbral": 0.4152,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9803,
+          "riesgo": 0.0205,
+          "umbral": 0.8252,
+          "error_en_revision": 0.612,
+          "errores_atrapados": 0.375,
+          "ic_riesgo": [
+            0.0109,
+            0.0337
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9504,
+          "riesgo": 0.0159,
+          "umbral": 0.9391,
+          "error_en_revision": 0.3414,
+          "errores_atrapados": 0.5277,
+          "ic_riesgo": [
+            0.0061,
+            0.0262
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9011,
+          "riesgo": 0.0051,
+          "umbral": 0.9717,
+          "error_en_revision": 0.2781,
+          "errores_atrapados": 0.8576,
+          "ic_riesgo": [
+            0.0005,
+            0.0177
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8504,
+          "riesgo": 0.0038,
+          "umbral": 0.9804,
+          "error_en_revision": 0.193,
+          "errores_atrapados": 0.8999,
+          "ic_riesgo": [
+            0.0,
+            0.0102
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.0037,
+          "umbral": 0.9823,
+          "error_en_revision": 0.1457,
+          "errores_atrapados": 0.9073,
+          "ic_riesgo": [
+            0.0,
+            0.0105
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2626,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2626,
+            "umbral": 0.4309,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2603,
+            "umbral": 0.4612,
+            "error_en_revision": 0.4,
+            "errores_atrapados": 0.0256
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2438,
+            "umbral": 0.5009,
+            "error_en_revision": 0.6429,
+            "errores_atrapados": 0.1154
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2201,
+            "umbral": 0.6304,
+            "error_en_revision": 0.6552,
+            "errores_atrapados": 0.2436
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2095,
+            "umbral": 0.698,
+            "error_en_revision": 0.5682,
+            "errores_atrapados": 0.3205
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1807,
+            "umbral": 0.7349,
+            "error_en_revision": 0.5932,
+            "errores_atrapados": 0.4487
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_beto_s2": {
+      "riesgo_total": 0.0295,
+      "aurc": {
+        "prob_max": 0.00466,
+        "entropia": 0.00461,
+        "margen": 0.00522
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0295,
+          "umbral": 0.4275,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.98,
+          "riesgo": 0.0215,
+          "umbral": 0.8322,
+          "error_en_revision": 0.4189,
+          "errores_atrapados": 0.2838,
+          "ic_riesgo": [
+            0.0109,
+            0.0325
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9501,
+          "riesgo": 0.0148,
+          "umbral": 0.9337,
+          "error_en_revision": 0.3086,
+          "errores_atrapados": 0.5222,
+          "ic_riesgo": [
+            0.0053,
+            0.0257
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9018,
+          "riesgo": 0.0101,
+          "umbral": 0.9691,
+          "error_en_revision": 0.2075,
+          "errores_atrapados": 0.691,
+          "ic_riesgo": [
+            0.0014,
+            0.0193
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8524,
+          "riesgo": 0.0051,
+          "umbral": 0.9786,
+          "error_en_revision": 0.1704,
+          "errores_atrapados": 0.853,
+          "ic_riesgo": [
+            0.0,
+            0.0121
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.0051,
+          "umbral": 0.9826,
+          "error_en_revision": 0.1271,
+          "errores_atrapados": 0.8611,
+          "ic_riesgo": [
+            0.0,
+            0.012
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2694,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2694,
+            "umbral": 0.3646,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2637,
+            "umbral": 0.422,
+            "error_en_revision": 0.6,
+            "errores_atrapados": 0.0375
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2544,
+            "umbral": 0.5245,
+            "error_en_revision": 0.5714,
+            "errores_atrapados": 0.1
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2388,
+            "umbral": 0.6125,
+            "error_en_revision": 0.5517,
+            "errores_atrapados": 0.2
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2134,
+            "umbral": 0.674,
+            "error_en_revision": 0.5909,
+            "errores_atrapados": 0.325
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1975,
+            "umbral": 0.7273,
+            "error_en_revision": 0.5593,
+            "errores_atrapados": 0.4125
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 4,
+        "proporcion": 0.0039,
+        "error": 0.25
+      }
+    },
+    "M4_beto_s3": {
+      "riesgo_total": 0.0284,
+      "aurc": {
+        "prob_max": 0.00395,
+        "entropia": 0.00392,
+        "margen": 0.00422
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0284,
+          "umbral": 0.4361,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9807,
+          "riesgo": 0.0226,
+          "umbral": 0.7931,
+          "error_en_revision": 0.325,
+          "errores_atrapados": 0.2209,
+          "ic_riesgo": [
+            0.0111,
+            0.0329
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9502,
+          "riesgo": 0.0132,
+          "umbral": 0.9186,
+          "error_en_revision": 0.3191,
+          "errores_atrapados": 0.5597,
+          "ic_riesgo": [
+            0.0041,
+            0.0245
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9005,
+          "riesgo": 0.0076,
+          "umbral": 0.9721,
+          "error_en_revision": 0.2165,
+          "errores_atrapados": 0.7579,
+          "ic_riesgo": [
+            0.0003,
+            0.017
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8517,
+          "riesgo": 0.0038,
+          "umbral": 0.9798,
+          "error_en_revision": 0.17,
+          "errores_atrapados": 0.887,
+          "ic_riesgo": [
+            0.0,
+            0.0102
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8004,
+          "riesgo": 0.0034,
+          "umbral": 0.9839,
+          "error_en_revision": 0.1286,
+          "errores_atrapados": 0.9036,
+          "ic_riesgo": [
+            0.0,
+            0.0103
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2559,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2559,
+            "umbral": 0.4383,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2466,
+            "umbral": 0.4942,
+            "error_en_revision": 0.8,
+            "errores_atrapados": 0.0526
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2473,
+            "umbral": 0.5382,
+            "error_en_revision": 0.4286,
+            "errores_atrapados": 0.0789
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2388,
+            "umbral": 0.6094,
+            "error_en_revision": 0.4138,
+            "errores_atrapados": 0.1579
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2134,
+            "umbral": 0.705,
+            "error_en_revision": 0.5,
+            "errores_atrapados": 0.2895
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1975,
+            "umbral": 0.7602,
+            "error_en_revision": 0.4915,
+            "errores_atrapados": 0.3816
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 4,
+        "proporcion": 0.0039,
+        "error": 0.25
+      }
+    },
+    "M4_beto_ensamble": {
+      "riesgo_total": 0.0268,
+      "aurc": {
+        "prob_max": 0.00396,
+        "entropia": 0.00393,
+        "margen": 0.00421
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0268,
+          "umbral": 0.4691,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9801,
+          "riesgo": 0.022,
+          "umbral": 0.78,
+          "error_en_revision": 0.264,
+          "errores_atrapados": 0.1963,
+          "ic_riesgo": [
+            0.0111,
+            0.0326
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9501,
+          "riesgo": 0.0131,
+          "umbral": 0.925,
+          "error_en_revision": 0.288,
+          "errores_atrapados": 0.5367,
+          "ic_riesgo": [
+            0.0033,
+            0.0248
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9002,
+          "riesgo": 0.0092,
+          "umbral": 0.9701,
+          "error_en_revision": 0.1857,
+          "errores_atrapados": 0.6924,
+          "ic_riesgo": [
+            0.0005,
+            0.018
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8501,
+          "riesgo": 0.0038,
+          "umbral": 0.98,
+          "error_en_revision": 0.1572,
+          "errores_atrapados": 0.8801,
+          "ic_riesgo": [
+            0.0,
+            0.0099
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8001,
+          "riesgo": 0.0034,
+          "umbral": 0.9832,
+          "error_en_revision": 0.1202,
+          "errores_atrapados": 0.8977,
+          "ic_riesgo": [
+            0.0,
+            0.0103
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2593,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2593,
+            "umbral": 0.43,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2568,
+            "umbral": 0.49,
+            "error_en_revision": 0.4,
+            "errores_atrapados": 0.026
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2473,
+            "umbral": 0.5255,
+            "error_en_revision": 0.5,
+            "errores_atrapados": 0.0909
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2313,
+            "umbral": 0.6094,
+            "error_en_revision": 0.5172,
+            "errores_atrapados": 0.1948
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2095,
+            "umbral": 0.6821,
+            "error_en_revision": 0.5455,
+            "errores_atrapados": 0.3117
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1933,
+            "umbral": 0.7227,
+            "error_en_revision": 0.5254,
+            "errores_atrapados": 0.4026
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 4,
+        "proporcion": 0.0039,
+        "error": 0.25
+      }
+    },
+    "M4_robertuito_s1_ppi": {
+      "riesgo_total": 0.0286,
+      "aurc": {
+        "prob_max": 0.00211,
+        "entropia": 0.00213,
+        "margen": 0.00208
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0286,
+          "umbral": 0.4394,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9805,
+          "riesgo": 0.0201,
+          "umbral": 0.8524,
+          "error_en_revision": 0.4545,
+          "errores_atrapados": 0.3107,
+          "ic_riesgo": [
+            0.0093,
+            0.0325
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.95,
+          "riesgo": 0.0053,
+          "umbral": 0.936,
+          "error_en_revision": 0.4718,
+          "errores_atrapados": 0.825,
+          "ic_riesgo": [
+            0.0011,
+            0.0162
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9005,
+          "riesgo": 0.0042,
+          "umbral": 0.974,
+          "error_en_revision": 0.2488,
+          "errores_atrapados": 0.8661,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8513,
+          "riesgo": 0.0045,
+          "umbral": 0.9829,
+          "error_en_revision": 0.1664,
+          "errores_atrapados": 0.8661,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8007,
+          "riesgo": 0.004,
+          "umbral": 0.9853,
+          "error_en_revision": 0.1281,
+          "errores_atrapados": 0.8876,
+          "ic_riesgo": [
+            0.0,
+            0.0109
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.229,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.229,
+            "umbral": 0.3736,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2226,
+            "umbral": 0.4763,
+            "error_en_revision": 0.6,
+            "errores_atrapados": 0.0441
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2049,
+            "umbral": 0.5144,
+            "error_en_revision": 0.7143,
+            "errores_atrapados": 0.1471
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.1828,
+            "umbral": 0.5502,
+            "error_en_revision": 0.6552,
+            "errores_atrapados": 0.2794
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1818,
+            "umbral": 0.628,
+            "error_en_revision": 0.5,
+            "errores_atrapados": 0.3235
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1723,
+            "umbral": 0.7418,
+            "error_en_revision": 0.4576,
+            "errores_atrapados": 0.3971
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_s2_ppi": {
+      "riesgo_total": 0.0284,
+      "aurc": {
+        "prob_max": 0.0019,
+        "entropia": 0.00189,
+        "margen": 0.00199
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0284,
+          "umbral": 0.4248,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9802,
+          "riesgo": 0.022,
+          "umbral": 0.7883,
+          "error_en_revision": 0.3462,
+          "errores_atrapados": 0.2413,
+          "ic_riesgo": [
+            0.0106,
+            0.034
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9505,
+          "riesgo": 0.0072,
+          "umbral": 0.9299,
+          "error_en_revision": 0.4348,
+          "errores_atrapados": 0.7578,
+          "ic_riesgo": [
+            0.0016,
+            0.0185
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9008,
+          "riesgo": 0.0042,
+          "umbral": 0.9742,
+          "error_en_revision": 0.2475,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8516,
+          "riesgo": 0.0045,
+          "umbral": 0.9819,
+          "error_en_revision": 0.1655,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8027,
+          "riesgo": 0.0048,
+          "umbral": 0.985,
+          "error_en_revision": 0.1267,
+          "errores_atrapados": 0.8653,
+          "ic_riesgo": [
+            0.0003,
+            0.0118
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2323,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2323,
+            "umbral": 0.3638,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2295,
+            "umbral": 0.4623,
+            "error_en_revision": 0.4,
+            "errores_atrapados": 0.029
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.212,
+            "umbral": 0.5077,
+            "error_en_revision": 0.6429,
+            "errores_atrapados": 0.1304
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2015,
+            "umbral": 0.5756,
+            "error_en_revision": 0.5172,
+            "errores_atrapados": 0.2174
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1937,
+            "umbral": 0.669,
+            "error_en_revision": 0.4545,
+            "errores_atrapados": 0.2899
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1849,
+            "umbral": 0.7359,
+            "error_en_revision": 0.4237,
+            "errores_atrapados": 0.3623
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 2,
+        "proporcion": 0.0031,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_s3_ppi": {
+      "riesgo_total": 0.0275,
+      "aurc": {
+        "prob_max": 0.00254,
+        "entropia": 0.00254,
+        "margen": 0.00229
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0275,
+          "umbral": 0.4572,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9813,
+          "riesgo": 0.0214,
+          "umbral": 0.7706,
+          "error_en_revision": 0.3488,
+          "errores_atrapados": 0.2376,
+          "ic_riesgo": [
+            0.0092,
+            0.0326
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.9508,
+          "riesgo": 0.011,
+          "umbral": 0.9217,
+          "error_en_revision": 0.3477,
+          "errores_atrapados": 0.6212,
+          "ic_riesgo": [
+            0.0026,
+            0.0205
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9006,
+          "riesgo": 0.0042,
+          "umbral": 0.9732,
+          "error_en_revision": 0.2383,
+          "errores_atrapados": 0.861,
+          "ic_riesgo": [
+            0.0003,
+            0.011
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8523,
+          "riesgo": 0.0042,
+          "umbral": 0.9823,
+          "error_en_revision": 0.162,
+          "errores_atrapados": 0.8696,
+          "ic_riesgo": [
+            0.0,
+            0.0109
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8002,
+          "riesgo": 0.0037,
+          "umbral": 0.9853,
+          "error_en_revision": 0.1228,
+          "errores_atrapados": 0.8919,
+          "ic_riesgo": [
+            0.0,
+            0.0106
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.229,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.229,
+            "umbral": 0.417,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2295,
+            "umbral": 0.4748,
+            "error_en_revision": 0.2,
+            "errores_atrapados": 0.0147
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.2226,
+            "umbral": 0.5176,
+            "error_en_revision": 0.3571,
+            "errores_atrapados": 0.0735
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2164,
+            "umbral": 0.6142,
+            "error_en_revision": 0.3448,
+            "errores_atrapados": 0.1471
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.2055,
+            "umbral": 0.6849,
+            "error_en_revision": 0.3636,
+            "errores_atrapados": 0.2353
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1723,
+            "umbral": 0.7363,
+            "error_en_revision": 0.4576,
+            "errores_atrapados": 0.3971
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    },
+    "M4_robertuito_ppi_ensamble": {
+      "riesgo_total": 0.0284,
+      "aurc": {
+        "prob_max": 0.00197,
+        "entropia": 0.00197,
+        "margen": 0.00197
+      },
+      "por_cobertura": {
+        "1.0": {
+          "cobertura": 1.0,
+          "riesgo": 0.0284,
+          "umbral": 0.4066,
+          "error_en_revision": null,
+          "errores_atrapados": 0.0
+        },
+        "0.98": {
+          "cobertura": 0.9802,
+          "riesgo": 0.0202,
+          "umbral": 0.7519,
+          "error_en_revision": 0.4346,
+          "errores_atrapados": 0.3036,
+          "ic_riesgo": [
+            0.0092,
+            0.0317
+          ]
+        },
+        "0.95": {
+          "cobertura": 0.95,
+          "riesgo": 0.0067,
+          "umbral": 0.9335,
+          "error_en_revision": 0.4406,
+          "errores_atrapados": 0.776,
+          "ic_riesgo": [
+            0.0014,
+            0.0178
+          ]
+        },
+        "0.9": {
+          "cobertura": 0.9006,
+          "riesgo": 0.0042,
+          "umbral": 0.9731,
+          "error_en_revision": 0.247,
+          "errores_atrapados": 0.8652,
+          "ic_riesgo": [
+            0.0003,
+            0.0106
+          ]
+        },
+        "0.85": {
+          "cobertura": 0.8512,
+          "riesgo": 0.0045,
+          "umbral": 0.9821,
+          "error_en_revision": 0.165,
+          "errores_atrapados": 0.8652,
+          "ic_riesgo": [
+            0.0003,
+            0.0112
+          ]
+        },
+        "0.8": {
+          "cobertura": 0.8011,
+          "riesgo": 0.004,
+          "umbral": 0.9854,
+          "error_en_revision": 0.1265,
+          "errores_atrapados": 0.8868,
+          "ic_riesgo": [
+            0.0,
+            0.0112
+          ]
+        }
+      },
+      "dirigido": {
+        "riesgo_total": 0.2189,
+        "por_cobertura": {
+          "1.0": {
+            "cobertura": 1.0,
+            "riesgo": 0.2189,
+            "umbral": 0.3839,
+            "error_en_revision": null,
+            "errores_atrapados": 0.0
+          },
+          "0.98": {
+            "cobertura": 0.9832,
+            "riesgo": 0.2192,
+            "umbral": 0.4681,
+            "error_en_revision": 0.2,
+            "errores_atrapados": 0.0154
+          },
+          "0.95": {
+            "cobertura": 0.9529,
+            "riesgo": 0.212,
+            "umbral": 0.4969,
+            "error_en_revision": 0.3571,
+            "errores_atrapados": 0.0769
+          },
+          "0.9": {
+            "cobertura": 0.9024,
+            "riesgo": 0.2052,
+            "umbral": 0.5745,
+            "error_en_revision": 0.3448,
+            "errores_atrapados": 0.1538
+          },
+          "0.85": {
+            "cobertura": 0.8519,
+            "riesgo": 0.1897,
+            "umbral": 0.6438,
+            "error_en_revision": 0.3864,
+            "errores_atrapados": 0.2615
+          },
+          "0.8": {
+            "cobertura": 0.8013,
+            "riesgo": 0.1723,
+            "umbral": 0.7329,
+            "error_en_revision": 0.4068,
+            "errores_atrapados": 0.3692
+          }
+        }
+      },
+      "disparador_impacto": {
+        "n": 3,
+        "proporcion": 0.0033,
+        "error": 0.0
+      }
+    }
+  }
+}

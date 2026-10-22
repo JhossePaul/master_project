@@ -1,6 +1,7 @@
 # EPIC-7: Exposición (FastAPI), Búsqueda Vectorial, Explicabilidad (SHAP/LIME), Portal Web HITL y Gobernanza MLOps
 
-* **Estado:** Pendiente. Era EPIC-6 hasta la reorganización del backlog (2026-10-22): sus features pasaron de 6.x a 7.x. El monitor de *drift* (antes tarea 6.5.1) y la base de curadurías (antes 6.7.2) pasaron a [EPIC-6](epic_6.md), que despliega el core analítico. El texto original asume las predicciones Dual LoRA de EPIC-5; donde la evidencia de EPIC-5 lo contradice rige la tabla de [decisiones heredadas](#-decisiones-heredadas-de-55-2026-10-22).
+* **Estado:** Pendiente. Era EPIC-6 hasta la reorganización del backlog (2026-10-22): sus features pasaron de 6.x a 7.x. El monitor de *drift* (antes tarea 6.5.1) y la base de curadurías (antes 6.7.2) pasaron a [EPIC-6](epic_6.md), que despliega el core analítico. El texto original asume las predicciones Dual LoRA de EPIC-5; donde la evidencia de EPIC-5 lo contradice rige la tabla de [decisiones heredadas](#-decisiones-heredadas-de-55-y-56-2026-10-22).
+* **Antes de empezar:** decidir P8-6, P8-8, P8-9, P8-10, P8-11 y P8-12 del [registro de decisiones](epic_5.md#decisiones-pendientes); las piezas de esta épica que chocan con la evidencia están en las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia).
 * **Semanas Objetivo:** tras EPIC-6.
 * **Dependencias:** `EPIC-1` (`HitlTriageAuditRecord`, `AnalyzedReviewPrediction`, `IncidentAlertMessage`), `EPIC-2` (`voc-api-backend`, `voc-sa-ml-backend`, tabla `hitl_triage_audit_log`), `EPIC-4` (`sanitized_reviews_tds`) y `EPIC-6` (tablas de salida que reemplazan `delora_predictions`, base de curadurías y alertas de *drift*).
 * **Directorios y Archivos Afectados:**
@@ -57,16 +58,19 @@ El Agente IA **DEBE** acatar las siguientes 5 reglas de integración con lo ya c
 
 ---
 
-## 🧭 Decisiones heredadas de 5.5 (2026-10-22)
+## 🧭 Decisiones heredadas de 5.5 y 5.6 (2026-10-22)
 
-El autor aprobó la recomendación híbrida de 5.5 ([nota de decisión](../analytics/topics/topics_decision_note.md)). Donde el texto original de esta épica la contradice, se conserva para trazabilidad y rige lo siguiente:
+El autor aprobó la recomendación híbrida de 5.5 ([nota de decisión](../analytics/topics/topics_decision_note.md)) y las decisiones de 5.6 ([reporte](../analytics/calibration/calibration_report.md)). Donde el texto original de esta épica la contradice, se conserva para trazabilidad y rige lo siguiente:
 
 | Texto original de EPIC-7 | Decisión heredada de 5.5 | Se fija en |
 | :--- | :--- | :--- |
 | Taxonomía de los 8 `ABSATopic` (ranking de backlog, `predicted_topic`, `validated_topic`, filtros) | Núcleo: las 11 familias multi-etiqueta de `aspects_v2_1` más las marcas `u` y `s`; una reseña puede tener varias familias. Los tópicos de BERTopic son una capa de detalle aparte, con versión y curada. | 7.1 a 7.4 al implementarlas; contratos de `voc_common` en EPIC-6 (6.1) |
-| `embedding_vector` de 768 dimensiones del modelo Delora (búsqueda semántica) | 5.4 descartó Delora (M8); los tópicos usan MiniLM (384 dimensiones). La búsqueda semántica debe decidir su encoder. | 5.7 o 5.8; columna en EPIC-6 (6.2) |
+| `embedding_vector` de 768 dimensiones del modelo Delora (búsqueda semántica) | 5.4 descartó Delora (M8); los tópicos usan MiniLM (384 dimensiones). La búsqueda semántica debe decidir su encoder. | 5.8 (P8-6); columna en EPIC-6 (6.2) |
 | *Concept drift* con JSD de la distribución de los 8 tópicos por versión | Proporción de las familias y de la marca `u`, que se adelantó a los incidentes de BBVA. | Umbrales en 5.7; monitor en EPIC-6 (6.4) |
-| Umbral HITL `prediction_entropy >= 0.65` fijado a priori | Lo fija 5.6 con la curva cobertura–riesgo en el oro *dev*. | 5.6 |
+| Umbral HITL `prediction_entropy >= 0.65` fijado a priori | Decidido en 5.6: probabilidad máxima calibrada con 90 % de cobertura por defecto, configurable desde el portal (7.7.2). | 5.6 (decidido) |
+| *Satisfaction Gap* como estrellas menos `tnss_numeric_calibrated` (7.1, 7.4, 7.6) | `tnss_numeric_calibrated` se descartó en 5.6; PPI ya da proporciones con intervalo por banco. | 5.8 (P8-9, P8-10) |
+| Explicador de < 150 ms en 1 vCPU (7.2) | M4 hace 39–53 textos/s en CPU, y la oclusión necesita una pasada por token. | 5.8 (P8-8) |
+| Ranking del backlog por `SUM(priority_weight_score)` y `SUM(votos_utilidad)` (7.1) | Decidido en 5.6: volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos se muestran como contexto, no como peso. | 5.6 (decidido) |
 
 ---
 
@@ -310,6 +314,18 @@ Escribir pruebas deterministas que validen:
 
 * Criterio de terminado: cada pantalla reproduce el flujo del prototipo, escribe en la base de curadurías de EPIC-6 (6.2) y muestra solo texto sanitizado.
 
+#### Tarea 7.7.2: Configuración de la política HITL (agregado del autor, 2026-10-22)
+
+La cobertura de la revisión humana es una decisión informada, no un número fijo. La pantalla de la cola HITL muestra:
+
+* la curva de cobertura y riesgo del modelo vigente (`hitl_coverage_curves` de EPIC-6), con el punto de la política vigente marcado;
+* para cada cobertura: el error esperado entre lo aceptado, los errores que caen en revisión, las revisiones por semana y los minutos estimados, con el volumen y el tiempo por revisión medidos;
+* el parámetro configurable (cobertura objetivo; por defecto 90 %, decidido en 5.6).
+
+Cambiar el parámetro **crea una versión nueva** de `hitl_policy` (solo inserción, con revisor como hash y motivo) y nunca edita la anterior. La API expone `GET /api/v1/hitl/policy`, `GET /api/v1/hitl/coverage-curve` y `POST /api/v1/hitl/policy`.
+
+* Criterio de terminado: la curva se ve con el punto vigente; el cambio de parámetro queda versionado y auditado; la siguiente corrida de inferencia usa la política nueva.
+
 ---
 
 ## ✅ Checklist de Aceptación de la Épica 7 (Cierre del Proyecto)
@@ -326,3 +342,4 @@ Escribir pruebas deterministas que validen:
 * [ ] Todos los *Quality Gates* del monorepo (`uv run ruff check .`, `uv run ruff format --check .`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r .` y `uv run pytest --cov-fail-under=85`) pasan con **0 errores**.
 
 * [ ] Los frontales de curaduría de sentimiento, aspectos y tópicos están en el portal y escriben en la base de curadurías para el reentrenamiento (7.7).
+* [ ] La cola HITL muestra la curva de cobertura y riesgo con su costo estimado y permite cambiar la cobertura, que queda versionada (7.7.2).

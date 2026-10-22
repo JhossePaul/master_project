@@ -1,0 +1,2580 @@
+{
+  "generado": "2026-10-22T09:48:10+00:00",
+  "n_dev_aleatorio": 794,
+  "n_dev_dirigido": 297,
+  "n_holdout_filas": 5305,
+  "particiones": 5,
+  "bootstrap": 2000,
+  "modelos": {
+    "M1": {
+      "sin_calibrar": {
+        "ece": 0.0187,
+        "ece_por_clase": {
+          "NEG": 0.0119,
+          "NEU": 0.0219,
+          "POS": 0.0151
+        },
+        "log_loss": 0.1567,
+        "brier": 0.0662,
+        "exactitud": 0.9551,
+        "confianza_media": 0.9739,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 2,
+            "peso": 0.001,
+            "confianza": 0.4359,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 12,
+            "peso": 0.0115,
+            "confianza": 0.548,
+            "acierto": 0.2338
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 17,
+            "peso": 0.0168,
+            "confianza": 0.6522,
+            "acierto": 0.4079
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 22,
+            "peso": 0.0219,
+            "confianza": 0.7411,
+            "acierto": 0.7024
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 26,
+            "peso": 0.0244,
+            "confianza": 0.8582,
+            "acierto": 0.7628
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 715,
+            "peso": 0.9244,
+            "confianza": 0.9942,
+            "acierto": 0.9862
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.5644,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0159,
+          "ece_por_clase": {
+            "NEG": 0.021,
+            "NEU": 0.0148,
+            "POS": 0.0199
+          },
+          "log_loss": 0.1379,
+          "brier": 0.0653,
+          "exactitud": 0.9551,
+          "confianza_media": 0.9521,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.3,
+                0.4
+              ],
+              "n": 1,
+              "peso": 0.0008,
+              "confianza": 0.3917,
+              "acierto": 0.0
+            },
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 7,
+              "peso": 0.0057,
+              "confianza": 0.48,
+              "acierto": 0.4292
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 23,
+              "peso": 0.022,
+              "confianza": 0.563,
+              "acierto": 0.3445
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 28,
+              "peso": 0.0261,
+              "confianza": 0.6539,
+              "acierto": 0.6989
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 26,
+              "peso": 0.0263,
+              "confianza": 0.7581,
+              "acierto": 0.7191
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 56,
+              "peso": 0.0655,
+              "confianza": 0.8578,
+              "acierto": 0.9665
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 653,
+              "peso": 0.8535,
+              "confianza": 0.9882,
+              "acierto": 0.9896
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.0876,
+          "ece_por_clase": {
+            "NEG": 0.0868,
+            "NEU": 0.0809,
+            "POS": 0.1062
+          },
+          "log_loss": 0.8303,
+          "brier": 0.4634,
+          "exactitud": 0.6599,
+          "confianza_media": 0.7475
+        },
+        "holdout_contra_plata": {
+          "ece": 0.02,
+          "ece_por_clase": {
+            "NEG": 0.0176,
+            "NEU": 0.013,
+            "POS": 0.0211
+          },
+          "log_loss": 0.1721,
+          "brier": 0.0899,
+          "exactitud": 0.9422,
+          "confianza_media": 0.9235
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0099,
+            0.0324
+          ],
+          "calibrado": [
+            0.0129,
+            0.0308
+          ],
+          "diferencia": [
+            -0.0116,
+            0.0153
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4687,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 0.7066,
+          "POS": 0.045
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0129,
+          "ece_por_clase": {
+            "NEG": 0.0234,
+            "NEU": 0.0139,
+            "POS": 0.0131
+          },
+          "log_loss": 0.1374,
+          "brier": 0.0674,
+          "exactitud": 0.9527,
+          "confianza_media": 0.9529
+        },
+        "dev_dirigido": {
+          "ece": 0.1266,
+          "ece_por_clase": {
+            "NEG": 0.1157,
+            "NEU": 0.0874,
+            "POS": 0.116
+          },
+          "log_loss": 0.8454,
+          "brier": 0.4727,
+          "exactitud": 0.6364,
+          "confianza_media": 0.7629
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0133,
+          "ece_por_clase": {
+            "NEG": 0.016,
+            "NEU": 0.0221,
+            "POS": 0.0176
+          },
+          "log_loss": 0.1809,
+          "brier": 0.0967,
+          "exactitud": 0.9341,
+          "confianza_media": 0.9245
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1522,
+        "ece_por_clase": {
+          "NEG": 0.1249,
+          "NEU": 0.1003,
+          "POS": 0.1343
+        },
+        "log_loss": 1.0284,
+        "brier": 0.4964,
+        "exactitud": 0.6599,
+        "confianza_media": 0.8121
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0164,
+        "ece_por_clase": {
+          "NEG": 0.0115,
+          "NEU": 0.0161,
+          "POS": 0.015
+        },
+        "log_loss": 0.1791,
+        "brier": 0.0895,
+        "exactitud": 0.9422,
+        "confianza_media": 0.9553
+      }
+    },
+    "M4_robertuito_s1": {
+      "sin_calibrar": {
+        "ece": 0.0249,
+        "ece_por_clase": {
+          "NEG": 0.0142,
+          "NEU": 0.0189,
+          "POS": 0.0188
+        },
+        "log_loss": 0.1255,
+        "brier": 0.0509,
+        "exactitud": 0.9721,
+        "confianza_media": 0.9952,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 5,
+            "peso": 0.003,
+            "confianza": 0.5456,
+            "acierto": 0.2874
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 3,
+            "peso": 0.0021,
+            "confianza": 0.6769,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 1,
+            "peso": 0.0008,
+            "confianza": 0.7572,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 9,
+            "peso": 0.0065,
+            "confianza": 0.8539,
+            "acierto": 0.5531
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 776,
+            "peso": 0.9876,
+            "confianza": 0.9984,
+            "acierto": 0.9768
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.6828,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0088,
+          "ece_por_clase": {
+            "NEG": 0.0069,
+            "NEU": 0.0099,
+            "POS": 0.0118
+          },
+          "log_loss": 0.0942,
+          "brier": 0.0459,
+          "exactitud": 0.9721,
+          "confianza_media": 0.9794,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 3,
+              "peso": 0.002,
+              "confianza": 0.4822,
+              "acierto": 0.4263
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 4,
+              "peso": 0.0029,
+              "confianza": 0.5577,
+              "acierto": 0.6709
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 5,
+              "peso": 0.0035,
+              "confianza": 0.6586,
+              "acierto": 0.7945
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 13,
+              "peso": 0.0084,
+              "confianza": 0.7492,
+              "acierto": 0.4547
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 17,
+              "peso": 0.017,
+              "confianza": 0.865,
+              "acierto": 0.5453
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 752,
+              "peso": 0.9662,
+              "confianza": 0.9868,
+              "acierto": 0.9868
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.0982,
+          "ece_por_clase": {
+            "NEG": 0.0916,
+            "NEU": 0.0835,
+            "POS": 0.0938
+          },
+          "log_loss": 0.6042,
+          "brier": 0.3343,
+          "exactitud": 0.7744,
+          "confianza_media": 0.8654
+        },
+        "holdout_contra_plata": {
+          "ece": 0.009,
+          "ece_por_clase": {
+            "NEG": 0.0085,
+            "NEU": 0.0045,
+            "POS": 0.0084
+          },
+          "log_loss": 0.0874,
+          "brier": 0.0425,
+          "exactitud": 0.9705,
+          "confianza_media": 0.9701
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0142,
+            0.0377
+          ],
+          "calibrado": [
+            0.0059,
+            0.0225
+          ],
+          "diferencia": [
+            -0.0176,
+            0.0006
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4238,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.184,
+          "POS": -0.1234
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0095,
+          "ece_por_clase": {
+            "NEG": 0.0118,
+            "NEU": 0.009,
+            "POS": 0.0122
+          },
+          "log_loss": 0.0931,
+          "brier": 0.0466,
+          "exactitud": 0.9695,
+          "confianza_media": 0.979
+        },
+        "dev_dirigido": {
+          "ece": 0.1185,
+          "ece_por_clase": {
+            "NEG": 0.0998,
+            "NEU": 0.0715,
+            "POS": 0.0905
+          },
+          "log_loss": 0.5975,
+          "brier": 0.3297,
+          "exactitud": 0.771,
+          "confianza_media": 0.8879
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0073,
+          "ece_por_clase": {
+            "NEG": 0.0107,
+            "NEU": 0.0115,
+            "POS": 0.0055
+          },
+          "log_loss": 0.0911,
+          "brier": 0.0447,
+          "exactitud": 0.9694,
+          "confianza_media": 0.9711
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.149,
+        "ece_por_clase": {
+          "NEG": 0.1202,
+          "NEU": 0.0932,
+          "POS": 0.1207
+        },
+        "log_loss": 0.8349,
+        "brier": 0.3627,
+        "exactitud": 0.7744,
+        "confianza_media": 0.9203
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0186,
+        "ece_por_clase": {
+          "NEG": 0.0139,
+          "NEU": 0.0091,
+          "POS": 0.0138
+        },
+        "log_loss": 0.1027,
+        "brier": 0.0458,
+        "exactitud": 0.9705,
+        "confianza_media": 0.9891
+      }
+    },
+    "M4_robertuito_s2": {
+      "sin_calibrar": {
+        "ece": 0.0229,
+        "ece_por_clase": {
+          "NEG": 0.011,
+          "NEU": 0.018,
+          "POS": 0.0219
+        },
+        "log_loss": 0.1332,
+        "brier": 0.0509,
+        "exactitud": 0.9716,
+        "confianza_media": 0.9945,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 1,
+            "peso": 0.0001,
+            "confianza": 0.4959,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 3,
+            "peso": 0.002,
+            "confianza": 0.5571,
+            "acierto": 0.4223
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 5,
+            "peso": 0.0034,
+            "confianza": 0.6586,
+            "acierto": 0.5687
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 4,
+            "peso": 0.0037,
+            "confianza": 0.7387,
+            "acierto": 0.6295
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 11,
+            "peso": 0.0067,
+            "confianza": 0.8475,
+            "acierto": 0.693
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 770,
+            "peso": 0.984,
+            "confianza": 0.9986,
+            "acierto": 0.9775
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7488,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0131,
+          "ece_por_clase": {
+            "NEG": 0.0098,
+            "NEU": 0.0101,
+            "POS": 0.0179
+          },
+          "log_loss": 0.0973,
+          "brier": 0.0464,
+          "exactitud": 0.9716,
+          "confianza_media": 0.9779,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 3,
+              "peso": 0.0012,
+              "confianza": 0.4456,
+              "acierto": 0.7257
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 7,
+              "peso": 0.0067,
+              "confianza": 0.5667,
+              "acierto": 0.4861
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 8,
+              "peso": 0.0046,
+              "confianza": 0.6675,
+              "acierto": 0.6698
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 14,
+              "peso": 0.0094,
+              "confianza": 0.7535,
+              "acierto": 0.7028
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 18,
+              "peso": 0.0201,
+              "confianza": 0.8764,
+              "acierto": 0.444
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 744,
+              "peso": 0.958,
+              "confianza": 0.9872,
+              "acierto": 0.9905
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.101,
+          "ece_por_clase": {
+            "NEG": 0.083,
+            "NEU": 0.0798,
+            "POS": 0.0935
+          },
+          "log_loss": 0.6058,
+          "brier": 0.3425,
+          "exactitud": 0.7677,
+          "confianza_media": 0.8643
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0084,
+          "ece_por_clase": {
+            "NEG": 0.0067,
+            "NEU": 0.0039,
+            "POS": 0.0096
+          },
+          "log_loss": 0.0892,
+          "brier": 0.0431,
+          "exactitud": 0.9717,
+          "confianza_media": 0.9701
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0136,
+            0.0363
+          ],
+          "calibrado": [
+            0.0071,
+            0.026
+          ],
+          "diferencia": [
+            -0.0171,
+            0.0035
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4622,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.0168,
+          "POS": -0.3952
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0122,
+          "ece_por_clase": {
+            "NEG": 0.0072,
+            "NEU": 0.0063,
+            "POS": 0.0202
+          },
+          "log_loss": 0.0944,
+          "brier": 0.0462,
+          "exactitud": 0.97,
+          "confianza_media": 0.9775
+        },
+        "dev_dirigido": {
+          "ece": 0.1177,
+          "ece_por_clase": {
+            "NEG": 0.091,
+            "NEU": 0.0612,
+            "POS": 0.0866
+          },
+          "log_loss": 0.5836,
+          "brier": 0.3262,
+          "exactitud": 0.7778,
+          "confianza_media": 0.8833
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0074,
+          "ece_por_clase": {
+            "NEG": 0.0076,
+            "NEU": 0.0108,
+            "POS": 0.0095
+          },
+          "log_loss": 0.0932,
+          "brier": 0.0456,
+          "exactitud": 0.9705,
+          "confianza_media": 0.9725
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1667,
+        "ece_por_clase": {
+          "NEG": 0.1252,
+          "NEU": 0.1042,
+          "POS": 0.1254
+        },
+        "log_loss": 0.8581,
+        "brier": 0.3824,
+        "exactitud": 0.7677,
+        "confianza_media": 0.9259
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0184,
+        "ece_por_clase": {
+          "NEG": 0.0145,
+          "NEU": 0.0095,
+          "POS": 0.0153
+        },
+        "log_loss": 0.1084,
+        "brier": 0.0467,
+        "exactitud": 0.9717,
+        "confianza_media": 0.9899
+      }
+    },
+    "M4_robertuito_s3": {
+      "sin_calibrar": {
+        "ece": 0.027,
+        "ece_por_clase": {
+          "NEG": 0.0134,
+          "NEU": 0.0188,
+          "POS": 0.0222
+        },
+        "log_loss": 0.1329,
+        "brier": 0.0527,
+        "exactitud": 0.9725,
+        "confianza_media": 0.9948,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 7,
+            "peso": 0.0044,
+            "confianza": 0.572,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 1,
+            "peso": 0.0002,
+            "confianza": 0.6981,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 2,
+            "peso": 0.0018,
+            "confianza": 0.7109,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 11,
+            "peso": 0.0061,
+            "confianza": 0.8511,
+            "acierto": 0.4004
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 773,
+            "peso": 0.9876,
+            "confianza": 0.9981,
+            "acierto": 0.976
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7237,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0095,
+          "ece_por_clase": {
+            "NEG": 0.008,
+            "NEU": 0.0101,
+            "POS": 0.008
+          },
+          "log_loss": 0.0984,
+          "brier": 0.0475,
+          "exactitud": 0.9725,
+          "confianza_media": 0.9779,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "peso": 0.0008,
+              "confianza": 0.4709,
+              "acierto": 1.0
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 6,
+              "peso": 0.0038,
+              "confianza": 0.5251,
+              "acierto": 0.9539
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 7,
+              "peso": 0.0049,
+              "confianza": 0.6543,
+              "acierto": 0.3892
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 17,
+              "peso": 0.0129,
+              "confianza": 0.7651,
+              "acierto": 0.5373
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 14,
+              "peso": 0.0108,
+              "confianza": 0.8513,
+              "acierto": 0.6341
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 748,
+              "peso": 0.9669,
+              "confianza": 0.986,
+              "acierto": 0.9851
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1127,
+          "ece_por_clase": {
+            "NEG": 0.0954,
+            "NEU": 0.0987,
+            "POS": 0.0964
+          },
+          "log_loss": 0.615,
+          "brier": 0.3493,
+          "exactitud": 0.7677,
+          "confianza_media": 0.8685
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0077,
+          "ece_por_clase": {
+            "NEG": 0.0086,
+            "NEU": 0.004,
+            "POS": 0.008
+          },
+          "log_loss": 0.0874,
+          "brier": 0.0421,
+          "exactitud": 0.9731,
+          "confianza_media": 0.9695
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0161,
+            0.0398
+          ],
+          "calibrado": [
+            0.0058,
+            0.022
+          ],
+          "diferencia": [
+            -0.0198,
+            -0.0005
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4547,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 0.7153,
+          "POS": -0.561
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0128,
+          "ece_por_clase": {
+            "NEG": 0.0084,
+            "NEU": 0.0064,
+            "POS": 0.0195
+          },
+          "log_loss": 0.0972,
+          "brier": 0.047,
+          "exactitud": 0.9697,
+          "confianza_media": 0.9776
+        },
+        "dev_dirigido": {
+          "ece": 0.1353,
+          "ece_por_clase": {
+            "NEG": 0.1031,
+            "NEU": 0.0804,
+            "POS": 0.0969
+          },
+          "log_loss": 0.5919,
+          "brier": 0.334,
+          "exactitud": 0.7609,
+          "confianza_media": 0.8879
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0074,
+          "ece_por_clase": {
+            "NEG": 0.007,
+            "NEU": 0.0099,
+            "POS": 0.0099
+          },
+          "log_loss": 0.09,
+          "brier": 0.0442,
+          "exactitud": 0.974,
+          "confianza_media": 0.9726
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1658,
+        "ece_por_clase": {
+          "NEG": 0.1372,
+          "NEU": 0.1098,
+          "POS": 0.13
+        },
+        "log_loss": 0.8681,
+        "brier": 0.3939,
+        "exactitud": 0.7677,
+        "confianza_media": 0.9304
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0167,
+        "ece_por_clase": {
+          "NEG": 0.0134,
+          "NEU": 0.0076,
+          "POS": 0.0134
+        },
+        "log_loss": 0.1037,
+        "brier": 0.0447,
+        "exactitud": 0.9731,
+        "confianza_media": 0.989
+      }
+    },
+    "M4_beto_s1": {
+      "sin_calibrar": {
+        "ece": 0.0261,
+        "ece_por_clase": {
+          "NEG": 0.0127,
+          "NEU": 0.0171,
+          "POS": 0.0249
+        },
+        "log_loss": 0.1523,
+        "brier": 0.0549,
+        "exactitud": 0.9679,
+        "confianza_media": 0.9926,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 2,
+            "peso": 0.0024,
+            "confianza": 0.4755,
+            "acierto": 0.5169
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 4,
+            "peso": 0.0034,
+            "confianza": 0.5376,
+            "acierto": 0.7105
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 5,
+            "peso": 0.0056,
+            "confianza": 0.6651,
+            "acierto": 0.1389
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 7,
+            "peso": 0.0053,
+            "confianza": 0.758,
+            "acierto": 0.5607
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 2,
+            "peso": 0.0013,
+            "confianza": 0.8302,
+            "acierto": 0.0978
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 774,
+            "peso": 0.9821,
+            "confianza": 0.9988,
+            "acierto": 0.9779
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7254,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0063,
+          "ece_por_clase": {
+            "NEG": 0.0094,
+            "NEU": 0.0096,
+            "POS": 0.0159
+          },
+          "log_loss": 0.1121,
+          "brier": 0.051,
+          "exactitud": 0.9679,
+          "confianza_media": 0.9741,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 5,
+              "peso": 0.0034,
+              "confianza": 0.441,
+              "acierto": 0.3642
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 7,
+              "peso": 0.009,
+              "confianza": 0.5561,
+              "acierto": 0.4532
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 7,
+              "peso": 0.0055,
+              "confianza": 0.65,
+              "acierto": 0.3853
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 2,
+              "peso": 0.0002,
+              "confianza": 0.7569,
+              "acierto": 1.0
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 20,
+              "peso": 0.0156,
+              "confianza": 0.86,
+              "acierto": 0.8112
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 753,
+              "peso": 0.9663,
+              "confianza": 0.9835,
+              "acierto": 0.9806
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1325,
+          "ece_por_clase": {
+            "NEG": 0.1083,
+            "NEU": 0.0921,
+            "POS": 0.1002
+          },
+          "log_loss": 0.6917,
+          "brier": 0.3825,
+          "exactitud": 0.7374,
+          "confianza_media": 0.8699
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0132,
+          "ece_por_clase": {
+            "NEG": 0.0126,
+            "NEU": 0.0051,
+            "POS": 0.0118
+          },
+          "log_loss": 0.1041,
+          "brier": 0.0502,
+          "exactitud": 0.9661,
+          "confianza_media": 0.9653
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0161,
+            0.0394
+          ],
+          "calibrado": [
+            0.0035,
+            0.0196
+          ],
+          "diferencia": [
+            -0.0231,
+            -0.0046
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4201,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.1046,
+          "POS": -0.4574
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0094,
+          "ece_por_clase": {
+            "NEG": 0.0075,
+            "NEU": 0.0042,
+            "POS": 0.0097
+          },
+          "log_loss": 0.1108,
+          "brier": 0.0525,
+          "exactitud": 0.9661,
+          "confianza_media": 0.9754
+        },
+        "dev_dirigido": {
+          "ece": 0.1567,
+          "ece_por_clase": {
+            "NEG": 0.1431,
+            "NEU": 0.0841,
+            "POS": 0.0933
+          },
+          "log_loss": 0.6849,
+          "brier": 0.3743,
+          "exactitud": 0.734,
+          "confianza_media": 0.8866
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0045,
+          "ece_por_clase": {
+            "NEG": 0.0076,
+            "NEU": 0.0134,
+            "POS": 0.0161
+          },
+          "log_loss": 0.1121,
+          "brier": 0.0542,
+          "exactitud": 0.9653,
+          "confianza_media": 0.9683
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1979,
+        "ece_por_clase": {
+          "NEG": 0.1523,
+          "NEU": 0.1253,
+          "POS": 0.1337
+        },
+        "log_loss": 0.9998,
+        "brier": 0.4333,
+        "exactitud": 0.7374,
+        "confianza_media": 0.9351
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0227,
+        "ece_por_clase": {
+          "NEG": 0.0185,
+          "NEU": 0.0086,
+          "POS": 0.0186
+        },
+        "log_loss": 0.1254,
+        "brier": 0.0546,
+        "exactitud": 0.9661,
+        "confianza_media": 0.9886
+      }
+    },
+    "M4_beto_s2": {
+      "sin_calibrar": {
+        "ece": 0.0245,
+        "ece_por_clase": {
+          "NEG": 0.0117,
+          "NEU": 0.0171,
+          "POS": 0.0229
+        },
+        "log_loss": 0.1503,
+        "brier": 0.0517,
+        "exactitud": 0.9705,
+        "confianza_media": 0.9943,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 2,
+            "peso": 0.001,
+            "confianza": 0.4788,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 2,
+            "peso": 0.0031,
+            "confianza": 0.5415,
+            "acierto": 0.2053
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 4,
+            "peso": 0.0018,
+            "confianza": 0.6311,
+            "acierto": 0.553
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 4,
+            "peso": 0.0037,
+            "confianza": 0.7697,
+            "acierto": 0.8612
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 5,
+            "peso": 0.007,
+            "confianza": 0.8658,
+            "acierto": 0.5847
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 777,
+            "peso": 0.9835,
+            "confianza": 0.9986,
+            "acierto": 0.9777
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7236,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0055,
+          "ece_por_clase": {
+            "NEG": 0.008,
+            "NEU": 0.0098,
+            "POS": 0.0122
+          },
+          "log_loss": 0.1106,
+          "brier": 0.0487,
+          "exactitud": 0.9705,
+          "confianza_media": 0.9754,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "peso": 0.001,
+              "confianza": 0.4435,
+              "acierto": 0.0
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 6,
+              "peso": 0.0048,
+              "confianza": 0.5275,
+              "acierto": 0.3334
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 5,
+              "peso": 0.0049,
+              "confianza": 0.6364,
+              "acierto": 0.6603
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 6,
+              "peso": 0.0072,
+              "confianza": 0.7383,
+              "acierto": 0.7576
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 25,
+              "peso": 0.0215,
+              "confianza": 0.8644,
+              "acierto": 0.6865
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 750,
+              "peso": 0.9606,
+              "confianza": 0.9842,
+              "acierto": 0.9842
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1369,
+          "ece_por_clase": {
+            "NEG": 0.1045,
+            "NEU": 0.0918,
+            "POS": 0.1142
+          },
+          "log_loss": 0.6858,
+          "brier": 0.3894,
+          "exactitud": 0.7306,
+          "confianza_media": 0.8615
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0096,
+          "ece_por_clase": {
+            "NEG": 0.0098,
+            "NEU": 0.0053,
+            "POS": 0.0075
+          },
+          "log_loss": 0.1041,
+          "brier": 0.0496,
+          "exactitud": 0.9667,
+          "confianza_media": 0.9645
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0145,
+            0.0369
+          ],
+          "calibrado": [
+            0.0045,
+            0.0202
+          ],
+          "diferencia": [
+            -0.0204,
+            -0.0007
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.3548,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.2131,
+          "POS": -0.7101
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0084,
+          "ece_por_clase": {
+            "NEG": 0.0072,
+            "NEU": 0.0049,
+            "POS": 0.0137
+          },
+          "log_loss": 0.1067,
+          "brier": 0.0483,
+          "exactitud": 0.9691,
+          "confianza_media": 0.9756
+        },
+        "dev_dirigido": {
+          "ece": 0.1483,
+          "ece_por_clase": {
+            "NEG": 0.1199,
+            "NEU": 0.0863,
+            "POS": 0.0858
+          },
+          "log_loss": 0.6643,
+          "brier": 0.3677,
+          "exactitud": 0.7306,
+          "confianza_media": 0.8789
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0086,
+          "ece_por_clase": {
+            "NEG": 0.0108,
+            "NEU": 0.0163,
+            "POS": 0.0169
+          },
+          "log_loss": 0.117,
+          "brier": 0.0561,
+          "exactitud": 0.9641,
+          "confianza_media": 0.9675
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.2013,
+        "ece_por_clase": {
+          "NEG": 0.1492,
+          "NEU": 0.1317,
+          "POS": 0.1476
+        },
+        "log_loss": 0.9776,
+        "brier": 0.4447,
+        "exactitud": 0.7306,
+        "confianza_media": 0.9288
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0216,
+        "ece_por_clase": {
+          "NEG": 0.018,
+          "NEU": 0.0104,
+          "POS": 0.0165
+        },
+        "log_loss": 0.1243,
+        "brier": 0.0532,
+        "exactitud": 0.9667,
+        "confianza_media": 0.9878
+      }
+    },
+    "M4_beto_s3": {
+      "sin_calibrar": {
+        "ece": 0.0241,
+        "ece_por_clase": {
+          "NEG": 0.0099,
+          "NEU": 0.0171,
+          "POS": 0.0222
+        },
+        "log_loss": 0.1364,
+        "brier": 0.0502,
+        "exactitud": 0.9716,
+        "confianza_media": 0.9925,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 1,
+            "peso": 0.0001,
+            "confianza": 0.4835,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 7,
+            "peso": 0.0073,
+            "confianza": 0.5587,
+            "acierto": 0.3506
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 4,
+            "peso": 0.0029,
+            "confianza": 0.6563,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 3,
+            "peso": 0.0029,
+            "confianza": 0.777,
+            "acierto": 0.801
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 7,
+            "peso": 0.0054,
+            "confianza": 0.8729,
+            "acierto": 0.9679
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 772,
+            "peso": 0.9814,
+            "confianza": 0.9981,
+            "acierto": 0.9767
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.6526,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0059,
+          "ece_por_clase": {
+            "NEG": 0.0101,
+            "NEU": 0.0104,
+            "POS": 0.011
+          },
+          "log_loss": 0.1045,
+          "brier": 0.0475,
+          "exactitud": 0.9716,
+          "confianza_media": 0.9755,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "peso": 0.0012,
+              "confianza": 0.4363,
+              "acierto": 0.9279
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 10,
+              "peso": 0.009,
+              "confianza": 0.5403,
+              "acierto": 0.4771
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 5,
+              "peso": 0.0033,
+              "confianza": 0.6411,
+              "acierto": 0.7675
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 9,
+              "peso": 0.0113,
+              "confianza": 0.7752,
+              "acierto": 0.6934
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 24,
+              "peso": 0.0193,
+              "confianza": 0.8621,
+              "acierto": 0.7666
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 744,
+              "peso": 0.9559,
+              "confianza": 0.9861,
+              "acierto": 0.9844
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1413,
+          "ece_por_clase": {
+            "NEG": 0.1131,
+            "NEU": 0.0909,
+            "POS": 0.1023
+          },
+          "log_loss": 0.6893,
+          "brier": 0.3891,
+          "exactitud": 0.7441,
+          "confianza_media": 0.8719
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0083,
+          "ece_por_clase": {
+            "NEG": 0.0099,
+            "NEU": 0.0063,
+            "POS": 0.009
+          },
+          "log_loss": 0.1027,
+          "brier": 0.0502,
+          "exactitud": 0.9666,
+          "confianza_media": 0.9674
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0145,
+            0.0362
+          ],
+          "calibrado": [
+            0.0041,
+            0.0191
+          ],
+          "diferencia": [
+            -0.0203,
+            -0.0023
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.336,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 0.956,
+          "POS": -0.7215
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0095,
+          "ece_por_clase": {
+            "NEG": 0.0085,
+            "NEU": 0.0066,
+            "POS": 0.0129
+          },
+          "log_loss": 0.1044,
+          "brier": 0.049,
+          "exactitud": 0.9692,
+          "confianza_media": 0.9769
+        },
+        "dev_dirigido": {
+          "ece": 0.1548,
+          "ece_por_clase": {
+            "NEG": 0.1296,
+            "NEU": 0.0861,
+            "POS": 0.0892
+          },
+          "log_loss": 0.6823,
+          "brier": 0.3781,
+          "exactitud": 0.734,
+          "confianza_media": 0.8888
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0069,
+          "ece_por_clase": {
+            "NEG": 0.0102,
+            "NEU": 0.0133,
+            "POS": 0.0173
+          },
+          "log_loss": 0.1148,
+          "brier": 0.0557,
+          "exactitud": 0.9647,
+          "confianza_media": 0.9706
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1964,
+        "ece_por_clase": {
+          "NEG": 0.1636,
+          "NEU": 0.1138,
+          "POS": 0.126
+        },
+        "log_loss": 0.9621,
+        "brier": 0.438,
+        "exactitud": 0.7441,
+        "confianza_media": 0.9348
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0219,
+        "ece_por_clase": {
+          "NEG": 0.0183,
+          "NEU": 0.0087,
+          "POS": 0.0188
+        },
+        "log_loss": 0.1222,
+        "brier": 0.0542,
+        "exactitud": 0.9666,
+        "confianza_media": 0.9884
+      }
+    },
+    "M4_robertuito_s1_ppi": {
+      "sin_calibrar": {
+        "ece": 0.0256,
+        "ece_por_clase": {
+          "NEG": 0.0142,
+          "NEU": 0.0179,
+          "POS": 0.0188
+        },
+        "log_loss": 0.1249,
+        "brier": 0.051,
+        "exactitud": 0.9714,
+        "confianza_media": 0.9952,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 5,
+            "peso": 0.003,
+            "confianza": 0.5546,
+            "acierto": 0.05
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 2,
+            "peso": 0.002,
+            "confianza": 0.6756,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 2,
+            "peso": 0.001,
+            "confianza": 0.7433,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 10,
+            "peso": 0.0075,
+            "confianza": 0.8582,
+            "acierto": 0.4783
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 775,
+            "peso": 0.9866,
+            "confianza": 0.9984,
+            "acierto": 0.9778
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.6811,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0109,
+          "ece_por_clase": {
+            "NEG": 0.0118,
+            "NEU": 0.01,
+            "POS": 0.0112
+          },
+          "log_loss": 0.0939,
+          "brier": 0.0459,
+          "exactitud": 0.9714,
+          "confianza_media": 0.9794,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "peso": 0.0013,
+              "confianza": 0.4743,
+              "acierto": 0.1145
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 6,
+              "peso": 0.0045,
+              "confianza": 0.5581,
+              "acierto": 0.6282
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 4,
+              "peso": 0.0026,
+              "confianza": 0.6731,
+              "acierto": 0.7287
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 11,
+              "peso": 0.0076,
+              "confianza": 0.7458,
+              "acierto": 0.3955
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 20,
+              "peso": 0.0191,
+              "confianza": 0.8626,
+              "acierto": 0.5294
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 751,
+              "peso": 0.965,
+              "confianza": 0.987,
+              "acierto": 0.9881
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1082,
+          "ece_por_clase": {
+            "NEG": 0.0938,
+            "NEU": 0.0842,
+            "POS": 0.0945
+          },
+          "log_loss": 0.6067,
+          "brier": 0.3359,
+          "exactitud": 0.771,
+          "confianza_media": 0.8662
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0093,
+          "ece_por_clase": {
+            "NEG": 0.0084,
+            "NEU": 0.0046,
+            "POS": 0.0089
+          },
+          "log_loss": 0.0874,
+          "brier": 0.0425,
+          "exactitud": 0.9703,
+          "confianza_media": 0.9702
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0148,
+            0.0382
+          ],
+          "calibrado": [
+            0.0065,
+            0.0237
+          ],
+          "diferencia": [
+            -0.0178,
+            0.0014
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4081,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.17,
+          "POS": -0.2208
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0143,
+          "ece_por_clase": {
+            "NEG": 0.0109,
+            "NEU": 0.009,
+            "POS": 0.0151
+          },
+          "log_loss": 0.0926,
+          "brier": 0.0467,
+          "exactitud": 0.9688,
+          "confianza_media": 0.9791
+        },
+        "dev_dirigido": {
+          "ece": 0.1157,
+          "ece_por_clase": {
+            "NEG": 0.098,
+            "NEU": 0.0727,
+            "POS": 0.0894
+          },
+          "log_loss": 0.5991,
+          "brier": 0.3302,
+          "exactitud": 0.7744,
+          "confianza_media": 0.8901
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0071,
+          "ece_por_clase": {
+            "NEG": 0.0093,
+            "NEU": 0.0113,
+            "POS": 0.0071
+          },
+          "log_loss": 0.0913,
+          "brier": 0.045,
+          "exactitud": 0.9699,
+          "confianza_media": 0.9718
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1538,
+        "ece_por_clase": {
+          "NEG": 0.125,
+          "NEU": 0.0905,
+          "POS": 0.1216
+        },
+        "log_loss": 0.8394,
+        "brier": 0.3649,
+        "exactitud": 0.771,
+        "confianza_media": 0.921
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0188,
+        "ece_por_clase": {
+          "NEG": 0.0139,
+          "NEU": 0.0093,
+          "POS": 0.0142
+        },
+        "log_loss": 0.1028,
+        "brier": 0.0459,
+        "exactitud": 0.9703,
+        "confianza_media": 0.9891
+      }
+    },
+    "M4_robertuito_s2_ppi": {
+      "sin_calibrar": {
+        "ece": 0.0229,
+        "ece_por_clase": {
+          "NEG": 0.0122,
+          "NEU": 0.018,
+          "POS": 0.0219
+        },
+        "log_loss": 0.1338,
+        "brier": 0.051,
+        "exactitud": 0.9716,
+        "confianza_media": 0.9945,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 1,
+            "peso": 0.0002,
+            "confianza": 0.4965,
+            "acierto": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 3,
+            "peso": 0.002,
+            "confianza": 0.5576,
+            "acierto": 0.4278
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 5,
+            "peso": 0.0034,
+            "confianza": 0.6587,
+            "acierto": 0.5687
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 6,
+            "peso": 0.0056,
+            "confianza": 0.7597,
+            "acierto": 0.7547
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 10,
+            "peso": 0.0054,
+            "confianza": 0.8687,
+            "acierto": 0.504
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 769,
+            "peso": 0.9834,
+            "confianza": 0.9987,
+            "acierto": 0.9781
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7515,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0133,
+          "ece_por_clase": {
+            "NEG": 0.0098,
+            "NEU": 0.0095,
+            "POS": 0.0185
+          },
+          "log_loss": 0.0976,
+          "brier": 0.0464,
+          "exactitud": 0.9716,
+          "confianza_media": 0.9778,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 3,
+              "peso": 0.0012,
+              "confianza": 0.4424,
+              "acierto": 0.7257
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 7,
+              "peso": 0.0067,
+              "confianza": 0.5689,
+              "acierto": 0.4861
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 8,
+              "peso": 0.0046,
+              "confianza": 0.6613,
+              "acierto": 0.6698
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 14,
+              "peso": 0.0094,
+              "confianza": 0.7539,
+              "acierto": 0.7028
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 18,
+              "peso": 0.0201,
+              "confianza": 0.8773,
+              "acierto": 0.444
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 744,
+              "peso": 0.958,
+              "confianza": 0.9872,
+              "acierto": 0.9905
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1163,
+          "ece_por_clase": {
+            "NEG": 0.0789,
+            "NEU": 0.0811,
+            "POS": 0.0937
+          },
+          "log_loss": 0.6055,
+          "brier": 0.3423,
+          "exactitud": 0.7677,
+          "confianza_media": 0.864
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0087,
+          "ece_por_clase": {
+            "NEG": 0.0075,
+            "NEU": 0.0039,
+            "POS": 0.0097
+          },
+          "log_loss": 0.0893,
+          "brier": 0.0432,
+          "exactitud": 0.9717,
+          "confianza_media": 0.97
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0137,
+            0.0363
+          ],
+          "calibrado": [
+            0.0071,
+            0.026
+          ],
+          "diferencia": [
+            -0.0174,
+            0.0034
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.4644,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 1.0133,
+          "POS": -0.4001
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0123,
+          "ece_por_clase": {
+            "NEG": 0.0072,
+            "NEU": 0.0063,
+            "POS": 0.0207
+          },
+          "log_loss": 0.0947,
+          "brier": 0.0463,
+          "exactitud": 0.97,
+          "confianza_media": 0.9774
+        },
+        "dev_dirigido": {
+          "ece": 0.1242,
+          "ece_por_clase": {
+            "NEG": 0.0903,
+            "NEU": 0.0603,
+            "POS": 0.0856
+          },
+          "log_loss": 0.5831,
+          "brier": 0.3259,
+          "exactitud": 0.7811,
+          "confianza_media": 0.8833
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0079,
+          "ece_por_clase": {
+            "NEG": 0.0076,
+            "NEU": 0.0109,
+            "POS": 0.0099
+          },
+          "log_loss": 0.0933,
+          "brier": 0.0457,
+          "exactitud": 0.9705,
+          "confianza_media": 0.9725
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1616,
+        "ece_por_clase": {
+          "NEG": 0.1254,
+          "NEU": 0.1062,
+          "POS": 0.1255
+        },
+        "log_loss": 0.8584,
+        "brier": 0.3821,
+        "exactitud": 0.7677,
+        "confianza_media": 0.9257
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0187,
+        "ece_por_clase": {
+          "NEG": 0.0137,
+          "NEU": 0.0095,
+          "POS": 0.0153
+        },
+        "log_loss": 0.1087,
+        "brier": 0.0468,
+        "exactitud": 0.9717,
+        "confianza_media": 0.9899
+      }
+    },
+    "M4_robertuito_s3_ppi": {
+      "sin_calibrar": {
+        "ece": 0.0256,
+        "ece_por_clase": {
+          "NEG": 0.0138,
+          "NEU": 0.0188,
+          "POS": 0.021
+        },
+        "log_loss": 0.1318,
+        "brier": 0.0523,
+        "exactitud": 0.9725,
+        "confianza_media": 0.9945,
+        "fiabilidad": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 6,
+            "peso": 0.0042,
+            "confianza": 0.5729,
+            "acierto": 1.0
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 2,
+            "peso": 0.0003,
+            "confianza": 0.6264,
+            "acierto": 0.5
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 3,
+            "peso": 0.0037,
+            "confianza": 0.74,
+            "acierto": 0.4762
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 11,
+            "peso": 0.0061,
+            "confianza": 0.854,
+            "acierto": 0.4004
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 772,
+            "peso": 0.9857,
+            "confianza": 0.9982,
+            "acierto": 0.9779
+          }
+        ]
+      },
+      "temperature": {
+        "temperatura": 1.7199,
+        "sesgos": null,
+        "dev_fuera_de_particion": {
+          "ece": 0.0094,
+          "ece_por_clase": {
+            "NEG": 0.0089,
+            "NEU": 0.0102,
+            "POS": 0.0078
+          },
+          "log_loss": 0.098,
+          "brier": 0.0472,
+          "exactitud": 0.9725,
+          "confianza_media": 0.9778,
+          "fiabilidad": [
+            {
+              "bin": [
+                0.4,
+                0.5
+              ],
+              "n": 2,
+              "peso": 0.0008,
+              "confianza": 0.4666,
+              "acierto": 1.0
+            },
+            {
+              "bin": [
+                0.5,
+                0.6
+              ],
+              "n": 6,
+              "peso": 0.0038,
+              "confianza": 0.5264,
+              "acierto": 0.9539
+            },
+            {
+              "bin": [
+                0.6,
+                0.7
+              ],
+              "n": 7,
+              "peso": 0.0061,
+              "confianza": 0.6414,
+              "acierto": 0.3142
+            },
+            {
+              "bin": [
+                0.7,
+                0.8
+              ],
+              "n": 16,
+              "peso": 0.0116,
+              "confianza": 0.7573,
+              "acierto": 0.5872
+            },
+            {
+              "bin": [
+                0.8,
+                0.9
+              ],
+              "n": 15,
+              "peso": 0.0109,
+              "confianza": 0.8533,
+              "acierto": 0.638
+            },
+            {
+              "bin": [
+                0.9,
+                1.0
+              ],
+              "n": 748,
+              "peso": 0.9669,
+              "confianza": 0.9861,
+              "acierto": 0.9851
+            }
+          ]
+        },
+        "dev_dirigido": {
+          "ece": 0.1166,
+          "ece_por_clase": {
+            "NEG": 0.0957,
+            "NEU": 0.0947,
+            "POS": 0.0965
+          },
+          "log_loss": 0.6153,
+          "brier": 0.3492,
+          "exactitud": 0.771,
+          "confianza_media": 0.8691
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0073,
+          "ece_por_clase": {
+            "NEG": 0.009,
+            "NEU": 0.0035,
+            "POS": 0.0075
+          },
+          "log_loss": 0.0874,
+          "brier": 0.0421,
+          "exactitud": 0.9732,
+          "confianza_media": 0.9697
+        },
+        "ic_ece": {
+          "sin_calibrar": [
+            0.0153,
+            0.038
+          ],
+          "calibrado": [
+            0.0056,
+            0.0215
+          ],
+          "diferencia": [
+            -0.0184,
+            0.0
+          ]
+        }
+      },
+      "vector": {
+        "temperatura": 1.452,
+        "sesgos": {
+          "NEG": 0.0,
+          "NEU": 0.7571,
+          "POS": -0.5164
+        },
+        "dev_fuera_de_particion": {
+          "ece": 0.0122,
+          "ece_por_clase": {
+            "NEG": 0.0096,
+            "NEU": 0.0078,
+            "POS": 0.019
+          },
+          "log_loss": 0.0969,
+          "brier": 0.0468,
+          "exactitud": 0.9697,
+          "confianza_media": 0.9774
+        },
+        "dev_dirigido": {
+          "ece": 0.1358,
+          "ece_por_clase": {
+            "NEG": 0.095,
+            "NEU": 0.0804,
+            "POS": 0.0986
+          },
+          "log_loss": 0.5935,
+          "brier": 0.3348,
+          "exactitud": 0.7609,
+          "confianza_media": 0.8885
+        },
+        "holdout_contra_plata": {
+          "ece": 0.0064,
+          "ece_por_clase": {
+            "NEG": 0.0066,
+            "NEU": 0.0101,
+            "POS": 0.0092
+          },
+          "log_loss": 0.0901,
+          "brier": 0.0442,
+          "exactitud": 0.9737,
+          "confianza_media": 0.9726
+        }
+      },
+      "dev_dirigido_sin_calibrar": {
+        "ece": 0.1667,
+        "ece_por_clase": {
+          "NEG": 0.1371,
+          "NEU": 0.11,
+          "POS": 0.13
+        },
+        "log_loss": 0.868,
+        "brier": 0.3934,
+        "exactitud": 0.771,
+        "confianza_media": 0.9306
+      },
+      "holdout_sin_calibrar": {
+        "ece": 0.0167,
+        "ece_por_clase": {
+          "NEG": 0.0134,
+          "NEU": 0.0076,
+          "POS": 0.0134
+        },
+        "log_loss": 0.1038,
+        "brier": 0.0446,
+        "exactitud": 0.9732,
+        "confianza_media": 0.9889
+      }
+    }
+  }
+}
