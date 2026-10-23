@@ -7,7 +7,7 @@
   * Las decisiones que la condicionan son P8-6 (búsqueda), P8-8 (explicabilidad), P8-9 (*gap* en estrellas), P8-10 (estimaciones), P8-11 (HITL) y P8-12 (alcance), todas en el [registro de decisiones](epic_5.md#decisiones-pendientes).
 * **Semanas Objetivo:** tras EPIC-6.
 * **Dependencias:**
-  * [EPIC-6](epic_6.md): tablas de salida, políticas, curadurías, alertas y monitoreo, según el [esquema v3](../contracts/analytics_outputs_v3_draft.md);
+  * [EPIC-6](epic_6.md): tablas de salida, políticas, curadurías, alertas y monitoreo, según el [esquema v3](../contracts/analytics_outputs_v3.md);
   * EPIC-4: `sanitized_reviews_tds` e `ingestion_runs_log_v2`;
   * EPIC-2: `voc-api-backend` y las cuentas de servicio;
   * 5.9: el top 5 diario de temas (P9-4) y la vista por versión (P9-2).
