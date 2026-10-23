@@ -1,6 +1,6 @@
 # Salidas analíticas v3: borrador de esquemas y migración
 
-> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** `incident_alerts` e `incident_alert_events` pasan a `drift_alerts` y `drift_alert_events` (solo deriva), sale `incident_signal` de la `drift_policy` y se agrega la vista `daily_topic_labels`.
+> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** `incident_alerts` e `incident_alert_events` pasan a `drift_alerts` y `drift_alert_events` (solo deriva), sale `incident_signal` de la `drift_policy` y se agrega la vista `daily_topic_labels`. **Actualizada el 2026-10-23 con el detalle de [EPIC-6](../backlog/epic_6.md#cambios-en-otros-documentos):** tabla `gold_labels` (D10), `palabras` en `review_predictions`, `text_key`, `bank_id` y `fecha` en `topic_assignments`, `local` en `inference_runs.environment`, tamaño y frecuencia de `agreement_sample` en `risk_policy` y umbral nulo para las familias y `u` en el monitor (D8).
 
 ## Principios
 
@@ -20,6 +20,7 @@
 | `id_resena`, `bank_id` | STRING | Clave del TDS |
 | `text_key` | STRING | SHA-256 hexadecimal de `texto_sanitizado`, igual en BigQuery (`TO_HEX(SHA256(...))`) y en Python; es la clave del backfill de 5.8 (1 429 675 textos únicos) |
 | `fecha`, `version_app`, `estrellas` | | Copiados del TDS para las series sin *join* |
+| `palabras` | INT64 | Palabras del texto limpio (`count_words` de `eligibility_rules_v1`). La usan `TOPIC_TOO_SHORT`, los conteos de elegibilidad y las series de longitud del monitor, sin releer el texto del TDS |
 | `eligibility_rules_version` | STRING | `eligibility_rules_v1` |
 | `eligibility_code` | STRING | `ELEGIBLE`, o el código de la regla que la excluye (`TNSS_TIME_OUTLIER`, `TNSS_NO_TEXT_CONTENT`…). Nulo solo si las reglas todavía no se evaluaron |
 | `label_source` | STRING | `MODEL`, `RULE_BASED` (léxico de una palabra, P8-3) o `NO_PREDICTED` |
@@ -46,7 +47,7 @@ El *re-scoring* (P7-4) inserta filas nuevas con otra `model_version`; la vista `
 
 ### Tópicos
 
-`topic_model_versions`, `topic_catalog` y `topic_assignments`, como en el [borrador de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría), sin cambios.
+`topic_model_versions`, `topic_catalog` y `topic_assignments`, como en el [borrador de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría). Cambio de EPIC-6 (2026-10-23): `topic_assignments` suma `text_key`, `bank_id` y `fecha`, para particionarla por mes y agruparla por banco como las demás.
 
 ### `daily_topic_labels` (vista: top 5 diario de temas, 5.9, P9-4)
 
@@ -71,8 +72,8 @@ Una fila por banco × día × tipo × rango, para el *hover* del cockpit (7.5). 
 | Tabla | Grano | Columnas principales |
 | :--- | :--- | :--- |
 | `model_versions` | Versión | `model_version`, `registry_uri` (Vertex o GCS, P7-3), `base_checkpoint`, `training_data` (plata, hash), `calibration_t`, métricas en el oro *dev* (κ, ECE, AURC), `license`, `status` (`candidate`, `promoted`, `retired`), `promoted_at`, `promoted_by_hash` |
-| `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`), `environment` (`kaggle`, `cloudrun`), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
-| `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version` |
+| `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`), `environment` (`kaggle`, `cloudrun`, `local`: los tópicos y embeddings de 5.9 se calcularon en el Mac), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
+| `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version`. Las familias y `u` se guardan con su z como contexto y nunca alertan (umbral nulo, D8 de EPIC-6) |
 | `drift_alerts` | Alerta de deriva | `alert_id`, `bank_id`, `period`, `series`, `value`, `threshold`, `drift_policy_version`, `hitl_boost_id`, `created_at`. Las emite el monitor de 6.4 con la `drift_policy` del banco (P7-9). El estado vigente es el último de `drift_alert_events`. Antes `incident_alerts`: la señal de incidentes quedó fuera del alcance (5.9, 2026-10-22) |
 | `drift_alert_events` | Transición de una alerta de deriva | `event_id`, `alert_id`, `status` (`open`, `confirmed`, `dismissed`), `actor_hash`, `at`, `note` (sanitizada), `ticket`. Solo inserción (EPIC-7, 7.8). Antes `incident_alert_events` |
 | `kpi_estimates` | Banco × periodo × métrica × corrida | `metric` (`neg`, `gap_estrellas`, `texto_peor`, `texto_mejor`, celdas de la matriz 3 × 3…), `bank_id`, `period`, `method` (`ppi` o `raw`), `estimate`, `ci_low`, `ci_high`, `n_gold`, `n_unlabeled`, `model_version`, `gold_version`, `computed_at`. Los KPI con PPI del cockpit (P8-9, P8-10); las series diarias crudas son vistas sobre `review_predictions_current` |
@@ -97,7 +98,8 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | Reacción automática a una alerta de deriva (P7-6): cobertura durante la subida, duración y tope; se aplica solo al banco que alertó |
 | `monitor_sample_size`, `monitor_frequency` | Muestra humana de concepto (P7-7) |
 | `topic_refit_frequency` | Re-ajuste de tópicos (P7-8); global porque los tópicos se ajustan con los cinco bancos juntos |
-| `retrain_kappa_floor`, `monitor_sample_size` | Reentrenamiento (P7-10): pedirlo si el κ de M4 en la muestra trimestral queda debajo de 0.89, con 300 revisiones por trimestre |
+| `retrain_kappa_floor` | Reentrenamiento (P7-10): pedirlo si el κ de M4 en la muestra trimestral (`monitor_sample_size`: 300 revisiones por trimestre) queda debajo de 0.89 |
+| `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`, EPIC-7, 7.7); no confundir con `agreement_sample_weekly`, que es el acuerdo M4–Gemini. Sin valor todavía: lo fija el autor antes de sembrar la política |
 | `warn_correction_rate`, `warn_agreement_floor`, `agreement_sample_weekly` | Avisos (P7-10), sin disparar solos: tasa de corrección de 4 semanas > 28 %; acuerdo M4–Gemini de 4 semanas < 94 %, con 500 textos por semana |
 | `families_exact_floor`, `families_min_prevalence` | Revalidación de las familias al cambiar el modelo o el prompt de Gemini (P7-11): acuerdo exacto ≥ 53 % en `muestra_v21` y ninguna familia con prevalencia ≥ 5 % bajo el límite inferior de su IC |
 | `set_by_hash`, `reason` | Revisor y dueño de negocio que la fijaron, y por qué |
@@ -112,7 +114,7 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | :--- | :--- |
 | `drift_policy_version`, `bank_id`, `valid_from` | `bank_id` obligatorio |
 | `template_version` | Plantilla de la que se creó, para ver qué cambió el banco |
-| `thresholds` | JSON con el umbral de cada serie: plantilla de 5.7, z ≥ 4 (palabras medias, una palabra, más de 60, no predecibles, vocabulario fuera del entrenamiento, proporción de `NEG`) y PSI ≥ 0.25 (longitud) |
+| `thresholds` | JSON con el umbral de cada serie: plantilla de 5.7, z ≥ 4 (palabras medias, una palabra, más de 60, no predecibles, vocabulario fuera del entrenamiento, proporción de `NEG`) y PSI ≥ 0.25 (longitud). Las familias y `u` llevan umbral nulo: se miden, pero no alertan (D8 de EPIC-6) |
 | `baseline_months`, `min_baseline_months` | 12 y 6 |
 | `min_rows_per_month`, `entry_rule` | 200 filas; el banco entra con 12 meses seguidos que las cumplan |
 | `set_by_hash`, `reason` | |
@@ -173,6 +175,10 @@ Una segunda revisión del mismo caso es otra fila, con `review_round = 2` (sirve
 | `gold_versions` | Versión del oro | `gold_version` (p. ej. `gold_hitl_v1`), `criteria` (`reason = 'monitor_sample'`, periodo, `guideline_version`), `cutoff_at`, `items`, `created_by_hash`, `created_at` |
 
 Los ítems de una versión se reproducen aplicando sus criterios a `hitl_reviews` con `submitted_at <= cutoff_at`. El oro de EPIC-5 (`gold_v0_r2` + `gold_v1`, con su *test* intacto) no cambia.
+
+### `gold_labels` (oro en producción, D10 de EPIC-6)
+
+`gold_version`, `split` (`dev` o `muestra_v21`), `task` (`sentiment` o `aspects`), `id_resena`, `text_key`, `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio de EPIC-5 (guía `v2.2`) y las 300 reseñas de `muestra_v21` (guía `v2.1`). El oro *test* no se carga: quedó consumido en 5.8. Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias (6.4). Son etiquetas individuales: viven solo en BigQuery, nunca en git (fila F-21 de la FMEA).
 
 La curaduría de tópicos (`curation_topics` del borrador de 5.5) se queda aparte, porque su grano es el tópico y no la reseña.
 

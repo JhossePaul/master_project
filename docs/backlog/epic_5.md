@@ -239,7 +239,7 @@ Historia compacta. Las opciones y la evidencia de cada una están en el [registr
 | ID | Decisión | Resultado (2026-10-22) | Bloquea |
 | :--- | :--- | :--- | :--- |
 | P7-1 | Entorno del backfill | Kaggle T4 con un pipeline desde GCP; riesgo de subir el corpus aceptado (F-14). Primer backfill hecho: `s1` en producción ([reporte de 5.7, §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)) | 6.2, 6.3 |
-| P7-2 | Recursos del delta diario | Cloud Run Job de 1 vCPU y 2 GiB (~25 s por 500 textos) | 6.2 |
+| P7-2 | Recursos del delta diario | Cloud Run Job de 1 vCPU y 2 GiB (~25 s por 500 textos), con M4 en fp32: los pesos fp16 del registro se cargan en fp32, sin int8 (D4 de [EPIC-6](epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23), 2026-10-23) | 6.2 |
 | P7-3 | Registro de artefactos | Vertex Model Registry, con alias para promover y regresar | 6.2, 6.4 |
 | P7-4 | Promoción, rollback y *re-scoring* | Re-predecir todo el histórico en Kaggle al promover; `model_version` por predicción y las anteriores conservadas | 6.3, 6.4 |
 | P7-6 | Subida de la revisión HITL por deriva o tema nuevo | Automática, solo para el banco que alertó (`hitl_boosts`), con las reglas de la `risk_policy` global | 6.4, 7.10 |

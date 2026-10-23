@@ -130,6 +130,8 @@ Modos de falla ya conocidos que se calificarán cuando exista el diseño. **Esta
 * Paridad dialectal: se descartó del alcance; queda declarada en la
   [Model Card](model_card.md) (límite 11).
 * Licencia (F-16) y sesgo del anotador (F-20): filas nuevas de 5.8.
+* Texto nuevo del esquema v3 (comentario del revisor, nota de la alerta) y
+  oro en BigQuery (`gold_labels`): F-21, fila nueva del detalle de EPIC-6.
 
 ### Matriz (EPIC-5, experimentación)
 
@@ -149,6 +151,7 @@ Las demás quedan **por calificar** hasta que exista el dato que falta.
 | **F-18** | Familias mal asignadas por Gemini | Un incidente se atribuye a otra familia o no se detecta | Las 11 familias `aspects_v2_1` las etiqueta Gemini, con κ de 0.55 a 0.86 contra el autor según la familia | Revalidación con `muestra_v21` al cambiar el modelo o el prompt (P7-11); HITL de aspectos (7.7); solo se vigilan las familias con prevalencia ≥ 5 % | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). |
 | **F-19** | Un pico de negativas se lee como incidente confirmado | El lector atribuye a un incidente o a un tema un pico que puede ser ruido, una quincena o un cambio de volumen | El dashboard muestra por día las familias y los tópicos de las negativas, sin una señal de incidentes validada: la detección quedó fuera del alcance (decisión del autor, 2026-10-22). Antes, esta fila cubría alertas con umbrales poco validados | Etiquetas descriptivas, sin alertas automáticas de incidentes; el *hover* aclara que son los temas más frecuentes entre las negativas del día, no un diagnóstico; las familias declaran su κ (F-18) | — | — | — | — | **Por calificar** al implementar el cockpit (7.5). Redefinida el 2026-10-22, al acotar 5.9 |
 | **F-20** | Sesgo del anotador en las métricas | Las métricas y la calibración heredan el criterio de una sola persona | El oro lo anotó el autor; el segundo anotador solo cubrió 100 reseñas (κ 0.81–0.87) | Guía versionada (`v2.2`); oro *test* a ciegas; doble revisión en el HITL (`agreement_sample`, 7.7) | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). |
+| **F-21** | Texto nuevo y etiquetas individuales en las tablas de producción | Un dato personal que escribe un revisor (o que la regex no detecta, F-01) queda en el comentario de una revisión o en la nota de una alerta; las etiquetas del oro, por reseña, quedan en BigQuery | El esquema v3 guarda `hitl_reviews.comment` y `drift_alert_events.note` (EPIC-7, 7.7 y 7.8) y la tabla `gold_labels` (D10 de EPIC-6), que carga el oro *dev* aleatorio y `muestra_v21` | Comentario y nota pasan por la sanitización de EPIC-4 antes de guardarse; revisores como hash SHA-256; `gold_labels` solo en BigQuery (CMEK, IAM de `voc-sa-ml-backend` y de la API), nunca en git; sin el oro *test* | — | — | — | — | **Por calificar** al implementar 6.2 (EPIC-6, 2026-10-23) |
 
 ### Propuesta de calificación: *Label Noise Bias* (5.4, *dev* ampliado)
 

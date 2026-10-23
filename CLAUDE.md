@@ -36,9 +36,12 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 5.7 Escala, ciclo de vida y monitoreo | Escala | `experiments/analytics/src/voc_analytics/scale/`, `docs/analytics/scale/` y la sección de la feature 5.7 en `docs/backlog/epic_5.md` |
 | 5.8 Registro de decisión | Decisión | `docs/analytics/decision_record.md`, el registro de decisiones de `docs/backlog/epic_5.md` y `docs/contracts/analytics_outputs_v3_draft.md` |
 | 5.9 Temas por día y versiones (descriptivo) | Temas por día | `experiments/analytics/src/voc_analytics/incidents/`, `docs/analytics/incidents/` y la sección de la feature 5.9 en `docs/backlog/epic_5.md`. Consume (sin modificarlos) `labeling/eligibility.py`, `topics/versions.py`, `scale/backfill.py` y las predicciones del backfill de M4 (`data/backfill/20261022/`) |
+| 6.1 Contratos v3 | Contratos | `packages/voc-common/`, `docs/contracts/analytics_outputs_v3.md` (reemplaza al borrador `analytics_outputs_v3_draft.md`) |
+| 6.2 Infraestructura de salidas y curadurías | Infraestructura | `infra/`, `.github/workflows/`, `.dockerignore` y el `pyproject.toml` de la raíz |
+| 6.3 Inferencia batch y 6.4 Monitoreo y ciclo de vida | Inferencia | `packages/voc-nlp/` (nuevo), `services/ml-inference/` (nuevo; reemplaza al stub `services/ml-delora/`) |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
-Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6, que cambiará `packages/` e `infra/`. EPIC-6 y EPIC-7 se agregan a esta tabla cuando arranquen.
+Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6 (filas 6.1 a 6.4). EPIC-7 se agrega a esta tabla cuando arranque. Dentro de EPIC-6 el orden es 6.1 → 6.2 → 6.3 → 6.4 ([`epic_6.md`](docs/backlog/epic_6.md)); 6.1 y 6.2 comparten PR, así que no son independientes.
 
 El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/src/`) y su evidencia en `docs/analytics/`, con una carpeta por etapa del paquete; el mapa de rutas anteriores está en [`experiments/analytics/MIGRATION.md`](experiments/analytics/MIGRATION.md). Los módulos compartidos de abajo son relativos a `voc_analytics/`.
 
@@ -51,6 +54,7 @@ El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/
 | `labeling/temporal_context.py` | Golden dataset y etiquetado | 5.2 (EDA temporal) |
 | `labeling/label_gemini.py` | Golden dataset y etiquetado | Modelos (M9) |
 | `paths.py` | Ninguna: se cambia solo con aprobación del autor | Todos |
+| `labeling/eligibility.py`, `eda/eda_lexicon.py` y `lexicon_v1`, `calibration/calibrate.py` (temperatura), `calibration/selective.py`, `calibration/ppi.py`, `scale/drift_baseline.py`, `eda/prompts/aspects_v2_1.md` | Su área en EPIC-5 | `packages/voc-nlp/` (EPIC-6) los porta sin cambiar el criterio: si cambia el original, cambia también el port, con su prueba |
 
 ## Convenciones del proyecto
 
@@ -60,6 +64,7 @@ El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/
 * **Datos:**
   * nunca se versiona texto de reseñas ni etiquetas individuales; `experiments/analytics/data/`, `experiments/playstore/evidence/` y `.env` están fuera de git;
   * en `docs/` solo van agregados y ejemplos sintéticos;
+  * excepción aprobada (D2 de EPIC-6, 2026-10-23): `packages/voc-nlp/` versiona `lexicon_v1.json`, con 151 formas y su etiqueta agregada (soporte ≥ 3, pureza ≥ 0.9) y su SHA-256; no son reseñas ni etiquetas individuales;
   * la sanitización por regex no detecta nombres de personas (FMEA F-01). Enviar texto fuera de GCP requiere la autorización del autor y una fila en la [matriz FMEA](docs/governance/ethical_fmea_matrix.md).
 * **Proyectos uv:**
   * el workspace de la raíz es producción;
