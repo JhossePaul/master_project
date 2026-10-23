@@ -110,21 +110,25 @@ deja hashes inconsistentes entre sí.
 
 ## Pendiente: EPIC-5 a EPIC-7
 
-Modos de falla ya conocidos que se calificarán cuando exista el diseño:
+Modos de falla ya conocidos que se calificarán cuando exista el diseño. **Estado al cerrar 5.8 (2026-10-22):**
 
 * Etiquetado por estrellas como señal ruidosa (*Label Noise Bias*) y su efecto
-  en el recall de reseñas negativas. **Ya tiene datos:** ver la propuesta de
-  calificación al final de esta sección.
-* Exposición de texto fuera del TDS durante la experimentación. **Ya tiene filas:**
-  F-10 a F-13, en la matriz de abajo.
-* Probabilidades sin calibrar que disparan o no el protocolo HITL.
-* Pérdida de cobertura de tópicos (taxonomía propia de 8 categorías, sin
-  validación externa en español bancario).
-* Exposición de texto de reseñas en el portal HITL y en los embeddings. Sin
-  fila: el portal HITL y los embeddings aún no existen.
-* Deriva entre versiones de la app (*Concept Drift*).
-* Paridad dialectal: se descartó del alcance; debe quedar como limitación
-  declarada en la Model Card.
+  en el recall de reseñas negativas. **Calificado y confirmado con el oro *test*:**
+  ver la propuesta de calificación al final de esta sección.
+* Exposición de texto fuera del TDS durante la experimentación y el backfill:
+  filas F-10 a F-14.
+* Probabilidades sin calibrar que disparan o no el protocolo HITL. **Resuelto en
+  5.6** (*temperature scaling*); el riesgo que queda está en F-17.
+* Pérdida de cobertura de tópicos: la taxonomía de 8 categorías se reemplazó por
+  las 11 familias `aspects_v2_1`; su riesgo está en F-18.
+* Exposición de texto de reseñas en el portal: F-15 (Explorador); el HITL ya
+  estaba considerado en el diseño de EPIC-7. Los embeddings se guardan sin texto
+  (`text_embeddings`).
+* Deriva entre versiones de la app (*Concept Drift*): monitor por banco de 5.7
+  (P7-9) y alertas de F-19.
+* Paridad dialectal: se descartó del alcance; queda declarada en la
+  [Model Card](model_card.md) (límite 11).
+* Licencia (F-16) y sesgo del anotador (F-20): filas nuevas de 5.8.
 
 ### Matriz (EPIC-5, experimentación)
 
@@ -137,14 +141,22 @@ Las demás quedan **por calificar** hasta que exista el dato que falta.
 | **F-11** | Acceso indebido a las copias locales del Mac del autor | Quien acceda al disco ve el TDS completo (texto sanitizado, `usuario_hash`), las etiquetas de oro y plata y las anotaciones | Snapshot `tds_20261016T054714Z` (2 649 047 filas) y etiquetas en `experiments/analytics/data/` para trabajar sin BigQuery | `experiments/analytics/data/` en `.gitignore`; `experiments/` en `.gcloudignore` y fuera de la lista de permitidos de `.dockerignore`; solo se versionan agregados; la app de anotación (Streamlit) escucha solo en `localhost` | 5 | 2 | 4 | 40 | Monitorear, como F-06. Borrar el snapshot al cerrar EPIC-5. El riesgo residual es el disco local |
 | **F-12** | El texto de reseñas queda expuesto a un segundo anotador | Una persona fuera del proyecto lee 100 reseñas de `gold_v1_a2` | Medir el acuerdo entre personas sin la contaminación por Gemini | Subconjunto de 100 ítems, a ciegas, misma app y misma guía; la cola solo lleva el texto. Sesión presencial en la app local del Mac del autor, sin copia del archivo; acuerdo verbal de confidencialidad (ambos confirmados por el autor). El nombre del segundo anotador solo está en el CSV local de anotaciones, fuera de git (cubierto por F-11), y no en `docs/`. 0 nombres marcados en esos 100 ítems | 5 | 1 | 5 | 25 | **Cerrado.** Calificada después de la anotación (2026-10-20), aunque el plan la ponía antes; calificación aprobada por el autor. La anotación se hizo una sola vez y el texto no salió del equipo |
 | **F-13** | Entrenamiento de modelos fuera de GCP | Textos y etiquetas salen del perímetro del proyecto hacia Kaggle | Los encoders de 5.4 (M4 con BETO, M8 Delora y sus semillas) necesitan GPU | Solo viaja `texto_sanitizado` con etiquetas de la plata, el oro *dev* y `holdout_nuevo`; el oro *test* no está en la carga. La medición de nombres de F-01 (acción 1, `nombre_persona` en `gold_v1`) dimensiona este riesgo: 0 nombres en 1 300 reseñas anotadas, bajo el disparador | — | — | — | — | **Riesgo aceptado por el autor (2026-10-19)**, con su criterio: priorizar el entrenamiento, que es crucial para continuar, porque la PII observada tras la regex es insignificante. Se descartó la GPU en el propio proyecto. La tasa de `nombre_persona` no supera el disparador de F-01 (2026-10-20) |
+| **F-14** | Backfill del corpus completo fuera de GCP | Todos los textos únicos del TDS (~1.4 M de `texto_sanitizado`) salen del perímetro hacia un dataset privado de Kaggle | El backfill de M4 en CPU tomaría ~17 h en Cloud Run; en la T4 de Kaggle, ~9 min por semilla (5.7, P7-1) | Solo viaja `texto_sanitizado` con una clave SHA-256 del propio texto y su número de filas: sin `id_resena`, `usuario_hash`, banco, fecha ni estrellas. Dataset y kernel privados; las predicciones vuelven a GCP y la copia en Kaggle se borra al cerrar EPIC-5 (decisión del autor, 2026-10-22: se conserva mientras pueda hacer falta otra corrida, como el backfill de tópicos). La tasa medida en F-01 (0 nombres en 1 300 reseñas anotadas; cota superior al 95 % de ~0.4 %) dimensiona el riesgo | — | — | — | — | **Riesgo aceptado por el autor (2026-10-22, P7-1)**, con su criterio: priorizar el tiempo de ejecución del backfill y del *re-scoring* (P7-4). En producción todo quedaría en GCP |
+| **F-15** | El Explorador de reseñas del portal amplía quién lee el texto | Analistas, además de los revisores HITL, leen reseñas sanitizadas con filtros y búsqueda semántica; un nombre que la regex no detectó (F-01) queda visible para más personas | El frontal de EPIC-7 (P8-12, 2026-10-22) incluye una tabla con *crossfilter* y la ficha de cada reseña (7.6) | Portal privado con IAP y rol de analista (7.2); solo `texto_sanitizado`; sin descarga de texto (exportación de agregados); accesos en Cloud Audit Logs; la tasa de F-01 (0 nombres en 1 300 reseñas anotadas) como riesgo base | — | — | — | — | **Por calificar** al implementar EPIC-7. Propuesta: lista nominal de analistas y revisión trimestral de accesos |
+| **F-16** | Uso del modelo fuera de la licencia | M4 parte de un checkpoint de `pysentimiento`, solo para uso no comercial e investigación (heredado de TASS) | Se eligió RoBERTuito por desempeño (P8-1, P8-2) | Uso académico declarado en la [Model Card](model_card.md) (límite 1); un uso comercial exige reentrenar desde un checkpoint sin esa restricción o usar M9 | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). Acción propuesta: aviso de licencia en el portal (7.3) |
+| **F-17** | Priorización errónea por una predicción incierta aceptada sin revisión | Una queja mal clasificada no llega a familias ni a la cola, o un incidente se ordena mal | En los casos difíciles (*dev* dirigido) el error sigue en 17–23 % aun revisando el 20 %, y la confianza calibrada vale menos (ECE 0.10–0.14) | Revisión humana con 90 % de cobertura (error aceptado 0.42 % [0.03, 1.06] en el aleatorio); muestra trimestral a ciegas; avisos de tasa de corrección y de acuerdo con Gemini (P7-10) | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). Reemplaza a la fila de la especificación anterior ("mitigado por entropía ≥ 0.65") |
+| **F-18** | Familias mal asignadas por Gemini | Un incidente se atribuye a otra familia o no se detecta | Las 11 familias `aspects_v2_1` las etiqueta Gemini, con κ de 0.55 a 0.86 contra el autor según la familia | Revalidación con `muestra_v21` al cambiar el modelo o el prompt (P7-11); HITL de aspectos (7.7); solo se vigilan las familias con prevalencia ≥ 5 % | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). |
+| **F-19** | Alertas de incidentes con umbrales poco validados | Falsas alarmas o incidentes omitidos en los bancos donde no se probó la señal | La señal por familia y marca `u` se probó con 3 incidentes de un solo banco (BBVA) | Umbrales en 5.9 con la lista de incidentes validada por el autor (P9-1); cada alerta se confirma o descarta en el portal (7.8) | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). |
+| **F-20** | Sesgo del anotador en las métricas | Las métricas y la calibración heredan el criterio de una sola persona | El oro lo anotó el autor; el segundo anotador solo cubrió 100 reseñas (κ 0.81–0.87) | Guía versionada (`v2.2`); oro *test* a ciegas; doble revisión en el HITL (`agreement_sample`, 7.7) | — | — | — | — | **Por calificar** (registro de decisión, 5.8, 2026-10-22). |
 
 ### Propuesta de calificación: *Label Noise Bias* (5.4, *dev* ampliado)
 
 **Propuesta del autor**, no validada. Usa el *dev* aleatorio ampliado con
 `gold_v1` ([reporte](../analytics/labeling/gold_v1_report.md), métricas en
 [`sentiment_models_gold_v1_metrics.json`](../analytics/sentiment/sentiment_models_gold_v1_metrics.json),
-commits `56786f4` y `763b63a`). Queda abierta hasta el registro de decisión (5.8), que
-evaluará el oro *test*.
+commits `56786f4` y `763b63a`). **Confirmada con el oro *test* en 5.8 (2026-10-22):** M4
+`s1` pierde 5 de 212 quejas (recall 97.6 %, O = 2, RPN 60), así que M4, el modelo
+elegido (P8-1), queda bajo el umbral.
 
 **Evidencia.** En el oro *dev* aleatorio (n = 794 evaluables: 199 de `gold_v0` y
 595 de `gold_v1`; 273 quejas `NEG`). El bloque dirigido no entra en estas cifras:
@@ -201,7 +213,8 @@ leen así:
   * *dev* ya no es chico (273 `NEG`; una queja equivale a 0.4 puntos de recall),
     pero las 199 de `gold_v0` conservan el residuo de anclaje que favorece a M1;
   * M1 aprende el criterio de Gemini, incluidos sus sesgos;
-  * el oro *test* (601) queda reservado para 5.8 y puede mover O un nivel.
+  * el oro *test* (594 evaluables, 212 `NEG`) se evaluó en 5.8 y no movió O:
+    M4 `s1` pierde el 2.4 % de las quejas (la media de las 3 semillas, el 2.5 %).
 
 ## Revisión
 

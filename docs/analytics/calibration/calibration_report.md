@@ -1,6 +1,6 @@
 # Reporte de 5.6: calibración, umbral HITL, PPI y priorización
 
-> **Estado (2026-10-22): cerrado.** Feature 5.6 de [`epic_5.md`](../../backlog/epic_5.md); plan aprobado en [`calibration_design.md`](calibration_design.md). Calibración, umbral HITL y priorización decididos por el autor; PPI con Gemini y con M4 medidos. Solo agregados; el oro *test* no se usó. Índice: [`README.md`](../README.md).
+> **Estado (2026-10-22): cerrado.** Feature 5.6 de [`epic_5.md`](../../backlog/epic_5.md); plan aprobado en [`calibration_design.md`](calibration_design.md). Calibración, umbral HITL y priorización decididos por el autor; PPI con Gemini y con M4 medidos. §3.5 se agregó en 5.8 (puntaje continuo de 1 a 5, P8-9). Solo agregados; el oro *test* no se usó. Índice: [`README.md`](../README.md).
 
 ## 1. Calibración (decidido)
 
@@ -19,7 +19,7 @@
 * **Revisar más del 10 % casi no mejora:** queda ~14 % de errores con mucha confianza.
 * **Descartes** aceptados con la recomendación: el ensamble de 3 semillas (mismo AURC), BETO para el HITL (el doble de AURC), el disparador por impacto como señal de error (2–4 casos en el *dev*, error 0) y la marca `duda` de Gemini (0 de 199).
 * **Límite:** en el *dev* dirigido el error sigue en 17–23 % aun revisando el 20 %.
-* **Estado de la aplicación:** la curva y el parámetro se guardan versionados y el frontal los muestra (EPIC-6, 6.1 a 6.4; EPIC-7, 7.7.2).
+* **Estado de la aplicación:** la curva y el parámetro se guardan versionados y el frontal los muestra (EPIC-6, 6.1 a 6.4; EPIC-7, 7.10).
 * **Métricas:** [`selective_v0_metrics.json`](selective_v0_metrics.json); curva en `figures/risk_coverage_m4.png`.
 
 ## 3. Estimaciones poblacionales con PPI
@@ -80,6 +80,39 @@ Matriz estrellas × texto (Gemini, proporción del corpus; filas = estrellas, co
 * **Medir en las dos direcciones no cambia la conclusión:** la discordancia es casi toda hacia lo negativo (10.5 % contra 0.9 %). Las reseñas de 1–2★ con texto positivo existen, pero son el 0.04 % del corpus.
 * **Por banco,** la brecha neta va de −0.08 (AZTECA) a −0.17 (BBVA y BANORTE). NUBANK tiene la mayor proporción de texto más positivo que sus estrellas (2.1 %).
 * Propuesta para P8-9: reportar la matriz y la brecha neta con su intervalo, en lugar de una sola dirección.
+
+### 3.5 Puntaje continuo de 1 a 5 (TNSS original) (P8-9, 5.8, 2026-10-22)
+
+A pedido del autor en 5.8, se mide la métrica original del TNSS, que 5.6 no había evaluado (§3.3 solo midió el *gap* por clases). Se usa el mismo PPI++ con M4 calibrado (`ppi_v0`, 99 789 filas, y el oro *dev* aleatorio, 794). Código: `calibration/tnss_score.py`; métricas: [`tnss_score_v0_metrics.json`](tnss_score_v0_metrics.json).
+
+* **Variantes:**
+  * `score_clase`: `NEG` = 1, `NEU` = 3, `POS` = 5, con la clase predicha.
+  * `score_esperado`: 1·p(`NEG`) + 3·p(`NEU`) + 5·p(`POS`), con la probabilidad calibrada. Es la fórmula de `tnss_numeric_calibrated` de EPIC-6. Su objetivo humano es el mismo que el de `score_clase`; solo cambia el predictor.
+  * `score_original`: 1 + 4·p(`POS`), la propuesta inicial.
+* ***Gap*:** estrellas menos el puntaje del texto, por reseña y promediado.
+
+| Corpus (PPI, IC 95 %) | Puntaje | *Gap* (estrellas − puntaje) |
+| :--- | :---: | :---: |
+| Estrellas | 4.09 [4.08, 4.10] | — |
+| `score_clase` | 3.88 [3.84, 3.91] | +0.21 [0.17, 0.24] |
+| `score_esperado` | 3.88 [3.85, 3.91] | +0.21 [0.18, 0.24] |
+| `score_original` | 3.81 [3.77, 3.86] | +0.28 [0.23, 0.32] |
+| Brecha neta ordinal (§3.3, −2 a +2) | — | −0.14 [−0.15, −0.12] |
+
+| Banco | Estrellas | `score_esperado` | *Gap* | Brecha neta ordinal |
+| :--- | :---: | :---: | :---: | :---: |
+| AZTECA | 4.42 | 4.32 | +0.10 [0.05, 0.14] | −0.09 [−0.12, −0.06] |
+| NUBANK | 4.32 | 4.08 | +0.22 [0.14, 0.31] | −0.12 [−0.16, −0.08] |
+| SANTANDER | 4.05 | 3.83 | +0.22 [0.17, 0.27] | −0.16 [−0.18, −0.13] |
+| BANORTE | 4.27 | 4.04 | +0.24 [0.19, 0.29] | −0.16 [−0.19, −0.14] |
+| BBVA | 3.72 | 3.47 | +0.27 [0.19, 0.34] | −0.15 [−0.19, −0.11] |
+
+* **Usar probabilidades no cambia el agregado.** `score_esperado` y `score_clase` estiman lo mismo (3.88) y el intervalo apenas se estrecha (0.064 contra 0.071). Con probabilidades calibradas, el promedio del puntaje continuo equivale a 1·P(`NEG`) + 3·P(`NEU`) + 5·P(`POS`) en la población.
+* **Por reseña, el puntaje continuo es peor.** En el oro *dev*, el error absoluto medio contra el puntaje humano es 0.107 con `score_esperado` y 0.075 con la clase. Solo el 1.9 % de las reseñas cae en la zona ambigua (de 2 a 4): las probabilidades de M4 son casi siempre extremas.
+* **1 + 4·p(`POS`) trata `NEU` como queja** (vale 1, igual que `NEG`), y eso infla el *gap* de +0.21 a +0.28. No hay criterio para preferirlo.
+* **α no se puede estimar y solo escala.** Con R = α·S + (1 − α)·T, el *gap* estrellas − R es (1 − α) veces el de T. Ajustar α requeriría una calificación "verdadera" de 1 a 5 que el oro no tiene, porque se anotó en 3 clases.
+* **La escala 1/3/5 agrega un artefacto chico** (descomposición con M4 en `ppi_v0`). De un *gap* de +0.19, las reseñas discordantes aportan +0.23 y las concordantes −0.04: las 4★ con texto `POS` (6.6 % del corpus) cuentan −1 cada una, y las 2★ con `NEG` (2.9 %), +1. Las quejas con 4–5★ aportan +0.17 y las 3★ con `NEG`, +0.06. La brecha ordinal no tiene este artefacto, porque compara clases y no puntajes.
+* **La hipótesis original no se confirma en los datos.** La tabla de partida suponía +0.8 para BBVA y +0.2 para Nu. El *gap* medido es +0.27 para BBVA y +0.22 para NUBANK, con intervalos traslapados. Solo AZTECA se separa del resto, con el *gap* más bajo. Los dos *gaps* ordenan igual al banco extremo (AZTECA) y difieren entre los demás dentro del ruido.
 
 ### 3.4 Insumo medido para 5.7
 

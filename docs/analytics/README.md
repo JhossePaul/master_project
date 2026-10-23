@@ -2,7 +2,7 @@
 
 Esta carpeta reúne los reportes de la fase de planteamiento y experimentación de [EPIC-5](../backlog/epic_5.md). Cada reporte se escribió en su momento y conserva sus cifras como evidencia. Este índice los ordena como una historia y dice, para cada capítulo, qué conclusión sigue vigente.
 
-* **Estado:** al 2026-10-22. 5.2 a 5.7 cerradas; faltan 5.8 y 5.9. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
+* **Estado:** al 2026-10-22. 5.2 a 5.8 cerradas; falta 5.9. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
 * **Cómo leer un reporte:** al inicio, una nota **Estado** dice si es vigente, vigente en parte o histórico, y qué lo reemplazó. Las cifras de un reporte histórico no se corrigen: se citan con su fecha o se reemplazan por las del reporte que lo sustituye.
 * **Carpetas:** una por etapa del paquete, cada una con un dueño: [`eda/`](eda/) (5.1 y 5.2, Datos y EDA), [`labeling/`](labeling/) (5.3, Golden dataset y etiquetado), [`sentiment/`](sentiment/) (5.4, Modelos) y [`topics/`](topics/) (5.5, Tópicos) [`calibration/`](calibration/) (5.6, Calibración) y [`scale/`](scale/) (5.7, Escala). El registro de decisión de 5.8 ([`decision_record.md`](decision_record.md)) está en la raíz de esta carpeta. Cada carpeta guarda sus reportes y los JSON de métricas que escribe el paquete; las guías congeladas van a `archive/`.
 * **Código:** paquete `voc_analytics` en [`experiments/analytics/`](../../experiments/analytics/README.md), con los comandos de cada etapa en orden de ejecución.
@@ -11,14 +11,14 @@ Esta carpeta reúne los reportes de la fase de planteamiento y experimentación 
 | # | Capítulo | Feature | Reportes | Estado |
 | :---: | :--- | :---: | :--- | :--- |
 | 1 | [Problema y corpus](#1-problema-y-corpus) | 5.1 | [`epic_5.md`](../backlog/epic_5.md) | Vigente |
-| 2 | [EDA y elegibilidad](#2-eda-y-elegibilidad) | 5.1, 5.2 | [`eda_report`](eda/eda_report.md), [`eda_temporal_report`](eda/eda_temporal_report.md), [`eda_aspects_guideline`](eda/eda_aspects_guideline.md), [`eligibility_rules`](eda/eligibility_rules.md) | 5.2 cerrada (2026-10-21, guía `v2.1`); reglas en borrador |
+| 2 | [EDA y elegibilidad](#2-eda-y-elegibilidad) | 5.1, 5.2 | [`eda_report`](eda/eda_report.md), [`eda_temporal_report`](eda/eda_temporal_report.md), [`eda_aspects_guideline`](eda/eda_aspects_guideline.md), [`eligibility_rules`](eda/eligibility_rules.md) | 5.2 cerrada (2026-10-21, guía `v2.1`); 5.1 cerrada con `eligibility_rules_v1` publicada (2026-10-22) |
 | 3 | [Etiquetado: guía, pilotos, oro y plata](#3-etiquetado-guía-pilotos-oro-y-plata) | 5.3 | [`annotation_guideline`](labeling/annotation_guideline.md), [`labeling_pilot_v0`](labeling/labeling_pilot_v0.md), [`gold_v0_report`](labeling/gold_v0_report.md), [`gold_v0_r2_report`](labeling/gold_v0_r2_report.md), [`silver_v0_report`](labeling/silver_v0_report.md), [`gold_v1_design`](labeling/gold_v1_design.md), [`gold_v1_report`](labeling/gold_v1_report.md) | Cerrada (2026-10-20); oro `gold_v1` y plata `silver_v0` vigentes |
-| 4 | [Competencia de modelos de sentimiento](#4-competencia-de-modelos-de-sentimiento) | 5.4 | [`sentiment_models_protocol`](sentiment/sentiment_models_protocol.md), [`sentiment_models_v0_report`](sentiment/sentiment_models_v0_report.md), [`gold_v1_report`](labeling/gold_v1_report.md) (sección 6) | Experimentación cerrada; M4 contra M9 se decide en 5.8 ([P8-1 y P8-2](../backlog/epic_5.md#decisiones-pendientes)) |
+| 4 | [Competencia de modelos de sentimiento](#4-competencia-de-modelos-de-sentimiento) | 5.4 | [`sentiment_models_protocol`](sentiment/sentiment_models_protocol.md), [`sentiment_models_v0_report`](sentiment/sentiment_models_v0_report.md), [`gold_v1_report`](labeling/gold_v1_report.md) (sección 6) | Experimentación cerrada; en 5.8, M4 RoBERTuito elegido tras el oro *test* ([P8-1](../backlog/epic_5.md#decisiones-pendientes), sección 15) |
 | 5 | [Tópicos e incidencias](#5-tópicos-e-incidencias) | 5.5 | [`topics_design`](topics/topics_design.md), [`topics_report`](topics/topics_report.md), [`topics_decision_note`](topics/topics_decision_note.md) | Cerrado (2026-10-22): híbrido aprobado; `TOPIC_TOO_SHORT` k = 1 |
 | 6 | [Calibración, HITL y PPI](#6-calibración-hitl-y-ppi) | 5.6 | [`calibration_design`](calibration/calibration_design.md), [`calibration_report`](calibration/calibration_report.md) | Cerrada (2026-10-22) |
 | 7 | [Escala, ciclo de vida y monitoreo](#7-escala-ciclo-de-vida-y-monitoreo) | 5.7 | [`scale_design`](scale/scale_design.md), [`scale_report`](scale/scale_report.md) | Cerrada (2026-10-22) |
-| 8 | [Registro de decisión](#8-registro-de-decisión) | 5.8 | [`decision_record`](decision_record.md) | Borrador (2026-10-22) |
-| 9 | [Siguientes pasos](#9-siguientes-pasos) | 5.7–5.9 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes) | 20 decisiones pendientes |
+| 8 | [Registro de decisión](#8-registro-de-decisión) | 5.8 | [`decision_record`](decision_record.md) | Aprobado; 5.8 cerrada (2026-10-22) |
+| 9 | [Siguientes pasos](#9-siguientes-pasos) | 5.9 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes) | 5.9 lista para empezar; P9-3 pendiente |
 
 ---
 
@@ -53,7 +53,7 @@ Los textos únicos de esta tabla son una cota superior; el EDA midió 1 383 138 
 | [Patrones temporales](eda/eda_temporal_report.md) | Vigente (versión 2) | Sin ciclo trimestral; sprints de 1–2 semanas en NUBANK, BBVA y AZTECA. **La quincena sube el volumen de todas las estrellas, no las quejas.** Con la plata: en los días pico de SANTANDER y AZTECA las 5★ esconden más quejas, el patrón de incidencia que busca el proyecto. |
 | [EDA, segunda pasada](eda/eda_report.md#5-pendientes-cerrados-tokens-multi-aspecto-y-léxico) (sección 5) | Vigente | **Tokens:** el tope de 128 trunca menos del 0.1 %. **Multi-aspecto:** entre el 32 % (Gemini, cota inferior) y el 44 % (autor, κ 0.42) de las negativas nombra dos o más problemas, y la mitad de las de 20 palabras o más; las de 1 a 5 palabras casi nunca son multi-aspecto, pero sí nombran un problema concreto (4 % de las de una palabra, 48–50 % de las de 2 y 77–81 % de las de 3 a 5; provisional, sección 2.3 de [`topics_report`](topics/topics_report.md), con `aspects_v2` sin validar). **Léxico:** 151 formas cubren el 95.3 % de las reseñas de una palabra con 99 % de exactitud; excluir solo las no cubiertas casi no sesga las estrellas. |
 | [Guía de aspectos](eda/eda_aspects_guideline.md) | `v2.1`, vigente y cerrada (copias congeladas: [`v1`](eda/archive/eda_aspects_guideline_v1.md) y [`v2`](eda/archive/eda_aspects_guideline_v2.md)) | Taxonomía de 11 códigos para las negativas; "sin problema concreto" es explícito (sin familias). `FQ` se fusionó en `UX`; `CO` incluye instalar y actualizar; `AC` incluye todo el token; `DV` se mantiene separado por decisión del autor, como excepción a la prevalencia mínima. Las marcas ortogonales `u` (actualización) y `s` (seguridad, incluye privacidad) sustituyen a la regla 3 de `v1`. La siguen el prompt `aspects_v2_1` y la app de validación. El κ 0.39 de `DS` es un dato de `v1`. |
-| [Reglas de elegibilidad](eda/eligibility_rules.md) | Borrador `v0.1` | Reglas deterministas por tarea con código de motivo; la fila excluida se conserva como `NOT_PREDICTED`. Corte de NUBANK en 2020-01-01. `TNSS_NOT_SPANISH` descartada. **Abierto:** `TNSS_SINGLE_WORD` (5.8) y `TOPIC_TOO_SHORT` (5.5). |
+| [Reglas de elegibilidad](eda/eligibility_rules.md) | **`v1`, aprobada en 5.8** (2026-10-22) | Reglas deterministas por tarea con código de motivo; la fila excluida se conserva como `NO_PREDICTED`. Corte de NUBANK en 2020-01-01, `TNSS_SINGLE_WORD` con léxico (P8-3) y `TOPIC_TOO_SHORT` k = 1. Sentimiento: 81.7 % por M4, 16.7 % por léxico y 1.6 % excluido ([conteos](eda/eligibility_v1_counts.json)). |
 
 **Feature 5.2 cerrada (2026-10-21), con la [sección 5.2.1](eda/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55) de `eda_report.md` (guía de aspectos `v2.1`).** Se reabre si hay un snapshot nuevo.
 
@@ -82,7 +82,7 @@ La estrategia: **Gemini Flash** (Vertex AI, dentro de GCP) etiqueta una **plata*
 | :--- | ---: | :--- | :--- |
 | *Dev* aleatorio | 799 (794 evaluables) | 199 de `gold_v0_r2` y 600 de `gold_v1` | Comparación de modelos, umbrales, calibración |
 | *Dev* dirigido | 300 (297 evaluables) | `gold_v1` | Casos difíciles y `NEU`; nunca cifras poblacionales |
-| *Test* | 601 | 201 de `gold_v0_r2` y 400 de `gold_v1` | **Una sola evaluación, en 5.8** |
+| *Test* | 601 | 201 de `gold_v0_r2` y 400 de `gold_v1` | **Evaluado una sola vez en 5.8 (2026-10-22)**; ya no se usa para elegir |
 | Calibración | 30 | `gold_v0_r2` | No se usa en métricas |
 
 ## 4. Competencia de modelos de sentimiento
@@ -108,7 +108,7 @@ El [protocolo](sentiment/sentiment_models_protocol.md) fija los candidatos (M0�
 | M5 M4 RoBERTuito con *label smoothing* (ε = 0.1 y 0.2) | 0.913 | Empata con M4 y calibra peor (ECE 0.05 y 0.10 contra 0.035); descartado |
 | M9 Gemini `prompt_v3` | 0.93 (0.91–0.96) | M9 − M4: +0.021 [−0.000, 0.043] |
 
-**Conclusión vigente (experimentación cerrada, 2026-10-20):** la escalera M0–M9 está completa. M4 RoBERTuito es el mejor modelo propio: κ 0.917 con 3 semillas, 0.63 en el dirigido y sin costo por texto. Queda a +0.021 [−0.000, 0.043] de Gemini, una brecha de unos 5 `NEU` de 30 que el *dev* no puede resolver. M5 y M8 se descartan; el detector de M8 se conserva como candidato para la incongruencia. La elección entre M4 y M9 queda para 5.8, por costo (Gemini ~$72 el backfill), licencia (`pysentimiento` es no comercial) y el oro *test*, que sigue intacto. Con κ 0.81–0.87 entre personas, diferencias de ~0.02 entre los mejores modelos quedan por debajo del ruido entre anotadores ([`gold_v1`](labeling/gold_v1_report.md), sección 7).
+**Conclusión vigente (experimentación cerrada, 2026-10-20):** la escalera M0–M9 está completa. M4 RoBERTuito es el mejor modelo propio: κ 0.917 con 3 semillas, 0.63 en el dirigido y sin costo por texto. Queda a +0.021 [−0.000, 0.043] de Gemini, una brecha de unos 5 `NEU` de 30 que el *dev* no puede resolver. M5 y M8 se descartan; el detector de M8 se conserva como candidato para la incongruencia. La elección entre M4 y M9 queda para 5.8, por costo (Gemini ~$72 el backfill), licencia (`pysentimiento` es no comercial) y el oro *test*. **En 5.8 (2026-10-22), el oro *test* confirmó el *dev*:** M4 κ 0.929 contra 0.943 de M9, con una diferencia de +0.010 a +0.017 que no es significativa en ninguna semilla y sin diferencia en `NEG`. Con la regla aprobada antes de mirar, **P8-1 queda en M4 RoBERTuito** ([reporte, sección 15](sentiment/sentiment_models_v0_report.md#15-evaluación-única-en-el-oro-test-58-2026-10-22)). Con κ 0.81–0.87 entre personas, diferencias de ~0.02 entre los mejores modelos quedan por debajo del ruido entre anotadores ([`gold_v1`](labeling/gold_v1_report.md), sección 7).
 
 **Después de 5.4 (5.6, 2026-10-22):** M4 RoBERTuito se reentrenó con las semillas 1 a 3 y esta vez se **guardaron los pesos** (`M4_robertuito_s*_ppi`, lote `m4_ppi`). Reproducen la tabla de arriba (κ 0.912–0.923 sin ponderar) y son los candidatos desplegables. Los dos M4 parten de checkpoints de `pysentimiento`, con licencia no comercial: es la decisión P8-2 del [registro](../backlog/epic_5.md#decisiones-pendientes).
 
@@ -130,7 +130,7 @@ Feature 5.7 ([plan](scale/scale_design.md), [reporte](scale/scale_report.md)). *
 
 ## 8. Registro de decisión
 
-Feature 5.8. El [borrador del registro](decision_record.md) junta por tema lo decidido en 5.1–5.7, lo pendiente y su evidencia: falta la evaluación única en el oro *test* (M4 contra M9), el *Satisfaction Gap* (P8-9), y el alcance de EPIC-7 (P8-12).
+Feature 5.8, **cerrada el 2026-10-22.** El [registro](decision_record.md) junta por tema lo decidido en 5.1–5.8 y su evidencia: M4 RoBERTuito tras la evaluación única en el oro *test* (P8-1), *gap* en estrellas con PPI (P8-9) y frontal de EPIC-7 por niveles (P8-12). Además, `eligibility_rules_v1` con sus conteos, la [Model Card](../governance/model_card.md) 0.1, las filas F-14 a F-20 de la FMEA y el primer backfill de M4 en Kaggle ([5.7, §9](scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)).
 
 ---
 
@@ -140,11 +140,11 @@ La lista ordenada, con dueño, dependencia y criterio de terminado, está en [`e
 
 1. ~~5.2 a 5.6~~: cerradas (2026-10-20 a 2026-10-22).
 2. ~~**5.7, escala, ciclo de vida y monitoreo**~~: cerrada (2026-10-22).
-3. **5.8, registro de decisión:** [borrador](decision_record.md) listo; faltan la evaluación única en el oro *test*, P8-9 y P8-12; el esquema (P8-5, P8-11) está aprobado con la condición de cubrir el frontal de EPIC-7.
-4. **5.9, incidentes y versiones con la estrategia elegida:** meses candidatos a incidente en los 5 bancos, validados por el autor, y análisis por versión con más filas; va después de 5.8 para no predecir con un modelo que la decisión podría descartar.
-5. **Antes de EPIC-6 y EPIC-7:** resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) entre su diseño original y la evidencia.
+3. ~~**5.8, registro de decisión**~~: cerrada (2026-10-22). Sigue detallar EPIC-6 a partir del registro.
+4. **5.9, incidentes y versiones con la estrategia elegida:** sentimiento con el backfill de M4 y familias con las muestras (P9-2); meses candidatos a incidente en los 5 bancos, validados por el autor, con su lista de incidentes externos para estimar el recall; análisis por versión y validación única de la cola HITL.
+5. ~~**Antes de EPIC-6 y EPIC-7:** resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)~~: resueltas en 5.8 (2026-10-22).
 
-Las opciones, la evidencia y una propuesta para cada decisión están en el [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
+Las decisiones tomadas y las pendientes de 5.9 están en el [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
 
 ---
 
@@ -193,6 +193,7 @@ Todos los escribe el paquete `voc_analytics` en la carpeta de su etapa; solo con
 | [`gold_v1_a2_metrics.json`](labeling/gold_v1_a2_metrics.json) | `analysis.analyze_gold_v1_a2` | [`gold_v1`](labeling/gold_v1_report.md), sección 7 | Vigente |
 | [`sentiment_models_metrics.json`](sentiment/sentiment_models_metrics.json) | `sentiment.evaluate` (primera ronda) | [Primera ronda](sentiment/sentiment_models_v0_report.md) | Histórico |
 | [`sentiment_models_gold_v1_metrics.json`](sentiment/sentiment_models_gold_v1_metrics.json) | `sentiment.evaluate` | [`gold_v1`](labeling/gold_v1_report.md), sección 6 | Vigente |
+| [`sentiment_models_test_metrics.json`](sentiment/sentiment_models_test_metrics.json) | `sentiment.evaluate_test` | [5.4, sección 15](sentiment/sentiment_models_v0_report.md#15-evaluación-única-en-el-oro-test-58-2026-10-22) | Vigente (evaluación única) |
 | [`topics_working_v0_metrics.json`](topics/topics_working_v0_metrics.json) | `topics.working_set` | [Tópicos](topics/topics_report.md) | Provisional |
 | [`topics_pilot_v0_metrics.json`](topics/topics_pilot_v0_metrics.json) | `topics.pilot` | [Tópicos](topics/topics_report.md) | Provisional |
 | [`topics_phase2_v0_metrics.json`](topics/topics_phase2_v0_metrics.json) | `topics.dynamics` | [Tópicos](topics/topics_report.md), fases 2 a 4 | Vigente |
@@ -200,6 +201,9 @@ Todos los escribe el paquete `voc_analytics` en la carpeta de su etapa; solo con
 | [`calibration_v0_metrics.json`](calibration/calibration_v0_metrics.json) | `calibration.calibrate` | [5.6](calibration/calibration_report.md), sección 1 | Vigente |
 | [`selective_v0_metrics.json`](calibration/selective_v0_metrics.json) | `calibration.selective` | [5.6](calibration/calibration_report.md), sección 2 | Vigente |
 | [`ppi_v0_gemini_metrics.json`](calibration/ppi_v0_gemini_metrics.json) y [`ppi_v0_m4_metrics.json`](calibration/ppi_v0_m4_metrics.json) | `calibration.ppi` | [5.6](calibration/calibration_report.md), sección 3 | Vigente |
+| [`backfill_v0_metrics.json`](scale/backfill_v0_metrics.json) | `scale.backfill check` | [5.7, §9](scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22) | Vigente |
+| [`eligibility_v1_counts.json`](eda/eligibility_v1_counts.json) | `eda.eligibility_counts` | [Reglas de elegibilidad](eda/eligibility_rules.md) (`v1`) | Vigente |
+| [`tnss_score_v0_metrics.json`](calibration/tnss_score_v0_metrics.json) | `calibration.tnss_score` | [5.6, §3.5](calibration/calibration_report.md#35-puntaje-continuo-de-1-a-5-tnss-original-p8-9-58-2026-10-22) (P8-9) | Vigente |
 | [`priority_v0_metrics.json`](calibration/priority_v0_metrics.json) | `calibration.priority` | [5.6](calibration/calibration_report.md), sección 4 | Vigente |
 | [`benchmark_mac.json`](scale/benchmark_mac.json), [`benchmark_cloudrun-1cpu-2gi.json`](scale/benchmark_cloudrun-1cpu-2gi.json) y [`benchmark_cloudrun-2cpu-4gi.json`](scale/benchmark_cloudrun-2cpu-4gi.json) | `scale.benchmark` | [5.7](scale/scale_report.md), sección 1 | Vigente |
 | [`drift_baseline_v0_metrics.json`](scale/drift_baseline_v0_metrics.json) | `scale.drift_baseline` | [5.7](scale/scale_report.md), sección 2 | Vigente |

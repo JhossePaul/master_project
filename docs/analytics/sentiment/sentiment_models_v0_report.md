@@ -20,6 +20,7 @@
 > * **Superado:** las cifras de κ sobre el *dev* de 199 (secciones 1, 4, 9 y 10), infladas por el anclaje, y las implicaciones de la sección 8, que ponían a M1 como referencia a vencer.
 > * **Sigue vigente:** la decisión de limpieza y ponderación (sección 2), la lectura por longitud (sección 3), las cifras de costo (secciones 6, 10 y 12) y la conclusión de la escalera de ruido.
 > * **Escalera completa:** M0–M9 evaluados. Un sesgo de `NEU` sobre M4, elegido con la plata, tampoco mejora en el oro (sección 14). La experimentación de 5.4 se cierra con M4 RoBERTuito; la elección entre M4 y M9 queda para 5.8.
+> * **Oro *test* (5.8, 2026-10-22, sección 15):** evaluado una sola vez. M4 κ 0.929 (3 semillas, 0.925–0.932) contra M9 0.943; M9 − M4 entre +0.010 y +0.017, con todos los IC conteniendo el 0, y sin diferencia en `NEG`. **P8-1: M4 RoBERTuito.**
 > * **Después (5.6, 2026-10-22):** M4 RoBERTuito se reentrenó con las semillas 1 a 3 guardando los pesos (`M4_robertuito_s*_ppi`); reproduce estas cifras (κ 0.912–0.923 sin ponderar). Ver el [reporte de 5.6](../calibration/calibration_report.md). La elección M4/M9 y la licencia son P8-1 y P8-2 del [registro de decisiones](../../backlog/epic_5.md#decisiones-pendientes).
 
 * **Qué es:** la fase A del [plan de 5.4](sentiment_models_protocol.md): líneas base y encoders sin ajuste, todo en el Mac y sin gasto.
@@ -39,7 +40,7 @@
 * **Datos:**
   * Entrenamiento: 63 720 textos únicos de la plata (`entrenamiento`), sin `NA` ni reseñas del oro.
   * Evaluación: oro *dev* (199 evaluables: 45 `NEG`, 7 `NEU`, 147 `POS`) y 5 305 filas de `holdout_nuevo`.
-  * **El oro *test* no se tocó.**
+  * **El oro *test* no se tocó** hasta su evaluación única en 5.8 (sección 15).
 * **Cómo leer las cifras:**
   * "Muestra" es la muestra sin ponderar (comparable con los κ de 5.3); "población" pondera por 1/π.
   * IC 95 % por bootstrap estratificado (2 000 réplicas en *dev*, 500 en holdout).
@@ -359,3 +360,41 @@ Lote `m5` en Kaggle: la receta de M4 (sección 12) con entropía cruzada suaviza
 * **La brecha de `NEU` contra Gemini son unos 5 ítems de 30.** M4 acierta 14–15 `NEU` del oro y Gemini 19; la mayoría de los errores de M4 van a `POS` (10–11 contra 7). Con 30 `NEU` en *dev*, una diferencia de ese tamaño no se resuelve; el oro *test* (5.8) es la próxima medición.
 * **Para Q1 la brecha importa poco:** en `NEG`, M4 y Gemini empatan (recall 0.96 contra 0.96, precisión 0.96–0.97 contra 0.97).
 * **Decisión:** el sesgo no se adopta, porque agrega un parámetro sin mejora en el oro. **La experimentación de 5.4 se cierra con M4 RoBERTuito** como el mejor modelo propio. La elección entre M4 y M9 queda para 5.8, por costo, licencia y el oro *test*.
+
+## 15. Evaluación única en el oro *test* (5.8, 2026-10-22)
+
+Protocolo y regla de decisión aprobados por el autor antes de mirar el *test* ([registro de decisión, tema 1](../decision_record.md#1-modelo-de-sentimiento-p8-1-p8-2)). Código: `sentiment/evaluate_test.py`; métricas: [`sentiment_models_test_metrics.json`](sentiment_models_test_metrics.json). Las predicciones del *test* no se guardan.
+
+* **Datos:** 594 ítems evaluables de 601 (200 de `gold_v0_r2` y 394 de `gold_v1`; 7 `NA` del humano excluidos). Todos del bloque aleatorio, anotados a ciegas: 212 `NEG`, 22 `NEU` y 360 `POS`.
+* **M4:** los pesos `M4_robertuito_s{1,2,3}_ppi` en el Mac (CPU, fp32) con la T de 5.6. Control previo: en el *dev* aleatorio, las tres semillas reproducen las clases de Kaggle al 100 % (diferencia máxima de probabilidad 0.004).
+* **M9:** la etiqueta de `prompt_v3` ya guardada; cubre los 594 ítems, sin `NA`.
+
+| *Test* (n = 594, muestra) | M4 `s1` | M4 `s2` | M4 `s3` | M4 media | M9 Gemini |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| κ (IC 95 %) | 0.929 (0.901–0.955) | 0.925 (0.896–0.951) | 0.932 (0.905–0.956) | **0.929** | **0.943** (0.917–0.966) |
+| κ población | 0.927 | 0.922 | 0.933 | 0.927 | 0.942 |
+| Macro-F1 | 0.859 | 0.857 | 0.872 | 0.863 | 0.893 |
+| F1 `NEG` / `NEU` / `POS` | 0.970 / 0.629 / 0.978 | 0.967 / 0.629 / 0.977 | 0.972 / 0.667 / 0.978 | — | 0.979 / 0.718 / 0.981 |
+| Recall / precisión `NEG` | 0.976 / 0.963 | 0.972 / 0.963 | 0.976 / 0.967 | 0.975 / 0.964 | 0.981 / 0.977 |
+| ECE sin calibrar → calibrado | 0.029 → 0.014 | 0.029 → 0.015 | 0.029 → 0.011 | — | — |
+
+**M9 − M4, pareado (muestra):**
+
+| Métrica | `s1` | `s2` | `s3` |
+| :--- | :---: | :---: | :---: |
+| κ | +0.014 [−0.010, 0.037] | +0.017 [−0.007, 0.041] | +0.010 [−0.013, 0.032] |
+| κ población | +0.015 [−0.015, 0.044] | +0.020 [−0.010, 0.050] | +0.009 [−0.017, 0.033] |
+| Recall `NEG` | +0.005 [−0.014, 0.024] | +0.009 [−0.014, 0.031] | +0.005 [−0.014, 0.024] |
+| Precisión `NEG` | +0.014 [−0.005, 0.036] | +0.014 [−0.005, 0.037] | +0.009 [−0.009, 0.031] |
+| F1 `NEU` (22 ítems) | +0.089 [−0.060, 0.261] | +0.089 [−0.060, 0.261] | +0.051 [−0.087, 0.212] |
+
+### Lectura
+
+1. **El *test* confirma el *dev* y no muestra optimismo.** M4 sube de 0.917 a 0.929 y M9 de 0.933 a 0.943. La brecha baja de +0.021 a +0.014 de media, y en ninguna semilla ni en ningún peso el IC excluye el 0. El residuo de anclaje del *dev* (sección 7) no infló a M4.
+2. **En `NEG`, lo que importa para Q1, no hay diferencia significativa.** M9 queda medio punto arriba en recall y un punto en precisión, con todos los IC conteniendo el 0.
+3. **La ventaja de M9 sigue concentrada en `NEU`**, con 22 ítems: unos 2 aciertos más, y un IC de −0.06 a +0.26 en F1.
+4. **La calibración se transfiere:** la T elegida en *dev* reduce el ECE del *test* a la mitad (0.029 → 0.011–0.015).
+
+### Decisión (P8-1)
+
+**M4 RoBERTuito**, aplicando la regla aprobada: el IC de M9 − M4 en κ incluye el 0 en las tres semillas, y M4 no pierde en `NEG`. Coincide con el criterio del autor de que la carga de la prueba está en M9, por sus gastos fijos y su dependencia de un servicio externo. El *test* queda consumido y no se vuelve a usar para elegir modelos.

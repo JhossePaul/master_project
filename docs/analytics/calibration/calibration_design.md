@@ -39,7 +39,7 @@
 
 * **Cobertura por defecto: 90 %.** Se revisa el ~10 % menos seguro: unos 350 textos únicos por semana sobre el volumen reciente (3 493 por semana), con un error de 0.4 % entre lo aceptado, igual en las tres semillas de RoBERTuito. El 95 % (unos 175 por semana) queda como alternativa de menor costo.
 * **Es un parámetro configurable, no un compromiso de horas del autor.** La revisión semanal es un costo de operación del escenario de producción, y la hace el equipo de CX o de producto en EPIC-7. Para la tesis basta medir y justificar el umbral, más una validación única con la cola de una semana antes de la presentación.
-* **La curva y el parámetro son parte del estado de la aplicación:** se guardan versionados y el frontal HITL los muestra junto con su costo estimado (EPIC-6, 6.1 a 6.4; EPIC-7, 7.7).
+* **La curva y el parámetro son parte del estado de la aplicación:** se guardan versionados y el frontal HITL los muestra junto con su costo estimado (EPIC-6, 6.1 a 6.4; EPIC-7, 7.10).
 * **Señal:** probabilidad máxima calibrada (la entropía y el margen dan el mismo AURC), con una semilla de RoBERTuito.
 * **Descartes, propuestos con la recomendación y aceptados con ella:**
   * el ensamble de 3 semillas, que no mejora el AURC;

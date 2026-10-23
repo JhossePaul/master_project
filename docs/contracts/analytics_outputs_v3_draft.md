@@ -1,12 +1,12 @@
 # Salidas analíticas v3: borrador de esquemas y migración
 
-> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7, que todavía no se revisa (P8-12). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales.
+> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales.
 
 ## Principios
 
 * **Solo inserción** en todo lo que es historia (predicciones, revisiones, políticas, eventos). Lo vigente se obtiene con la última fila por clave, en una vista.
 * **Todo lleva su versión:** de modelo, de calibración, de prompt, de guía, de reglas de elegibilidad y de política. Un número del portal se puede rastrear hasta lo que lo produjo.
-* **Una inferencia por texto único** (`text_key`), propagada a sus reseñas. El backfill y el *re-scoring* predicen solo los textos únicos (~1.38 M) y luego materializan las filas por reseña con un *join*; el costo de inferencia no depende de la granularidad de la tabla. En el delta diario se predice igual por texto, aunque ahí el ahorro importa menos.
+* **Una inferencia por texto único** (`text_key`), propagada a sus reseñas. El backfill y el *re-scoring* predicen solo los textos únicos (1 429 675 en el backfill de 5.8) y luego materializan las filas por reseña con un *join*; el costo de inferencia no depende de la granularidad de la tabla. En el delta diario se predice igual por texto, aunque ahí el ahorro importa menos.
 * **Sin valores nulos que mezclen conceptos:** un valor explícito dice qué pasó (`ELEGIBLE`, `NO_PREDICTED`); el nulo se reserva para "no calculado todavía" o para una ausencia real (las probabilidades de una reseña sin modelo).
 * **Sin PII:** solo `texto_sanitizado` (que ya vive en el TDS) y revisores como hash SHA-256. Las tablas nuevas no copian texto: lo leen del TDS por `id_resena`.
 * **BigQuery:** particionadas por mes de `fecha` (o de la fecha del evento) y agrupadas por `bank_id`, como el TDS.
@@ -18,7 +18,7 @@
 | Columna | Tipo | Nota |
 | :--- | :--- | :--- |
 | `id_resena`, `bank_id` | STRING | Clave del TDS |
-| `text_key` | STRING | Hash de la clave normalizada del texto (la de `sample_silver`) |
+| `text_key` | STRING | SHA-256 hexadecimal de `texto_sanitizado`, igual en BigQuery (`TO_HEX(SHA256(...))`) y en Python; es la clave del backfill de 5.8 (1 429 675 textos únicos) |
 | `fecha`, `version_app`, `estrellas` | | Copiados del TDS para las series sin *join* |
 | `eligibility_rules_version` | STRING | `eligibility_rules_v1` |
 | `eligibility_code` | STRING | `ELEGIBLE`, o el código de la regla que la excluye (`TNSS_TIME_OUTLIER`, `TNSS_NO_TEXT_CONTENT`…). Nulo solo si las reglas todavía no se evaluaron |
@@ -59,7 +59,10 @@ El *re-scoring* (P7-4) inserta filas nuevas con otra `model_version`; la vista `
 | `model_versions` | Versión | `model_version`, `registry_uri` (Vertex o GCS, P7-3), `base_checkpoint`, `training_data` (plata, hash), `calibration_t`, métricas en el oro *dev* (κ, ECE, AURC), `license`, `status` (`candidate`, `promoted`, `retired`), `promoted_at`, `promoted_by_hash` |
 | `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`), `environment` (`kaggle`, `cloudrun`), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
 | `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version` |
-| `incident_alerts` | Alerta | `alert_id`, `bank_id`, `period`, `signal`, `family`, `value`, `threshold`, `status` (`open`, `confirmed`, `dismissed`), `confirmed_by_hash`; las confirmadas son la lista de incidentes (5.9) |
+| `incident_alerts` | Alerta | `alert_id`, `bank_id`, `period`, `signal`, `family`, `value`, `threshold`, `hitl_boost_id`, `created_at`. El estado vigente es el último de `incident_alert_events`; las confirmadas son la lista de incidentes (5.9) |
+| `incident_alert_events` | Transición de una alerta | `event_id`, `alert_id`, `status` (`open`, `confirmed`, `dismissed`), `actor_hash`, `at`, `note` (sanitizada), `ticket`. Solo inserción (EPIC-7, 7.8) |
+| `kpi_estimates` | Banco × periodo × métrica × corrida | `metric` (`neg`, `gap_estrellas`, `texto_peor`, `texto_mejor`, celdas de la matriz 3 × 3…), `bank_id`, `period`, `method` (`ppi` o `raw`), `estimate`, `ci_low`, `ci_high`, `n_gold`, `n_unlabeled`, `model_version`, `gold_version`, `computed_at`. Los KPI con PPI del cockpit (P8-9, P8-10); las series diarias crudas son vistas sobre `review_predictions_current` |
+| `review_explanations` | Texto × versión de modelo | `text_key`, `model_version`, `method` (`occlusion_v1`), `attributions` (JSON por token), `source` (`precomputed_hitl` u `on_demand`), `computed_at`. Las lee solo el Explorador (EPIC-7, 7.6), nunca la pantalla HITL (P8-8) |
 | `model_quality` | Modelo × periodo × señal | `model_version` (o `llm_model` y `prompt_version` para las familias), `signal` (`kappa_monitor`, `correction_rate`, `agreement_m4_gemini`, `families_validation`), `period`, `value`, `n`, `ic95`, `threshold`, `status` (`ok`, `warning`, `retrain`, `rejected`), `risk_policy_version` |
 
 ## 3. Políticas: apetito de riesgo (global) y alertas de deriva (por banco)
@@ -107,7 +110,7 @@ Mismas columnas que `drift_policy`, sin `bank_id`. Se usa al dar de alta un banc
 
 ### `hitl_coverage_curves` (una curva por `model_version` y `calibration_version`)
 
-Puntos de cobertura con riesgo, IC, umbral, errores atrapados, revisiones por semana y minutos estimados (5.6), con el volumen semanal total y por banco (para estimar el costo de una subida). Lo lee la pantalla 7.7.2.
+Puntos de cobertura con riesgo, IC, umbral, errores atrapados, revisiones por semana y minutos estimados (5.6), con el volumen semanal total y por banco (para estimar el costo de una subida). Lo lee la pantalla de administración (EPIC-7, 7.10).
 
 ## 4. HITL: estado e historia (P8-11)
 
@@ -118,11 +121,11 @@ El estado de cada caso es la **última transición** de su historia, así que na
 | Columna | Nota |
 | :--- | :--- |
 | `item_id`, `id_resena`, `bank_id`, `task` | `task`: `sentiment`, `aspects` o `topic` |
-| `reason` | `low_confidence`, `drift_boost` (subida automática; con su `boost_id`), `monitor_sample` (muestra de concepto, P7-7) o `manual` |
+| `reason` | `low_confidence`, `drift_boost` (subida automática; con su `boost_id`), `monitor_sample` (muestra de concepto, P7-7), `agreement_sample` (doble revisión para medir el acuerdo entre personas) o `manual` |
+| `display_mode` | `blind` (sin la predicción) o `assisted` (con la predicción). **`monitor_sample`, `agreement_sample` y todo caso que pueda entrar al oro van siempre `blind`** (decisión del autor, 2026-10-22, para evitar el anclaje medido en 5.3) |
 | `model_version`, `risk_policy_version` | Con qué se generó el caso |
-| `predicted` | JSON con lo que predijo el sistema (etiqueta y probabilidades, o familias) |
+| `predicted` | JSON con lo que predijo el sistema (etiqueta y probabilidades, o familias). La API no lo envía a la pantalla cuando `display_mode = 'blind'` |
 | `priority` | Para ordenar la cola: familia y marca `u` del mes (5.6), luego menor confianza |
-| `explanation` | JSON opcional con la atribución por token (P8-8, si no se descarta) |
 | `created_at` | |
 
 ### `hitl_events` (transiciones de estado)
@@ -136,14 +139,19 @@ El estado de cada caso es la **última transición** de su historia, así que na
 | `review_id`, `item_id`, `id_resena`, `task` | |
 | `predicted_label`, `validated_label` | Sentimiento; o `predicted_families` y `validated_families` con las marcas `u` y `s` |
 | `outcome` | `confirmed` o `corrected` |
+| `display_mode`, `review_round` | Modo en que se revisó (copiado del caso) y número de revisión (1, o 2 en la doble revisión) |
 | `flags` | `menciona_falla`, `duda`, `no_evaluable`, `nombre_persona` (guía `v2.2`) |
-| `guideline_version`, `model_version`, `risk_policy_version` | |
+| `guideline_version`, `model_version`, `risk_policy_version` | `guideline_version` apunta a `guidelines` |
 | `reviewer_hash` | |
 | `opened_at`, `submitted_at`, `seconds_spent` | Mide el costo real de la revisión (alimenta los minutos de la curva) |
 | `comment` | Comentario libre del revisor (opcional). Pasa por la sanitización de EPIC-4 antes de guardarse y se registra en la FMEA, porque es texto nuevo que podría traer PII |
 | `ticket` | Ticket de backlog opcional |
 
-Una segunda revisión del mismo caso es otra fila (sirve para medir acuerdo entre revisores). Las `low_confidence` son dirigidas y no dan cifras poblacionales (como el *dev* dirigido).
+Una segunda revisión del mismo caso es otra fila, con `review_round = 2` (sirve para medir acuerdo entre revisores).
+
+### `guidelines` (guías vigentes a la vista del revisor)
+
+`guideline_version`, `task` (`sentiment`, `aspects`, `topic`), `content_uri` (documento versionado, por ejemplo la guía `v2.2` de sentimiento o `v2.1` de aspectos), `valid_from`, `published_by_hash`. La vigente de cada tarea es la última con `valid_from` ≤ ahora. Las `low_confidence` son dirigidas y no dan cifras poblacionales (como el *dev* dirigido).
 
 **Oro nuevo desde el HITL (decisión del autor, 2026-10-22).** La muestra de monitoreo no es una tabla aparte: es `hitl_items.reason = 'monitor_sample'`, una muestra aleatoria. Esas revisiones pueden entrar al oro, pero **separadas por versión** y no mezcladas con el oro de EPIC-5. Como `hitl_items`, `hitl_events` y `hitl_reviews` son de solo inserción y guardan `model_version`, `risk_policy_version`, `guideline_version` y fechas, ya son el historial; solo hace falta fijar qué entra en cada versión:
 
@@ -167,6 +175,24 @@ La curaduría de tópicos (`curation_topics` del borrador de 5.5) se queda apart
 | `hitl_entropy_threshold` en `Settings` | Sin uso | Se retira; el umbral vive en `risk_policy` |
 
 Como las dos tablas viejas están vacías, la migración no mueve datos: es un cambio de esquema en Pulumi y de contratos en `voc-common`. Orden propuesto: contratos (6.1), tablas nuevas (6.2), retiro de las viejas en la misma versión del stack.
+
+## 6. Cobertura del frontal de EPIC-7
+
+Revisión pantalla por pantalla (condición de P8-5, 2026-10-22) contra el [frontal reescrito](../backlog/epic_7.md).
+
+| Pantalla (EPIC-7) | Lee | Escribe |
+| :--- | :--- | :--- |
+| Landing (7.3) | `ingestion_runs_log_v2` (EPIC-4), `inference_runs`, `incident_alerts` + `incident_alert_events`, `kpi_estimates` | — |
+| Reporte (7.4) | Ninguna tabla: se publica desde `docs/analytics/` por versión | — |
+| Cockpit (7.5) | `kpi_estimates` (PPI), vistas diarias sobre `review_predictions_current` y `review_aspects`, `topic_assignments`; la pestaña por versión usa `version_app` de `review_predictions` | — |
+| Explorador (7.6) | `review_predictions_current`, `review_aspects`, `topic_assignments`, texto del TDS por `id_resena`, `text_embeddings`, `review_explanations` | `review_explanations` (bajo pedido) |
+| HITL (7.7) | `hitl_queue`, `hitl_items` (sin `predicted` si es `blind`), `guidelines`, texto del TDS | `hitl_events`, `hitl_reviews`, curadurías de tópicos (5.5) |
+| Alertas (7.8) | `incident_alerts`, `incident_alert_events`, `hitl_boosts`, `drift_metrics` | `incident_alert_events` |
+| MLOps y AIOps (7.9) | `model_quality`, `hitl_coverage_curves`, `drift_metrics`, `model_versions`, `inference_runs`, `ingestion_runs_log_v2`, conteos por `eligibility_code` | — |
+| Administración (7.10) | `risk_policy`, `hitl_boosts`, `drift_policy`, `drift_policy_template`, `hitl_coverage_curves`, `hitl_reviews` (tiempo medido), `gold_versions` | `risk_policy`, `drift_policy`, `gold_versions` |
+| Seguridad (7.2) | Grupos de IAP y Cloud Audit Logs; no hay tabla de usuarios | — |
+
+**Fuera del esquema, a propósito:** los usuarios y roles (los resuelve IAP), los registros de acceso (Cloud Audit Logs) y el contenido del reporte (documentos versionados del repositorio).
 
 ## Respuestas del autor (2026-10-22)
 

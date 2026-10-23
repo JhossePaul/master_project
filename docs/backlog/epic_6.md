@@ -1,10 +1,10 @@
 # EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado (2026-10-22):** Pendiente. Las features están delimitadas, pero su detalle está **condicionado al registro de decisión de EPIC-5** (5.8): no se implementa nada antes. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
+* **Estado (2026-10-22):** Pendiente. Las features están delimitadas; el **registro de decisión de EPIC-5 (5.8) se aprobó el 2026-10-22**, así que la primera tarea es detallarlas (archivos, firmas y pruebas) a partir de él. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
-* **Antes de empezar:** aprobar el [registro de decisión de 5.8](../analytics/decision_record.md) (hoy faltan la evaluación en el oro *test*, P8-9 y P8-12, y comprobar que el esquema aprobado cubre el frontal de EPIC-7; ver el [registro de decisiones](epic_5.md#decisiones-pendientes)) y resolver o aceptar las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia). Las filas de la tabla de insumos que siguen abiertas dicen qué decisión esperan.
+* **Antes de empezar:** el [registro de decisión de 5.8](../analytics/decision_record.md) está aprobado y las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) resueltas (2026-10-22). Solo 6.4 espera a 5.9, por los umbrales de la señal de incidentes (P9-1).
 * **Semanas Objetivo:** tras 5.8 y antes de [EPIC-7](epic_7.md).
 * **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión; 5.9, incidentes y versiones, solo para 6.4) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
 * **La consume:** [EPIC-7](epic_7.md), cuya API y portal leen las tablas de salida, escriben en la base de curadurías y muestran las alertas.
@@ -28,7 +28,7 @@ Lo implementado en EPIC-1 y EPIC-2 sigue en el código hasta que esta épica lo 
 
 | Tema | Hoy (EPIC-1 y EPIC-2) | Evidencia o decisión de EPIC-5 | Decide | Feature aquí |
 | :--- | :--- | :--- | :---: | :---: |
-| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | M4 RoBERTuito es el mejor modelo propio (κ 0.917); M9 Gemini queda a +0.021. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial. M4 ya tiene pesos guardados (lote `m4_ppi`, 5.6) | 5.8 (P8-1, P8-2) | 6.1, 6.3 |
+| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | **Decidido: M4 RoBERTuito** (P8-1): κ 0.929 en el oro *test*, contra 0.943 de M9, diferencia no significativa. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial. M4 ya tiene pesos guardados (lote `m4_ppi`, 5.6) | 5.8 (P8-1, P8-2) | 6.1, 6.3 |
 | Taxonomía | 8 `ABSATopic`; `topico` obligatorio y único por reseña | 11 familias `aspects_v2_1` multi-etiqueta más las marcas `u` y `s`; los tópicos son una capa aparte, con versión y curada | 5.5 (aprobado) | 6.1, 6.2 |
 | Filtro de longitud | `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` y `cumple_umbral_palabras` | Sin filtro de longitud, porque la longitud predice las estrellas. Elegibilidad por reglas deterministas con código (`NOT_PREDICTED`); `TOPIC_TOO_SHORT` con k = 1 | 5.1, 5.2; `TNSS_SINGLE_WORD` en 5.8 | 6.1 |
 | Tabla de salida | `delora_predictions`: 15 columnas, agrupada por `topico` | Predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con ciclo de vida; estado de elegibilidad; registro de corridas | 5.8 (P8-5) | 6.2 |

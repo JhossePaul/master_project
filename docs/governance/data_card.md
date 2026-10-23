@@ -1,6 +1,7 @@
 # Data Card — Corpus de reseñas de banca móvil (TDS)
 
-* **Versión:** borrador 0.2 (2026-10-20). Se completa en iteraciones de EPIC-5; la próxima es el registro de decisión (5.8).
+* **Versión:** borrador 0.3 (2026-10-22). Se completa en EPIC-7 (7.11).
+  * **0.3:** reglas de elegibilidad `v1` aprobadas en el registro de decisión (5.8), con sus conteos.
   * **0.2:** EDA completo (5.2: tokens, multi-aspecto y léxico), oro y plata vigentes (5.3) y etiquetas de aspecto.
   * **0.1** (2026-10-17): primera versión, con el EDA global y las reglas de elegibilidad.
 * **Formato:** sigue la estructura de *Datasheets for Datasets* (Gebru et al., 2021); ver [`references.md`](references.md).
@@ -77,9 +78,10 @@
   * Por eso **puede quedar PII residual** (FMEA F-01/F-03): no publicar ejemplos sin revisión. En 1 000 reseñas aleatorias del oro no apareció ningún nombre propio (cota 95 %: 0.3 %; [`gold_v1`](../analytics/labeling/gold_v1_report.md), sección 5). Gemini se usa en Vertex AI, dentro de GCP; enviar texto fuera de GCP requiere la autorización del autor y una fila en la [matriz FMEA](ethical_fmea_matrix.md).
 * **Limpieza:** `texto_limpio` pasa a minúsculas y quita URLs, menciones y hashtags, y repeticiones de 3 o más caracteres (`limpiar_texto_bancario`). El texto sanitizado sin limpiar se conserva en `texto_sanitizado`, que es el que usan los modelos de sentimiento (5.4); `texto_limpio` solo define las reglas de longitud.
 * **Sin filtro de longitud en el almacenamiento:** el rango 2–60 palabras del EDA inicial se aplica, si acaso, en el análisis.
-* **Elegibilidad por tarea** (`eligibility_rules_v0.1`, reglas deterministas):
-  * Se excluyen de la predicción del sentimiento real los textos vacíos (8), sin contenido alfanumérico (19 586) y las 175 reseñas de NUBANK anteriores a 2020.
-  * Las reseñas de una palabra (484 829; 465 633 tras las demás reglas) tienen la decisión pendiente (5.8): excluirlas o asignarles sentimiento con un léxico determinista. El léxico medido cubre el 95.3 % con 99 % de exactitud en el oro *dev*.
+* **Elegibilidad por tarea** (`eligibility_rules_v1`, aprobada en 5.8; [conteos](../analytics/eda/eligibility_rules.md)):
+  * **Sentimiento:** el 81.7 % de las filas lo predice M4 y el 16.7 % (reseñas de una palabra cubiertas por un léxico de 151 formas, 99 % de exactitud en el oro *dev*) se etiqueta por regla.
+  * **Se excluye el 1.6 %:** las reseñas de una palabra sin forma en el léxico (22 164), las que no tienen contenido alfanumérico (19 586), las 174 de NUBANK anteriores a 2020 y las vacías (8).
+  * **Familias y tópicos:** solo las negativas predichas de dos palabras o más (26.6 % de las filas).
   * Las filas excluidas se conservan y se reportan, nunca se borran.
 
 ## 5. Usos

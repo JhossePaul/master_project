@@ -1,6 +1,6 @@
 # Reporte de 5.7: escala, ciclo de vida y monitoreo
 
-> **Estado (2026-10-22): cerrado.** Decididos por el autor: P7-9 (umbrales de deriva por banco en `drift_policy`; política HITL global en `risk_policy`, sección 7) y P7-10 y P7-11 (reentrenamiento de M4 y revalidación de las familias, sección 8). Feature 5.7 de [`epic_5.md`](../../backlog/epic_5.md); plan en [`scale_design.md`](scale_design.md). Hecho: benchmark en el Mac y en Cloud Run (E1, E2), línea base histórica de deriva (E3), costo real de las familias con Gemini (P8-7), costo de la explicabilidad (P8-8), búsqueda vectorial en BigQuery (P8-6) y Vertex Model Registry (P7-3). Todos los recursos temporales en GCP se borraron. Solo agregados. Índice: [`README.md`](../README.md).
+> **Estado (2026-10-22): cerrado.** Decididos por el autor: P7-9 (umbrales de deriva por banco en `drift_policy`; política HITL global en `risk_policy`, sección 7) y P7-10 y P7-11 (reentrenamiento de M4 y revalidación de las familias, sección 8). Feature 5.7 de [`epic_5.md`](../../backlog/epic_5.md); plan en [`scale_design.md`](scale_design.md). Hecho: benchmark en el Mac y en Cloud Run (E1, E2), línea base histórica de deriva (E3), costo real de las familias con Gemini (P8-7), costo de la explicabilidad (P8-8), búsqueda vectorial en BigQuery (P8-6) y Vertex Model Registry (P7-3). Todos los recursos temporales en GCP se borraron. Después del cierre, en 5.8, se corrió el primer backfill de M4 en Kaggle (sección 9). Solo agregados. Índice: [`README.md`](../README.md).
 
 ## 1. Benchmark de inferencia de M4 (P7-1, P7-2)
 
@@ -233,3 +233,25 @@ Muestras aleatorias simuladas desde el oro *dev* aleatorio (remuestreo proporcio
 * Acuerdo exacto del conjunto de familias: 58.3 % [52.7, 64.0].
 * Las familias de baja prevalencia (DI, OT) tienen intervalos demasiado anchos para juzgar un cambio; solo se vigilan las que tienen 5 % o más.
 * Repetir el prompt sobre estas 300 reseñas cuesta ~$0.03.
+
+## 9. Backfill de M4 en Kaggle (P7-1, 5.8, 2026-10-22)
+
+Primer backfill con el pipeline que decidió el autor en P7-1. El riesgo de subir el corpus está aceptado en la FMEA (F-14). Código: [`scale/backfill.py`](../../../experiments/analytics/src/voc_analytics/scale/backfill.py); métricas: [`backfill_v0_metrics.json`](backfill_v0_metrics.json).
+
+* **Pipeline:**
+  1. `export`: `EXPORT DATA` de los textos únicos de `sanitized_reviews_tds` a `gs://voc-datalake-<proyecto>/backfill/20261022/` y descarga. Facturó 0.15 GB.
+  2. `dataset`: dataset privado `voc-backfill-corpus` con los textos y los pesos de las 3 semillas `_ppi`.
+  3. `kernel`: kernel privado `voc-backfill-m4` en la T4.
+  4. `pull` y `check`: descarga y validación.
+* **Qué viaja:** solo `texto_sanitizado`, su clave `text_key` (SHA-256 del texto, igual en BigQuery y en Python) y su número de filas.
+* **Corrida:**
+  * 1 429 675 textos únicos, que cubren las 2 653 238 filas del TDS, con reseñas hasta el 2026-10-20.
+  * Las 3 semillas, sin textos faltantes, a ~4 000 textos/s: 346–357 s de GPU por semilla.
+  * La preparación (`preprocess_tweet` y tokenización, en la CPU de Kaggle) tomó 27 min. En el Mac la misma preparación proyecta ~2 min, así que conviene paralelizarla o hacerla antes de subir.
+* **Control:** sobre los 69 528 textos de `ppi_v0` que se pueden emparejar, las clases coinciden con las de 5.6 en el 99.99–100 % (diferencia máxima de probabilidad 0.012, fp16 en otra GPU).
+* **Acuerdo entre semillas en el corpus:** 99.1 % por par, 98.6 % entre las tres.
+* **Distribución por texto único** (`s1`): 46.3 % `NEG`, 1.9 % `NEU`, 51.8 % `POS`. Es por texto, no por reseña: los elogios breves se repiten mucho, así que por fila la proporción de `POS` es mayor.
+* **Decisiones del autor (2026-10-22):**
+  * **`M4_robertuito_s1_ppi` va a producción** (la semilla del monitoreo de 5.7; las tres son equivalentes en el oro *test*).
+  * La carga a `review_predictions` (esquema v3, con la T de `s1` y las reglas de elegibilidad) se hace en EPIC-6 (6.2 y 6.3). Mientras tanto, las predicciones se conservan en local (`data/backfill/20261022/`, fuera de git) para 5.9.
+  * El dataset del corpus en Kaggle se conserva hasta cerrar EPIC-5, por si hacen falta más corridas (por ejemplo, el backfill de tópicos), y se borra al cerrarla.
