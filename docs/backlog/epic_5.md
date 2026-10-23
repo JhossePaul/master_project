@@ -1,6 +1,6 @@
 # EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado (2026-10-22):** En curso, fase 2. Cerradas 5.1 a 5.8. El [registro de decisión](../analytics/decision_record.md) está aprobado: M4 RoBERTuito (`M4_robertuito_s1_ppi`) en producción, *gap* en estrellas con PPI (P8-9) y frontal de EPIC-7 por niveles (P8-12). El primer backfill de M4 está hecho. Falta 5.9 (incidentes y versiones con la estrategia elegida). Los frontales de curaduría HITL (sentimiento, aspectos y tópicos) pasan a EPIC-7 (7.7) y su base de datos a EPIC-6 (6.2). Ver [estado por feature](#-estado-por-feature), el [registro de decisiones](#decisiones-pendientes) y los [siguientes pasos](#siguientes-pasos).
+* **Estado (2026-10-23):** En curso, fase 2: cerradas 5.1 a 5.9; faltan los criterios de cierre de la épica. El [registro de decisión](../analytics/decision_record.md) está aprobado: M4 RoBERTuito (`M4_robertuito_s1_ppi`) en producción, *gap* en estrellas con PPI (P8-9) y frontal de EPIC-7 por niveles (P8-12). El primer backfill de M4 está hecho. 5.9 se cerró el 2026-10-23, acotada a lo descriptivo: temas por día y vista por versión para el dashboard, backfills de familias, tópicos y embeddings para EPIC-6 y la validación única de la cola HITL; la detección de incidentes pasó a trabajo futuro. Quedan los criterios de cierre de EPIC-5 (checklist). Los frontales de curaduría HITL (sentimiento, aspectos y tópicos) pasan a EPIC-7 (7.7) y su base de datos a EPIC-6 (6.2). Ver [estado por feature](#-estado-por-feature), el [registro de decisiones](#decisiones-pendientes) y los [siguientes pasos](#siguientes-pasos).
 * **Historia de los resultados:** [`docs/analytics/README.md`](../analytics/README.md) ordena los reportes como una historia y dice qué cifra está vigente. Este documento solo guarda el planteamiento, el estado y lo que falta; la cronología detallada está en los reportes.
 * **Fases:** (1) planteamiento analítico viable → (2) experimentación para elegir la estrategia de producción → (3) despliegue de la estrategia elegida. Desde la reorganización del backlog (2026-10-22), la fase 3 es [EPIC-6](epic_6.md), que conserva la especificación anterior como anexo no vigente. Con el registro de decisión aprobado, detallarla es su primera tarea; solo 6.4 espera a 5.9.
 * **Dependencias:** EPIC-1 a EPIC-4 cerradas ([cierre](epics.md#cierre-de-las-épicas-1-a-4)). Corpus: `bbva_voc_tds.sanitized_reviews_tds`, **2 649 047 reseñas** en el snapshot del EDA (`tds_20261016T054714Z`) de BBVA, NUBANK, SANTANDER, AZTECA y BANORTE (2011-04 a 2026-10), con `source_observed_at`. El backfill de M4 cubrió 2 653 238 filas y 1 429 675 textos únicos (TDS al 2026-10-20). Bibliografía: [`references.md`](../governance/references.md).
@@ -20,7 +20,7 @@ Diseñar, con evidencia, el pipeline analítico que responde a cuatro preguntas 
 | :--- | :--- | :---: |
 | Q1. ¿Cuál es el sentimiento real del texto, separado de las estrellas? | Polaridad por reseña con M4 RoBERTuito (P8-1) y *gap* en estrellas: promedio de estrellas menos el puntaje del texto, con PPI (P8-9), +0.21 [0.17, 0.24]. Desglose medido en 5.6: el texto es más negativo que las estrellas en el 10.5 % de las reseñas y más positivo en el 0.9 %. **Resuelta en 5.8** | 5.4, 5.6, 5.8 |
 | Q2. ¿Qué temas recurrentes hay en las quejas y cómo cambian en el tiempo? | Familias de aspectos `v2.1` (núcleo) y tópicos curados (detalle) sobre las reseñas negativas, por banco y periodo. **Resuelta en 5.5** | 5.5 |
-| Q3. ¿Cómo detectamos rápido un incidente nuevo? | Marca `u` (problema atribuido a una actualización) y series por familia, por banco y mes; la prueba hacia atrás detecta 2 de 3 incidentes de BBVA. **Resuelta en 5.5** (umbrales en 5.9) | 5.5 |
+| Q3. ¿Qué temas acompañan los días con más negativas? | Familias `v2.1` y tópicos curados por banco y día, como etiquetas descriptivas del dashboard (5.9). La detección automática de incidentes quedó fuera del alcance (decisión del autor, 2026-10-22): la señal de 5.5 detecta 2 de 3 incidentes de BBVA y la comparación de ventanas de 5.9 queda como hallazgo exploratorio | 5.5, 5.9 |
 | Q4. ¿Qué atender primero? | Volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto. **Resuelta en 5.6** | 5.6 |
 
 Principios:
@@ -47,7 +47,7 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 | 5.6 Calibración, HITL y priorización | **Cerrada (2026-10-22).** *temperature scaling* adoptado; umbral HITL al 90 % de cobertura (parámetro configurable); PPI con Gemini y con M4 hecho; M4 reentrenado con pesos guardados (lote `m4_ppi`); priorización por volumen de negativas por familia y marca `u`, sin fórmula anterior ni votos (decisión del autor) | [Plan](../analytics/calibration/calibration_design.md), [reporte](../analytics/calibration/calibration_report.md) |
 | 5.7 Escala, ciclo de vida y monitoreo | **Cerrada (2026-10-22).** Benchmark en el Mac y en Cloud Run, línea base de deriva, costos de Gemini, búsqueda vectorial, Vertex Model Registry y explicabilidad medidos; P7-1 a P7-4 y P7-6 a P7-11 decididas (HITL global en `risk_policy`, alertas de deriva por banco en `drift_policy`, reentrenamiento de M4 y revalidación de las familias) | [Plan](../analytics/scale/scale_design.md), [reporte de 5.7](../analytics/scale/scale_report.md) |
 | 5.8 Registro de decisión | **Cerrada (2026-10-22):** P8-1 a P8-12 decididas (M4 RoBERTuito tras el oro *test*, *gap* en estrellas, frontal de EPIC-7 por niveles); `eligibility_rules_v1` publicada con sus conteos; Model Card 0.1 y FMEA F-14 a F-20; incompatibilidades resueltas. Primer backfill de M4 hecho (`s1` en producción) | [`decision_record.md`](../analytics/decision_record.md), [esquemas](../contracts/analytics_outputs_v3_draft.md) |
-| 5.9 Incidentes y versiones con la estrategia elegida | Lista para empezar (5.8 cerrada). P9-1 (criterio) y P9-2 decididas; P9-3 pendiente ([registro](#decisiones-pendientes)). Incluye la validación única de la cola HITL de 5.6 | — |
+| 5.9 Temas por día y versiones (descriptivo) | **Cerrada (2026-10-23).** Acotada a lo descriptivo por decisión del autor: preparación, comparación de ventanas (hallazgo exploratorio), backfills de familias, tópicos y embeddings, top 5 diario de temas (P9-4), vista por versión (P9-2) y validación única de la cola HITL (corrección 18.3 %) | [Reporte](../analytics/incidents/incidents_report.md) |
 
 ### FEATURE 5.1: Planteamiento, Volumetría y Contrato Analítico
 
@@ -177,7 +177,7 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 * **Costos medidos para 5.8:** familias con Gemini, $0.091 por 1 000 textos (~$72 el llenado histórico; reporte §3); explicabilidad precalculada para el HITL, ~9 min de CPU por semana (§4); `VECTOR_SEARCH` en BigQuery, 4.26 GB por búsqueda sobre todo el corpus y ~0.5 GB con una ventana de 12 meses en una tabla particionada (§5 y §5.1).
 * **Propuesta de ciclo de vida y monitoreo:** reporte §7 (candidato, registro, promoción, rollback y política HITL; umbrales del monitor por nivel).
 * **Backfill de M4 (P7-1, hecho en 5.8; [reporte §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)):** 1 429 675 textos únicos con las 3 semillas, 346–357 s de T4 por semilla y 27 min de preparación. `s1` va a producción y las predicciones quedan en local para 5.9.
-* **Heredado de 5.5 y 5.6:** el emparejamiento de tópicos entre reajustes y el monitoreo de `OT` quedan en P7-8; los umbrales de la señal de incidentes y el análisis por versión pasaron a 5.9.
+* **Heredado de 5.5 y 5.6:** el emparejamiento de tópicos entre reajustes y el monitoreo de `OT` quedan en P7-8; el análisis por versión pasó a 5.9 (descriptivo); la señal de incidentes quedó fuera del alcance (2026-10-22).
 
 ### FEATURE 5.8: Registro de Decisión
 
@@ -193,33 +193,30 @@ La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco 
 * **Gobierno:** [Model Card](../governance/model_card.md) 0.1 y filas F-14 a F-20 de la [FMEA](../governance/ethical_fmea_matrix.md) (F-15 a F-20 por calificar).
 * **Backfill de M4 (P7-1):** hecho; `M4_robertuito_s1_ppi` va a producción y la carga a BigQuery es de EPIC-6 (6.2, 6.3) ([reporte de 5.7, §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)).
 * **Incompatibilidades:** todas resueltas ([tabla](#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)).
-* **Sigue:** EPIC-6 y EPIC-7 pueden empezar; solo 6.4 y la pestaña por versión (7.5) esperan a 5.9.
+* **Sigue:** EPIC-6 y EPIC-7 pueden empezar. Con 5.9 acotada (2026-10-22), 6.4 ya no espera umbrales de incidentes; el cockpit (7.5) toma las etiquetas de temas por día de 5.9.
 
-### FEATURE 5.9: Incidentes y versiones con la estrategia elegida
+### FEATURE 5.9: Temas por día y versiones (descriptivo)
 
-> **Lista para empezar (5.8 cerrada el 2026-10-22).** Usa solo la estrategia elegida: sentimiento con M4 `s1` (P8-1) y familias con Gemini `aspects_v2_1` (P8-7). Va después de 5.8 para no predecir con un modelo que la decisión podía descartar.
+> **Acotada a lo descriptivo (decisión del autor, 2026-10-22).** La detección de incidentes (series de tiempo, anomalías, umbrales y su validación, y el cruce con redes sociales) es un problema con metodología propia y supera el alcance de la tesis: queda como trabajo futuro. 5.9 se queda en lo descriptivo: qué temas acompañan cada día en el dashboard. Usa la estrategia elegida en 5.8: sentimiento con M4 `s1` (P8-1) y familias con Gemini `aspects_v2_1` (P8-7).
 
-**Objetivo:** validar la señal de incidentes fuera de BBVA y medir el efecto de cada versión de la app, con datos suficientes y el predictor de producción.
+**Objetivo:** dar al dashboard de KPIs, por banco y día, los temas de las negativas (familias y tópicos curados), para que el lector relacione temas con sentimiento; y, si alcanza el tiempo, una vista descriptiva por versión de la app.
 
-**Datos disponibles (en local, fuera de git):**
+**Datos (en local, fuera de git):**
 
 * sentimiento de M4 `s1` para todo el corpus: `data/backfill/20261022/preds/` (1 429 675 textos únicos, que se unen a las filas por `text_key`);
-* familias y marca `u` en dos muestras: las 40 382 negativas de la plata (`NEG` de Gemini, 5.5) y las 39 635 de `ppi_v0` (`NEG` de M4, [reporte de 5.7, §3](../analytics/scale/scale_report.md#3-costo-de-las-familias-con-gemini-p8-7)). Juntas son ~10 % de las ~788 000 negativas únicas.
+* backfill de familias y tópicos (P9-3, hecho): familias de Gemini, cláusulas, embeddings MiniLM, modelo de tópicos congelado y tópicos de las 659 416 negativas únicas, por `text_key`, en `data/backfill/20261022/aspects/` y `topics/`.
 
 Tareas:
 
-0. **Preparación.** Unir el snapshot con `preds_s1`, medir la cobertura y aplicar `eligibility_rules_v1`. Series crudas, como el monitor (P8-10). Revisar que las negativas de las dos muestras sean comparables (Gemini en la plata, M4 en `ppi_v0`).
-1. **Meses candidatos a incidente en los 5 bancos (P9-1).** Hoy solo hay 3 incidentes etiquetados, todos de BBVA; en 5.5, el 11 % de los demás meses × banco tuvo alguna alerta y no se sabe cuántas son reales.
-   * Señal: volumen y proporción de `NEG` con el corpus completo; marca `u` y familias con la cobertura que fije P9-3; en nivel y en anomalía (z contra los 12 meses previos, con la entrada al monitor de P7-9).
-   * Entregable: por banco, los meses con más alerta, con la familia dominante, el tamaño de la muestra y su IC.
-   * El autor marca cuáles fueron incidentes reales. Con esa lista se fijan los umbrales (P9-1), se mide la precisión fuera de BBVA (dejando fuera un banco a la vez) y se califica F-19.
-   * **Sesgo de selección:** los candidatos salen de la misma señal, así que no muestran lo que la señal omite. El autor investiga por su cuenta los incidentes conocidos de los 5 bancos en fuentes externas, y con esa lista se estima el recall.
-2. **Análisis por versión (P9-2).** En 5.5 la plata no alcanzó para comparar versiones (JSD dominada por el ruido de muestreo).
-   * Sentimiento con el backfill de M4 (corpus completo); familias y marca `u` con la cobertura de P9-3.
-   * Entregable: por banco y versión normalizada (`topics/versions.py`), la proporción de `NEG` y de la marca `u` con IC, el efecto de los días desde la versión en el sentimiento (no solo en la marca `u`) y qué versiones se separan de su línea base, con corrección por comparaciones múltiples.
-3. **Validación única de la cola HITL (heredada de 5.6).** El autor revisa una vez la cola de una semana del backfill con el umbral del 90 %, antes de la presentación ([plan de 5.6](../analytics/calibration/calibration_design.md)).
+0. **Preparación (hecha, 2026-10-22; [reporte §0](../analytics/incidents/incidents_report.md#0-preparación-tarea-0)).** Snapshot unido al backfill de M4 (99 de 1 427 640 textos sin predicción), `eligibility_rules_v1` aplicada y series por banco, mes y día.
+1. **Ventana de la señal (hecha como hallazgo exploratorio; [reporte §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)).** Con la lista de 107 incidentes de medios que reunió el autor (no exhaustiva; fuera de git), la ventana de 1 día capta más incidentes que las de 2 a 30 días y que el mes calendario, también con una tolerancia de fecha de ±7 días: 54.5 % con el 10 % de días marcados. No se fijan umbrales (P9-1 quedó fuera del alcance). El hallazgo respalda usar el día como unidad de las etiquetas y queda como antecedente para un proyecto de incidentes.
+2. **Backfill de familias y tópicos (P9-3, hecho, 2026-10-22; [reporte §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3)).** Familias de Gemini para 659 316 de 659 416 negativas únicas ($60.61; marca `u` 17.7 %; acuerdo exacto entre corridas 68 %) y tópicos con el modelo de 5.5 congelado, que reproduce el 100 % de sus conjuntos (72.9 % de los textos con tópico). Los artefactos se conservan por `text_key` para cargarlos en 6.3. Además, embeddings MiniLM por texto de los 1 429 675 textos únicos, para `text_embeddings` y la búsqueda semántica de EPIC-6 (P8-6; [reporte §2.3](../analytics/incidents/incidents_report.md#23-embeddings-por-texto-para-la-búsqueda-semántica-p8-6)).
+3. **Top 5 diario de temas (P9-4, hecho, 2026-10-22; [reporte §4](../analytics/incidents/incidents_report.md#4-top-5-diario-de-temas-p9-4)).** Por banco y día, las 5 familias y los 5 tópicos útiles (los 19 que el autor juzgó útiles en 5.5) con más negativas, con su participación del día y la habitual de los 28 días previos, para el cockpit (7.5). 19 343 días × banco; el 41 % de las negativas tiene un tópico útil. Queda en `data/incidents/daily_topics_v0.parquet` (fuera de git) y como vista `daily_topic_labels` del esquema v3 para 6.3.
+4. **Vista por versión (P9-2, hecha, 2026-10-22; [reporte §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2)).** Por decisión del autor se muestra en el dashboard: por banco y versión normalizada, proporción cruda de `NEG` con IC de Wilson, marca `u` y familias, sin pruebas de cambio de nivel. El 90.9 % de las reseñas tiene versión; las versiones con más `NEG` coinciden con episodios conocidos (BBVA 25.100.15, el rediseño de octubre de 2025; NUBANK 9.5.66, octubre de 2023).
+5. **Validación única de la cola HITL (heredada de 5.6; hecha, 2026-10-23; [reporte §6](../analytics/incidents/incidents_report.md#6-validación-única-de-la-cola-hitl-heredada-de-56)).** Revisión del autor a ciegas de la última semana completa (2026-10-05 a 11). Con el umbral del 90 % del *dev*, la cola fue de 387 textos (cobertura real 86.4 %). Tasa de corrección **18.3 % [14.6, 22.6]**, menor que el 24.9 % esperado; los errores se concentran en lo predicho `POS` (33 %, casi siempre quejas dentro de un elogio). ~80 min activos, mediana de 7 s por reseña.
 
-* **Consume:** 5.8 (predictor, familias, reglas). **Alimenta:** EPIC-6, 6.4 (umbrales del monitor y de las alertas); EPIC-7, pestaña por versión (7.5); Model Card (límite 7) y FMEA (F-19). Las features 6.1 a 6.3 no dependen de 5.9 y pueden empezar ya.
+* **Fuera del alcance (trabajo futuro):** umbrales y calibración de una señal de incidentes, validación de episodios candidatos, precisión fuera de BBVA, descubrimiento de tópicos por ventana (por ejemplo, `topics_over_time` de BERTopic) y cruce con redes sociales.
+* **Consume:** 5.8 (predictor, familias, reglas). **Alimenta:** EPIC-6, 6.3 (familias y tópicos del backfill, etiquetas diarias); EPIC-7, cockpit (7.5) y pestaña por versión (deseable); Model Card (límite 7) y FMEA (F-19). Ninguna feature de EPIC-6 espera a 5.9 para empezar.
 
 <a id="decisiones-pendientes"></a>
 
@@ -233,7 +230,7 @@ Seguimiento de las decisiones del autor de 5.7 a 5.9. La columna "Bloquea" dice 
 | :--- | :--- | :--- |
 | 5.7 | P7-1 a P7-4 y P7-6 a P7-11 | Ninguna (cerrada) |
 | 5.8 | P8-1 a P8-12 (P8-5 y P8-11 con la condición del frontal cumplida) | Ninguna (cerrada) |
-| 5.9 | P9-1 (criterio) y P9-2 | P9-3 |
+| 5.9 | P9-1 (fuera del alcance), P9-2 (descriptiva), P9-3 (provisional) y P9-4 | Ninguna |
 
 ### Decididas (5.7 y 5.8)
 
@@ -268,9 +265,10 @@ Historia compacta. Las opciones y la evidencia de cada una están en el [registr
 
 | ID | Decisión | Opciones | Evidencia hoy | Propuesta | Bloquea |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| P9-1 | Umbrales de la señal de incidentes | z, línea base, mínimo de filas por mes | 5.5: la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas; solo 3 incidentes etiquetados, todos de BBVA | **Decidido por el autor (2026-10-22):** fijarlos con datos: la lista de meses candidatos de los 5 bancos que valide el autor (tarea 1 de 5.9), más su lista de incidentes de fuentes externas para estimar el recall | 6.4 |
-| P9-2 | Datos para el análisis por versión | Plata + `ppi_v0`; backfill de M4 | 5.5: con la plata sola domina el ruido; el backfill de M4 ya está en local (5.8) | **Decidido por el autor (2026-10-22):** sentimiento con el backfill de M4 y familias con la cobertura de P9-3. Queda abierta la opción de un backfill de familias y tópicos si P9-3 lo pide | 5.9, 7.5 |
-| P9-3 | Cobertura de familias y marca `u` para la señal | Muestras actuales (~80 000 negativas, $0); muestra estratificada por banco y mes (~$10); backfill completo de familias (~$72, Gemini en GCP, reutilizable en 6.3) y, si hace falta, de tópicos | ~10 % de las ~788 000 negativas únicas tiene familias | **Para empezar (autor, 2026-10-22):** las muestras actuales. Se considera el backfill completo, que de todos modos hará falta en producción (P8-7); se decide con los IC de la marca `u` por mes, y el gasto requiere la autorización del autor | 5.9, 6.3 |
+| P9-1 | Ventana y umbrales de la señal de incidentes | Ventana de 1 a 30 días o mes calendario; z, línea base y presupuesto de alertas | 5.5: la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas. Lista externa del autor (101 incidentes evaluables, [reporte §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)): con el 10 % de días marcados, la ventana de 1 día capta el 54.5 %, la de 7 días el 30.7 % y el mes calendario el 15.8 % | **Fuera del alcance (decisión del autor, 2026-10-22):** la detección de incidentes pasa a trabajo futuro. La comparación de ventanas queda como hallazgo exploratorio; antes se había elegido la ventana de 1 día como señal principal y una larga como complementaria | — |
+| P9-2 | Datos para el análisis por versión | Plata + `ppi_v0`; backfill de M4 | 5.5: con la plata sola domina el ruido; el backfill de M4 ya está en local (5.8) | **Decidido por el autor (2026-10-22):** descriptiva y en el dashboard (los datos ya existen): proporción de `NEG` con IC, marca `u` y familias por versión, con los backfills de M4 y de P9-3, sin pruebas de cambio de nivel. Hecha ([reporte §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2)) | 7.5 (pestaña por versión, deseable) |
+| P9-3 | Cobertura de familias y marca `u` para la señal | Muestras actuales (~83 000 negativas, $0); muestra estratificada por banco y mes (~$10); backfill completo de familias (~659 000 textos, ~$60, Gemini en GCP, reutilizable en 6.3) y, si hace falta, de tópicos | Medido en la tarea 0 ([reporte §0.3](../analytics/incidents/incidents_report.md#03-series-por-banco-y-mes)): las muestras cubren el 11.8 % de las negativas; por banco y mes, mediana de 114 a 192 negativas con familias y un IC 95 % de la marca `u` de 7 a 13 puntos, con una prevalencia de ~17 % | **Decidido por el autor (2026-10-22), provisional:** backfill de familias con Gemini para las 659 416 negativas únicas (autorizado), cláusulas y embeddings MiniLM en local, y asignación con el modelo global de 5.5 reajustado y congelado. Es provisional: el descubrimiento de tópicos por ventana (por ejemplo, `topics_over_time` de BERTopic) queda como trabajo futuro con la detección de incidentes. Los artefactos se conservan para EPIC-6 (6.3) ([reporte §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3)) | 5.9, 6.3 |
+| P9-4 | Etiquetas de temas por día | Cuántas familias y tópicos por día; todos los tópicos o solo los curados; marcar o no un tema por encima de su línea base | 5.5: el autor juzgó útiles 19 de 35 tópicos y cerca de un tercio del peso de los tópicos principales es ruido | **Decidido por el autor (2026-10-22):** algo sencillo, un top 5 diario: por banco y día, las 5 familias y los 5 tópicos útiles con más negativas, con su participación del día y su participación habitual de los 28 días previos como dato al lado, sin umbral ni marca. Van las dos listas; la forma visual se decide en 7.5 | 6.3, 7.5 |
 
 ### Incompatibilidades entre el diseño de EPIC-6 y EPIC-7 y la evidencia
 
@@ -290,7 +288,7 @@ Piezas del texto original de EPIC-1, EPIC-2 y EPIC-7 que chocaban con lo decidid
 | Explicador de < 150 ms en 1 vCPU y 1 GiB (EPIC-7 anexo B.2) | Velocidad medida de M4 en CPU | Resuelta con P8-8: oclusión precalculada para la cola HITL y bajo pedido, mostrada solo en el Explorador (7.6) |
 | Model Card con Delora, paridad dialectal sintética y umbral 0.65 (EPIC-7 anexo B.5) | 5.4 y 5.6 | Resuelta: [Model Card](../governance/model_card.md) 0.1 escrita en 5.8 (2026-10-22) |
 | FMEA: "Label Noise mitigado por Dual LoRA" y "priorización mitigada por entropía ≥ 0.65" (EPIC-7 anexo B.5) | M4 ajustado con la plata; HITL por cobertura | Resuelta: filas F-17 (priorización con predicciones inciertas) y *Label Noise Bias* confirmada con el oro *test* (2026-10-22); F-17 queda por calificar |
-| *Concept drift* con JSD de 8 tópicos y umbrales PSI 0.25 / JSD 0.20 (anexo de EPIC-6, A.7) | Familias y marca `u` (5.5); línea base de 5.7 | Resuelta para la deriva con P7-9 (`drift_policy` por banco, 5.7); los umbrales de la señal de incidentes pasan a 5.9 (P9-1) y no bloquean el cierre de 5.8 |
+| *Concept drift* con JSD de 8 tópicos y umbrales PSI 0.25 / JSD 0.20 (anexo de EPIC-6, A.7) | Familias y marca `u` (5.5); línea base de 5.7 | Resuelta para la deriva con P7-9 (`drift_policy` por banco, 5.7); la señal de incidentes quedó fuera del alcance (P9-1, 2026-10-22) |
 | Backfill "dentro de GCP" contra la medición en Kaggle | Principio de que los datos no salen de GCP | Resuelta con P7-1: backfill en Kaggle con riesgo aceptado y declarado en la FMEA; en producción, todo en GCP |
 | IAM de Vertex AI para el modelo de producción (EPIC-6 6.2) | Las familias usan Gemini en GCP (P8-7) y el registro es Vertex (P7-3) | Resuelta: `voc-sa-ml-backend` necesita Vertex AI para Gemini y el registro; M9 solo cambia el volumen |
 
@@ -305,12 +303,14 @@ En orden. Los pasos 1 a 13 están hechos (2026-10-20 a 2026-10-22), de 5.2 a 5.8
 
 | # | Paso | Dueña | Depende de | Terminado cuando |
 | :---: | :--- | :---: | :--- | :--- |
-| 14 | **5.9, preparación:** unir el snapshot con el backfill de M4, aplicar `eligibility_rules_v1` y armar las series por banco y mes | 5.9 | — | Cobertura medida y series listas |
-| 15 | **5.9, meses candidatos (P9-1):** señal en los 5 bancos, lista para el autor, umbrales y precisión fuera de BBVA | 5.9 | 14; lista externa del autor; P9-3 | Lista validada, umbrales fijados y F-19 calificada |
-| 16 | **5.9, análisis por versión (P9-2):** proporción de `NEG` y de la marca `u` por versión, con IC | 5.9 | 14; P9-3 | Efecto por versión con IC |
-| 17 | **5.9, validación única de la cola HITL** (heredada de 5.6) | 5.9 | 14 | Cola de una semana revisada por el autor |
-| 18 | **EPIC-6:** detallar las features a partir del registro (sesión paralela) | EPIC-6 | — | [`epic_6.md`](epic_6.md) detallada; 6.4 a la espera de 5.9 |
-| 19 | **Cierre de EPIC-5** | EPIC-5 | 15–17 | Criterios de cierre del checklist |
+| 14 | ~~**5.9, preparación**~~ **Hecho (2026-10-22):** ver el [reporte, §0](../analytics/incidents/incidents_report.md#0-preparación-tarea-0) | 5.9 | — | — |
+| 15 | ~~**5.9, ventana de la señal**~~ **Hecho como hallazgo exploratorio (2026-10-22):** ver el [reporte, §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1); la detección de incidentes quedó fuera del alcance | 5.9 | — | — |
+| 16 | ~~**5.9, backfill de familias y tópicos (P9-3)**~~ **Hecho (2026-10-22):** ver el [reporte, §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3) | 5.9 | — | — |
+| 17 | ~~**5.9, top 5 diario de temas (P9-4)**~~ **Hecho (2026-10-22):** ver el [reporte, §4](../analytics/incidents/incidents_report.md#4-top-5-diario-de-temas-p9-4); también los embeddings por texto para EPIC-6 (§2.3) | 5.9 | — | — |
+| 18 | ~~**5.9, validación única de la cola HITL**~~ **Hecho (2026-10-23):** ver el [reporte, §6](../analytics/incidents/incidents_report.md#6-validación-única-de-la-cola-hitl-heredada-de-56) | Autor | — | — |
+| 19 | ~~**5.9, vista por versión (P9-2)**~~ **Hecho (2026-10-22):** ver el [reporte, §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2) | 5.9 | — | — |
+| 20 | **EPIC-6:** detallar las features a partir del registro (sesión paralela) | EPIC-6 | — | [`epic_6.md`](epic_6.md) detallada; ninguna feature espera a 5.9 |
+| 21 | **Cierre de EPIC-5** | EPIC-5 | 16–18 | Criterios de cierre del checklist |
 
 ---
 
@@ -327,7 +327,7 @@ En orden. Los pasos 1 a 13 están hechos (2026-10-20 a 2026-10-22), de 5.2 a 5.8
 | Familias con Gemini (P8-7) | Vertex AI, `gemini-3.6-flash` | Medido: $3.60 por 39 635 negativas de `ppi_v0` ($0.091 por 1 000); llenado histórico ~$72 (precio introductorio hasta el 2026-12-31) |
 | Búsqueda semántica (P8-6) | BigQuery `VECTOR_SEARCH` | Medido: 4.26 GB por búsqueda sobre todo el corpus; ~0.5 GB con ventana de 12 meses (free tier: 1 TiB al mes) |
 | Benchmarks de 5.7 | Cloud Run, Cloud Build, BigQuery y Vertex | Recursos temporales, borrados al terminar |
-| Incidentes y versiones (5.9) | Mac (polars, CPU) con el backfill de M4; Vertex AI si P9-3 elige el backfill de familias | $0 con las muestras; ~$72 el backfill de familias (requiere autorización del autor) |
+| Temas por día (5.9) | Mac (polars en CPU; MiniLM en MPS) y Vertex AI para las familias (P9-3) | Medido: familias $60.61 por 659 316 textos ($0.092 por 1 000); embeddings de 1 035 052 cláusulas en 14 min y tópicos en 3 min; embeddings por texto de 1 429 675 textos en el Mac ($0) |
 
 Crédito disponible: ~$5 000 MXN. La restricción del etiquetado es el tiempo humano, no el gasto. Las cifras de throughput, costo y duplicados de la literatura o de conversaciones con otros LLM no se usan para decidir hasta medirlas.
 
@@ -340,7 +340,7 @@ Los límites del modelo están en la [Model Card](../governance/model_card.md), 
 * **El ruido de las estrellas depende de la instancia y del periodo** (NoisyAG-News, 2024): los resultados con ruido sintético no transfieren.
 * **Las etiquetas de plata heredan sesgos de Gemini** (sarcasmo, jerga bancaria mexicana, `NEU`); solo el oro sirve para reportar.
 * **Los tópicos dinámicos requieren curaduría humana continua;** sin ella pierden identidad entre corridas (P7-8).
-* **La señal de incidentes es ilustrativa hasta 5.9:** se probó con 3 incidentes de un solo banco (F-19).
+* **No hay detección automática de incidentes:** quedó fuera del alcance (2026-10-22). Las etiquetas de temas por día son descriptivas; un pico de negativas no se interpreta como incidente confirmado (F-19).
 * **El corpus sigue en Kaggle hasta cerrar EPIC-5** (F-14): el dataset `voc-backfill-corpus` se conserva por si hace falta otra corrida y se borra al cerrar la épica.
 
 ---
@@ -356,6 +356,6 @@ Los límites del modelo están en la [Model Card](../governance/model_card.md), 
 * [x] Calibración y umbral HITL elegidos por cobertura–riesgo (5.6). *Temperature scaling (T ≈ 1.7) y 90 % de cobertura por defecto como parámetro configurable; PPI y priorización decididos ([reporte](../analytics/calibration/calibration_report.md)).*
 * [x] Benchmark de escala, propuesta de ciclo de vida y plan de monitoreo (5.7). *Benchmark en Cloud Run, ciclo de vida y monitoreo ([reporte de 5.7](../analytics/scale/scale_report.md), §1 y §7); P7-1 a P7-4 y P7-6 a P7-11 decididas.*
 * [x] Registro de decisión ([`decision_record.md`](../analytics/decision_record.md)) aprobado, con P8-1 a P8-12 decididas (5.8, 2026-10-22). Detallar [EPIC-6](epic_6.md) a partir de él es la primera tarea de EPIC-6.
-* [ ] Lista de incidentes de los 5 bancos validada por el autor, umbrales de la señal y efecto por versión, con la estrategia elegida, y validación única de la cola HITL (5.9).
+* [x] Top 5 diario de temas con las familias y los tópicos del backfill, vista por versión y validación única de la cola HITL (5.9, 2026-10-23). La detección de incidentes quedó fuera del alcance (2026-10-22).
 * [x] Experimentos reproducibles en `experiments/analytics/` (proyecto `uv` propio, semillas fijas), sin dependencias de experimentación en el `uv.lock` de producción.
 * [ ] Cierre de EPIC-5 (por confirmar con el autor): dataset `voc-backfill-corpus` borrado de Kaggle (F-14); destino del snapshot local decidido (F-11); filas F-15 a F-20 de la FMEA calificadas o asignadas a EPIC-6 y EPIC-7.

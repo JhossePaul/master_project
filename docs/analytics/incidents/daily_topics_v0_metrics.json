@@ -1,0 +1,54 @@
+{
+  "generado": "2026-10-23T04:11:23+00:00",
+  "top": 5,
+  "habitual": "reseñas con el tema entre las negativas de los 28 días previos (sin el día), por banco",
+  "top1_familia_participacion_sobre_habitual_mediana": 1.273,
+  "topicos_utiles": {
+    "total": 19,
+    "producto": 11,
+    "ingenieria": 8
+  },
+  "negativas": 703353,
+  "negativas_con_topico_util": 0.4123,
+  "dias_banco": 19343,
+  "por_banco": {
+    "AZTECA": {
+      "dias": 3383,
+      "negativas_por_dia_mediana": 23.0,
+      "familia_mas_frecuente_en_el_primer_lugar": "AC"
+    },
+    "BANORTE": {
+      "dias": 4576,
+      "negativas_por_dia_mediana": 23.0,
+      "familia_mas_frecuente_en_el_primer_lugar": "LE"
+    },
+    "BBVA": {
+      "dias": 4925,
+      "negativas_por_dia_mediana": 43.0,
+      "familia_mas_frecuente_en_el_primer_lugar": "AC"
+    },
+    "NUBANK": {
+      "dias": 2202,
+      "negativas_por_dia_mediana": 10.0,
+      "familia_mas_frecuente_en_el_primer_lugar": "AC"
+    },
+    "SANTANDER": {
+      "dias": 4257,
+      "negativas_por_dia_mediana": 33.0,
+      "familia_mas_frecuente_en_el_primer_lugar": "AC"
+    }
+  },
+  "primer_lugar_familias": {
+    "AC": 0.4693,
+    "FA": 0.2242,
+    "LE": 0.0896,
+    "PR": 0.0647,
+    "TR": 0.0637,
+    "CO": 0.0425,
+    "AT": 0.0222,
+    "UX": 0.0147,
+    "DI": 0.0041,
+    "OT": 0.0031,
+    "DV": 0.0019
+  }
+}

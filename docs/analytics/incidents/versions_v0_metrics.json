@@ -1,0 +1,218 @@
+{
+  "generado": "2026-10-23T04:01:34+00:00",
+  "min_resenas_por_version": 50,
+  "resenas_con_sentimiento": 2607016,
+  "con_version": 0.9087,
+  "por_banco": {
+    "AZTECA": {
+      "versiones": 225,
+      "resenas_en_versiones": 520457,
+      "resenas_por_version_mediana": 1866.0,
+      "prop_neg_mediana": 0.1523,
+      "u_mediana": 0.0973,
+      "versiones_con_mas_neg": [
+        {
+          "version": "0.4.7",
+          "primera_fecha": "2018-01-13",
+          "resenas": 546,
+          "prop_neg": 0.8,
+          "ic": [
+            0.765,
+            0.832
+          ],
+          "u": 0.162
+        },
+        {
+          "version": "0.5.0",
+          "primera_fecha": "2018-04-11",
+          "resenas": 530,
+          "prop_neg": 0.649,
+          "ic": [
+            0.607,
+            0.688
+          ],
+          "u": 0.128
+        },
+        {
+          "version": "0.5.7",
+          "primera_fecha": "2018-08-25",
+          "resenas": 569,
+          "prop_neg": 0.599,
+          "ic": [
+            0.558,
+            0.639
+          ],
+          "u": 0.154
+        }
+      ]
+    },
+    "BANORTE": {
+      "versiones": 30,
+      "resenas_en_versiones": 464955,
+      "resenas_por_version_mediana": 10658.5,
+      "prop_neg_mediana": 0.1914,
+      "u_mediana": 0.0743,
+      "versiones_con_mas_neg": [
+        {
+          "version": "5.2.1",
+          "primera_fecha": "2016-09-28",
+          "resenas": 3262,
+          "prop_neg": 0.861,
+          "ic": [
+            0.849,
+            0.873
+          ],
+          "u": 0.458
+        },
+        {
+          "version": "4.4.1",
+          "primera_fecha": "2015-12-07",
+          "resenas": 2282,
+          "prop_neg": 0.751,
+          "ic": [
+            0.732,
+            0.768
+          ],
+          "u": 0.2
+        },
+        {
+          "version": "5.6.1",
+          "primera_fecha": "2017-07-25",
+          "resenas": 557,
+          "prop_neg": 0.734,
+          "ic": [
+            0.696,
+            0.769
+          ],
+          "u": 0.312
+        }
+      ]
+    },
+    "BBVA": {
+      "versiones": 259,
+      "resenas_en_versiones": 704156,
+      "resenas_por_version_mediana": 1671.0,
+      "prop_neg_mediana": 0.3967,
+      "u_mediana": 0.1851,
+      "versiones_con_mas_neg": [
+        {
+          "version": "25.100.15",
+          "primera_fecha": "2025-10-19",
+          "resenas": 13475,
+          "prop_neg": 0.878,
+          "ic": [
+            0.872,
+            0.883
+          ],
+          "u": 0.745
+        },
+        {
+          "version": "25.100.20",
+          "primera_fecha": "2025-11-03",
+          "resenas": 2924,
+          "prop_neg": 0.803,
+          "ic": [
+            0.788,
+            0.817
+          ],
+          "u": 0.662
+        },
+        {
+          "version": "26.70.12",
+          "primera_fecha": "2026-07-21",
+          "resenas": 1563,
+          "prop_neg": 0.773,
+          "ic": [
+            0.751,
+            0.793
+          ],
+          "u": 0.262
+        }
+      ]
+    },
+    "NUBANK": {
+      "versiones": 252,
+      "resenas_en_versiones": 110745,
+      "resenas_por_version_mediana": 234.0,
+      "prop_neg_mediana": 0.2872,
+      "u_mediana": 0.0577,
+      "versiones_con_mas_neg": [
+        {
+          "version": "9.5.66",
+          "primera_fecha": "2023-10-05",
+          "resenas": 1003,
+          "prop_neg": 0.777,
+          "ic": [
+            0.75,
+            0.801
+          ],
+          "u": 0.224
+        },
+        {
+          "version": "9.33.46",
+          "primera_fecha": "2025-08-28",
+          "resenas": 977,
+          "prop_neg": 0.621,
+          "ic": [
+            0.59,
+            0.651
+          ],
+          "u": 0.299
+        },
+        {
+          "version": "9.14.64",
+          "primera_fecha": "2024-06-10",
+          "resenas": 624,
+          "prop_neg": 0.473,
+          "ic": [
+            0.434,
+            0.512
+          ],
+          "u": 0.072
+        }
+      ]
+    },
+    "SANTANDER": {
+      "versiones": 176,
+      "resenas_en_versiones": 565592,
+      "resenas_por_version_mediana": 2010.5,
+      "prop_neg_mediana": 0.2855,
+      "u_mediana": 0.0771,
+      "versiones_con_mas_neg": [
+        {
+          "version": "5.28",
+          "primera_fecha": "2018-11-29",
+          "resenas": 612,
+          "prop_neg": 0.922,
+          "ic": [
+            0.898,
+            0.94
+          ],
+          "u": 0.399
+        },
+        {
+          "version": "5.27",
+          "primera_fecha": "2018-11-25",
+          "resenas": 682,
+          "prop_neg": 0.887,
+          "ic": [
+            0.861,
+            0.909
+          ],
+          "u": 0.453
+        },
+        {
+          "version": "3.6",
+          "primera_fecha": "2016-10-02",
+          "resenas": 508,
+          "prop_neg": 0.785,
+          "ic": [
+            0.748,
+            0.819
+          ],
+          "u": 0.253
+        }
+      ]
+    }
+  }
+}

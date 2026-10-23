@@ -1,0 +1,11 @@
+{
+  "generado": "2026-10-23T04:06:06+00:00",
+  "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "max_seq": 128,
+  "dimensiones": 384,
+  "textos": 1429675,
+  "dispositivo": "mps",
+  "segundos": 1378,
+  "textos_por_segundo": 1037,
+  "megabytes": 2196
+}

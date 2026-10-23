@@ -2,7 +2,7 @@
 
 Esta carpeta reúne los reportes de la fase de planteamiento y experimentación de [EPIC-5](../backlog/epic_5.md). Cada reporte se escribió en su momento y conserva sus cifras como evidencia. Este índice los ordena como una historia y dice, para cada capítulo, qué conclusión sigue vigente.
 
-* **Estado:** al 2026-10-22. 5.2 a 5.8 cerradas; falta 5.9. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
+* **Estado:** al 2026-10-23. 5.1 a 5.9 cerradas (5.9 acotada a lo descriptivo); faltan los criterios de cierre de EPIC-5. El estado de cada feature y los siguientes pasos están en [`epic_5.md`](../backlog/epic_5.md), y lo que falta decidir en su [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).
 * **Cómo leer un reporte:** al inicio, una nota **Estado** dice si es vigente, vigente en parte o histórico, y qué lo reemplazó. Las cifras de un reporte histórico no se corrigen: se citan con su fecha o se reemplazan por las del reporte que lo sustituye.
 * **Carpetas:** una por etapa del paquete, cada una con un dueño: [`eda/`](eda/) (5.1 y 5.2, Datos y EDA), [`labeling/`](labeling/) (5.3, Golden dataset y etiquetado), [`sentiment/`](sentiment/) (5.4, Modelos) y [`topics/`](topics/) (5.5, Tópicos) [`calibration/`](calibration/) (5.6, Calibración) y [`scale/`](scale/) (5.7, Escala). El registro de decisión de 5.8 ([`decision_record.md`](decision_record.md)) está en la raíz de esta carpeta. Cada carpeta guarda sus reportes y los JSON de métricas que escribe el paquete; las guías congeladas van a `archive/`.
 * **Código:** paquete `voc_analytics` en [`experiments/analytics/`](../../experiments/analytics/README.md), con los comandos de cada etapa en orden de ejecución.
@@ -18,7 +18,7 @@ Esta carpeta reúne los reportes de la fase de planteamiento y experimentación 
 | 6 | [Calibración, HITL y PPI](#6-calibración-hitl-y-ppi) | 5.6 | [`calibration_design`](calibration/calibration_design.md), [`calibration_report`](calibration/calibration_report.md) | Cerrada (2026-10-22) |
 | 7 | [Escala, ciclo de vida y monitoreo](#7-escala-ciclo-de-vida-y-monitoreo) | 5.7 | [`scale_design`](scale/scale_design.md), [`scale_report`](scale/scale_report.md) | Cerrada (2026-10-22) |
 | 8 | [Registro de decisión](#8-registro-de-decisión) | 5.8 | [`decision_record`](decision_record.md) | Aprobado; 5.8 cerrada (2026-10-22) |
-| 9 | [Siguientes pasos](#9-siguientes-pasos) | 5.9 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes) | 5.9 lista para empezar; P9-3 pendiente |
+| 9 | [Siguientes pasos](#9-siguientes-pasos) | 5.9 | [`epic_5.md`](../backlog/epic_5.md#siguientes-pasos), [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes), [`incidents_report`](incidents/incidents_report.md) | 5.9 cerrada (2026-10-23); faltan los criterios de cierre de EPIC-5 |
 
 ---
 
@@ -141,7 +141,7 @@ La lista ordenada, con dueño, dependencia y criterio de terminado, está en [`e
 1. ~~5.2 a 5.6~~: cerradas (2026-10-20 a 2026-10-22).
 2. ~~**5.7, escala, ciclo de vida y monitoreo**~~: cerrada (2026-10-22).
 3. ~~**5.8, registro de decisión**~~: cerrada (2026-10-22). Sigue detallar EPIC-6 a partir del registro.
-4. **5.9, incidentes y versiones con la estrategia elegida:** sentimiento con el backfill de M4 y familias con las muestras (P9-2); meses candidatos a incidente en los 5 bancos, validados por el autor, con su lista de incidentes externos para estimar el recall; análisis por versión y validación única de la cola HITL.
+4. ~~**5.9, temas por día y versiones (descriptivo)**~~: cerrada (2026-10-23). Backfills de familias, tópicos y embeddings, top 5 diario de temas, vista por versión y validación única de la cola HITL (corrección 18.3 %). La detección de incidentes quedó fuera del alcance; la comparación de ventanas queda como hallazgo exploratorio.
 5. ~~**Antes de EPIC-6 y EPIC-7:** resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)~~: resueltas en 5.8 (2026-10-22).
 
 Las decisiones tomadas y las pendientes de 5.9 están en el [registro de decisiones](../backlog/epic_5.md#decisiones-pendientes).

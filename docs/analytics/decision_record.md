@@ -1,6 +1,6 @@
 # Registro de decisión de EPIC-5 (5.8)
 
-> **Estado (2026-10-22): aprobado; 5.8 cerrada.** Junta, por tema, lo que decidió el autor en 5.1–5.8 y la evidencia de cada punto. Las doce decisiones P8 están tomadas, el oro *test* se evaluó una sola vez, las reglas `eligibility_rules_v1` están publicadas, los límites están en la [Model Card](../governance/model_card.md) y la [FMEA](../governance/ethical_fmea_matrix.md), y las incompatibilidades están resueltas (la señal de incidentes pasa a 5.9). Sigue detallar [EPIC-6](../backlog/epic_6.md) a partir de este registro y, en paralelo, 5.9. El seguimiento de cada decisión está en el [registro de decisiones de `epic_5.md`](../backlog/epic_5.md#decisiones-pendientes). Índice: [`README.md`](README.md).
+> **Estado (2026-10-22): aprobado; 5.8 cerrada.** Junta, por tema, lo que decidió el autor en 5.1–5.8 y la evidencia de cada punto. Las doce decisiones P8 están tomadas, el oro *test* se evaluó una sola vez, las reglas `eligibility_rules_v1` están publicadas, los límites están en la [Model Card](../governance/model_card.md) y la [FMEA](../governance/ethical_fmea_matrix.md), y las incompatibilidades están resueltas. Sigue detallar [EPIC-6](../backlog/epic_6.md) a partir de este registro y, en paralelo, 5.9, que el autor acotó a lo descriptivo el 2026-10-22: la detección de incidentes pasa a trabajo futuro. El seguimiento de cada decisión está en el [registro de decisiones de `epic_5.md`](../backlog/epic_5.md#decisiones-pendientes). Índice: [`README.md`](README.md).
 
 ## Resumen
 
@@ -8,7 +8,7 @@
 | :--- | :--- | :--- |
 | 1. Modelo de sentimiento | Decidido: M4 RoBERTuito, tras la evaluación única en el oro *test* | P8-1, P8-2 |
 | 2. Limpieza y elegibilidad | Decidido | P8-3, P8-4 |
-| 3. Tópicos, familias e incidentes | Decidido; los umbrales de la señal pasan a 5.9 | 5.5, P8-7, P9-1 |
+| 3. Tópicos, familias e incidentes | Decidido; la detección de incidentes quedó fuera del alcance (2026-10-22) y 5.9 da temas por día | 5.5, P8-7, P9-1 a P9-4 |
 | 4. Calibración, HITL y priorización | Decidido | 5.6, P7-6 a P7-8 |
 | 5. *Satisfaction Gap* y estimaciones | Decidido: *gap* en estrellas con PPI | P8-9, P8-10 |
 | 6. Esquema de salida, HITL y migración | Decidido; cubre el frontal de EPIC-7 (revisado el 2026-10-22) | P8-5, P8-11 |
@@ -46,11 +46,12 @@
 * **Hecho (2026-10-22):** [`eligibility_rules.md`](eda/eligibility_rules.md) publicada como `v1`, con conteos por banco × periodo × motivo ([`eligibility_v1_counts.json`](eda/eligibility_v1_counts.json)). Sentimiento: 81.7 % por M4, 16.7 % por léxico y 1.6 % excluido. Familias y tópicos: 26.6 % de las filas (negativas de dos palabras o más).
 * Evidencia: [reglas](eda/eligibility_rules.md), [EDA §5.3](eda/eda_report.md#53-léxico-determinista-para-reseñas-de-una-palabra), [tópicos §4.3](topics/topics_report.md#43-topic_too_short-k--1-se-confirma-con-v21-y-los-5-bancos).
 
-## 3. Tópicos, familias e incidentes (5.5, P8-7, P9-1)
+## 3. Tópicos, familias e incidentes (5.5, P8-7, P9-1 a P9-4)
 
 * **Decidido (5.5):** híbrido: las 11 familias `aspects_v2_1` y las marcas `u` y `s` como núcleo de medición y alerta; los tópicos (BERTopic por cláusulas, MiniLM, HDBSCAN) como capa de detalle curada.
 * **Decidido (P8-7):** las familias se etiquetan con Gemini dentro de GCP. Costo medido: $0.091 por 1 000 textos; llenado histórico de ~788 000 negativas únicas, **~$72**.
-* **A 5.9:** los umbrales de la señal de incidentes se fijan con la lista de meses candidatos de los 5 bancos que valide el autor (P9-1).
+* **Incidentes, fuera del alcance (decisión del autor, 2026-10-22, P9-1):** la detección de incidentes (series de tiempo, anomalías, umbrales y su validación, y el cruce con redes sociales) tiene metodología propia y supera el alcance de la tesis; queda como trabajo futuro. La comparación de ventanas de 5.9 queda como hallazgo exploratorio: la ventana de 1 día capta más incidentes de la lista de medios del autor ([reporte de 5.9, §1](incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)).
+* **5.9, descriptiva:** backfill de familias y tópicos de todas las negativas (P9-3, con el modelo de tópicos de 5.5 congelado), etiquetas de temas por día para el cockpit (P9-4) y, si alcanza el tiempo, una vista por versión (P9-2).
 * Evidencia: [reporte de tópicos](topics/topics_report.md), [nota para 5.8](topics/topics_decision_note.md), [costo de las familias](scale/scale_report.md#3-costo-de-las-familias-con-gemini-p8-7).
 
 ## 4. Calibración, HITL y priorización (5.6, P7-6 a P7-8)
@@ -111,20 +112,20 @@
 
 * **Decidido por el autor (2026-10-22):** el frontal de [EPIC-7](../backlog/epic_7.md), reescrito con las secciones que definió el autor, y el alcance por niveles:
   * **Imprescindible:** API y seguridad con tres roles (IAP), landing, reporte de hallazgos versionado, cockpit diario, HITL de sentimiento con modo ciego, administración de `risk_policy` y `drift_policy`, documentos de gobernanza y pruebas.
-  * **Importante:** Explorador de reseñas (tabla con *crossfilter*, búsqueda semántica y ficha con XAI), alertas e incidentes, MLOps y AIOps.
-  * **Deseable:** HITL de aspectos y tópicos, pestaña por versión de la app (depende de 5.9) y página de gobernanza.
+  * **Importante:** Explorador de reseñas (tabla con *crossfilter*, búsqueda semántica y ficha con XAI), alertas de deriva (antes "alertas e incidentes"; acotadas al acotar 5.9, 2026-10-22), MLOps y AIOps, y la pestaña por versión de la app (subida desde deseable por el autor el 2026-10-22, con la vista descriptiva de 5.9).
+  * **Deseable:** HITL de aspectos y tópicos y página de gobernanza.
 * **Esquema:** revisado pantalla por pantalla ([sección 6](../contracts/analytics_outputs_v3_draft.md#6-cobertura-del-frontal-de-epic-7)); con los agregados de esa revisión, la condición de P8-5 queda cumplida.
 
 ## 11. Límites y riesgos para la Model Card y la FMEA
 
-**Redactado (2026-10-22):** los límites están en la sección 5 de la [Model Card](../governance/model_card.md), que se escribió en 5.8. Los riesgos tienen su fila en la [FMEA](../governance/ethical_fmea_matrix.md): F-01, F-13 a F-15 y las nuevas F-16 (licencia), F-17 (priorización con predicciones inciertas), F-18 (familias de Gemini), F-19 (umbrales de incidentes) y F-20 (sesgo del anotador), por calificar. La calificación del *Label Noise Bias* quedó confirmada con el oro *test* (M4 pierde 5 de 212 quejas; RPN 60). Lista de partida:
+**Redactado (2026-10-22):** los límites están en la sección 5 de la [Model Card](../governance/model_card.md), que se escribió en 5.8. Los riesgos tienen su fila en la [FMEA](../governance/ethical_fmea_matrix.md): F-01, F-13 a F-15 y las nuevas F-16 (licencia), F-17 (priorización con predicciones inciertas), F-18 (familias de Gemini), F-19 (lectura de un pico como incidente; redefinida al acotar 5.9) y F-20 (sesgo del anotador), por calificar. La calificación del *Label Noise Bias* quedó confirmada con el oro *test* (M4 pierde 5 de 212 quejas; RPN 60). Lista de partida:
 
 * licencia no comercial de los checkpoints de `pysentimiento` (P8-2);
 * corpus completo en un dataset privado de Kaggle (P7-1), cubierto por F-14;
 * error de 17–23 % en los casos difíciles (*dev* dirigido) aun revisando el 20 % (5.6);
 * el oro es de un solo anotador principal (κ 0.81–0.87 con un segundo anotador);
 * las familias son etiquetas de Gemini, con κ de 0.55 a 0.86 contra el autor según la familia;
-* la señal de incidentes se probó solo con 3 incidentes de un banco (hasta 5.9);
+* no hay detección automática de incidentes (fuera del alcance desde el 2026-10-22); las etiquetas de temas por día son descriptivas (F-19);
 * `fecha` es la de la última edición de la reseña;
 * PII residual posible por la sanitización solo con regex (F-01: 0 nombres en 1 000 aleatorias).
 
@@ -134,6 +135,6 @@
 2. ~~Decidir P8-9 y P8-12~~: *gap* en estrellas y alcance por niveles (2026-10-22).
 3. ~~Comprobar que el esquema cubre el frontal de EPIC-7~~: hecho (2026-10-22).
 4. ~~Publicar `eligibility_rules_v1` y redactar la sección 11 en la Model Card y la FMEA~~: hecho (2026-10-22).
-5. ~~Resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)~~: resueltas (2026-10-22); los umbrales de la señal de incidentes pasan a 5.9 (P9-1).
+5. ~~Resolver o aceptar las [incompatibilidades](../backlog/epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)~~: resueltas (2026-10-22). La señal de incidentes pasó a 5.9 y después quedó fuera del alcance (P9-1).
 
 **Registro aprobado y 5.8 cerrada (2026-10-22).**

@@ -54,6 +54,7 @@
 * **Entre personas:** κ 0.81–0.87 con un segundo anotador (100 reseñas). Diferencias de ~0.02 entre los mejores modelos quedan por debajo de ese ruido.
 * **Por banco:** contra la plata en `holdout_nuevo`, κ de 0.92 a 0.97 (corrida del Mac). No hay oro suficiente para medirlo contra humanos por banco.
 * **Revisión humana** (curva de cobertura y riesgo de 5.6, oro *dev*): con 90 % de cobertura se revisa el ~10 % menos seguro (~350 textos por semana). El error entre lo que se acepta sin revisión es 0.42 % [0.03, 1.06], la revisión atrapa el 87 % de los errores y una de cada cuatro reseñas revisadas (24.9 %) necesita corrección.
+* **Validación con una semana real** (5.9, 2026-10-23; revisión del autor a ciegas de la cola del 2026-10-05 al 11): con el umbral del 90 % del *dev*, la cobertura real fue 86.4 % (cola de 387 textos, no ~350). La tasa de corrección fue **18.3 % [14.6, 22.6]** en 356 evaluables, menor que la esperada; el 8.0 % de la cola fue no evaluable. Los errores se concentran en lo predicho `POS` (33 % corregido, casi siempre a `NEG`: elogios con una queja), y lo predicho `NEG` casi no se corrige (5 %). Revisar la cola tomó ~80 min activos (mediana de 7 s por reseña).
 
 **Costo de operación** (5.7): T4 a ~4 000 textos/s (backfill de 1 429 675 textos únicos en ~6 min por semilla); Cloud Run de 1 vCPU y 2 GiB a 22.6 textos/s en fp32 (delta diario de ~500 textos en ~25 s). No cabe en 1 GiB.
 
@@ -73,7 +74,7 @@ Cada riesgo tiene su fila en la [FMEA](ethical_fmea_matrix.md) cuando aplica.
 4. **Aprende el criterio de Gemini,** incluidos sus sesgos: su techo práctico es el acuerdo de Gemini con el oro.
 5. **Oro de un solo anotador principal** (el autor), con κ 0.81–0.87 contra un segundo anotador en 100 reseñas. Las métricas heredan su criterio (F-20).
 6. **Familias y tópicos dependen de Gemini:** las 11 familias `aspects_v2_1` son etiquetas de Gemini, con κ de 0.55 a 0.86 contra el autor según la familia (F-18).
-7. **Señal de incidentes poco validada:** se probó con 3 incidentes de un solo banco (BBVA). Sus umbrales se fijan en 5.9 con la lista validada (F-19).
+7. **Sin detección de incidentes:** la detección automática quedó fuera del alcance (decisión del autor, 2026-10-22). El dashboard muestra por día los temas de las negativas como descripción; un pico no es un incidente confirmado (F-19).
 8. **`fecha` es la de la última edición** de la reseña, no la de creación. Las series pueden desplazar una queja al mes en que se editó.
 9. **PII residual:** la sanitización es solo regex y no detecta nombres (F-01: 0 nombres en 1 300 reseñas anotadas, con una cota superior al 95 % de ~0.4 %).
 10. **Corpus fuera de GCP:** el entrenamiento (F-13) y el backfill (F-14) se hicieron en Kaggle, con el riesgo aceptado por el autor.

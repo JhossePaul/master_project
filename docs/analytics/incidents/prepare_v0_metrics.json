@@ -1,0 +1,182 @@
+{
+  "generado": "2026-10-23T01:31:20+00:00",
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "backfill": "20261022",
+  "modelo": "M4_robertuito_s1_ppi",
+  "reglas": "eligibility_rules_v1",
+  "mes_parcial": "2026-10",
+  "cobertura": {
+    "filas": 2649047,
+    "textos_unicos": 1427640,
+    "textos_sin_prediccion": 99,
+    "filas_modelo": 2163646,
+    "filas_modelo_sin_prediccion": 99
+  },
+  "sentimiento_por_fila": {
+    "EXCLUIDA": 0.0159,
+    "NEG": 0.2694,
+    "NEU": 0.0167,
+    "POS": 0.698
+  },
+  "sentimiento_por_banco": {
+    "AZTECA": {
+      "EXCLUIDA": 0.0188,
+      "NEG": 0.1604,
+      "NEU": 0.0169,
+      "POS": 0.8038
+    },
+    "BANORTE": {
+      "EXCLUIDA": 0.0146,
+      "NEG": 0.2361,
+      "NEU": 0.0142,
+      "POS": 0.7351
+    },
+    "BBVA": {
+      "EXCLUIDA": 0.0153,
+      "NEG": 0.3741,
+      "NEU": 0.016,
+      "POS": 0.5946
+    },
+    "NUBANK": {
+      "EXCLUIDA": 0.015,
+      "NEG": 0.2424,
+      "NEU": 0.0289,
+      "POS": 0.7137
+    },
+    "SANTANDER": {
+      "EXCLUIDA": 0.015,
+      "NEG": 0.2738,
+      "NEU": 0.017,
+      "POS": 0.6941
+    }
+  },
+  "negativas_para_familias": {
+    "filas": 703353,
+    "textos_unicos": 659416
+  },
+  "muestras": {
+    "plata": {
+      "filas_muestra": 99926,
+      "filas_sin_snapshot": 0,
+      "filas_con_familias": 42573,
+      "filas_con_familias_neg_m4": 41594,
+      "filas_neg_m4_sin_familias": 615
+    },
+    "ppi_v0": {
+      "filas_muestra": 99789,
+      "filas_sin_snapshot": 0,
+      "filas_con_familias": 41843,
+      "filas_con_familias_neg_m4": 41145,
+      "filas_neg_m4_sin_familias": 3
+    }
+  },
+  "muestra_total": {
+    "filas": 82739,
+    "proporcion_de_negativas": 0.1176
+  },
+  "prevalencias_por_muestra": {
+    "plata": {
+      "filas": 41594,
+      "u": 0.1741,
+      "s": 0.0239,
+      "familias": {
+        "AC": 0.2705,
+        "TR": 0.1379,
+        "DI": 0.0273,
+        "PR": 0.1224,
+        "AT": 0.0854,
+        "FA": 0.2778,
+        "LE": 0.1012,
+        "CO": 0.0874,
+        "DV": 0.0129,
+        "UX": 0.0802,
+        "OT": 0.0075
+      }
+    },
+    "ppi_v0": {
+      "filas": 41145,
+      "u": 0.1675,
+      "s": 0.0216,
+      "familias": {
+        "AC": 0.2527,
+        "TR": 0.1372,
+        "DI": 0.0254,
+        "PR": 0.1244,
+        "AT": 0.083,
+        "FA": 0.2786,
+        "LE": 0.1089,
+        "CO": 0.0894,
+        "DV": 0.0152,
+        "UX": 0.0794,
+        "OT": 0.0064
+      }
+    }
+  },
+  "por_banco": {
+    "AZTECA": {
+      "mes_entrada": "2018-09",
+      "meses_evaluados": 97,
+      "filas": 583916,
+      "neg_familias": 89583,
+      "neg_familias_en_muestra": 12145,
+      "meses_con_muestra_suficiente": 94,
+      "n_muestra_mediana": 114.0,
+      "ancho_ic_u_mediano": 0.1182,
+      "meses_z_neg_ge_4": 11,
+      "meses_z_prop_neg_ge_4": 4
+    },
+    "BANORTE": {
+      "mes_entrada": "2018-10",
+      "meses_evaluados": 96,
+      "filas": 471483,
+      "neg_familias": 105075,
+      "neg_familias_en_muestra": 14122,
+      "meses_con_muestra_suficiente": 96,
+      "n_muestra_mediana": 135.5,
+      "ancho_ic_u_mediano": 0.1044,
+      "meses_z_neg_ge_4": 3,
+      "meses_z_prop_neg_ge_4": 7
+    },
+    "BBVA": {
+      "mes_entrada": "2016-04",
+      "meses_evaluados": 126,
+      "filas": 772875,
+      "neg_familias": 285602,
+      "neg_familias_en_muestra": 19617,
+      "meses_con_muestra_suficiente": 124,
+      "n_muestra_mediana": 124.0,
+      "ancho_ic_u_mediano": 0.1309,
+      "meses_z_neg_ge_4": 14,
+      "meses_z_prop_neg_ge_4": 10
+    },
+    "NUBANK": {
+      "mes_entrada": "2021-12",
+      "meses_evaluados": 58,
+      "filas": 119971,
+      "neg_familias": 28988,
+      "neg_familias_en_muestra": 14745,
+      "meses_con_muestra_suficiente": 57,
+      "n_muestra_mediana": 192.0,
+      "ancho_ic_u_mediano": 0.0706,
+      "meses_z_neg_ge_4": 5,
+      "meses_z_prop_neg_ge_4": 2
+    },
+    "SANTANDER": {
+      "mes_entrada": "2019-04",
+      "meses_evaluados": 90,
+      "filas": 558602,
+      "neg_familias": 149931,
+      "neg_familias_en_muestra": 14623,
+      "meses_con_muestra_suficiente": 90,
+      "n_muestra_mediana": 140.5,
+      "ancho_ic_u_mediano": 0.082,
+      "meses_z_neg_ge_4": 10,
+      "meses_z_prop_neg_ge_4": 6
+    }
+  },
+  "parametros": {
+    "min_filas_mes": 200,
+    "min_muestra_mes": 30,
+    "z_referencia": 4
+  }
+}

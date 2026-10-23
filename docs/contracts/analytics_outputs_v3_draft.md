@@ -1,6 +1,6 @@
 # Salidas analíticas v3: borrador de esquemas y migración
 
-> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales.
+> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** `incident_alerts` e `incident_alert_events` pasan a `drift_alerts` y `drift_alert_events` (solo deriva), sale `incident_signal` de la `drift_policy` y se agrega la vista `daily_topic_labels`.
 
 ## Principios
 
@@ -48,6 +48,20 @@ El *re-scoring* (P7-4) inserta filas nuevas con otra `model_version`; la vista `
 
 `topic_model_versions`, `topic_catalog` y `topic_assignments`, como en el [borrador de 5.5](../analytics/topics/topics_decision_note.md#borrador-del-modelo-de-datos-de-curaduría), sin cambios.
 
+### `daily_topic_labels` (vista: top 5 diario de temas, 5.9, P9-4)
+
+Una fila por banco × día × tipo × rango, para el *hover* del cockpit (7.5). Se calcula sobre `review_predictions_current`, `review_aspects` y `topic_assignments`; no guarda texto.
+
+| Columna | Nota |
+| :--- | :--- |
+| `bank_id`, `dia` | |
+| `n_neg` | Reseñas negativas para familias del día (`NEG` con dos palabras o más) |
+| `tipo`, `rango` | `familia` o `topico`; 1 a 5 por tipo |
+| `codigo`, `nombre` | Código de la familia `aspects_v2_1` o `topic_id`; nombre de la guía `v2.1` o el curado del tópico. Solo entran los tópicos útiles de la curaduría (producto o ingeniería, 19 en `model_v0`) |
+| `filas`, `participacion` | Reseñas del día con ese tema y su proporción entre `n_neg`; no suman 100 % porque una reseña puede tener varios temas |
+| `habitual` | Participación del mismo tema en los 28 días previos del banco, sin el día; dato de contexto, sin umbral |
+| `aspects_prompt_version`, `topic_model_version` | De dónde salen las familias y los tópicos |
+
 ### `text_embeddings` (para la búsqueda semántica, P8-6)
 
 `text_key`, `bank_id`, `mes`, `embedding` (ARRAY<FLOAT64> de 384, MiniLM), `embedding_model`, `created_at`. Una fila por texto × banco × mes, **particionada por `mes`**: según el experimento de 5.7 (§5.1), solo la partición reduce lo que factura `VECTOR_SEARCH` (con 12 meses, ~2 000 búsquedas al mes en el free tier); una fila por texto único no se puede particionar. La búsqueda va acotada por defecto a una ventana de meses configurable.
@@ -59,8 +73,8 @@ El *re-scoring* (P7-4) inserta filas nuevas con otra `model_version`; la vista `
 | `model_versions` | Versión | `model_version`, `registry_uri` (Vertex o GCS, P7-3), `base_checkpoint`, `training_data` (plata, hash), `calibration_t`, métricas en el oro *dev* (κ, ECE, AURC), `license`, `status` (`candidate`, `promoted`, `retired`), `promoted_at`, `promoted_by_hash` |
 | `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`), `environment` (`kaggle`, `cloudrun`), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
 | `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version` |
-| `incident_alerts` | Alerta | `alert_id`, `bank_id`, `period`, `signal`, `family`, `value`, `threshold`, `hitl_boost_id`, `created_at`. El estado vigente es el último de `incident_alert_events`; las confirmadas son la lista de incidentes (5.9) |
-| `incident_alert_events` | Transición de una alerta | `event_id`, `alert_id`, `status` (`open`, `confirmed`, `dismissed`), `actor_hash`, `at`, `note` (sanitizada), `ticket`. Solo inserción (EPIC-7, 7.8) |
+| `drift_alerts` | Alerta de deriva | `alert_id`, `bank_id`, `period`, `series`, `value`, `threshold`, `drift_policy_version`, `hitl_boost_id`, `created_at`. Las emite el monitor de 6.4 con la `drift_policy` del banco (P7-9). El estado vigente es el último de `drift_alert_events`. Antes `incident_alerts`: la señal de incidentes quedó fuera del alcance (5.9, 2026-10-22) |
+| `drift_alert_events` | Transición de una alerta de deriva | `event_id`, `alert_id`, `status` (`open`, `confirmed`, `dismissed`), `actor_hash`, `at`, `note` (sanitizada), `ticket`. Solo inserción (EPIC-7, 7.8). Antes `incident_alert_events` |
 | `kpi_estimates` | Banco × periodo × métrica × corrida | `metric` (`neg`, `gap_estrellas`, `texto_peor`, `texto_mejor`, celdas de la matriz 3 × 3…), `bank_id`, `period`, `method` (`ppi` o `raw`), `estimate`, `ci_low`, `ci_high`, `n_gold`, `n_unlabeled`, `model_version`, `gold_version`, `computed_at`. Los KPI con PPI del cockpit (P8-9, P8-10); las series diarias crudas son vistas sobre `review_predictions_current` |
 | `review_explanations` | Texto × versión de modelo | `text_key`, `model_version`, `method` (`occlusion_v1`), `attributions` (JSON por token), `source` (`precomputed_hitl` u `on_demand`), `computed_at`. Las lee solo el Explorador (EPIC-7, 7.6), nunca la pantalla HITL (P8-8) |
 | `model_quality` | Modelo × periodo × señal | `model_version` (o `llm_model` y `prompt_version` para las familias), `signal` (`kappa_monitor`, `correction_rate`, `agreement_m4_gemini`, `families_validation`), `period`, `value`, `n`, `ic95`, `threshold`, `status` (`ok`, `warning`, `retrain`, `rejected`), `risk_policy_version` |
@@ -101,7 +115,6 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | `thresholds` | JSON con el umbral de cada serie: plantilla de 5.7, z ≥ 4 (palabras medias, una palabra, más de 60, no predecibles, vocabulario fuera del entrenamiento, proporción de `NEG`) y PSI ≥ 0.25 (longitud) |
 | `baseline_months`, `min_baseline_months` | 12 y 6 |
 | `min_rows_per_month`, `entry_rule` | 200 filas; el banco entra con 12 meses seguidos que las cumplan |
-| `incident_signal` | Umbrales de la señal de incidentes por familia y marca `u`; los fija 5.9 (P9-1) |
 | `set_by_hash`, `reason` | |
 
 ### `drift_policy_template`
@@ -182,12 +195,12 @@ Revisión pantalla por pantalla (condición de P8-5, 2026-10-22) contra el [fron
 
 | Pantalla (EPIC-7) | Lee | Escribe |
 | :--- | :--- | :--- |
-| Landing (7.3) | `ingestion_runs_log_v2` (EPIC-4), `inference_runs`, `incident_alerts` + `incident_alert_events`, `kpi_estimates` | — |
+| Landing (7.3) | `ingestion_runs_log_v2` (EPIC-4), `inference_runs`, `drift_alerts` + `drift_alert_events`, `kpi_estimates` | — |
 | Reporte (7.4) | Ninguna tabla: se publica desde `docs/analytics/` por versión | — |
-| Cockpit (7.5) | `kpi_estimates` (PPI), vistas diarias sobre `review_predictions_current` y `review_aspects`, `topic_assignments`; la pestaña por versión usa `version_app` de `review_predictions` | — |
+| Cockpit (7.5) | `kpi_estimates` (PPI), vistas diarias sobre `review_predictions_current` y `review_aspects`, `topic_assignments`, `daily_topic_labels` (*hover* del día); la pestaña por versión usa `version_app` de `review_predictions` | — |
 | Explorador (7.6) | `review_predictions_current`, `review_aspects`, `topic_assignments`, texto del TDS por `id_resena`, `text_embeddings`, `review_explanations` | `review_explanations` (bajo pedido) |
 | HITL (7.7) | `hitl_queue`, `hitl_items` (sin `predicted` si es `blind`), `guidelines`, texto del TDS | `hitl_events`, `hitl_reviews`, curadurías de tópicos (5.5) |
-| Alertas (7.8) | `incident_alerts`, `incident_alert_events`, `hitl_boosts`, `drift_metrics` | `incident_alert_events` |
+| Alertas de deriva (7.8) | `drift_alerts`, `drift_alert_events`, `hitl_boosts`, `drift_metrics` | `drift_alert_events` |
 | MLOps y AIOps (7.9) | `model_quality`, `hitl_coverage_curves`, `drift_metrics`, `model_versions`, `inference_runs`, `ingestion_runs_log_v2`, conteos por `eligibility_code` | — |
 | Administración (7.10) | `risk_policy`, `hitl_boosts`, `drift_policy`, `drift_policy_template`, `hitl_coverage_curves`, `hitl_reviews` (tiempo medido), `gold_versions` | `risk_policy`, `drift_policy`, `gold_versions` |
 | Seguridad (7.2) | Grupos de IAP y Cloud Audit Logs; no hay tabla de usuarios | — |

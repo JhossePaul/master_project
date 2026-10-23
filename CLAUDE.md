@@ -35,9 +35,10 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 5.6 Calibración, HITL, PPI y priorización | Calibración | `experiments/analytics/src/voc_analytics/calibration/`, `experiments/analytics/src/voc_analytics/sampling/sample_ppi.py`, `docs/analytics/calibration/` y la sección de la feature 5.6 en `docs/backlog/epic_5.md` |
 | 5.7 Escala, ciclo de vida y monitoreo | Escala | `experiments/analytics/src/voc_analytics/scale/`, `docs/analytics/scale/` y la sección de la feature 5.7 en `docs/backlog/epic_5.md` |
 | 5.8 Registro de decisión | Decisión | `docs/analytics/decision_record.md`, el registro de decisiones de `docs/backlog/epic_5.md` y `docs/contracts/analytics_outputs_v3_draft.md` |
+| 5.9 Temas por día y versiones (descriptivo) | Temas por día | `experiments/analytics/src/voc_analytics/incidents/`, `docs/analytics/incidents/` y la sección de la feature 5.9 en `docs/backlog/epic_5.md`. Consume (sin modificarlos) `labeling/eligibility.py`, `topics/versions.py`, `scale/backfill.py` y las predicciones del backfill de M4 (`data/backfill/20261022/`) |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
-Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6, que cambiará `packages/` e `infra/`. La feature 5.9, EPIC-6 y EPIC-7 se agregan a esta tabla cuando arranquen.
+Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6, que cambiará `packages/` e `infra/`. EPIC-6 y EPIC-7 se agregan a esta tabla cuando arranquen.
 
 El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/src/`) y su evidencia en `docs/analytics/`, con una carpeta por etapa del paquete; el mapa de rutas anteriores está en [`experiments/analytics/MIGRATION.md`](experiments/analytics/MIGRATION.md). Los módulos compartidos de abajo son relativos a `voc_analytics/`.
 

@@ -1,6 +1,6 @@
 # EPIC-7: Portal de consumo, HITL y gobernanza (API y frontal web)
 
-* **Estado (2026-10-22):** Pendiente. **Reescrita el 2026-10-22** con el frontal que definió el autor para P8-12. Era EPIC-6 hasta la reorganización del backlog. La especificación anterior, escrita antes de la evidencia de EPIC-5 (Delora, 768 dimensiones, umbral de entropía 0.65, `ABSATopic`), se conserva en el [anexo B](#anexo-b-especificación-anterior-no-vigente) y no se implementa donde contradice esta versión.
+* **Estado (2026-10-22):** Pendiente. **Reescrita el 2026-10-22** con el frontal que definió el autor para P8-12. Era EPIC-6 hasta la reorganización del backlog. La especificación anterior, escrita antes de la evidencia de EPIC-5 (Delora, 768 dimensiones, umbral de entropía 0.65, `ABSATopic`), se conserva en el [anexo B](#anexo-b-especificación-anterior-no-vigente) y no se implementa donde contradice esta versión. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** 7.8 pasa a alertas de deriva (la detección de incidentes quedó fuera del alcance de la tesis) y el cockpit muestra el top 5 diario de temas (7.5).
 * **Antes de empezar:**
   * aprobar el [registro de decisión de 5.8](../analytics/decision_record.md);
   * tener en operación las tablas y la inferencia de [EPIC-6](epic_6.md).
@@ -10,7 +10,7 @@
   * [EPIC-6](epic_6.md): tablas de salida, políticas, curadurías, alertas y monitoreo, según el [esquema v3](../contracts/analytics_outputs_v3_draft.md);
   * EPIC-4: `sanitized_reviews_tds` e `ingestion_runs_log_v2`;
   * EPIC-2: `voc-api-backend` y las cuentas de servicio;
-  * 5.9: la lista de incidentes y el análisis por versión.
+  * 5.9: el top 5 diario de temas (P9-4) y la vista por versión (P9-2).
 * **Directorios (provisionales):** `services/api-backend/` (FastAPI), `web/hitl-portal/` (SPA en React, TypeScript y Vite, con la paleta institucional del EDA: azul `#002D72`, verde `#215347`, vino `#7A1A37` y dorado `#B9975B`) y `docs/governance/`.
 
 ---
@@ -22,7 +22,7 @@ Un portal privado que deje a los equipos de CX, producto y gestión de modelos:
 * seguir cada día el sentimiento, el *Satisfaction Gap* y los temas de queja de los cinco bancos;
 * investigar reseñas y causas raíz;
 * revisar casos HITL sin anclaje;
-* atender alertas;
+* atender las alertas de deriva del modelo;
 * vigilar el modelo y el pipeline;
 * ajustar el apetito de riesgo y la deriva con información a la vista.
 
@@ -50,10 +50,10 @@ La épica no decide modelos ni umbrales: muestra y configura los que fijaron EPI
 | Seguridad y acceso | Portal privado con tres roles | — | 7.2 | Imprescindible |
 | Landing y navegación | Menú hacia las secciones, estado de los datos y enlace a gobernanza | Lector | 7.3 | Imprescindible |
 | Reporte de hallazgos | Resultados del análisis por secciones, con submenú | Lector | 7.4 | Imprescindible |
-| Cockpit diario | KPIs, *gap* en estrellas, sentimiento y temas, con actualización diaria | Lector | 7.5 | Imprescindible; la pestaña por versión, deseable (depende de 5.9) |
+| Cockpit diario | KPIs, *gap* en estrellas, sentimiento y temas, con actualización diaria | Lector | 7.5 | Imprescindible; la pestaña por versión, importante (decisión del autor, 2026-10-22) |
 | Explorador de reseñas | Tabla con *crossfilter*, búsqueda semántica y ficha con XAI | Analista | 7.6 | Importante |
 | HITL | Colas de sentimiento, aspectos y tópicos, con la guía vigente | Revisor | 7.7 | Sentimiento, imprescindible; aspectos y tópicos, deseable |
-| Alertas e incidentes | Bandeja de alertas por banco, con su flujo | Analista | 7.8 | Importante |
+| Alertas de deriva | Bandeja de alertas de deriva por banco, con su flujo | Analista | 7.8 | Importante |
 | MLOps y AIOps | Calidad y deriva del modelo, registro de modelos y salud del pipeline | Analista | 7.9 | Importante |
 | Administración | Apetito de riesgo HITL, deriva por banco, historial y oro desde el HITL | Administrador | 7.10 | Imprescindible |
 | Gobernanza | Data Card, Model Card y FMEA | — (documentos) | 7.11 | Imprescindible (documentos); la página del portal, deseable |
@@ -91,7 +91,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Autenticación:** Identity-Aware Proxy (IAP) delante de Cloud Run, con grupos de Google. No se construye autenticación propia.
 * **Roles:**
   * **Lector:** landing, reporte y cockpit; solo agregados.
-  * **Analista:** además, Explorador, alertas y MLOps y AIOps; lee texto sanitizado.
+  * **Analista:** además, Explorador, alertas de deriva y MLOps y AIOps; lee texto sanitizado.
   * **Revisor:** las colas HITL que tenga asignadas; lee texto sanitizado.
   * **Administrador:** configuración y versiones del oro.
   * Un usuario puede tener varios roles.
@@ -110,7 +110,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Landing:**
   * menú hacia todas las secciones que permita el rol;
   * frescura de los datos: última ingesta (`ingestion_runs_log_v2`) y última inferencia (`inference_runs`);
-  * alertas abiertas (7.8);
+  * alertas de deriva abiertas (7.8);
   * una línea por KPI principal.
 * **Navegación común:** filtros globales de banco y periodo que se conservan entre secciones, glosario y ayuda contextual en cada métrica.
 * **Página de gobernanza** (deseable): Data Card, Model Card y FMEA de 7.11, con los límites declarados (licencia no comercial de `pysentimiento`, tasa de nombres de F-01, el riesgo del corpus en Kaggle de F-14).
@@ -125,7 +125,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   3. competencia de modelos y evaluación en el oro *test*;
   4. calibración y HITL;
   5. estimaciones con PPI y *Satisfaction Gap* por banco;
-  6. familias, tópicos e incidentes;
+  6. familias, tópicos y temas por día (con la comparación de ventanas de 5.9 como hallazgo exploratorio);
   7. escala y monitoreo;
   8. decisiones y límites.
 * Cada gráfica trae "cómo leerla" e intervalo cuando corresponde. Solo agregados y ejemplos sintéticos, como `docs/`.
@@ -139,15 +139,15 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * *Satisfaction Gap* en estrellas por banco (P8-9: estrellas menos el puntaje 1/3/5 del texto) con su intervalo PPI;
   * proporción de `NEG` y su tendencia;
   * quejas con 4–5★;
-  * alertas abiertas.
+  * alertas de deriva abiertas.
 * **Gráficas interactivas:**
-  * serie diaria de sentimiento y de *gap* por banco (proporciones crudas, P8-10, rotuladas como tales);
+  * serie diaria de sentimiento y de *gap* por banco (proporciones crudas, P8-10, rotuladas como tales). Junto a cada día se muestra el top 5 de familias y el top 5 de tópicos útiles de sus negativas, con su participación del día y su participación habitual de los 28 días previos (5.9, P9-4; vista `daily_topic_labels`). Van las dos listas; la forma visual (*hover*, panel lateral al elegir un día u otra) se decide al diseñar 7.5. Se aclara que es una descripción, no un diagnóstico (F-19);
   * KPIs por banco y periodo con PPI e intervalo;
-  * volumen de negativas por familia y marca `u`, en nivel y en anomalía (priorización de 5.6);
+  * volumen de negativas por familia y marca `u`, en nivel y en anomalía (priorización de 5.6), como descripción y sin alertas;
   * tópicos vigentes con su tendencia;
   * matriz 3 × 3 estrellas × texto como desglose del *gap*;
   * comparación entre bancos.
-* **Pestaña por versión de la app** (deseable, depende de 5.9): negativas por `version_app` y familias que cambian tras un *release*.
+* **Pestaña por versión de la app** (importante, decisión del autor del 2026-10-22; la vista descriptiva de 5.9 ya está hecha, [reporte §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2)): proporción de `NEG` con su IC, marca `u` y familias por banco y versión, sin pruebas de cambio de nivel.
 * **Interacción:** las gráficas se filtran entre sí (*crossfilter*) por banco, periodo, familia y sentimiento. Desde cualquier gráfica, un analista puede abrir el Explorador con el mismo filtro.
 * **Terminado cuando:** las tarjetas y las series se recalculan con cada delta; cada cifra muestra su versión de modelo y si es cruda o PPI.
 
@@ -188,15 +188,16 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Doble revisión:** una muestra de casos va a dos revisores (`reason = 'agreement_sample'`), para medir el acuerdo entre personas.
 * **Terminado cuando:** cada cola reproduce el flujo de su prototipo, escribe en `hitl_reviews` (o en las curadurías de tópicos de EPIC-6) con su modo y su guía, y la muestra de monitoreo nunca muestra la predicción.
 
-### FEATURE 7.8: Alertas e incidentes
+### FEATURE 7.8: Alertas de deriva
 
-**Objetivo:** atender las alertas de negocio. Son distintas de las de MLOps: aquí se pregunta si el banco tiene un problema, no si el modelo se degradó.
+> **Acotada el 2026-10-22:** la detección de incidentes de negocio quedó fuera del alcance de la tesis (5.9). Ya no hay alertas por picos de negativas, familias o marca `u`; esos picos se ven en el cockpit (7.5) como descripción.
 
-* **Bandeja de `incident_alerts` por banco:** picos de negativas por familia, marca `u` y deriva de la `drift_policy` del banco. Cada alerta muestra su serie, su umbral, la subida HITL que disparó (`hitl_boosts`) y un enlace al Explorador con el filtro de la alerta.
+**Objetivo:** atender las alertas de deriva que emite el monitor de EPIC-6 (6.4) con la `drift_policy` de cada banco (P7-9), y ver las subidas de la revisión HITL que disparan (P7-6).
+
+* **Bandeja de `drift_alerts` por banco:** las series de entrada y de proporción de `NEG` que superan su umbral. Cada alerta muestra su serie, su umbral, la subida HITL que disparó (`hitl_boosts`) y un enlace al Explorador con el filtro de la alerta.
 * **Flujo:**
-  * cada alerta pasa por `open`, `confirmed` o `dismissed`;
-  * cada transición queda en `incident_alert_events`, con quién (como hash), cuándo, nota y ticket;
-  * las confirmadas forman la lista de incidentes que usa 5.9 (P9-1) para fijar los umbrales.
+  * cada alerta pasa por `open`, `confirmed` (la deriva es real) o `dismissed`;
+  * cada transición queda en `drift_alert_events`, con quién (como hash), cuándo, nota y ticket.
 * **Terminado cuando:** una alerta nueva aparece en la bandeja y en la landing, y su confirmación queda auditada.
 
 ### FEATURE 7.9: MLOps y AIOps
@@ -266,7 +267,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * [ ] Landing, reporte versionado y cockpit diario con el *gap* en estrellas y sus intervalos (7.3 a 7.5).
 * [ ] HITL de sentimiento con la cola visible, la guía vigente y el modo ciego para `monitor_sample`; sin XAI en la pantalla de revisión (7.7).
 * [ ] Configuración de `risk_policy` y `drift_policy` versionada, con su curva y su ayuda, y usada por la siguiente corrida (7.10).
-* [ ] Lo de nivel importante y deseable que entre en el tiempo: Explorador con XAI y búsqueda (7.6), alertas (7.8), MLOps y AIOps (7.9), HITL de aspectos y tópicos (7.7) y pestaña por versión (7.5).
+* [ ] Lo de nivel importante y deseable que entre en el tiempo: Explorador con XAI y búsqueda (7.6), alertas de deriva (7.8), MLOps y AIOps (7.9), pestaña por versión (7.5) y, de nivel deseable, HITL de aspectos y tópicos (7.7).
 * [ ] Data Card, Model Card y FMEA actualizadas (7.11).
 * [ ] *Quality gates* y `npm run build` sin errores (7.12).
 
