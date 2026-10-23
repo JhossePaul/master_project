@@ -118,7 +118,7 @@
 
 ## 11. Límites y riesgos para la Model Card y la FMEA
 
-**Redactado (2026-10-22):** los límites están en la sección 5 de la [Model Card](../governance/model_card.md), que se escribió en 5.8. Los riesgos tienen su fila en la [FMEA](../governance/ethical_fmea_matrix.md): F-01, F-13 a F-15 y las nuevas F-16 (licencia), F-17 (priorización con predicciones inciertas), F-18 (familias de Gemini), F-19 (lectura de un pico como incidente; redefinida al acotar 5.9) y F-20 (sesgo del anotador), por calificar. La calificación del *Label Noise Bias* quedó confirmada con el oro *test* (M4 pierde 5 de 212 quejas; RPN 60). Lista de partida:
+**Redactado (2026-10-22):** los límites están en la sección 5 de la [Model Card](../governance/model_card.md), que se escribió en 5.8. Los riesgos tienen su fila en la [FMEA](../governance/ethical_fmea_matrix.md): F-01, F-13 a F-15 y las nuevas F-16 (licencia), F-17 (priorización con predicciones inciertas), F-18 (familias de Gemini), F-19 (lectura de un pico como incidente; redefinida al acotar 5.9) y F-20 (sesgo del anotador). Al cerrar EPIC-5 (2026-10-23) se calificaron F-16 a F-18 y F-20, bajo el umbral, y F-15 y F-19 se asignaron a EPIC-7. La calificación del *Label Noise Bias* quedó confirmada con el oro *test* (M4 pierde 5 de 212 quejas; RPN 60). Lista de partida:
 
 * licencia no comercial de los checkpoints de `pysentimiento` (P8-2);
 * corpus completo en un dataset privado de Kaggle (P7-1), cubierto por F-14;

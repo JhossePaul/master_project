@@ -101,7 +101,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * queda abierto evaluar un segundo visto bueno.
 * **Sin descarga de texto:** la exportación es solo de agregados. Los accesos quedan en Cloud Audit Logs (API y *data access* de BigQuery).
 * **FMEA:**
-  * el Explorador amplía quién lee reseñas, más allá de los revisores HITL: fila F-15 de la [matriz](../governance/ethical_fmea_matrix.md), con F-01 (nombres que la regex no detecta) como riesgo base;
+  * el Explorador amplía quién lee reseñas, más allá de los revisores HITL: fila F-15 de la [matriz](../governance/ethical_fmea_matrix.md), con F-01 (nombres que la regex no detecta) como riesgo base. Asignada a esta épica al cerrar EPIC-5 (2026-10-23), con RPN 50 de partida; se califica al implementar 7.2 y 7.6;
   * el comentario del revisor ya está considerado en el esquema.
 * **Terminado cuando:** un usuario sin rol no ve nada; un lector no puede pedir texto ni por la API; cada cambio de configuración aparece en el historial (7.10).
 
@@ -141,7 +141,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * quejas con 4–5★;
   * alertas de deriva abiertas.
 * **Gráficas interactivas:**
-  * serie diaria de sentimiento y de *gap* por banco (proporciones crudas, P8-10, rotuladas como tales). Junto a cada día se muestra el top 5 de familias y el top 5 de tópicos útiles de sus negativas, con su participación del día y su participación habitual de los 28 días previos (5.9, P9-4; vista `daily_topic_labels`). Van las dos listas; la forma visual (*hover*, panel lateral al elegir un día u otra) se decide al diseñar 7.5. Se aclara que es una descripción, no un diagnóstico (F-19);
+  * serie diaria de sentimiento y de *gap* por banco (proporciones crudas, P8-10, rotuladas como tales). Junto a cada día se muestra el top 5 de familias y el top 5 de tópicos útiles de sus negativas, con su participación del día y su participación habitual de los 28 días previos (5.9, P9-4; vista `daily_topic_labels`). Van las dos listas; la forma visual (*hover*, panel lateral al elegir un día u otra) se decide al diseñar 7.5. Se aclara que es una descripción, no un diagnóstico (F-19, asignada a esta épica al cerrar EPIC-5, 2026-10-23, con RPN 84 de partida; se califica al implementar 7.5);
   * KPIs por banco y periodo con PPI e intervalo;
   * volumen de negativas por familia y marca `u`, en nivel y en anomalía (priorización de 5.6), como descripción y sin alertas;
   * tópicos vigentes con su tendencia;

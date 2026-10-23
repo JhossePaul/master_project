@@ -318,7 +318,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * `embeddings/emb_minilm.npy` con `keys.parquet` → `text_embeddings`, replicada por banco × mes;
   * sube a `ml_artifacts/` los pesos de `M4_robertuito_s1_ppi` y `model_v0`.
   * Las 99 reseñas sin predicción, el lote de 100 textos que Gemini no etiqueta y los textos posteriores al snapshot entran con el primer delta.
-* `backfill.py`: el pipeline de `voc_analytics.scale.backfill` sin constantes de proyecto, para el *re-scoring* al promover (P7-4, D5): `export(run: str)`, `dataset(run: str, user: str, update: bool)`, `kernel(user: str, batch: int, limit: int | None)`, `pull(run: str, user: str)` y `load(run: str, model_version: str)`. Los pesos salen del registro. Paralelizar el `preprocess_tweet` antes de subir (5.7, §9: 27 min en la CPU de Kaggle).
+* `backfill.py`: el pipeline de `voc_analytics.scale.backfill` sin constantes de proyecto, para el *re-scoring* al promover (P7-4, D5): `export(run: str)`, `dataset(run: str, user: str, update: bool)`, `kernel(user: str, batch: int, limit: int | None)`, `pull(run: str, user: str)`, `load(run: str, model_version: str)` y `cleanup(run: str, user: str)`. Los pesos salen del registro. Cada corrida sube su propio dataset privado (`voc-backfill-corpus-<corrida>`), y `cleanup` lo borra de Kaggle en cuanto `load` verifica la carga en BigQuery (conteos por `text_key` y por `model_version`); si la verificación falla, el dataset se queda y la corrida no se da por terminada (FMEA F-14, decisión del autor, 2026-10-23). Paralelizar el `preprocess_tweet` antes de subir (5.7, §9: 27 min en la CPU de Kaggle).
 * `seed.py`: `seed(settings: InferenceSettings, actor_hash: str, reason: str) -> None`. Inserta las versiones iniciales:
   * `model_versions`: `M4_robertuito_s1_ppi` promovido, con T 1.6811 y sus métricas en el oro *dev*;
   * `hitl_coverage_curves`: la curva de `s1` de `selective_v0_metrics.json` (5.6);
@@ -346,7 +346,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
     * la tabla temporal se borra aunque falle el `MERGE`;
     * un texto que Gemini omite queda pendiente.
   * `test_load_local.py`: parquet sintéticos con las columnas reales; la T se aplica y las probabilidades suman 1.
-  * `test_backfill.py`: `kaggle` simulado; el `EXPORT DATA` usa `TO_HEX(SHA256(texto_sanitizado))`.
+  * `test_backfill.py`: `kaggle` simulado; el `EXPORT DATA` usa `TO_HEX(SHA256(texto_sanitizado))`; `cleanup` borra el dataset de la corrida solo después de una carga verificada.
   * `test_registry.py`: `aiplatform` simulado; `promote` mueve el alias y escribe en `model_versions`.
 * CI: `voc-nlp` y `ml-inference` en el job de calidad con su piso de cobertura, y un job de imagen (import de prueba, usuario 10001).
 

@@ -2,7 +2,7 @@
 
 El proyecto se divide en **7 épicas técnicas** para construir y desplegar en Google Cloud Platform (GCP) el motor analítico de NLP: medir el sentimiento real del texto separado de las estrellas (*Label Noise Bias*, sesgo de *Obligatory 5-Star*), detectar y priorizar incidencias, y exponerlo con revisión humana (HITL) bajo lineamientos de *Ethics by Design*.
 
-* **Estado (2026-10-22):** EPIC-1 a EPIC-4 cerradas; EPIC-5 en curso (5.1 a 5.9 cerradas; faltan sus criterios de cierre); EPIC-6 y EPIC-7 pendientes. Lo que falta decidir antes de montar la infraestructura está en el [registro de decisiones](epic_5.md#decisiones-pendientes).
+* **Estado (2026-10-23):** EPIC-1 a EPIC-4 cerradas; EPIC-5 cerrada (2026-10-23); EPIC-6 detallada y pendiente de implementar; EPIC-7 pendiente. Lo que falta decidir antes de montar la infraestructura está en el [registro de decisiones](epic_5.md#decisiones-pendientes).
 * **Reorganización (2026-10-22):** se agregó EPIC-6 (despliegue del core analítico), que absorbe la antigua fase 3 de EPIC-5 (`epic_5_deployment.md`) y los cambios a los contratos de EPIC-1 y a la infraestructura de EPIC-2. El portal pasó de EPIC-6 a EPIC-7 (features 6.x → 7.x). El cierre de EPIC-1 a EPIC-4, que estaba en `closure_epics_1_4.md`, quedó en la sección [Cierre de las épicas 1 a 4](#cierre-de-las-épicas-1-a-4).
 
 ---
@@ -15,7 +15,7 @@ El proyecto se divide en **7 épicas técnicas** para construir y desplegar en G
 | **EPIC-2** | Infraestructura *serverless* y seguridad en GCP (Pulumi) | **Cerrada** | `infra/` | [`epic_2.md`](epic_2.md) |
 | **EPIC-3** | Ingesta multibanco reanudable desde Google Play (`batchexecute`) | **Cerrada** | `services/ingestion-worker/`, `experiments/playstore/` | [`epic_3.md`](epic_3.md) |
 | **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
-| **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **En curso** (5.1–5.9 cerradas; faltan los criterios de cierre) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
+| **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **Cerrada** (2026-10-23) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
 | **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **Pendiente** (5.8 aprobada; se detalla al empezar) | `packages/voc-common/`, `infra/`, `services/ml-*/` | [`epic_6.md`](epic_6.md) |
 | **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Pendiente** | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/` | [`epic_7.md`](epic_7.md) |
 
@@ -113,7 +113,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado:** **Pendiente.** El registro de decisión de EPIC-5 (5.8) se aprobó el 2026-10-22; las features se detallan a partir de él al empezar.
+* **Estado:** **Pendiente de implementar.** Features 6.1 a 6.4 detalladas el 2026-10-23 a partir del registro de decisión de EPIC-5 (5.8).
 * **Objetivo técnico:** llevar a producción la estrategia de 5.8 con un backfill único y un delta diario.
 * **Alcance:** contratos de predicción v3 en `voc-common` (6.1), tablas de salida y de curaduría en Pulumi (6.2), servicio de inferencia batch con `MERGE` y alertas (6.3), y monitor de *drift* y ciclo de vida de modelos (6.4).
 

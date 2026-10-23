@@ -26,6 +26,11 @@ Pasos (cada uno es un subcomando):
 La carga a BigQuery (`review_predictions`, esquema v3) queda para EPIC-6
 (6.2 y 6.3), con la aprobación del autor.
 
+El dataset `voc-backfill-corpus` de la corrida `20261022` se borró de Kaggle
+el 2026-10-23, al cerrar EPIC-5 (F-14). En EPIC-6 (6.3), cada *re-scoring*
+sube su propio dataset (`voc-backfill-corpus-<corrida>`) y lo borra en cuanto
+la carga en BigQuery queda verificada (decisión del autor, 2026-10-23).
+
     .venv/bin/python \\
         experiments/analytics/src/voc_analytics/scale/backfill.py \\
         export --run 20261022
