@@ -27,7 +27,7 @@ class EligibilityCode(StrEnum):
 
 
 class TopicEligibilityCode(StrEnum):
-    """Reglas de la tarea de familias y tópicos (k = 1 en ``TOPIC_TOO_SHORT``)."""
+    """Reglas de familias y tópicos (k = 1 en ``TOPIC_TOO_SHORT``)."""
 
     ELEGIBLE = "ELEGIBLE"
     TOPIC_TNSS_NOT_PREDICTED = "TOPIC_TNSS_NOT_PREDICTED"
@@ -120,6 +120,15 @@ class HitlStatus(StrEnum):
 class ReviewOutcome(StrEnum):
     CONFIRMED = "confirmed"
     CORRECTED = "corrected"
+
+
+class ReviewFlag(StrEnum):
+    """Marcas del revisor de sentimiento (guía ``v2.2``)."""
+
+    MENCIONA_FALLA = "menciona_falla"
+    DUDA = "duda"
+    NO_EVALUABLE = "no_evaluable"
+    NOMBRE_PERSONA = "nombre_persona"
 
 
 class GoldSplit(StrEnum):

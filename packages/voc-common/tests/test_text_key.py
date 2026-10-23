@@ -6,7 +6,9 @@ from voc_common.text_utils import text_key
 # Calculado con ``TO_HEX(SHA256(texto))`` (bytes UTF-8 del STRING); el texto es
 # sintético, con acentos, emoji y un token de sanitización.
 _SYNTHETIC = "La app no abre 😡, ¿por qué? [PERSONA] ñandú"
-_SYNTHETIC_KEY = "fcb00c89f1bdf6eea3da9c092ea52ad4d3582b105934f9fa0174c5e3fe1eacdf"
+_SYNTHETIC_KEY = (
+    "fcb00c89f1bdf6eea3da9c092ea52ad4d3582b105934f9fa0174c5e3fe1eacdf"
+)
 
 
 def test_text_key_matches_bigquery_sha256() -> None:

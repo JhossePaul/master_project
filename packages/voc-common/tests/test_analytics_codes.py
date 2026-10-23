@@ -21,6 +21,7 @@ from voc_common.analytics_codes import (
     ModelStatus,
     QualitySignal,
     QualityStatus,
+    ReviewFlag,
     ReviewOutcome,
     RunEnvironment,
     RunKind,
@@ -30,7 +31,8 @@ from voc_common.analytics_codes import (
 from voc_common.constants import SentimentLabel
 
 _RULES_DOC = (
-    Path(__file__).resolve().parents[3] / "docs/analytics/eda/eligibility_rules.md"
+    Path(__file__).resolve().parents[3]
+    / "docs/analytics/eda/eligibility_rules.md"
 )
 
 
@@ -76,9 +78,20 @@ _RULES_DOC = (
         (DisplayMode, ["blind", "assisted"]),
         (
             HitlStatus,
-            ["queued", "assigned", "in_review", "submitted", "skipped", "expired"],
+            [
+                "queued",
+                "assigned",
+                "in_review",
+                "submitted",
+                "skipped",
+                "expired",
+            ],
         ),
         (ReviewOutcome, ["confirmed", "corrected"]),
+        (
+            ReviewFlag,
+            ["menciona_falla", "duda", "no_evaluable", "nombre_persona"],
+        ),
         (GoldSplit, ["dev", "muestra_v21"]),
         (RunKind, ["backfill", "delta", "rescoring"]),
         (RunEnvironment, ["kaggle", "cloudrun", "local"]),
@@ -99,7 +112,9 @@ _RULES_DOC = (
         (ExplanationSource, ["precomputed_hitl", "on_demand"]),
     ],
 )
-def test_enum_values_match_schema_v3(enum: type[StrEnum], values: list[str]) -> None:
+def test_enum_values_match_schema_v3(
+    enum: type[StrEnum], values: list[str]
+) -> None:
     assert [member.value for member in enum] == values
 
 
@@ -111,5 +126,7 @@ def test_sentiment_value_extends_the_three_model_classes() -> None:
 @pytest.mark.skipif(not _RULES_DOC.exists(), reason="docs/ fuera del checkout")
 def test_eligibility_codes_follow_the_rules_document_order() -> None:
     text = _RULES_DOC.read_text(encoding="utf-8")
-    approved = re.findall(r"^\| \d \| `(TNSS_[A-Z_]+)` \|", text, flags=re.MULTILINE)
+    approved = re.findall(
+        r"^\| \d \| `(TNSS_[A-Z_]+)` \|", text, flags=re.MULTILINE
+    )
     assert approved == [code.value for code in EligibilityCode][1:]
