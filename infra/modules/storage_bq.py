@@ -1,7 +1,7 @@
 """Data Lake temporal y tablas TDS: nunca se crea una tabla de PII cruda."""
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pulumi
 import pulumi_gcp as gcp
@@ -13,10 +13,10 @@ class StorageAndBqResources:
     datalake_bucket: gcp.storage.Bucket
     dataset: gcp.bigquery.Dataset
     sanitized_reviews_tds: gcp.bigquery.Table
-    delora_predictions: gcp.bigquery.Table
     ingestion_runs_log: gcp.bigquery.Table
-    hitl_triage_audit_log: gcp.bigquery.Table
     storage_layout: IngestionStorageLayout
+    # APIs y, con CMEK, el permiso del agente de BigQuery sobre la llave.
+    bq_deps: list[pulumi.Resource] = field(default_factory=list)
 
 
 def _schema(
@@ -50,23 +50,6 @@ _SANITIZED = (
     # Captura en el origen: desempata revisiones con igual fecha (EPIC-4 D1).
     ("source_observed_at", "TIMESTAMP", "REQUIRED"),
 )
-_PREDICTIONS = (
-    ("id_resena", "STRING", "REQUIRED"),
-    ("bank_id", "STRING", "REQUIRED"),
-    ("version_app", "STRING", "REQUIRED"),
-    ("fecha", "TIMESTAMP", "REQUIRED"),
-    ("estrellas", "INTEGER", "REQUIRED"),
-    ("votos_utilidad", "INTEGER", "REQUIRED"),
-    ("sentimiento_roberta", "STRING", "REQUIRED"),
-    ("tnss_score", "STRING", "REQUIRED"),
-    ("tnss_numeric_calibrated", "FLOAT", "REQUIRED"),
-    ("is_obligatory_5_star_bias", "BOOLEAN", "REQUIRED"),
-    ("topico", "STRING", "REQUIRED"),
-    ("priority_weight_score", "FLOAT", "REQUIRED"),
-    ("prediction_entropy", "FLOAT", "REQUIRED"),
-    ("requires_hitl", "BOOLEAN", "REQUIRED"),
-    ("embedding_vector", "FLOAT", "REPEATED"),
-)
 _INGESTION_RUNS = (
     ("audit_event_id", "STRING", "REQUIRED"),
     ("schema_version", "INTEGER", "REQUIRED"),
@@ -89,18 +72,45 @@ _INGESTION_RUNS = (
     ("reviews_discarded", "INTEGER", "NULLABLE"),
     ("recovery_requests", "INTEGER", "NULLABLE"),
 )
-_AUDIT = (
-    ("audit_id", "STRING", "REQUIRED"),
-    ("id_resena", "STRING", "REQUIRED"),
-    ("bank_id", "STRING", "REQUIRED"),
-    ("original_tnss", "STRING", "REQUIRED"),
-    ("validated_tnss", "STRING", "REQUIRED"),
-    ("original_topic", "STRING", "REQUIRED"),
-    ("validated_topic", "STRING", "REQUIRED"),
-    ("reviewer_email_hash", "STRING", "REQUIRED"),
-    ("backlog_jira_ticket", "STRING", "NULLABLE"),
-    ("reviewed_at", "TIMESTAMP", "REQUIRED"),
-)
+# Prefijos del bucket con borrado a 7 días: staging crudo, Beam y las
+# exportaciones del backfill en Kaggle (``backfill/<corrida>/``, D5 de EPIC-6).
+# ``ml_artifacts/`` (pesos de M4 y modelo de tópicos) no caduca.
+BACKFILL_PREFIX = "backfill"
+ML_ARTIFACTS_PREFIX = "ml_artifacts"
+
+
+def bq_table(
+    name: str,
+    *,
+    project_id: str,
+    dataset: gcp.bigquery.Dataset,
+    fields: tuple[tuple[str, str, str], ...],
+    kms_key_id: pulumi.Input[str] | None,
+    is_dev: bool,
+    deps: list[pulumi.Resource],
+    clustering: list[str] | None = None,
+    partition_field: str | None = None,
+    partition_type: str = "DAY",
+) -> gcp.bigquery.Table:
+    """Tabla del dataset TDS; sin ``partition_field`` no se particiona."""
+    return gcp.bigquery.Table(
+        name,
+        project=project_id,
+        dataset_id=dataset.dataset_id,
+        table_id=name,
+        schema=_schema(fields),
+        deletion_protection=not is_dev,
+        time_partitioning=(
+            {"type": partition_type, "field": partition_field}
+            if partition_field
+            else None
+        ),
+        clusterings=clustering or None,
+        encryption_configuration=(
+            {"kms_key_name": kms_key_id} if kms_key_id is not None else None
+        ),
+        opts=pulumi.ResourceOptions(depends_on=[dataset, *deps]),
+    )
 
 
 def create_storage_and_bq_resources(
@@ -112,7 +122,10 @@ def create_storage_and_bq_resources(
     environment: str = "dev",
     storage_layout: IngestionStorageLayout | None = None,
 ) -> StorageAndBqResources:
-    """Aprovisiona staging con caducidad y cuatro tablas curadas/auditoría."""
+    """Aprovisiona staging con caducidad, el TDS y la auditoría de corridas.
+
+    Las tablas analíticas v3 las crea ``analytics_bq`` (EPIC-6, 6.2).
+    """
     layout = storage_layout or IngestionStorageLayout()
     is_dev = environment.strip().lower() == "dev"
     bucket_deps = list(api_deps)
@@ -158,6 +171,7 @@ def create_storage_and_bq_resources(
                     "matches_prefixes": [
                         layout.gcs_raw_staging_prefix + "/",
                         "temp_beam/",
+                        BACKFILL_PREFIX + "/",
                     ],
                 },
             }
@@ -182,23 +196,16 @@ def create_storage_and_bq_resources(
         clustering: list[str] | None = None,
         partition_field: str | None = None,
     ) -> gcp.bigquery.Table:
-        return gcp.bigquery.Table(
+        return bq_table(
             name,
-            project=project_id,
-            dataset_id=dataset.dataset_id,
-            table_id=name,
-            schema=_schema(fields),
-            deletion_protection=not is_dev,
-            time_partitioning=(
-                {"type": "DAY", "field": partition_field}
-                if partition_field
-                else None
-            ),
-            clusterings=clustering,
-            encryption_configuration=(
-                {"kms_key_name": kms_key_id} if kms_key_id is not None else None
-            ),
-            opts=pulumi.ResourceOptions(depends_on=[dataset, *bq_deps]),
+            project_id=project_id,
+            dataset=dataset,
+            fields=fields,
+            kms_key_id=kms_key_id,
+            is_dev=is_dev,
+            deps=bq_deps,
+            clustering=clustering,
+            partition_field=partition_field,
         )
 
     return StorageAndBqResources(
@@ -211,17 +218,11 @@ def create_storage_and_bq_resources(
             "fecha",
         ),
         table(
-            "delora_predictions",
-            _PREDICTIONS,
-            ["bank_id", "topico", "tnss_score"],
-            "fecha",
-        ),
-        table(
             "ingestion_runs_log_v2",
             _INGESTION_RUNS,
             ["bank_id", "run_id", "status"],
             "updated_at",
         ),
-        table("hitl_triage_audit_log", _AUDIT),
         layout,
+        bq_deps,
     )

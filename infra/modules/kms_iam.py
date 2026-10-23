@@ -114,11 +114,16 @@ def create_datalake_access(
     security: SecurityResources,
     api_deps: list[pulumi.Resource],
 ) -> list[gcp.storage.BucketIAMMember]:
-    """Grants aditivos de objetos solo en el bucket, sin administrar su IAM."""
+    """Grants aditivos de objetos solo en el bucket, sin administrar su IAM.
+
+    ``voc-sa-ml-backend`` lee los pesos de ``ml_artifacts/`` y escribe las
+    exportaciones de ``backfill/`` (EPIC-6, 6.2).
+    """
     grants = []
     for label, account in (
         ("ingestion", security.sa_ingestion_worker),
         ("sanitization", security.sa_sanitization_worker),
+        ("ml-backend", security.sa_ml_and_backend),
     ):
         grants.append(
             gcp.storage.BucketIAMMember(

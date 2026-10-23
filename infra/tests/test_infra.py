@@ -9,6 +9,8 @@ import pulumi
 import pytest
 
 from infra.tests.conftest import (
+    BQ_TABLES,
+    BQ_VIEWS,
     WORKLOAD_CONFIG,
     InfrastructureMonitor,
     assert_acyclic,
@@ -45,14 +47,11 @@ def test_bigquery_tables_privacy_and_partitioning(
     dev_stack: dict[str, dict[str, Any]],
 ) -> None:
     tables = {
-        name: state for name, state in dev_stack.items() if "tableId" in state
+        name: state for name, state in dev_stack.items() if "schema" in state
     }
-    assert set(tables) == {
-        "sanitized_reviews_tds",
-        "delora_predictions",
-        "ingestion_runs_log_v2",
-        "hitl_triage_audit_log",
-    }
+    views = {name for name, state in dev_stack.items() if "view" in state}
+    assert set(tables) == BQ_TABLES
+    assert views == BQ_VIEWS
     for state in tables.values():
         columns = {field["name"] for field in json.loads(state["schema"])}
         assert (
@@ -136,7 +135,11 @@ def test_datalake_lifecycle_rule(
             "action": {"type": "Delete"},
             "condition": {
                 "age": 7,
-                "matchesPrefixes": ["raw_staging/", "temp_beam/"],
+                "matchesPrefixes": [
+                    "raw_staging/",
+                    "temp_beam/",
+                    "backfill/",
+                ],
             },
         }
     ]

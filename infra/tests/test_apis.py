@@ -52,24 +52,20 @@ def _assert_resources(
 
 
 @pytest.mark.parametrize("cmek", [False, True])
-@pytest.mark.parametrize("vertex", [False, True])
 @pytest.mark.parametrize("vertex_api", [False, True])
 @pulumi.runtime.test
 def test_api_flags_and_destroy_policy(
-    cmek: bool, vertex: bool, vertex_api: bool
+    cmek: bool, vertex_api: bool
 ) -> pulumi.Output[Any]:
     expected = set(_BASE_APIS)
     if cmek:
         expected.add("cloudkms.googleapis.com")
-    if vertex or vertex_api:
+    if vertex_api:
         expected.add("aiplatform.googleapis.com")
-    if vertex:
-        expected.add("dataflow.googleapis.com")
     return _assert_resources(
         enable_project_apis(
             _PROJECT,
             enable_cmek=cmek,
-            enable_vertex=vertex,
             enable_vertex_ai_api=vertex_api,
         ),
         expected,
@@ -85,22 +81,15 @@ def test_pulumi_entrypoint_reads_stack_flags(
         {
             "gcp:project": _PROJECT,
             "bbva-voc-infra:enable_cmek": str(enabled).lower(),
-            "bbva-voc-infra:enable_dedicated_vertex_endpoints": str(
-                enabled
-            ).lower(),
+            # Flag retirado en EPIC-6 (P8-6): ya no crea endpoints ni Dataflow.
+            "bbva-voc-infra:enable_dedicated_vertex_endpoints": "true",
         }
     )
     entrypoint = Path(__file__).resolve().parents[1] / "__main__.py"
     program = runpy.run_path(str(entrypoint))
     expected = set(_BASE_APIS)
     if enabled:
-        expected.update(
-            {
-                "cloudkms.googleapis.com",
-                "aiplatform.googleapis.com",
-                "dataflow.googleapis.com",
-            }
-        )
+        expected.add("cloudkms.googleapis.com")
     return _assert_resources(program["project_apis"], expected)
 
 

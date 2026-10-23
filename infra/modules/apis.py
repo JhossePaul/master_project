@@ -18,22 +18,19 @@ _BASE_APIS: tuple[str, ...] = (
 def enable_project_apis(
     project_id: str,
     enable_cmek: bool = False,
-    enable_vertex: bool = False,
     enable_vertex_ai_api: bool = False,
 ) -> dict[str, gcp.projects.Service]:
     """Devuelve recursos por API para dependencias de módulos posteriores.
 
-    `enable_vertex_ai_api` solo habilita la API (p. ej., Gemini para el
-    etiquetado de EPIC-5), sin endpoints ni Dataflow. Ambos flags comparten el
-    recurso `api-aiplatform`, así que pasar de uno a otro no lo reemplaza.
+    `enable_vertex_ai_api` habilita la API de Vertex AI (Gemini y Model
+    Registry), sin endpoints dedicados: se retiraron con el índice de 768
+    dimensiones (P8-6, EPIC-6).
     """
     apis = list(_BASE_APIS)
     if enable_cmek:
         apis.append("cloudkms.googleapis.com")
-    if enable_vertex or enable_vertex_ai_api:
+    if enable_vertex_ai_api:
         apis.append("aiplatform.googleapis.com")
-    if enable_vertex:
-        apis.append("dataflow.googleapis.com")
 
     return {
         api: gcp.projects.Service(

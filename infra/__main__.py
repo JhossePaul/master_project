@@ -1,4 +1,4 @@
-"""Entrada Pulumi: datos, cómputo y orquestación (Features 2.1–2.5)."""
+"""Entrada Pulumi: datos, cómputo y orquestación (EPIC-2 y EPIC-6, 6.2)."""
 
 import json
 
@@ -9,6 +9,7 @@ from voc_common.config import (
     IngestionStorageLayout,
 )
 
+from infra.modules.analytics_bq import create_analytics_bq
 from infra.modules.apis import enable_project_apis
 from infra.modules.cloud_run import (
     ARTIFACT_REPOSITORY_ID,
@@ -26,15 +27,13 @@ from infra.modules.kms_iam import (
 )
 from infra.modules.pubsub import create_pubsub_resources
 from infra.modules.storage_bq import create_storage_and_bq_resources
-from infra.modules.vertex_ai import create_vertex_resources
 
 gcp_config = pulumi.Config("gcp")
 config = pulumi.Config("bbva-voc-infra")
 project_id = gcp_config.require("project")
 region = gcp_config.get("region") or "us-central1"
 enable_cmek = config.get_bool("enable_cmek") or False
-enable_vertex = config.get_bool("enable_dedicated_vertex_endpoints") or False
-# Solo la API de Vertex AI (Gemini), sin endpoints dedicados ni costo fijo.
+# Solo la API de Vertex AI (Gemini y Model Registry), sin endpoints dedicados.
 enable_vertex_ai_api = config.get_bool("enable_vertex_ai_api") or False
 free_tier = config.get_bool("free_tier_mode")
 free_tier = True if free_tier is None else free_tier
@@ -60,7 +59,6 @@ storage_layout = IngestionStorageLayout.model_validate(
 project_apis = enable_project_apis(
     project_id,
     enable_cmek=enable_cmek,
-    enable_vertex=enable_vertex,
     enable_vertex_ai_api=enable_vertex_ai_api,
 )
 security = create_security_resources(
@@ -84,6 +82,13 @@ storage_bq = create_storage_and_bq_resources(
     list(project_apis.values()),
     environment=environment,
     storage_layout=storage_layout,
+)
+analytics_bq = create_analytics_bq(
+    project_id,
+    storage_bq.dataset,
+    security.kms_crypto_key_id,
+    is_dev=environment.strip().lower() == "dev",
+    deps=storage_bq.bq_deps,
 )
 storage_access = create_datalake_access(
     storage_bq.datalake_bucket,
@@ -109,6 +114,7 @@ if deploy_workloads:
             "sanitization_job": config.require("sanitization_job_image"),
             "api_backend": config.get("api_backend_image"),
             "historical_job": config.get("historical_job_image"),
+            "ml_inference": config.get("ml_inference_image"),
         }
     )
     cloud_run = create_cloud_run_resources(
@@ -127,7 +133,6 @@ if deploy_workloads:
         user_hash_salt=user_hash_salt,
         environment=environment,
         free_tier_mode=free_tier,
-        enable_vertex=enable_vertex,
         scraper_proxy_pool_urls=proxies.apply(json.dumps)
         if proxies is not None
         else None,
@@ -143,15 +148,15 @@ if deploy_workloads:
             *project_apis.values(),
             cloud_run.ingestion_invoker,
             cloud_run.sanitization_invoker,
+            *cloud_run.ml_invokers,
         ],
+        ml_delta_job_name=(
+            cloud_run.ml_delta_job.name if cloud_run.ml_delta_job else None
+        ),
+        ml_monitor_job_name=(
+            cloud_run.ml_monitor_job.name if cloud_run.ml_monitor_job else None
+        ),
     )
-vertex = create_vertex_resources(
-    project_id,
-    region,
-    storage_bq.datalake_bucket.name,
-    enable_vertex,
-    api_deps=list(project_apis.values()),
-)
 
 pulumi.export("project_id", project_id)
 pulumi.export("enabled_apis", sorted(project_apis))
@@ -179,11 +184,17 @@ pulumi.export("pubsub_alerts_subscription", pubsub.alerts_subscription.id)
 pulumi.export(
     "bq_sanitized_tds_table", storage_bq.sanitized_reviews_tds.table_id
 )
-pulumi.export("bq_predictions_table", storage_bq.delora_predictions.table_id)
 pulumi.export(
     "bq_ingestion_runs_log_table", storage_bq.ingestion_runs_log.table_id
 )
-pulumi.export("bq_hitl_audit_table", storage_bq.hitl_triage_audit_log.table_id)
+pulumi.export(
+    "bq_analytics_tables",
+    {name: table.table_id for name, table in analytics_bq.tables.items()},
+)
+pulumi.export(
+    "bq_analytics_views",
+    {name: view.table_id for name, view in analytics_bq.views.items()},
+)
 pulumi.export("deploy_workloads", deploy_workloads)
 pulumi.export("artifact_registry_id", repository.id)
 pulumi.export(
@@ -198,8 +209,8 @@ if cloud_run is not None:
     pulumi.export("ingestion_history_job_id", cloud_run.historical_job.id)
     pulumi.export("ingestion_history_job_name", cloud_run.historical_job_name)
     pulumi.export("ingestion_history_job_region", region)
+    if cloud_run.ml_delta_job is not None:
+        pulumi.export("ml_delta_job_id", cloud_run.ml_delta_job.id)
+    if cloud_run.ml_monitor_job is not None:
+        pulumi.export("ml_monitor_job_id", cloud_run.ml_monitor_job.id)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])
-pulumi.export(
-    "vertex_endpoint_id", vertex.endpoint.id if vertex.endpoint else None
-)
-pulumi.export("vertex_index_id", vertex.index.id if vertex.index else None)
