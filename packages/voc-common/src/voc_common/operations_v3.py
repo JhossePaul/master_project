@@ -1,8 +1,8 @@
 """Operación del esquema v3: modelos, corridas, deriva, KPI, calidad y oro.
 
 Una clase por tabla de ``bbva_voc_tds`` más el mensaje de Pub/Sub de las
-alertas de deriva (``DriftAlertMessage``), que reemplaza a
-``IncidentAlertMessage`` y no lleva texto ni PII.
+alertas de deriva (``DriftAlertMessage``), que reemplaza a la alerta de
+incidentes de EPIC-1 y no lleva texto ni PII.
 """
 
 from typing import Literal, Self

@@ -8,8 +8,6 @@ del ``userName`` de Google Play.
 import hashlib
 import re
 
-from voc_common.constants import MAX_REVIEW_WORDS, MIN_REVIEW_WORDS
-
 _URL_REGEX = re.compile(r"http\S+|www\S+|https\S+", flags=re.MULTILINE)
 # Menciones completas (@usuario) y hashtags completos (#etiqueta) o '#' suelto.
 _MENTION_HASHTAG_REGEX = re.compile(r"@\w+|#\w*")
@@ -44,14 +42,6 @@ def contar_palabras(texto: str) -> int:
     if not stripped:
         return 0
     return len(stripped.split())
-
-
-def cumple_umbral_palabras(texto: str) -> bool:
-    """Indica si el texto está dentro del rango del EDA (2 a 60 palabras).
-
-    Solo para el análisis. La ingesta y el TDS no filtran por longitud.
-    """
-    return MIN_REVIEW_WORDS <= contar_palabras(texto) <= MAX_REVIEW_WORDS
 
 
 def text_key(texto_sanitizado: str) -> str:
