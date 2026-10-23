@@ -82,6 +82,7 @@ from voc_common.text_utils import (
     cumple_umbral_palabras,
     hash_username_pii,
     limpiar_texto_bancario,
+    text_key,
 )
 
 __all__ = [
@@ -159,4 +160,5 @@ __all__ = [
     "hash_username_pii",
     "limpiar_texto_bancario",
     "log_event",
+    "text_key",
 ]

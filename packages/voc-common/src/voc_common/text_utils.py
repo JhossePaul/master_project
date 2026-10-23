@@ -54,6 +54,16 @@ def cumple_umbral_palabras(texto: str) -> bool:
     return MIN_REVIEW_WORDS <= contar_palabras(texto) <= MAX_REVIEW_WORDS
 
 
+def text_key(texto_sanitizado: str) -> str:
+    """Clave del texto único del esquema v3: SHA-256 hexadecimal de UTF-8.
+
+    Coincide con ``TO_HEX(SHA256(texto_sanitizado))`` de BigQuery, que hashea
+    los bytes UTF-8 del ``STRING``. No normaliza: el texto se hashea tal como
+    vive en el TDS.
+    """
+    return hashlib.sha256(texto_sanitizado.encode("utf-8")).hexdigest()
+
+
 def hash_username_pii(username: str, salt: str) -> str:
     """Genera un digest SHA-256 irreversible a partir del userName y la sal."""
     normalized = f"{salt}:{username.strip().lower()}".encode()
