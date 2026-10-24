@@ -9,11 +9,6 @@ import pytest
 ACTOR = "b" * 64
 
 
-def test_monitor_is_a_no_op_until_6_4(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "_clients", lambda s: pytest.fail("no clients"))
-    assert cli.main(["monitor"]) == 0
-
-
 def test_actor_hash_must_be_sha256() -> None:
     with pytest.raises(SystemExit):
         cli.parser().parse_args(["seed", "--actor-hash", "x", "--reason", "r"])
@@ -36,6 +31,22 @@ def test_seed_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert cli.main(["seed", "--actor-hash", ACTOR, "--reason", "inicio"]) == 0
     assert env["seed"][3:5] == (ACTOR, "inicio")
+
+
+def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
+    import ml_inference.monitor.drift_job as drift
+
+    monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
+    monkeypatch.setattr(
+        drift, "close_boosts", lambda c, n: env.setdefault("close", c)
+    )
+    monkeypatch.setattr(
+        drift, "run_drift", lambda s, c, n: env.setdefault("drift", c)
+    )
+    assert cli.main(["monitor"]) == 0
+    assert env["close"] is env["drift"]
+    assert env["drift"].publish == "publish"
+    assert env["drift"].run_id.startswith("monitor_")
 
 
 def test_delta_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:

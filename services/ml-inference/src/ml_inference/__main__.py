@@ -4,7 +4,7 @@
 * ``seed``: versiones iniciales desde las métricas de EPIC-5 (autor).
 * ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
-* ``monitor``: el Job semanal de 6.4; hasta entonces no hace nada.
+* ``monitor``: el Job semanal de 6.4 (por ahora, deriva y cierre de subidas).
 """
 
 import argparse
@@ -74,18 +74,45 @@ def _clients(settings: InferenceSettings):  # pragma: no cover - red real
     )
 
 
+def _publisher(settings: InferenceSettings):  # pragma: no cover - red real
+    from google.cloud import pubsub_v1
+
+    client = pubsub_v1.PublisherClient()
+    topic = client.topic_path(settings.gcp_project_id, settings.drift_topic)
+
+    def publish(message) -> None:
+        data = message.model_dump_json().encode("utf-8")
+        client.publish(topic, data).result(timeout=60)
+
+    return publish
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parser().parse_args(argv)
     now = datetime.now(UTC)
-    if args.command == "monitor":
-        log.info("monitor: se implementa en 6.4; no hay nada que hacer")
-        return 0
     settings = InferenceSettings()  # type: ignore[call-arg]
     bigquery, storage = _clients(settings)
     from ml_inference.bq_io import StagingMergeWriter
 
     writer = StagingMergeWriter(bigquery, settings.dataset)
+    if args.command == "monitor":
+        from ml_inference.monitor.drift_job import (
+            BqDriftSource,
+            MonitorClients,
+            close_boosts,
+            run_drift,
+        )
+
+        clients = MonitorClients(
+            BqDriftSource(bigquery, settings.dataset),
+            writer,
+            _publisher(settings),
+            f"monitor_{now:%Y%m%dT%H%M%S}",
+        )
+        close_boosts(clients, now)
+        run_drift(settings, clients, now)
+        return 0
     if args.command == "delta":
         from voc_nlp.aspects import make_client
 

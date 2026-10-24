@@ -444,3 +444,8 @@ def seed_world(bq: FakeBigQuery) -> None:
     bq.rows("topic_model_versions").append(
         {"topic_model_version": "topics_v1", "fitted_at": NOW}
     )
+
+
+@pytest.fixture
+def fake_bq() -> FakeBigQuery:
+    return FakeBigQuery()

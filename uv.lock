@@ -2091,6 +2091,7 @@ source = { editable = "services/ml-inference" }
 dependencies = [
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery" },
+    { name = "google-cloud-pubsub" },
     { name = "google-cloud-storage" },
     { name = "pyarrow" },
     { name = "pydantic-settings" },
@@ -2102,6 +2103,7 @@ dependencies = [
 requires-dist = [
     { name = "google-cloud-aiplatform", specifier = ">=1.70,<2" },
     { name = "google-cloud-bigquery", specifier = ">=3.27,<4" },
+    { name = "google-cloud-pubsub", specifier = ">=2.23,<3" },
     { name = "google-cloud-storage", specifier = ">=2.19,<4" },
     { name = "pyarrow", specifier = ">=17" },
     { name = "pydantic-settings", specifier = ">=2.7,<3" },

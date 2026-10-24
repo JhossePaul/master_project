@@ -28,6 +28,8 @@ class InferenceSettings(BaseSettings):
     gemini_model: str = "gemini-3.6-flash"
     gemini_location: str = "global"
     torch_threads: int = Field(default=1, ge=1)
+    # Tópico de las alertas de deriva (nombre heredado de EPIC-2).
+    drift_topic: str = "voc-incident-alerts-topic"
 
     @property
     def dataset(self) -> str:

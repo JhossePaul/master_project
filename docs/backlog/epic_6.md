@@ -501,8 +501,16 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * `voc_nlp.ppi`: `ppi_mean` (PPI++ con λ en [0, 1], con pesos 1 / π del oro y del corpus por separado), `combine` (celdas pesadas por tamaño poblacional) y `gap_stars` (estrellas − texto, = −`brecha_neta` de 5.6). `Estimate` lleva también la versión solo-oro y la cruda del predictor (P8-10).
 * `voc_nlp.agreement`: `cohen_kappa` sin scikit-learn (igual a `cohen_kappa_score` con pesos), `exact_agreement` y su IC, y `family_kappa`. Cambio frente a la firma prevista: la regla de 5.7 juzga el κ de cada familia con prevalencia ≥ 5 % contra su IC, así que `prevalence_ci` se reemplazó por `family_kappa`.
 * Cobertura de `voc-nlp`: 100 % (108 pruebas).
+* `ml_inference.monitor.drift_job` y el comando `monitor` (cierra subidas y corre la deriva):
+  * dos consultas por corrida: `review_predictions_current` (palabras medias, una palabra, más de 60, no predecibles, `neg_share` sobre lo predicho y el histograma de `BINS`) y `review_aspects` (última etiqueta por reseña: `family_<código>` y `flag_update_share`);
+  * calcula solo las series que nombra la `drift_policy` del banco, desde el mes siguiente al de entrada (como 5.7) hasta el último mes cerrado, y solo los meses sin filas en `drift_metrics`; alerta con `|z|` ≥ umbral o PSI ≥ umbral;
+  * ids deterministas (`drift_<banco>_<mes>_<serie>`, `<alerta>_open`, `boost_<alerta>`) y `drift_metrics` se escribe al final: una corrida fallida se repite sin duplicar filas (el mensaje puede llegar dos veces);
+  * una subida por banco: si ya tiene una activa, la alerta la cita y no abre otra. `close_boosts` cierra con `expired` las vencidas y con `alert_closed` las de alertas descartadas (`dismissed`);
+  * `test_drift_job.py` cubre los criterios de la sección (cobertura de `ml-inference`: 98 %). Suma la dependencia `google-cloud-pubsub` y `drift_topic` en la configuración.
+* **Pendiente del autor:** `out_of_vocabulary_share` no se calcula, porque en producción no hay vocabulario de entrenamiento (5.7 lo armó con los textos de la plata). Opciones: una tabla `training_vocab` en BigQuery (cambio de contrato, 6.1) o un artefacto en `ml_artifacts` junto a los pesos. Mientras tanto la serie no escribe filas y no alerta.
+* **Pendiente de infraestructura:** `voc-sa-ml-backend` necesita `roles/pubsub.publisher` en `voc-incident-alerts-topic`; va con la suscripción de correo de D15.
 
-Sigue, en orden: `monitor/drift_job.py` (con `close_boosts`), `samples.py`, `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
+Sigue, en orden: `samples.py`, `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 
