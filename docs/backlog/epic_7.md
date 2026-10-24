@@ -212,6 +212,11 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Familias:** las revalidaciones de P7-11, con acuerdo exacto e IC por familia.
 * **Deriva de entrada y de predicción:** `drift_metrics` por banco y mes, con z o PSI contra el umbral de la `drift_policy` del banco.
 * **Registro de modelos:** versión promovida, candidatos, promociones y *rollbacks* (`model_versions`), y *re-scorings* (P7-4).
+* **Acciones sobre el modelo** (decisiones del autor, 2026-10-24; D25 y D26 de [EPIC-6](epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23)):
+  * **Reentrenar:** con `retrain_trigger = manual`, un botón que solo se habilita con el aviso `retrain` vigente y sin otro reentrenamiento en curso; ejecuta el Job de reentrenamiento (Kaggle) y registra quién y por qué;
+  * **Promover:** un botón por candidato con el *re-scoring* verificado; muestra la regla de promoción (diferencias de κ y macro-F1 con su IC) y la curva nueva antes de confirmar, y si la regla no pasa pide confirmación explícita y motivo;
+  * **Rollback:** desde el mismo panel, a una versión que ya estuvo promovida;
+  * la API ejecuta los Jobs de EPIC-6 (`jobs.run` de Cloud Run) con permiso solo sobre esos Jobs; las acciones quedan con el actor (hash) y el motivo.
 * **Salud del pipeline (AIOps):**
   * corridas de ingesta e inferencia (estado, duración, filas, costo);
   * frescura de los datos;
@@ -226,7 +231,8 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * la curva de cobertura y riesgo del modelo vigente (`hitl_coverage_curves`), con el punto vigente marcado;
   * para cada cobertura: error esperado entre lo aceptado, errores atrapados, revisiones por semana y minutos estimados con el tiempo medido (`seconds_spent`);
   * la cobertura objetivo (90 % por defecto, 5.6);
-  * los parámetros de reacción a la deriva, de monitoreo y de reentrenamiento (P7-6, P7-7, P7-10 y P7-11).
+  * los parámetros de reacción a la deriva, de monitoreo y de reentrenamiento (P7-6, P7-7, P7-10 y P7-11);
+  * el switch del disparo del reentrenamiento, `auto` o `manual` (`retrain_trigger`, D25 de EPIC-6), con la advertencia de que en `auto` el texto sale a Kaggle sin aprobación por corrida.
   * Muestra también las subidas activas por banco (`hitl_boosts`).
 * **Deriva por banco (`drift_policy`):** umbrales por serie y regla de entrada, con la tasa histórica de alerta que daría cada umbral (5.7) y la diferencia contra la plantilla.
 * **Ayuda en cada parámetro:** qué significa, qué decisión de EPIC-5 lo fijó y qué pasa si se sube o se baja, con la gráfica o la tabla que lo respalda.

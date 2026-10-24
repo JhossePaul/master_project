@@ -16,7 +16,7 @@ El proyecto se divide en **7 épicas técnicas** para construir y desplegar en G
 | **EPIC-3** | Ingesta multibanco reanudable desde Google Play (`batchexecute`) | **Cerrada** | `services/ingestion-worker/`, `experiments/playstore/` | [`epic_3.md`](epic_3.md) |
 | **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
 | **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **Cerrada** (2026-10-23) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
-| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **Pendiente** (5.8 aprobada; se detalla al empezar) | `packages/voc-common/`, `infra/`, `services/ml-*/` | [`epic_6.md`](epic_6.md) |
+| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **En curso** (6.1 y 6.2 desplegadas; código de 6.3 y 6.4 terminado, sin correr en dev; 6.5 por detallar) | `packages/voc-common/`, `packages/voc-nlp/`, `infra/`, `services/ml-inference/` | [`epic_6.md`](epic_6.md) |
 | **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Pendiente** | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/` | [`epic_7.md`](epic_7.md) |
 
 Orden: cada épica usa los contratos y recursos de las anteriores. EPIC-6 empieza al aprobarse el registro de decisión de EPIC-5 (5.8), y EPIC-7 lee lo que despliega EPIC-6.
