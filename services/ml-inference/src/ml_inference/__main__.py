@@ -5,6 +5,7 @@
 * ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
 * ``monitor``: el Job semanal de 6.4 (por ahora, deriva y cierre de subidas).
+* ``build-vocab``: sube una vez el vocabulario de entrenamiento (6.4).
 """
 
 import argparse
@@ -58,6 +59,10 @@ def parser() -> argparse.ArgumentParser:
     reg.add_argument("--kappa-dev", type=float)
     reg.add_argument("--ece-dev", type=float)
     reg.add_argument("--aurc-dev", type=float)
+    voc = sub.add_parser(
+        "build-vocab", help="sube el vocabulario de entrenamiento (6.4)"
+    )
+    voc.add_argument("--model-version", default=None)
     pro = sub.add_parser("promote", help="promueve una versión (o rollback)")
     pro.add_argument("--model-version", required=True)
     pro.add_argument("--actor-hash", type=_actor, required=True)
@@ -87,6 +92,19 @@ def _publisher(settings: InferenceSettings):  # pragma: no cover - red real
     return publish
 
 
+def _monitor_vocab(settings: InferenceSettings, bigquery, storage):
+    """Vocabulario del modelo promovido, o ``None`` si falta (sin OOV)."""
+    from ml_inference.state import NoPromotedModel, load_state
+    from ml_inference.vocab import load_vocab
+
+    try:
+        model = load_state(bigquery, settings.dataset).model.model_version
+        return load_vocab(settings, storage, model)
+    except (NoPromotedModel, FileNotFoundError) as exc:
+        log.warning("monitor: %s", exc)
+        return None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parser().parse_args(argv)
@@ -105,13 +123,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
         clients = MonitorClients(
-            BqDriftSource(bigquery, settings.dataset),
+            BqDriftSource(
+                bigquery,
+                settings.dataset,
+                settings.tds_table,
+                _monitor_vocab(settings, bigquery, storage),
+            ),
             writer,
             _publisher(settings),
             f"monitor_{now:%Y%m%dT%H%M%S}",
         )
         close_boosts(clients, now)
         run_drift(settings, clients, now)
+        return 0
+    if args.command == "build-vocab":
+        from ml_inference.seed import MODEL_VERSION
+        from ml_inference.vocab import build_vocab
+
+        words, digest = build_vocab(
+            settings, storage, args.model_version or MODEL_VERSION
+        )
+        log.info("build-vocab: %d palabras, sha256 %s", words, digest)
         return 0
     if args.command == "delta":
         from voc_nlp.aspects import make_client

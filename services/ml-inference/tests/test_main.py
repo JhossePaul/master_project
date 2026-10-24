@@ -37,6 +37,7 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.monitor.drift_job as drift
 
     monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
+    monkeypatch.setattr(cli, "_monitor_vocab", lambda s, b, g: frozenset({"a"}))
     monkeypatch.setattr(
         drift, "close_boosts", lambda c, n: env.setdefault("close", c)
     )
@@ -47,6 +48,43 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     assert env["close"] is env["drift"]
     assert env["drift"].publish == "publish"
     assert env["drift"].run_id.startswith("monitor_")
+    assert env["drift"].source.vocab == frozenset({"a"})
+
+
+def test_monitor_vocab_is_optional(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.vocab as vocab
+    from ml_inference.config import InferenceSettings
+
+    model = type("M", (), {"model_version": "m1"})()
+    monkeypatch.setattr(
+        state, "load_state", lambda b, d: type("S", (), {"model": model})()
+    )
+    settings = InferenceSettings()  # type: ignore[call-arg]
+
+    def missing(*a: Any) -> frozenset[str]:
+        raise FileNotFoundError("no vocabulary for m1")
+
+    monkeypatch.setattr(vocab, "load_vocab", lambda s, g, m: frozenset({m}))
+    assert cli._monitor_vocab(settings, "bq", "gcs") == frozenset({"m1"})
+    monkeypatch.setattr(vocab, "load_vocab", missing)
+    assert cli._monitor_vocab(settings, "bq", "gcs") is None
+
+
+def test_build_vocab_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.vocab as vocab
+
+    monkeypatch.setattr(
+        vocab,
+        "build_vocab",
+        lambda s, g, m: env.setdefault("m", m) and (3, "h"),
+    )
+    assert cli.main(["build-vocab"]) == 0
+    assert env["m"] == "robertuito_sentiment_v1"
 
 
 def test_delta_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:

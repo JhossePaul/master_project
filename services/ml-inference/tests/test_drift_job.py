@@ -315,6 +315,16 @@ class _Client:
         self.answers = answers
         self.sql: list[str] = []
 
+    def create_table(self, table: Any) -> None:
+        self.created = table.table_id
+
+    def load_table_from_json(self, rows: list, table_id: str, **_: Any) -> Any:
+        self.vocab_rows = rows
+        return _Job([])
+
+    def delete_table(self, table: str, **_: Any) -> None:
+        self.deleted = table
+
     def query(self, sql: str, job_config: Any = None, **_: Any) -> Any:
         self.sql.append(sql)
         rows = next((v for k, v in self.answers.items() if k in sql), [])
@@ -369,6 +379,36 @@ def test_bq_source_reads_and_merges_monthly_inputs() -> None:
     assert [b.boost_id for b in source.open_boosts()] == ["b1"]
     assert source.dismissed_alerts() == {"drift_x"}
     assert BqDriftSource(_Client({}), "p.ds").risk_policy() is None
+
+
+def test_bq_source_adds_out_of_vocabulary_share() -> None:
+    row = {
+        "bank_id": "bbva",
+        "period": "2026-06",
+        "n_rows": 300,
+        **{f"b{i}": n for i, n in enumerate(HIST)},
+    }
+    client = _Client(
+        {
+            "out_of_vocabulary_share": [
+                {
+                    "bank_id": "bbva",
+                    "period": "2026-06",
+                    "out_of_vocabulary_share": 0.03,
+                }
+            ],
+            "review_predictions_current": [row],
+        }
+    )
+    source = BqDriftSource(
+        client, "p.ds", "p.ds.tds", frozenset({"hola"}), clock=lambda: NOW
+    )
+    [month] = source.monthly(NOW)
+    assert month.values["out_of_vocabulary_share"] == 0.03
+    oov_sql = next(q for q in client.sql if "UNNEST(SPLIT" in q)
+    assert "`p.ds.tds`" in oov_sql and "`p.ds._vocab_20260708060000`" in oov_sql
+    assert client.vocab_rows == [{"word": "hola"}]
+    assert client.deleted == "p.ds._vocab_20260708060000"
 
 
 def test_generated_sql_uses_constants_and_parameters() -> None:

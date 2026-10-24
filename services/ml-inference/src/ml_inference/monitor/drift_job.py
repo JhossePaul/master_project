@@ -43,6 +43,7 @@ from voc_nlp.drift import BINS, entry_month, psi, robust_z
 
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
+from ml_inference.vocab import stage_vocab
 
 log = logging.getLogger(__name__)
 
@@ -345,6 +346,24 @@ GROUP BY bank_id, period
 ASPECTS_SQL: Final = _ASPECTS_TEMPLATE.replace("@@families@@", _families_sql())
 
 
+# Fracción de tokens (``texto_sanitizado`` en minúsculas, separado por espacio,
+# como en 5.7) que no están en el vocabulario de entrenamiento del modelo.
+OOV_SQL: Final = """
+SELECT
+  p.bank_id,
+  FORMAT_TIMESTAMP('%Y-%m', p.fecha) AS period,
+  AVG(IF(v.word IS NULL, 1, 0)) AS out_of_vocabulary_share
+FROM `${ds}.review_predictions_current` AS p
+JOIN `${tds}` AS t
+  ON t.id_resena = p.id_resena
+  AND TO_HEX(SHA256(t.texto_sanitizado)) = p.text_key
+CROSS JOIN UNNEST(SPLIT(LOWER(t.texto_sanitizado), ' ')) AS token
+LEFT JOIN `${vocab}` AS v ON v.word = token
+WHERE p.fecha < @before
+GROUP BY bank_id, period
+"""
+
+
 def _clean(row: Mapping[str, Any], model: type) -> dict[str, Any]:
     return {k: v for k, v in row.items() if k in model.model_fields}
 
@@ -355,9 +374,35 @@ class BqDriftSource:
 
     client: Any
     dataset: str
+    # Sin vocabulario (``training_vocab.txt`` del modelo), la serie
+    # ``out_of_vocabulary_share`` no se calcula.
+    tds: str | None = None
+    vocab: frozenset[str] | None = None
+    clock: Callable[[], datetime] = field(default=lambda: datetime.now(UTC))
 
-    def _rows(self, sql: str, **params: Any) -> list[dict[str, Any]]:
-        return query_rows(self.client, render(sql, ds=self.dataset), params)
+    def _rows(
+        self, sql: str, tables: Mapping[str, str] | None = None, **params: Any
+    ) -> list[dict[str, Any]]:
+        sql = render(sql, ds=self.dataset, **(tables or {}))
+        return query_rows(self.client, sql, params)
+
+    def _oov(self, before: datetime) -> dict[tuple[str, str], float]:
+        if self.vocab is None or self.tds is None:
+            log.warning(
+                "drift: sin vocabulario, out_of_vocabulary_share omitida"
+            )
+            return {}
+        table = stage_vocab(self.client, self.dataset, self.vocab, self.clock())
+        try:
+            rows = self._rows(
+                OOV_SQL, {"tds": self.tds, "vocab": table}, before=before
+            )
+        finally:
+            self.client.delete_table(table, not_found_ok=True)
+        return {
+            (r["bank_id"], r["period"]): float(r["out_of_vocabulary_share"])
+            for r in rows
+        }
 
     def policies(self) -> list[DriftPolicy]:
         return [
@@ -378,6 +423,7 @@ class BqDriftSource:
             (r["bank_id"], r["period"]): r
             for r in self._rows(ASPECTS_SQL, before=before)
         }
+        oov = self._oov(before)
         out = []
         for r in self._rows(
             INPUT_SQL, before=before, predictable=list(_NOT_PREDICTED_OK)
@@ -389,6 +435,8 @@ class BqDriftSource:
                 if k not in {"bank_id", "period", "n_rows"}
                 and not re.fullmatch(r"b\d", k)
             }
+            if key in oov:
+                values["out_of_vocabulary_share"] = oov[key]
             extra = aspects.get(key, {})
             values |= {
                 k: (None if v is None else float(v))
