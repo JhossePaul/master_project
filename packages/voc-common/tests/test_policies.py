@@ -47,6 +47,36 @@ def test_risk_policy_bounds(field: str, value: Any) -> None:
         RiskPolicy(**{**load("risk_policy"), field: value})
 
 
+_BUSINESS_FIELDS = (
+    "hitl_weekly_cap",
+    "drift_boost_coverage",
+    "drift_boost_days",
+    "drift_boost_weekly_cap",
+    "human_agreement_sample_size",
+    "human_agreement_frequency",
+)
+
+
+def test_business_parameters_are_null_until_configured() -> None:
+    data = {
+        k: v
+        for k, v in load("risk_policy").items()
+        if k not in _BUSINESS_FIELDS
+    }
+    policy = RiskPolicy(**data)
+    assert all(getattr(policy, name) is None for name in _BUSINESS_FIELDS)
+
+
+@pytest.mark.parametrize(
+    "missing", ["drift_boost_days", "human_agreement_frequency"]
+)
+def test_drift_boost_and_agreement_are_configured_together(
+    missing: str,
+) -> None:
+    with pytest.raises(ValidationError, match="all present or all null"):
+        RiskPolicy(**{**load("risk_policy"), missing: None})
+
+
 def test_drift_policy_round_trips_with_null_thresholds() -> None:
     policy = DriftPolicy(**load("drift_policy"))
     assert policy.thresholds.z["family_AC"] is None
@@ -132,4 +162,8 @@ def test_coverage_curve() -> None:
         )
     with pytest.raises(ValidationError, match="inside its interval"):
         CoveragePoint(**_point(0.9, risk=0.2))
+    full = CoveragePoint(**_point(1.0, risk_ci_low=None, risk_ci_high=None))
+    assert full.risk_ci_low is None
+    with pytest.raises(ValidationError, match="all present or all null"):
+        CoveragePoint(**_point(1.0, risk_ci_high=None))
     assert ACTOR

@@ -250,6 +250,7 @@ def _gold(**overrides: Any) -> GoldLabel:
         "id_resena": "synthetic-0001",
         "text_key": KEY,
         "label": "NEG",
+        "weight": 12.5,
         "guideline_version": "v2.2",
         "loaded_at": "2026-10-24T00:00:00Z",
     }
@@ -259,9 +260,11 @@ def _gold(**overrides: Any) -> GoldLabel:
 
 def _gold_aspects(**overrides: Any) -> GoldLabel:
     data: dict[str, Any] = {
-        "gold_version": "muestra_v21",
-        "split": "muestra_v21",
+        "gold_version": "aspects_gold_v2_1",
+        "split": "aspects_gold_v2_1",
         "task": "aspects",
+        "id_resena": None,
+        "weight": None,
         "label": None,
         "families": ["AC"],
         "flag_update": False,
@@ -286,3 +289,10 @@ def test_gold_labels() -> None:
         _gold_aspects(split="dev")
     with pytest.raises(ValidationError, match="sentiment or aspects only"):
         _gold(task="topic")
+    with pytest.raises(ValidationError, match="id_resena and weight"):
+        _gold(weight=None)
+    with pytest.raises(ValidationError, match="positive"):
+        _gold(weight=0)
+    with pytest.raises(ValidationError, match="design weight"):
+        _gold_aspects(weight=1.0)
+    assert _gold_aspects().id_resena is None

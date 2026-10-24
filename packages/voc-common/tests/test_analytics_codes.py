@@ -92,7 +92,7 @@ _RULES_DOC = (
             ReviewFlag,
             ["menciona_falla", "duda", "no_evaluable", "nombre_persona"],
         ),
-        (GoldSplit, ["dev", "muestra_v21"]),
+        (GoldSplit, ["dev", "aspects_gold_v2_1"]),
         (RunKind, ["backfill", "delta", "rescoring"]),
         (RunEnvironment, ["kaggle", "cloudrun", "local"]),
         (ModelStatus, ["candidate", "promoted", "retired"]),

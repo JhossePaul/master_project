@@ -21,8 +21,17 @@ members = ["packages/*", "services/*", "infra"]
 # entrada al implementar el paquete correspondiente.
 exclude = [
     "services/api-backend",
-    "services/ml-delora",
 ]
+
+# torch solo en CPU en Linux (CI e imagen de ml-inference, D4): las ruedas de
+# PyPI traen CUDA y pesan varios GB. En macOS la rueda de PyPI ya es de CPU.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 line-length = 80

@@ -135,7 +135,8 @@ class GoldSplit(StrEnum):
     """Partición del oro cargado en ``gold_labels`` (D10)."""
 
     DEV = "dev"
-    MUESTRA_V21 = "muestra_v21"
+    # 300 reseñas con familias de la guía v2.1 (EPIC-5: muestra_v21).
+    ASPECTS_GOLD_V2_1 = "aspects_gold_v2_1"
 
 
 # ---------------------------------------------------------------------------

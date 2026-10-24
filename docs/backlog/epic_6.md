@@ -4,14 +4,14 @@
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
-* **Antes de empezar:** el [registro de decisión de 5.8](../analytics/decision_record.md) está aprobado y las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) resueltas (2026-10-22). Ninguna feature espera a 5.9: el autor la acotó a lo descriptivo el 2026-10-22 y la detección de incidentes quedó fuera del alcance. 6.3 carga los backfills que dejó 5.9. Quedan [huecos de parámetros](#huecos-que-decide-el-autor) que el autor fija antes de sembrar las políticas.
+* **Antes de empezar:** el [registro de decisión de 5.8](../analytics/decision_record.md) está aprobado y las [incompatibilidades](epic_5.md#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia) resueltas (2026-10-22). Ninguna feature espera a 5.9: el autor la acotó a lo descriptivo el 2026-10-22 y la detección de incidentes quedó fuera del alcance. 6.3 carga los backfills que dejó 5.9. Los parámetros de apetito de riesgo sin evidencia se siembran nulos y los fija el dueño de negocio en 7.10 ([D12](#huecos-que-decide-el-autor)); el re-ajuste de tópicos y su emparejamiento se deciden en 6.4.
 * **Semanas Objetivo:** tras 5.8 y antes de [EPIC-7](epic_7.md).
 * **Dependencias:** [EPIC-5](epic_5.md) (5.6 calibración y umbral HITL, 5.7 escala, ciclo de vida y monitoreo, 5.8 registro de decisión; 5.9, backfills de familias, tópicos y embeddings y top 5 diario de temas, para 6.3) y EPIC-1 a EPIC-4, cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
 * **La consume:** [EPIC-7](epic_7.md), cuya API y portal leen las tablas de salida, escriben en la base de curadurías y muestran las alertas de deriva.
-* **Orden:** 6.1 → 6.2 → 6.3 → 6.4. 6.2 deriva sus esquemas de los contratos de 6.1; 6.4 lee lo que escribe 6.3.
+* **Orden:** 6.1 → 6.2 → 6.3 → 6.4 → 6.5. 6.2 deriva sus esquemas de los contratos de 6.1; 6.4 lee lo que escribe 6.3; 6.5 (reentrenamiento, D14) usa la promoción de 6.4 y el *re-scoring* de 6.3.
 * **Directorios:**
   * `packages/voc-common/`: contratos v3 (modelos Pydantic, enums y códigos);
-  * `packages/voc-nlp/` (nuevo): lógica pura compartida (elegibilidad, léxico, calibración, curva HITL, deriva, PPI, carga de M4, oclusión, familias y tópicos). La usan `ml-inference` y, en EPIC-7, el servicio de explicaciones bajo pedido;
+  * `packages/voc-nlp/` (nuevo): lógica pura compartida (elegibilidad, léxico, calibración, curva HITL, deriva, PPI, carga del modelo de sentimiento, oclusión, familias y tópicos). La usan `ml-inference` y, en EPIC-7, el servicio de explicaciones bajo pedido;
   * `services/ml-inference/` (nuevo): una imagen con los comandos `delta`, `backfill`, `load-local`, `seed`, `register`, `promote` y `monitor`. Reemplaza al stub vacío `services/ml-delora/`, que se borra;
   * `infra/`: tablas y vistas de BigQuery, Cloud Run Jobs, Scheduler e IAM;
   * `docs/contracts/analytics_outputs_v3.md`: contrato definitivo (antes el borrador `analytics_outputs_v3_draft.md`), como `ingestion_v2.md` para la ingesta.
@@ -30,17 +30,17 @@ Lo implementado en EPIC-1 y EPIC-2 sigue en el código hasta que esta épica lo 
 
 | Tema | Hoy (EPIC-1 y EPIC-2) | Evidencia o decisión de EPIC-5 | Decide | Feature aquí |
 | :--- | :--- | :--- | :---: | :---: |
-| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | **Decidido: M4 RoBERTuito** (P8-1): κ 0.929 en el oro *test*, contra 0.943 de M9, diferencia no significativa. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial. M4 ya tiene pesos guardados (lote `m4_ppi`, 5.6) | 5.8 (P8-1, P8-2) | 6.1, 6.3 |
+| Modelo de sentimiento | `sentimiento_roberta` y el docstring "DeLoRA" en `AnalyzedReviewPrediction` | **Decidido: RoBERTuito ajustado** (M4 en EPIC-5, P8-1): κ 0.929 en el oro *test*, contra 0.943 de M9, diferencia no significativa. Delora (M8) se descartó. `pysentimiento` es solo para uso no comercial. RoBERTuito ya tiene pesos guardados (lote `m4_ppi`, 5.6) | 5.8 (P8-1, P8-2) | 6.1, 6.3 |
 | Taxonomía | 8 `ABSATopic`; `topico` obligatorio y único por reseña | 11 familias `aspects_v2_1` multi-etiqueta más las marcas `u` y `s`; los tópicos son una capa aparte, con versión y curada | 5.5 (aprobado) | 6.1, 6.2 |
 | Filtro de longitud | `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` y `cumple_umbral_palabras` | Sin filtro de longitud, porque la longitud predice las estrellas. Elegibilidad por reglas deterministas con código (`NO_PREDICTED`); `TOPIC_TOO_SHORT` con k = 1 | 5.1, 5.2; `TNSS_SINGLE_WORD` en 5.8 | 6.1 |
 | Tabla de salida | `delora_predictions`: 15 columnas, agrupada por `topico` | Predicción por reseña versionada por modelo y corrida; tópicos por periodo; catálogo de tópicos con ciclo de vida; estado de elegibilidad; registro de corridas | 5.8 (P8-5) | 6.2 |
 | Embeddings | `embedding_vector` de 768 dimensiones | Delora descartado; los tópicos usan MiniLM (384). La búsqueda semántica de EPIC-7 necesita su propio encoder | 5.8 (P8-6) | 6.2 |
-| Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Probabilidad máxima de M4 calibrado; **90 % de cobertura por defecto** (se revisa el ~10 % menos seguro, ~350 textos por semana), como parámetro configurable. La curva de cobertura y riesgo y el parámetro son estado de la aplicación: se guardan versionados y el frontal los muestra ([plan de 5.6](../analytics/calibration/calibration_design.md#31-decisión-del-autor-2026-10-22)) | 5.6 (decidido 2026-10-22) | 6.1 a 6.4 |
-| Calibración | Ninguna | *Temperature scaling* con una T por semilla de M4 (≈ 1.7) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
+| Umbral HITL | `hitl_entropy_threshold = 0.65` en `Settings` | Probabilidad máxima de RoBERTuito calibrado; **90 % de cobertura por defecto** (se revisa el ~10 % menos seguro, ~350 textos por semana), como parámetro configurable. La curva de cobertura y riesgo y el parámetro son estado de la aplicación: se guardan versionados y el frontal los muestra ([plan de 5.6](../analytics/calibration/calibration_design.md#31-decisión-del-autor-2026-10-22)) | 5.6 (decidido 2026-10-22) | 6.1 a 6.4 |
+| Calibración | Ninguna | *Temperature scaling* con una T por semilla de RoBERTuito (≈ 1.7) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
 | Priorización | Fórmulas de `tnss_numeric_calibrated` y `priority_weight_score` | Se descartan: ordenan los incidentes igual que contar negativas, y los votos empeoran el orden. Se prioriza por volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto ([reporte de 5.6](../analytics/calibration/calibration_report.md#4-priorización-q4-decidido)) | 5.6 (decidido 2026-10-22) | 6.1, 6.3 |
 | *Concept drift* | JSD de los 8 tópicos por versión | Proporción de las familias y de la marca `u` como series del monitor de deriva por banco; la señal de incidentes quedó fuera del alcance (5.9, 2026-10-22) | 5.7 (P7-6, P7-9) | 6.4 |
 | Curaduría | `hitl_triage_audit_log` (sentimiento y un tópico) | Curadurías de sentimiento, aspectos y tópicos, inmutables, con versión de guía, modelo y prompt | 5.5 (aprobado); tabla de sentimiento en 5.8 (P8-11) | 6.2 |
-| Entorno de cómputo | Sin definir | M4 infiere ~2 500 textos/s en la T4 y 39–53 en CPU; el backfill en Kaggle sacaría el corpus de GCP | 5.7 (P7-1, P7-2) | 6.2, 6.3 |
+| Entorno de cómputo | Sin definir | RoBERTuito infiere ~2 500 textos/s en la T4 y 39–53 en CPU; el backfill en Kaggle sacaría el corpus de GCP | 5.7 (P7-1, P7-2) | 6.2, 6.3 |
 | Etiquetador y M9 | `enable_vertex_ai_api`; `enable_dedicated_vertex_endpoints = False` | Gemini por Vertex AI dentro del proyecto, sin endpoints dedicados; las familias en producción dependen de quién las etiquete | 5.3; 5.8 (P8-1, P8-7) | 6.2 |
 
 ## 🔒 Restricciones de despliegue que siguen vigentes
@@ -64,23 +64,30 @@ Tomadas al detallar las features. Ninguna cambia una decisión de EPIC-5.
 | D1 | Dónde vive el código | `voc-common` solo con contratos y códigos; `packages/voc-nlp/` con la lógica pura, compartida con EPIC-7; `services/ml-inference/`, una imagen con varios comandos. Se borra el stub `services/ml-delora/` |
 | D2 | Léxico `lexicon_v1` | Versionado en git dentro de `voc-nlp` (JSON con su SHA-256). Son 151 formas con su etiqueta agregada (soporte ≥ 3, pureza ≥ 0.9), no reseñas ni etiquetas individuales; es una excepción aprobada a la regla de datos |
 | D3 | Alertas | Todas en 6.4 (`drift_alerts`). 6.3 solo predice y escribe |
-| D4 | Precisión del delta (P7-2) | M4 en fp32 en el Job de 1 vCPU: ~25 s al día. Los pesos fp16 del registro (218 MB, la versión de modelo de 5.7) se cargan en fp32, así que hay un solo artefacto que versionar; sin int8 |
-| D5 | Backfill y *re-scoring* en Kaggle (P7-1, P7-4) | CLI que corre el autor (`ml_inference backfill …`). Exporta de BigQuery y carga con `MERGE` dentro de GCP; el token de Kaggle se queda en su máquina. Sin Secret Manager ni Job nuevo |
+| D4 | Precisión del delta (P7-2) | RoBERTuito en fp32 en el Job de 1 vCPU: ~25 s al día. Los pesos fp16 del registro (218 MB, la versión de modelo de 5.7) se cargan en fp32, así que hay un solo artefacto que versionar; sin int8 |
+| D5 | Backfill y *re-scoring* en Kaggle (P7-1, P7-4) | **Reemplazada por D13 (2026-10-24).** Era una CLI que corría el autor desde su máquina, con el token de Kaggle en local: repetía el flujo de experimentación y bajaba los datos al equipo |
 | D6 | Histórico de familias, tópicos y embeddings | Ya hechos en 5.9 ([reporte, §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3)); 6.3 solo los carga |
 | D7 | Piezas del esquema sin dueño | 6.3 crea los casos `low_confidence` de `hitl_items` y precalcula su oclusión (`review_explanations`). 6.4 crea `monitor_sample` y `agreement_sample` y calcula `kpi_estimates` con PPI sobre el oro *dev* aleatorio de EPIC-5, más las versiones `gold_hitl` cuando existan |
 | D8 | Familias y marca `u` en el monitor | Se calculan y se guardan en `drift_metrics` con su z, con umbral nulo: nunca crean una alerta ni una subida HITL. MLOps las muestra como contexto |
-| D9 | Organización del delta | Un solo Job con pasos en serie (M4, Gemini, MiniLM y tópicos), liberando cada modelo antes del siguiente. Se mide la memoria; si 2 GiB no alcanza, se sube a 4 GiB |
-| D10 | Oro en producción | Tabla `gold_labels` en BigQuery, cargada una vez desde local: oro *dev* aleatorio de EPIC-5 y las 300 etiquetas de familias de `muestra_v21`. Agregada al [esquema v3](../contracts/analytics_outputs_v3.md#gold_labels-oro-en-producción-d10-de-epic-6) el 2026-10-23 |
+| D9 | Organización del delta | Un solo Job con pasos en serie (RoBERTuito, Gemini, MiniLM y tópicos), liberando cada modelo antes del siguiente. Se mide la memoria; si 2 GiB no alcanza, se sube a 4 GiB |
+| D10 | Oro en producción | Tabla `gold_labels` en BigQuery, cargada una vez desde local: oro *dev* aleatorio de EPIC-5 y las 300 etiquetas de familias de `aspects_gold_v2_1`. Agregada al [esquema v3](../contracts/analytics_outputs_v3.md#gold_labels-oro-en-producción-d10-de-epic-6) el 2026-10-23 |
+| D11 | Nombres sin la jerga de EPIC-5 (autor, 2026-10-24) | El código y los valores que se guardan en BigQuery usan nombres que se entienden sin leer EPIC-5. Equivalencias: M4 (cuarto de los nueve modelos de 5.4) → RoBERTuito, módulo `sentiment_model.py`, `SentimentModel`, `load_sentiment_model` y extra `[sentiment]`; `M4_robertuito_s1_ppi` → `model_version` `robertuito_sentiment_v1` (semilla 1, T 1.6811); `model_v0` (BERTopic de 5.5) → `topic_model_version` `topics_v1`; `clauses_v0` → segmentador `clause_segmenter_v1`; `muestra_v21` → `GoldSplit.ASPECTS_GOLD_V2_1` (`aspects_gold_v2_1`). Los archivos locales de EPIC-5 conservan su nombre: la carga los traduce |
+| D12 | Parámetros del apetito de riesgo sin evidencia (autor, 2026-10-24) | El tope semanal, la subida por deriva y la doble revisión de `risk_policy` los fija el dueño de negocio en 7.10. La v1 de `seed` los deja nulos (sin tope, sin subida automática, sin doble revisión); la subida y la doble revisión se configuran completas o no se configuran. `RiskPolicy` (`voc-common`) los acepta nulos. Con esto, la siembra ya no espera al autor |
+| D13 | *Re-scoring* orquestado desde GCP (autor, 2026-10-24; reemplaza D5; se implementa en 6.4) | Un Cloud Run Job (`voc-ml-rescoring`, comando `rescore`, imagen `ml-inference`) hace el ciclo completo sin pasar por la máquina de nadie. (1) `EXPORT DATA` de los textos únicos a `gs://…/backfill/<corrida>/`. (2) Sube un dataset privado de Kaggle por corrida y lanza el kernel de GPU con los pesos del registro. (3) Espera el kernel, trae las predicciones a GCS y las carga con `MERGE` y la `model_version` nueva. (4) Verifica los conteos y entonces borra el dataset de Kaggle (F-14). El token de Kaggle vive en Secret Manager (`voc-kaggle-token`), y solo `voc-sa-ml-backend` lo lee. Lo dispara la promoción (6.4) o el autor con `gcloud run jobs execute`. Los datos siguen saliendo a Kaggle, como aceptó el autor en P7-1, pero ya no pasan por equipos locales. La carga inicial de los backfills de 5.8 y 5.9 (`load-local`) sigue siendo única y desde local, porque esos archivos ya existen en la máquina del autor |
+| D14 | Reentrenamiento automatizado (autor, 2026-10-24) | Feature nueva, 6.5, que se detalla después de 6.4. El aviso `retrain` de `model_quality` o el autor disparan un Job que arma el conjunto de entrenamiento en BigQuery (la plata de Gemini más las correcciones del HITL) y entrena en GPU (un kernel de Kaggle, dentro de las 30 h semanales, o Cloud Run con GPU si el proyecto tiene cuota). Después evalúa en el oro *dev* con la regla de 5.4 y registra un candidato en Vertex Model Registry. La promoción la aprueba una persona y dispara el *re-scoring* (D13). El entrenamiento manda texto y etiquetas a Kaggle: F-13 |
+| D15 | Avisos fuera del portal (autor, 2026-10-24) | Las alertas de deriva (`voc-incident-alerts-topic`) y los avisos de `model_quality` (`warning`, `retrain`, `rejected`) llegan por correo con un canal de notificación de Cloud Monitoring. Los avisos de calidad también publican un mensaje sin texto ni PII. Lo implementa 6.4, con su infraestructura en `infra/` |
+| D16 | Carga del backfill (autor, 2026-10-24) | `load-local` corre en el Mac del autor: lee del TDS solo `id_resena`, `bank_id`, `fecha` y `texto_limpio`, en memoria y sin guardarlos, para la elegibilidad (FMEA F-11). Lo demás viaja sin texto: parquet con `text_key` en tablas temporales de BigQuery, y las tablas finales se arman con `MERGE` dentro de BigQuery |
+| D17 | Oro y curva (autor, 2026-10-24) | `gold_labels` suma `weight` (1/π del oro *dev* aleatorio, para cifras poblacionales en la curva y en PPI) y su `id_resena` es nulo en el oro de aspectos (textos únicos). El oro se exporta con las funciones de EPIC-5 (`voc_analytics.labeling.export_gold_v3`) a un parquet sin texto. `CoveragePoint` acepta el intervalo de riesgo nulo donde 5.6 no lo midió (cobertura 1.0) |
 
 ### Huecos que decide el autor
 
-No hay evidencia que los fije. No se inventan: la semilla de `risk_policy` no se inserta hasta que el autor los decida.
+Los tres primeros no son huecos del diseño sino **parámetros del apetito de riesgo**: los fijan el revisor y el dueño de negocio en la pantalla de administración (EPIC-7, 7.10), como dice el [registro de decisión](../analytics/decision_record.md) (sección 4, P7-6 a P7-8). No hay evidencia en EPIC-5 para ellos, así que la `risk_policy` v1 los siembra nulos (D12). Los dos últimos sí son decisiones de diseño del autor, y se resuelven en 6.4.
 
-| Parámetro | Dónde | Qué falta |
+| Parámetro | Dónde | Estado |
 | :--- | :--- | :--- |
-| `hitl_weekly_cap` | `risk_policy` | Tope de revisiones por semana. Referencia: la semana real de 5.9 dio 387 casos con el umbral del 90 % (cobertura real 86.4 %) |
-| `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | `risk_policy` | Cobertura, duración y tope de la subida por deriva (P7-6). La curva de 5.6 da el costo de cada cobertura |
-| Tamaño y frecuencia de `agreement_sample` | `risk_policy` (`human_agreement_sample_size`, `human_agreement_frequency`) | Doble revisión entre personas (EPIC-7, 7.7) |
+| `hitl_weekly_cap` | `risk_policy` | Nulo en v1 = sin tope. Referencia para 7.10: la semana real de 5.9 dio 387 casos con el umbral del 90 % (cobertura real 86.4 %) |
+| `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | `risk_policy` | Nulos en v1 = la alerta de deriva se registra, pero no crea una subida. Se configuran los tres juntos. La curva de 5.6 da el costo de cada cobertura |
+| Tamaño y frecuencia de `agreement_sample` | `risk_policy` (`human_agreement_sample_size`, `human_agreement_frequency`) | Nulos en v1 = sin doble revisión entre personas (EPIC-7, 7.7). Se configuran juntos |
 | Dónde corre el re-ajuste trimestral de tópicos (P7-8) | 6.4 | BERTopic sobre ~1 M de cláusulas no cabe en el Job de monitoreo (1 vCPU, 2 GiB); en 5.5 y 5.9 corrió en el Mac. Opciones: CLI del autor en local (copia local, F-11), un Job aparte con más memoria o Kaggle (texto fuera de GCP, como F-14) |
 | Emparejamiento de tópicos entre reajustes | 6.4 | 5.5 no lo validó (ARI entre semillas de 0.40 a 0.97). Sin umbral automático: se propone el par de mayor similitud de centroides y el curador confirma cada uno |
 
@@ -238,7 +245,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 **Archivos que cambian:**
 
-* `infra/modules/storage_bq.py`: se borran `_PREDICTIONS`, `_AUDIT`, las tablas `delora_predictions` e `hitl_triage_audit_log` y sus campos de `StorageAndBqResources`. El helper `table()` acepta partición mensual (`type="MONTH"`) y tablas sin partición. El bucket `voc-datalake-<proyecto>` suma los prefijos `ml_artifacts/` (pesos de M4, modelo de tópicos `model_v0`) y `backfill/<corrida>/`, este último con el borrado a 7 días de `raw_staging/`.
+* `infra/modules/storage_bq.py`: se borran `_PREDICTIONS`, `_AUDIT`, las tablas `delora_predictions` e `hitl_triage_audit_log` y sus campos de `StorageAndBqResources`. El helper `table()` acepta partición mensual (`type="MONTH"`) y tablas sin partición. El bucket `voc-datalake-<proyecto>` suma los prefijos `ml_artifacts/` (pesos de RoBERTuito, modelo de tópicos `topics_v1`) y `backfill/<corrida>/`, este último con el borrado a 7 días de `raw_staging/`.
 * `infra/modules/vertex_ai.py`: se retiran el índice de 768 dimensiones y el endpoint `delora-tnss-endpoint` (P8-6). Queda `enable_vertex_ai_api`, que habilita Gemini y Model Registry; el flag `enable_dedicated_vertex_endpoints` se retira.
 * `infra/modules/cloud_run.py`:
   * Job `voc-ml-inference-delta`: imagen `ml-inference`, comando `delta`, 1 vCPU y 2 GiB (4 GiB si la medición de 6.3 lo pide, D9), *timeout* 1 800 s, un reintento, cuenta `voc-sa-ml-backend`;
@@ -297,7 +304,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 **Objetivo:** cargar los backfills de 5.8 y 5.9 y correr el delta diario, escribiendo en las tablas de 6.2.
 
-**Paquete `packages/voc-nlp/` (nuevo):** lógica pura, portada de `voc_analytics` sin cambiar el criterio. Las dependencias pesadas van en *extras*: `[m4]` (torch CPU, transformers, pysentimiento), `[gemini]` (google-genai) y `[topics]` (sentence-transformers, umap-learn, hdbscan, bertopic).
+**Paquete `packages/voc-nlp/` (nuevo):** lógica pura, portada de `voc_analytics` sin cambiar el criterio. Las dependencias pesadas van en *extras*: `[sentiment]` (torch CPU, transformers, pysentimiento), `[gemini]` (google-genai) y `[topics]` (sentence-transformers, umap-learn, hdbscan, bertopic).
 
 | Módulo | Port de | Firmas principales |
 | :--- | :--- | :--- |
@@ -305,17 +312,19 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 | `lexicon.py` y `data/lexicon_v1.json` | `eda/eda_lexicon.py` (`form`) y `data/eda/lexicon_v1.parquet` (D2) | `form(text: str \| None) -> str`; `load_lexicon() -> Lexicon` (valida el SHA-256) |
 | `calibration.py` | `calibration/calibrate.py` (solo temperatura) | `apply_temperature(proba: np.ndarray, t: float) -> np.ndarray`; `confidence(proba: np.ndarray) -> np.ndarray` |
 | `hitl.py` | Regla de 5.6 | `threshold_for(policy: RiskPolicy, boost: HitlBoost \| None, curve: HitlCoverageCurve) -> float`; `requires_hitl(confidence: float \| None, threshold: float) -> bool` |
-| `m4.py` `[m4]` | `sentiment/encoder.py` y `scale/benchmark.py` | `load_m4(weights_dir: Path) -> M4Model` (fp32, CPU, D4); `predict_proba(model: M4Model, texts: Sequence[str], batch_size: int = 64) -> np.ndarray`, con `preprocess_tweet`, tope de 128 tokens, orden por longitud y verificación de `id2label` |
-| `explain.py` `[m4]` | Experimento de 5.7 (§4) | `occlusion(model: M4Model, text: str) -> list[TokenAttribution]` (`occlusion_v1`); la reusa el servicio bajo pedido de EPIC-7 |
+| `sentiment_model.py` `[sentiment]` | `sentiment/encoder.py` y `scale/benchmark.py` | `load_sentiment_model(weights_dir: Path) -> SentimentModel` (fp32, CPU, D4); `predict_proba(model: SentimentModel, texts: Sequence[str], batch_size: int = 64) -> np.ndarray`, con `preprocess_tweet`, tope de 128 tokens, orden por longitud y verificación de `id2label` |
+| `explain.py` `[sentiment]` | Experimento de 5.7 (§4) | `occlusion(model: SentimentModel, text: str) -> list[TokenAttribution]` (`occlusion_v1`); la reusa el servicio bajo pedido de EPIC-7 |
 | `aspects.py` y `prompts/aspects_v2_1.md` `[gemini]` | `labeling/label_gemini.py`, `topics/aspects_scale.py` y `eda/eda_aspects_v2.py` (`parse`) | `parse(text: str) -> list[AspectLabel]`; `label_batch(client: genai.Client, items: Sequence[tuple[str, str]], prompt: str, model: str) -> list[AspectLabel]`, con reintento en lotes más chicos cuando falta un id |
-| `topics.py` `[topics]` | `topics/units.py` (`clauses_v0`), `topics/working_set.py` y `incidents/backfill_topics.py` | `segment(text: str) -> list[str]`; `embed(texts: Sequence[str]) -> np.ndarray` (MiniLM, 384, 128 tokens); `load_topic_model(path: Path) -> FrozenTopicModel`; `assign(model: FrozenTopicModel, embeddings: np.ndarray) -> list[int]` |
+| `topics.py` `[topics]` | `topics/units.py` (`clauses_v0` en EPIC-5; `clause_segmenter_v1` aquí), `topics/working_set.py` y `incidents/backfill_topics.py` | `segment(text: str) -> list[str]`; `embed(texts: Sequence[str]) -> np.ndarray` (MiniLM, 384, 128 tokens); `load_topic_model(path: Path) -> FrozenTopicModel`; `assign(model: FrozenTopicModel, embeddings: np.ndarray) -> list[int]` |
 
-* `benchmark.encode` de 5.7 no aplicaba `preprocess_tweet`. `m4.py` lo aplica, como el entrenamiento y el backfill.
+* `benchmark.encode` de 5.7 no aplicaba `preprocess_tweet`. `sentiment_model.py` lo aplica, como el entrenamiento y el backfill.
 * La copia del prompt `aspects_v2_1.md` es idéntica a la de `voc_analytics/eda/prompts/` (una prueba compara el SHA-256).
 
 **Servicio `services/ml-inference/` (nuevo):**
 
-* `pyproject.toml` (`voc-common`, `voc-nlp[m4,gemini,topics]`, `google-cloud-bigquery`, `google-cloud-storage`, `google-cloud-pubsub`, `google-cloud-aiplatform`; ruedas de torch CPU) y `Dockerfile` (patrón de `sanitization-pipeline`: uv multi-stage, usuario 10001, `ENTRYPOINT ["python", "-m", "ml_inference"]`).
+* Reemplaza al stub `services/ml-delora/` (9 archivos vacíos), que se borra junto con su entrada en el `exclude` del `pyproject.toml` raíz (D1). `README.md` deja de describir la arquitectura Dual LoRA (Delora) y lista `voc-nlp` y `ml-inference` en la estructura del monorepo.
+
+* `pyproject.toml` (`voc-common`, `voc-nlp[sentiment,gemini,topics]`, `google-cloud-bigquery`, `google-cloud-storage`, `google-cloud-pubsub`, `google-cloud-aiplatform`; ruedas de torch CPU) y `Dockerfile` (patrón de `sanitization-pipeline`: uv multi-stage, usuario 10001, `ENTRYPOINT ["python", "-m", "ml_inference"]`).
 * `src/ml_inference/__main__.py`: subcomandos `delta`, `backfill`, `load-local`, `seed`, `register`, `promote`, `monitor` (6.4).
 * `config.py`: `InferenceSettings` (alias del modelo, `produccion`; URIs de artefactos; tamaños de lote; límite de textos por corrida).
 * `bq_io.py`: generaliza `BigQueryTdsUpsertManager` de EPIC-4.
@@ -340,26 +349,25 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 * `delta.py`: `run_delta(settings: InferenceSettings, clients: Clients, now: datetime) -> InferenceRun`. Pasos en serie (D9):
   1. **Pendientes:** filas del TDS sin fila en `review_predictions` para la versión promovida y su `text_key`, hasta el límite por corrida. Una reseña editada cambia de `text_key` y recibe otra fila; la vista toma la última.
-  2. **Sentimiento:** elegibilidad v1 por fila; M4 una vez por texto único `MODEL`, ordenado por longitud; T de la versión; umbral de la `risk_policy` vigente o de la subida activa del banco; `MERGE` en `review_predictions`.
+  2. **Sentimiento:** elegibilidad v1 por fila; RoBERTuito una vez por texto único `MODEL`, ordenado por longitud; T de la versión; umbral de la `risk_policy` vigente o de la subida activa del banco; `MERGE` en `review_predictions`.
   3. **Familias:** negativas de dos palabras o más (`TOPIC_TOO_SHORT` con k = 1) sin fila en `review_aspects` para el mismo `text_key` y `prompt_version`; Gemini `aspects_v2_1` en lotes de 100; el texto que Gemini omite se reintenta en lotes más chicos y, si sigue fallando, queda pendiente para el día siguiente (no se guarda vacío).
-  4. **Embeddings y tópicos:** MiniLM por `text_key` nuevo, una fila por banco × mes en `text_embeddings`; cláusulas y tópicos con `model_v0` en `topic_assignments`.
+  4. **Embeddings y tópicos:** MiniLM por `text_key` nuevo, una fila por banco × mes en `text_embeddings`; cláusulas y tópicos con `topics_v1` en `topic_assignments`.
   5. **HITL:** casos `low_confidence` en `hitl_items` (con `drift_boost` y su `boost_id` si hay una subida activa), modo `assisted`, hasta el tope semanal de la política; oclusión precalculada en `review_explanations` (`precomputed_hitl`).
   6. **Registro:** fila en `inference_runs` con conteos, duración, memoria pico y costo de Gemini.
 * `load_local.py`: `load_backfill(run_dir: Path, run_id: str) -> list[InferenceRun]`. Carga única, desde la máquina del autor, de `experiments/analytics/data/backfill/20261022/` (fuera de git):
-  * `preds/preds_s1.parquet` (`text_key`, `p_NEG`, `p_NEU`, `p_POS`, sin calibrar) con la T de `s1` (1.6811), unida por `text_key` con las filas del TDS y la elegibilidad v1 → `review_predictions`;
+  * `preds/preds_s1.parquet` (`text_key`, `p_NEG`, `p_NEU`, `p_POS`, sin calibrar; semilla 1) con su T (1.6811), unida por `text_key` con las filas del TDS y la elegibilidad v1 → `review_predictions`;
   * `aspects/labels_by_key.parquet` (659 316 negativas) → `review_aspects`;
-  * `topics/topics_by_key.parquet`, `segment_topics_v0.parquet` y `model_v0` → `topic_assignments`, `topic_model_versions` y `topic_catalog`; la curaduría de 5.5 (fase 4) → `curation_topics`;
+  * `topics/topics_by_key.parquet`, `segment_topics_v0.parquet` y el modelo `model_v0` de EPIC-5 → `topic_assignments`, `topic_model_versions` y `topic_catalog`, como `topics_v1`; la curaduría de 5.5 (fase 4) → `curation_topics`;
   * `embeddings/emb_minilm.npy` con `keys.parquet` → `text_embeddings`, replicada por banco × mes;
-  * sube a `ml_artifacts/` los pesos de `M4_robertuito_s1_ppi` y `model_v0`.
+  * sube a `ml_artifacts/` los pesos de RoBERTuito (carpeta local `M4_robertuito_s1_ppi`, versión `robertuito_sentiment_v1`) y el modelo de tópicos (`topics_v1`).
   * Las 99 reseñas sin predicción, el lote de 100 textos que Gemini no etiqueta y los textos posteriores al snapshot entran con el primer delta.
-* `backfill.py`: el pipeline de `voc_analytics.scale.backfill` sin constantes de proyecto, para el *re-scoring* al promover (P7-4, D5): `export(run: str)`, `dataset(run: str, user: str, update: bool)`, `kernel(user: str, batch: int, limit: int | None)`, `pull(run: str, user: str)`, `load(run: str, model_version: str)` y `cleanup(run: str, user: str)`. Los pesos salen del registro. Cada corrida sube su propio dataset privado (`voc-backfill-corpus-<corrida>`), y `cleanup` lo borra de Kaggle en cuanto `load` verifica la carga en BigQuery (conteos por `text_key` y por `model_version`); si la verificación falla, el dataset se queda y la corrida no se da por terminada (FMEA F-14, decisión del autor, 2026-10-23). Paralelizar el `preprocess_tweet` antes de subir (5.7, §9: 27 min en la CPU de Kaggle).
 * `seed.py`: `seed(settings: InferenceSettings, actor_hash: str, reason: str) -> None`. Inserta las versiones iniciales:
-  * `model_versions`: `M4_robertuito_s1_ppi` promovido, con T 1.6811 y sus métricas en el oro *dev*;
-  * `hitl_coverage_curves`: la curva de `s1` de `selective_v0_metrics.json` (5.6);
-  * `risk_policy` v1: `prob_max`, cobertura 0.90, umbral 0.974 (5.6), muestra de monitoreo de 300 por trimestre (P7-7, P7-10), re-ajuste trimestral (P7-8), piso de κ 0.89, avisos de 28 % y 94 % con 500 textos por semana (P7-10), familias con 53 % y prevalencia 5 % (P7-11). **No se inserta hasta que el autor fije los [huecos](#huecos-que-decide-el-autor).**
+  * `model_versions`: `robertuito_sentiment_v1` promovido, con T 1.6811 y sus métricas en el oro *dev*;
+  * `hitl_coverage_curves`: la curva de la semilla 1 de `selective_v0_metrics.json` (5.6);
+  * `risk_policy` v1: `prob_max`, cobertura 0.90, umbral 0.974 (5.6), muestra de monitoreo de 300 por trimestre (P7-7, P7-10), re-ajuste trimestral (P7-8), piso de κ 0.89, avisos de 28 % y 94 % con 500 textos por semana (P7-10), familias con 53 % y prevalencia 5 % (P7-11). Tope semanal, subida por deriva y doble revisión nulos hasta que el dueño de negocio los fije en 7.10 ([D12](#huecos-que-decide-el-autor)).
   * `drift_policy_template` v1 y una `drift_policy` por banco desde ella: z ≥ 4 en las series de entrada y de `NEG`, PSI ≥ 0.25 en la longitud, 12 y 6 meses de línea base, 200 filas y 12 meses seguidos para entrar (P7-9); familias y `u` con umbral nulo (D8);
   * `guidelines`: `v2.2` de sentimiento y `v2.1` de aspectos;
-  * `gold_labels`: el oro *dev* aleatorio y `muestra_v21`, desde local (D10).
+  * `gold_labels`: el oro *dev* aleatorio y `aspects_gold_v2_1` (`muestra_v21` en EPIC-5), desde local (D10).
 
 **Pruebas** (sin red ni descargas; cobertura ≥ 85 %):
 
@@ -371,7 +379,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * `test_aspects.py`: `parse` con líneas válidas, marcas `u`, `s` y elogio, y códigos desconocidos; la copia del prompt;
   * `test_m4.py`: modelo diminuto con configuración aleatoria, sin descarga; el orden por longitud se deshace bien;
   * `test_topics.py`: `segment` con cláusulas sintéticas y `assign` con un modelo falso.
-* `services/ml-inference/tests/` (con un `FakeBigQuery` como el de `sanitization-pipeline` y M4, Gemini y MiniLM falsos):
+* `services/ml-inference/tests/` (con un `FakeBigQuery` como el de `sanitization-pipeline` y RoBERTuito, Gemini y MiniLM falsos):
   * `test_delta.py`:
     * una inferencia por `text_key`, propagada a sus filas;
     * la fila no elegible queda `NO_PREDICTED` con su código y sin probabilidades; la de una palabra del léxico, `RULE_BASED`;
@@ -380,17 +388,45 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
     * la tabla temporal se borra aunque falle el `MERGE`;
     * un texto que Gemini omite queda pendiente.
   * `test_load_local.py`: parquet sintéticos con las columnas reales; la T se aplica y las probabilidades suman 1.
-  * `test_backfill.py`: `kaggle` simulado; el `EXPORT DATA` usa `TO_HEX(SHA256(texto_sanitizado))`; `cleanup` borra el dataset de la corrida solo después de una carga verificada.
   * `test_registry.py`: `aiplatform` simulado; `promote` mueve el alias y escribe en `model_versions`.
 * CI: `voc-nlp` y `ml-inference` en el job de calidad con su piso de cobertura, y un job de imagen (import de prueba, usuario 10001).
 
 **Terminado cuando:**
 
-* `review_predictions` tiene una fila por reseña del export del 2026-10-20 (2 653 238), con `s1` y su T, y los conteos por banco y `eligibility_code` reproducen `eligibility_v1_counts.json` salvo las reseñas que cambiaron después del snapshot;
-* `review_aspects` tiene los 659 316 textos de 5.9, `text_embeddings` los 1 429 675 `text_key` y `topic_assignments` los tópicos de `model_v0`;
+* `review_predictions` tiene una fila por reseña del export del 2026-10-20 (2 653 238), con `robertuito_sentiment_v1` y su T, y los conteos por banco y `eligibility_code` reproducen `eligibility_v1_counts.json` salvo las reseñas que cambiaron después del snapshot;
+* `review_aspects` tiene los 659 316 textos de 5.9, `text_embeddings` los 1 429 675 `text_key` y `topic_assignments` los tópicos de `topics_v1`;
 * `daily_topic_labels` reproduce `daily_topics_v0` de 5.9 en una muestra de días × banco (comprobación local única);
 * el Job programado corre el delta dentro de 2 GiB (o 4 GiB, D9), con su duración y memoria en `inference_runs`, y su primera corrida cubre los textos pendientes;
 * los *quality gates* pasan sin red.
+
+#### Estado de 6.3 (2026-10-24)
+
+**Código y pruebas listos; faltan los pasos que corre el autor** (siembra, carga, imagen y primera corrida).
+
+* **`packages/voc-nlp/`:** `eligibility`, `lexicon` (con `data/lexicon_v1.json`), `calibration`, `hitl`, `sentiment_model`, `explain`, `aspects` (con `prompts/aspects_v2_1.md`) y `topics`. Pruebas sin red ni descargas, con un RoBERTa diminuto aleatorio; cobertura 100 %.
+  * Contraste con EPIC-5: la elegibilidad y `form` dan lo mismo en 662 filas sintéticas, que incluyen las 151 formas del léxico. RoBERTuito da probabilidades idénticas con los pesos reales de la semilla 1 (diferencia máxima 0.0).
+  * La oclusión (`occlusion_v1`) guarda, por palabra, cuánto baja la probabilidad de la clase predicha al quitarla (decisión del autor). El experimento de 5.7 solo había medido el tiempo.
+  * `aspects` acepta una respuesta parcial de Gemini y reintenta los ids faltantes en lotes más chicos. Una respuesta sin líneas válidas, con ids repetidos o ajenos, o con códigos desconocidos se reintenta hasta tres veces. Un texto que sigue sin etiqueta queda pendiente.
+* **`services/ml-inference/`:** `delta`, `seed`, `load-local`, `register`, `promote` y `monitor`, que no hace nada hasta 6.4. Le sirven `config`, `bq_io` (tabla temporal + `MERGE` de solo inserción, con nulos iguales en la clave y consultas con identificadores validados), `state`, `engines` (un modelo cargado a la vez, D9) y `artifacts`. Cobertura 98 %.
+  * El delta cubre los criterios de prueba de 6.3: una inferencia por `text_key`, `NO_PREDICTED` y `RULE_BASED`, el umbral de la política o de la subida del banco, el tope semanal (sin tope si es nulo, D12) y la idempotencia. También que la tabla temporal se borra aunque falle el `MERGE` y que el texto que Gemini omite queda pendiente. Las etiquetas y los embeddings ya conocidos se reutilizan sin volver a llamar al modelo.
+  * La prioridad de los casos `low_confidence` es `1 − confidence`, porque al crearlos todavía no se conoce la familia.
+* **Imagen:** `Dockerfile` multi-stage con torch de CPU (2.48 GB), usuario 10001 y sin descargas en tiempo de ejecución (`HF_HUB_OFFLINE`). La versión de torch para Linux sale del índice de CPU (`pyproject.toml` de la raíz).
+* **CI y CD:** pasos de prueba de `voc-nlp` y `ml-inference`, el job `ml-inference-image` y 25 minutos de tope para el job de calidad. `tools/deploy_images.py` fija las tres imágenes del mismo commit.
+* **Retiros:** el stub `services/ml-delora/` y su `exclude`. `README.md` ya no describe Delora.
+* **Fuera de 6.3:** el *re-scoring* (D13) se implementa en 6.4, junto con `promote` y el *rollback* que lo disparan (decisión del autor, 2026-10-24).
+* **Lo que hereda 6.4:**
+  * la curva sembrada no tiene volumen por banco (`weekly_volume_by_bank = {}`): lo agrega el recálculo, que inserta con la clave `(model_version, calibration_version, computed_at)`;
+  * las series de deriva que siembra `seed` son las de la sección 8 del contrato, y el monitor las lee por esos nombres;
+  * `monitor` no hace nada hasta 6.4, para que el Job semanal no falle si se crea antes.
+* **Datos:** las 2 etiquetas del backfill con el código inventado `UI` quedan sin familia, porque solo valen las 11 familias.
+* **Pasos del autor, en orden:**
+  1. Exportar el oro: `uv run python -m voc_analytics.labeling.export_gold_v3`, en `experiments/analytics`.
+  2. Mezclar en `main`, esperar el CD y fijar las tres imágenes: `uv run python tools/deploy_images.py --project <proyecto> --apply`. Esto crea los Jobs y sus triggers; después hay que commitear `infra/Pulumi.dev.yaml`.
+  3. Sembrar: `uv run python -m ml_inference seed --actor-hash <sha256> --reason "..."`.
+  4. Cargar el backfill: `uv run python -m ml_inference load-local --actor-hash <sha256> --work <carpeta>`. La primera vez guarda MiniLM en `<carpeta>/minilm`.
+  5. Ejecutar el delta una vez (`gcloud run jobs execute voc-ml-inference-delta`) y revisar duración y memoria en `inference_runs` (D9).
+  6. Validar `daily_topic_labels` contra `daily_topics_v0` en una muestra de días × banco.
+  7. Borrar las copias locales que cargó 6.3 (F-11).
 
 ### FEATURE 6.4: Monitoreo y ciclo de vida
 
@@ -413,14 +449,16 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * Series: palabras medias, textos de una palabra, de más de 60, no predecibles, vocabulario fuera del entrenamiento, proporción de `NEG` (z) y distribución de longitud (PSI). Familias y `u` con umbral nulo (D8).
   * Escribe `drift_metrics`. Si una serie cruza su umbral: `drift_alerts`, evento `open` en `drift_alert_events`, `DriftAlertMessage` en `voc-incident-alerts-topic` (nombre heredado de EPIC-2) y una subida en `hitl_boosts` solo para ese banco, con las reglas de `risk_policy` (P7-6).
   * `close_boosts(now)`: inserta la fila de cierre (`expired` o `alert_closed`) de cada subida vencida; nunca edita.
+  * Sin subida configurada en la `risk_policy` vigente (D12), la alerta se registra y se publica, pero no crea una subida.
+* Avisos por correo (D15): en `infra/`, una suscripción al tópico de alertas y un canal de correo de Cloud Monitoring. `quality.py` publica los `warning`, `retrain` y `rejected` en un tópico propio (`voc-model-quality-topic`), con un mensaje de `voc-common` sin texto.
 * `samples.py`:
   * `create_monitor_sample(quarter: str, size: int) -> list[HitlItem]`: muestra aleatoria con semilla registrada entre las reseñas predichas por el modelo en el trimestre, siempre `blind` (P7-7);
-  * `create_agreement_sample(...) -> list[HitlItem]`: doble revisión, `blind`; tamaño y frecuencia según el [hueco](#huecos-que-decide-el-autor).
+  * `create_agreement_sample(...) -> list[HitlItem]`: doble revisión, `blind`; tamaño y frecuencia de la `risk_policy` vigente; con los dos nulos no crea casos (D12).
 * `quality.py` (P7-10, P7-11) → `model_quality`:
-  * `kappa_monitor(quarter: str) -> ModelQuality`: κ de M4 contra las revisiones de `monitor_sample`; `retrain` si queda debajo de `retrain_kappa_floor` (0.89);
+  * `kappa_monitor(quarter: str) -> ModelQuality`: κ de RoBERTuito contra las revisiones de `monitor_sample`; `retrain` si queda debajo de `retrain_kappa_floor` (0.89);
   * `correction_rate(weeks: int = 4) -> ModelQuality`: `warning` si pasa de 28 % en la cola HITL;
   * `agreement_m4_gemini(week: str) -> ModelQuality`: 500 textos por semana etiquetados por Gemini (~$0.02); `warning` si el acuerdo de 4 semanas baja de 94 %;
-  * `families_validation(llm_model: str, prompt_version: str) -> ModelQuality`: corre al cambiar el modelo o el prompt de Gemini, sobre las 300 reseñas de `muestra_v21` en `gold_labels` (~$0.03); `rejected` si el acuerdo exacto es < 53 % o una familia con prevalencia ≥ 5 % queda bajo el límite inferior de su IC.
+  * `families_validation(llm_model: str, prompt_version: str) -> ModelQuality`: corre al cambiar el modelo o el prompt de Gemini, sobre las 300 reseñas de `aspects_gold_v2_1` en `gold_labels` (~$0.03); `rejected` si el acuerdo exacto es < 53 % o una familia con prevalencia ≥ 5 % queda bajo el límite inferior de su IC.
   * Los avisos no disparan nada solos: los ve MLOps (EPIC-7, 7.9).
 * `kpis.py`: `compute_kpis(period: str) -> list[KpiEstimate]`. `neg`, `gap_estrellas` (P8-9), `texto_peor`, `texto_mejor` y las celdas de la matriz 3 × 3 por banco y periodo, con PPI sobre el oro *dev* aleatorio de `gold_labels` (más las versiones `gold_hitl` cuando existan, D7) y su versión cruda (P8-10). Recalcula el mes en curso y el anterior.
 * `lifecycle.py` (ciclo de vida de 5.7, §7):
@@ -429,6 +467,11 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * **promoción:** con la regla de 5.4 (diferencia pareada en el oro *dev* que excluye el 0, o empate a menor costo); `promote` mueve el alias, se recalcula la curva y el autor corre el *re-scoring* completo en Kaggle (`backfill`, P7-4), que inserta filas con la `model_version` nueva;
   * **rollback:** `promote` a la versión anterior; sus predicciones siguen en la tabla, así que no se re-predice;
   * **re-ajuste trimestral de tópicos** (P7-8): `refit` y `match`; el curador confirma cada emparejamiento en `curation_topics` (`mapping_confirmed`) antes de que la versión nueva asigne.
+
+**En `services/ml-inference/src/ml_inference/rescore.py`** (D13; se implementa en 6.4, decisión del autor del 2026-10-24):
+
+* `rescore.py` (D13; antes `backfill.py`, D5): el pipeline de `voc_analytics.scale.backfill`, sin constantes de proyecto, como pasos de un Job: `export(run)`, `push_dataset(run)`, `run_kernel(run, model_version)`, `wait_kernel(run, timeout)`, `pull(run)` (predicciones a GCS), `load(run, model_version)` y `cleanup(run)`. Corre en el Job `voc-ml-rescoring` con la API de Kaggle y el token de Secret Manager; nada pasa por un equipo local. Los pesos salen del registro. El kernel predice en GPU, y la calibración con la T de la versión se aplica en `load`. Cada corrida sube su propio dataset privado (`voc-backfill-corpus-<corrida>`), y `cleanup` lo borra de Kaggle en cuanto `load` verifica la carga en BigQuery (conteos por `text_key` y por `model_version`); si la verificación falla, el dataset se queda y la corrida no se da por terminada (FMEA F-14, decisión del autor, 2026-10-23). Paralelizar el `preprocess_tweet` antes de subir (5.7, §9: 27 min en la CPU de Kaggle).
+* Infraestructura que suma 6.4 (D13): el Job `voc-ml-rescoring` (1 vCPU, 4 GiB por el dataset que arma en memoria, *timeout* de 3 h, sin Scheduler), el secreto `voc-kaggle-token` con `roles/secretmanager.secretAccessor` solo para `voc-sa-ml-backend`, y la API `secretmanager.googleapis.com`. El autor carga el valor del secreto, que no pasa por Pulumi ni por git.
 
 **Pruebas** (sin red; cobertura ≥ 85 %):
 
@@ -439,14 +482,26 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * `test_samples.py`: `monitor_sample` siempre `blind` y reproducible con su semilla;
   * `test_quality.py`: κ debajo del piso da `retrain`; corrección de 30 % da `warning`; la regla de las familias acepta y rechaza en los bordes;
   * `test_lifecycle.py`: `promote` y *rollback* con `aiplatform` simulado; la curva recalculada coincide con `selective` en datos sintéticos.
+  * `test_rescore.py`: Kaggle y Secret Manager simulados; el `EXPORT DATA` usa `TO_HEX(SHA256(texto_sanitizado))`; un kernel fallido o que excede el tiempo deja la corrida en `failed` sin cargar nada; `cleanup` borra el dataset de la corrida solo después de una carga verificada.
 
 **Terminado cuando:**
 
 * corrido sobre el histórico, el monitor reproduce las tasas de alerta de 5.7 (§2: de 0 a 1.4 meses al año por serie y banco);
-* las alertas de deriva llegan al tópico con los umbrales de la `drift_policy` de cada banco y crean su subida HITL;
+* las alertas de deriva llegan al tópico con los umbrales de la `drift_policy` de cada banco, crean su subida HITL si la `risk_policy` la configura y llegan por correo (D15);
 * `model_quality` registra cada medición de P7-10 y P7-11, y `kpi_estimates` llena el cockpit;
 * promover recalcula y guarda la curva, y el *rollback* no re-predice;
 * el portal de EPIC-7 puede consultar todo lo anterior.
+
+### FEATURE 6.5: Reentrenamiento automatizado (D14)
+
+**Objetivo:** que reentrenar RoBERTuito no dependa de repetir la experimentación de EPIC-5 en local.
+
+**Se detalla después de 6.4**, con el mismo formato que las demás features. Partes previstas:
+
+* un Job que arma el conjunto de entrenamiento en BigQuery: la plata de Gemini más las revisiones del HITL, sin el oro *test* (consumido en 5.8);
+* entrenamiento en GPU: un kernel de Kaggle (el `finetune` de 5.4 sin constantes de proyecto) o Cloud Run con GPU si el proyecto tiene cuota;
+* evaluación en el oro *dev* de `gold_labels` con la regla de 5.4, nueva T y curva de cobertura y riesgo, y registro del candidato en Vertex Model Registry;
+* promoción con aprobación humana (pantalla de EPIC-7 o el autor), que dispara el *re-scoring* de D13.
 
 ---
 
@@ -454,9 +509,10 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 * [x] Contratos v3 en `voc-common`, con `bq_schema` y su documento en `docs/contracts/` (6.1).
 * [ ] Tablas y vistas v3, Jobs de inferencia y de monitoreo, Scheduler e IAM aprovisionados con Pulumi; `delora_predictions`, `hitl_triage_audit_log` y el índice de 768 retirados (6.2). *Desplegado en dev el 2026-10-24; los Jobs de inferencia y monitoreo esperan la imagen de 6.3.*
-* [ ] Backfills de 5.8 y 5.9 cargados y delta diario en operación con M4 fp32, Gemini y `model_v0` (6.3).
-* [ ] Política HITL y curva de cobertura y riesgo versionadas en BigQuery; la inferencia marca con la política vigente (6.1 a 6.3), una vez fijados los huecos del autor.
-* [ ] Monitor de deriva por banco, subidas HITL, calidad de M4 y de las familias, KPI con PPI, promoción, *rollback* y re-ajuste de tópicos probados (6.4).
+* [ ] Backfills de 5.8 y 5.9 cargados y delta diario en operación con RoBERTuito fp32, Gemini y `topics_v1` (6.3).
+* [ ] Política HITL y curva de cobertura y riesgo versionadas en BigQuery; la inferencia marca con la política vigente (6.1 a 6.3).
+* [ ] Monitor de deriva por banco, subidas HITL, calidad de RoBERTuito y de las familias, KPI con PPI, promoción, *rollback* y re-ajuste de tópicos probados (6.4).
+* [ ] Reentrenamiento automatizado con aprobación humana de la promoción (6.5, D14).
 * [ ] *Quality gates* del monorepo (`ruff`, `pyrefly`, `bandit`, `pytest` con cobertura ≥ 85 %, ≥ 80 % en `infra/`) sin errores.
 
 ---

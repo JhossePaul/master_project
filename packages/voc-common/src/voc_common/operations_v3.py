@@ -262,23 +262,31 @@ class ModelQuality(_AnalyticsRecord):
 
 
 class GoldLabel(_AnalyticsRecord):
-    """Fila de ``gold_labels`` (D10): oro *dev* y ``muestra_v21``."""
+    """Fila de ``gold_labels`` (D10): oro *dev* y ``aspects_gold_v2_1``.
+
+    El oro *dev* aleatorio es una muestra estratificada: ``weight`` (1/π) da
+    cifras poblacionales en la curva HITL y en PPI. El oro de aspectos es por
+    texto único, así que no tiene ``id_resena`` ni peso.
+    """
 
     gold_version: NonEmpty
     split: GoldSplit
     task: HitlTask
-    id_resena: NonEmpty
+    id_resena: NonEmpty | None = None
     text_key: Digest
     label: SentimentLabel | None = None
     families: list[AspectFamily] = []
     flag_update: bool | None = None
     flag_security: bool | None = None
     praise: bool | None = None
+    weight: float | None = None
     guideline_version: NonEmpty
     loaded_at: UtcDatetime
 
     @model_validator(mode="after")
     def _task_fields(self) -> Self:
+        if self.weight is not None and self.weight <= 0:
+            raise ValueError("weight must be positive")
         flags = (self.flag_update, self.flag_security, self.praise)
         if self.task is HitlTask.SENTIMENT:
             if (
@@ -287,6 +295,8 @@ class GoldLabel(_AnalyticsRecord):
                 or any(flag is not None for flag in flags)
             ):
                 raise ValueError("sentiment gold has a label and no aspects")
+            if self.id_resena is None or self.weight is None:
+                raise ValueError("sentiment gold needs id_resena and weight")
         elif self.task is HitlTask.ASPECTS:
             if self.label is not None or any(flag is None for flag in flags):
                 raise ValueError(
@@ -294,6 +304,8 @@ class GoldLabel(_AnalyticsRecord):
                 )
             if len(set(self.families)) != len(self.families):
                 raise ValueError("families must not repeat")
+            if self.weight is not None:
+                raise ValueError("aspects gold has no design weight")
         else:
             raise ValueError("gold_labels holds sentiment or aspects only")
         expected = {GoldSplit.DEV: HitlTask.SENTIMENT}.get(

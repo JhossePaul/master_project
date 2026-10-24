@@ -21,10 +21,13 @@ def listing(entries: list[tuple[str, list[str] | str]]) -> str:
 class Fake:
     """Sustituye gcloud y pulumi; registra los comandos ejecutados."""
 
-    def __init__(self, ingestion, sanitization, current=None, preview=None):
+    def __init__(
+        self, ingestion, sanitization, current=None, preview=None, ml=None
+    ):
         self.images = {
             f"{REGISTRY}/ingestion-worker": ingestion,
             f"{REGISTRY}/sanitization-pipeline": sanitization,
+            f"{REGISTRY}/ml-inference": ingestion if ml is None else ml,
         }
         self.current = current or {}
         self.preview = (
@@ -78,6 +81,7 @@ def test_picks_the_latest_sha_present_in_both_images_and_sets_both_keys():
     assert {c[-2].split(":", 1)[1] for c in sets} == {
         "ingestion_worker_image",
         "sanitization_job_image",
+        "ml_inference_image",
     }
     assert f"{REGISTRY}/ingestion-worker:{NEW}@{D['n']}" in {
         c[-1] for c in sets
@@ -89,6 +93,13 @@ def test_a_sha_built_in_only_one_image_is_never_chosen():
     ingestion = listing([(D["n"], [NEW]), (D["o"], [OLD])])
     sanitization = listing([(D["o"], [OLD])])
     code, text = run(Fake(ingestion, sanitization))
+    assert f"Versión: {OLD}" in text
+
+
+def test_ml_inference_must_share_the_sha():
+    ingestion, sanitization = both()
+    ml = listing([(D["o"], [OLD])])
+    code, text = run(Fake(ingestion, sanitization, ml=ml))
     assert f"Versión: {OLD}" in text
 
 
@@ -121,6 +132,7 @@ def test_no_changes_when_already_pinned():
         current={
             "ingestion_worker_image": ref("ingestion-worker", NEW, D["n"]),
             "sanitization_job_image": ref("sanitization-pipeline", NEW, D["n"]),
+            "ml_inference_image": ref("ml-inference", NEW, D["n"]),
         },
         preview="Resources:\n    54 unchanged",
     )

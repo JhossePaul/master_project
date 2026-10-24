@@ -2,12 +2,12 @@
 
 Sustituye el copiar a mano los comandos `pulumi config set` del resumen del CD:
 
-1. Lista en Artifact Registry las imágenes de `ingestion-worker` y
-   `sanitization-pipeline`.
-2. Elige el SHA de commit más reciente que tengan **las dos** (comparten código:
+1. Lista en Artifact Registry las imágenes de `ingestion-worker`,
+   `sanitization-pipeline` y `ml-inference` (EPIC-6, 6.3).
+2. Elige el SHA de commit más reciente que tengan **todas** (comparten código:
    desplegar una sola dejó páginas cerradas con hueco el 2026-10-16) o el que
    se pida con `--sha`.
-3. Fija las dos claves de Pulumi con `<registro>/<imagen>:<sha>@<digest>`.
+3. Fija sus claves de Pulumi con `<registro>/<imagen>:<sha>@<digest>`.
 4. Muestra `pulumi preview`; con `--apply` ejecuta `pulumi up` solo si el
    preview no borra ni reemplaza recursos.
 
@@ -31,6 +31,7 @@ REPOSITORY = "voc-containers-repo"
 WORKERS = (
     ("ingestion-worker", "ingestion_worker_image"),
     ("sanitization-pipeline", "sanitization_job_image"),
+    ("ml-inference", "ml_inference_image"),
 )
 CONFIG_NAMESPACE = "bbva-voc-infra"
 INFRA_DIR = Path(__file__).resolve().parent.parent / "infra"

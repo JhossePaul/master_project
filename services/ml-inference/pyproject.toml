@@ -1,0 +1,25 @@
+[project]
+name = "ml-inference"
+version = "0.1.0"
+description = "Inferencia batch, cargas y siembra del core analítico de BBVA VoC Analyzer (EPIC-6, 6.3)"
+requires-python = ">=3.11"
+dependencies = [
+    "voc-common",
+    "voc-nlp[sentiment,gemini,topics]",
+    "google-cloud-bigquery>=3.27,<4",
+    "google-cloud-storage>=2.19,<4",
+    "google-cloud-aiplatform>=1.70,<2",
+    "pydantic-settings>=2.7,<3",
+    "pyarrow>=17",
+]
+
+[tool.uv.sources]
+voc-common = { workspace = true }
+voc-nlp = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ml_inference"]
