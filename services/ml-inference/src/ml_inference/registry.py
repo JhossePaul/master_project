@@ -130,7 +130,7 @@ def promote(
     ).add_version_aliases(
         new_aliases=[PRODUCTION_ALIAS], version=version.version_id
     )
-    candidates = _latest_rows(bigquery, settings.dataset)
+    candidates = latest_versions(bigquery, settings.dataset)
     if model_version not in candidates:
         raise LookupError(f"{model_version} is not in model_versions")
     rows = []
@@ -168,7 +168,8 @@ def resolve(bigquery: Any, settings: InferenceSettings) -> ModelVersion:
     return load_state(bigquery, settings.dataset).model
 
 
-def _latest_rows(bigquery: Any, dataset: str) -> dict[str, ModelVersion]:
+def latest_versions(bigquery: Any, dataset: str) -> dict[str, ModelVersion]:
+    """Última fila de cada versión en ``model_versions``."""
     from ml_inference.bq_io import query_rows, render
 
     rows = query_rows(

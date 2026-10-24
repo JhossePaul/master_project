@@ -193,8 +193,10 @@ def test_register_and_promote_dispatch(
     monkeypatch.setattr(
         registry, "register", lambda *a, **k: env.setdefault("reg", k)
     )
+    import ml_inference.lifecycle as lifecycle
+
     monkeypatch.setattr(
-        registry, "promote", lambda *a, **k: env.setdefault("pro", k)
+        lifecycle, "promote_version", lambda *a, **k: env.setdefault("pro", k)
     )
     assert (
         cli.main(
@@ -235,8 +237,39 @@ def test_register_and_promote_dispatch(
                 ACTOR,
                 "--reason",
                 "r",
+                "--force",
             ]
         )
         == 0
     )
-    assert env["pro"]["model_version"] == "v2"
+    assert env["pro"]["model_version"] == "v2" and env["pro"]["force"]
+
+
+def test_curve_and_risk_policy_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.lifecycle as lifecycle
+    import ml_inference.registry as registry
+
+    versions = {"v1": "model-v1", "v2": "model-v2"}
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: versions)
+    monkeypatch.setattr(registry, "resolve", lambda b, s: "model-v1")
+    monkeypatch.setattr(
+        lifecycle.Lifecycle,
+        "recompute_curve",
+        lambda self, m, n: env.setdefault("curves", []).append(m),
+    )
+    policy = type("P", (), {"policy_version": "p2", "hitl_threshold": 0.7})
+    monkeypatch.setattr(
+        lifecycle.Lifecycle,
+        "set_coverage",
+        lambda self, m, c, a, r, n: (
+            env.setdefault("policy", (m, c, r)) and policy
+        ),
+    )
+    assert cli.main(["curve"]) == 0
+    assert cli.main(["curve", "--model-version", "v2"]) == 0
+    assert env["curves"] == ["model-v1", "model-v2"]
+    args = ["risk-policy", "--coverage", "0.85", "--actor-hash", ACTOR]
+    assert cli.main([*args, "--reason", "menos carga"]) == 0
+    assert env["policy"] == ("model-v1", 0.85, "menos carga")

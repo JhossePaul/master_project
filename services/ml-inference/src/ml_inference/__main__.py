@@ -4,6 +4,10 @@
 * ``seed``: versiones iniciales desde las métricas de los experimentos (autor).
 * ``load-local``: carga única del backfill histórico desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
+  ``promote`` evalúa la regla de promoción, recalcula la curva y propone la
+  ``risk_policy`` del modelo nuevo; el candidato ya debe estar re-predicho.
+* ``curve``: recalcula la curva de cobertura y riesgo de una versión.
+* ``risk-policy``: nueva versión de la ``risk_policy`` con otra cobertura.
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
   muestras humanas, calidad y KPI).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento.
@@ -68,6 +72,17 @@ def parser() -> argparse.ArgumentParser:
     pro.add_argument("--model-version", required=True)
     pro.add_argument("--actor-hash", type=_actor, required=True)
     pro.add_argument("--reason", required=True)
+    pro.add_argument(
+        "--force",
+        action="store_true",
+        help="promueve aunque el candidato sea significativamente peor",
+    )
+    cur = sub.add_parser("curve", help="recalcula la curva de una versión")
+    cur.add_argument("--model-version", default=None)
+    pol = sub.add_parser("risk-policy", help="cambia la cobertura objetivo")
+    pol.add_argument("--coverage", type=float, required=True)
+    pol.add_argument("--actor-hash", type=_actor, required=True)
+    pol.add_argument("--reason", required=True)
     return p
 
 
@@ -282,16 +297,40 @@ def main(argv: Sequence[str] | None = None) -> int:
             now=now,
         )
         return 0
-    from ml_inference.registry import promote
+    from ml_inference.lifecycle import Lifecycle, promote_version
+    from ml_inference.registry import latest_versions, resolve
 
-    promote(
+    lifecycle = Lifecycle(bigquery, writer, settings.dataset)
+    if args.command == "curve":
+        model = (
+            latest_versions(bigquery, settings.dataset)[args.model_version]
+            if args.model_version
+            else resolve(bigquery, settings)
+        )
+        lifecycle.recompute_curve(model, now)
+        return 0
+    if args.command == "risk-policy":
+        policy = lifecycle.set_coverage(
+            resolve(bigquery, settings),
+            args.coverage,
+            args.actor_hash,
+            args.reason,
+            now,
+        )
+        log.info(
+            "risk-policy: %s, umbral %.4f",
+            policy.policy_version,
+            policy.hitl_threshold,
+        )
+        return 0
+    promote_version(
         settings,
-        writer,
-        bigquery,
+        lifecycle,
         model_version=args.model_version,
         actor_hash=args.actor_hash,
         reason=args.reason,
         now=now,
+        force=args.force,
     )
     return 0
 

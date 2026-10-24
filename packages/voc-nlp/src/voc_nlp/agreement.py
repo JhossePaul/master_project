@@ -1,7 +1,9 @@
 """Acuerdo entre etiquetadores del monitor de calidad.
 
 Port de ``voc_analytics.scale.model_monitor`` sin scikit-learn: κ de Cohen
-(con pesos opcionales, como ``cohen_kappa_score``), acuerdo exacto de
+(con pesos opcionales, como ``cohen_kappa_score``), macro-F1 (como
+``f1_score(average="macro", zero_division=0)``, la otra métrica de la regla
+de promoción), acuerdo exacto de
 conjuntos de familias y κ por familia con su IC *bootstrap*. Las familias
 con prevalencia < 5 % no se juzgan: sus intervalos son demasiado anchos
 (``docs/analytics/scale/scale_report.md``).
@@ -54,6 +56,25 @@ def cohen_kappa(
     return (
         0.0 if expected == 1 else float((observed - expected) / (1 - expected))
     )
+
+
+def macro_f1(
+    y_true: Sequence[object],
+    y_pred: Sequence[object],
+    labels: Sequence[object],
+    w: Sequence[float] | NDArray[np.floating] | None = None,
+) -> float:
+    """Media del F1 de cada clase de ``labels``; 0 en una clase sin casos."""
+    if len(y_true) != len(y_pred):
+        raise ValueError("label sequences must align")
+    weights = np.ones(len(y_true)) if w is None else np.asarray(w, dtype=float)
+    t, p = np.asarray(y_true, dtype=object), np.asarray(y_pred, dtype=object)
+    scores = []
+    for label in labels:
+        tp = weights[(t == label) & (p == label)].sum()
+        denom = weights[t == label].sum() + weights[p == label].sum()
+        scores.append(0.0 if denom == 0 else 2 * tp / denom)
+    return float(np.mean(scores))
 
 
 def exact_agreement(

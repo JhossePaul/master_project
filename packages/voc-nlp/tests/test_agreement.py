@@ -8,6 +8,7 @@ from voc_nlp.agreement import (
     exact_agreement,
     exact_agreement_ci,
     family_kappa,
+    macro_f1,
 )
 
 
@@ -34,6 +35,40 @@ def test_cohen_kappa_matches_scikit_learn_when_available() -> None:
     w = rng.uniform(1, 5, 200)
     expected = metrics.cohen_kappa_score(a, b, sample_weight=w)
     assert cohen_kappa(a, b, w) == pytest.approx(expected)
+
+
+LABELS = ("NEG", "NEU", "POS")
+
+
+def test_macro_f1_matches_a_hand_solution() -> None:
+    y = ["NEG", "NEG", "POS", "POS"]
+    p = ["NEG", "POS", "POS", "POS"]
+    # F1: NEG 2/3, POS 4/5 y NEU 0 (sin casos ni predicciones).
+    assert macro_f1(y, p, LABELS) == pytest.approx((2 / 3 + 4 / 5) / 3)
+    assert macro_f1(y, p, ("NEG", "POS"), [1.0, 1.0, 2.0, 2.0]) == (
+        pytest.approx(
+            macro_f1(y + ["POS"] * 2, p + ["POS"] * 2, ("NEG", "POS"))
+        )
+    )
+    with pytest.raises(ValueError):
+        macro_f1(y, p[:2], LABELS)
+
+
+def test_macro_f1_matches_scikit_learn_when_available() -> None:
+    metrics = pytest.importorskip("sklearn.metrics")
+    rng = np.random.default_rng(5)
+    a = list(rng.choice(["NEG", "NEU", "POS"], 200))
+    b = list(rng.choice(["NEG", "POS"], 200))
+    w = rng.uniform(1, 5, 200)
+    expected = metrics.f1_score(
+        a,
+        b,
+        labels=list(LABELS),
+        average="macro",
+        sample_weight=w,
+        zero_division=0,
+    )
+    assert macro_f1(a, b, LABELS, w) == pytest.approx(expected)
 
 
 def test_exact_agreement_compares_whole_sets() -> None:
