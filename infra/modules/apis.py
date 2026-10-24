@@ -12,6 +12,8 @@ _BASE_APIS: tuple[str, ...] = (
     "cloudscheduler.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
+    # Canal de correo y políticas de los avisos.
+    "monitoring.googleapis.com",
 )
 
 

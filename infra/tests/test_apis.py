@@ -20,6 +20,7 @@ _BASE_APIS = {
     "cloudscheduler.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
+    "monitoring.googleapis.com",
 }
 
 

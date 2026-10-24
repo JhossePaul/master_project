@@ -180,6 +180,12 @@ def create_cloud_run_resources(
         "PUBSUB_RAW_SUBSCRIPTION": pubsub.raw_subscription.name,
         "PUBSUB_ALERTS_TOPIC": pubsub.alerts_topic.name,
     }
+    # Tópicos del monitor (InferenceSettings.drift_topic y quality_topic).
+    ml_env: dict[str, pulumi.Input[str]] = {
+        **common,
+        "DRIFT_TOPIC": pubsub.alerts_topic.name,
+        "QUALITY_TOPIC": pubsub.quality_topic.name,
+    }
     deps = [
         repository,
         *api_deps,
@@ -407,7 +413,7 @@ def create_cloud_run_resources(
                                 },
                                 "envs": [
                                     {"name": k, "value": v}
-                                    for k, v in common.items()
+                                    for k, v in ml_env.items()
                                 ],
                             }
                         ],

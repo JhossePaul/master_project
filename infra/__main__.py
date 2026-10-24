@@ -9,6 +9,7 @@ from voc_common.config import (
     IngestionStorageLayout,
 )
 
+from infra.modules.alerting import create_alerting_resources
 from infra.modules.analytics_bq import create_analytics_bq
 from infra.modules.apis import enable_project_apis
 from infra.modules.cloud_run import (
@@ -45,6 +46,8 @@ if user_hash_salt is None:
     else:
         user_hash_salt = pulumi.Output.secret(DEV_USER_HASH_SALT)
 proxies = config.get_secret_object("scraper_proxy_pool_urls")
+# Destino de los avisos de deriva y de calidad; sin él no hay correo.
+alert_email = config.get("alert_email")
 # Fase 1 (false): base sin Cloud Run ni Scheduler hasta publicar imágenes.
 deploy_workloads = config.get_bool("deploy_workloads") or False
 # Leer solo Pulumi: los prefijos no dependen de .env ni variables del host.
@@ -74,6 +77,14 @@ pubsub = create_pubsub_resources(
     security.kms_crypto_key_id,
     list(project_apis.values()),
     project_id=project_id,
+    alert_publisher_email=security.sa_ml_and_backend.email,
+)
+alerting = (
+    create_alerting_resources(
+        project_id, alert_email, list(project_apis.values())
+    )
+    if alert_email
+    else None
 )
 storage_bq = create_storage_and_bq_resources(
     project_id,
@@ -181,6 +192,12 @@ pulumi.export("pubsub_alerts_topic", pubsub.alerts_topic.id)
 pulumi.export("pubsub_dlq_topic", pubsub.dlq_topic.id)
 pulumi.export("pubsub_dlq_subscription", pubsub.dlq_subscription.id)
 pulumi.export("pubsub_alerts_subscription", pubsub.alerts_subscription.id)
+pulumi.export("pubsub_model_quality_topic", pubsub.quality_topic.id)
+pulumi.export(
+    "pubsub_model_quality_subscription", pubsub.quality_subscription.id
+)
+if alerting is not None:
+    pulumi.export("alert_notification_channel", alerting.channel.name)
 pulumi.export(
     "bq_sanitized_tds_table", storage_bq.sanitized_reviews_tds.table_id
 )

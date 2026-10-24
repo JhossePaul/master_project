@@ -240,6 +240,8 @@ def _check_ml_jobs(
         }
         env = {e["name"]: e["value"] for e in container["envs"]}
         assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
+        assert env["DRIFT_TOPIC"] == "voc-incident-alerts-topic"
+        assert env["QUALITY_TOPIC"] == "voc-model-quality-topic"
         grant = states[f"{name}-scheduler-invoker"]
         assert grant["role"] == "roles/run.invoker"
         assert grant["member"] == invoker

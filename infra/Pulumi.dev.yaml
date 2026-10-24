@@ -19,6 +19,9 @@ config:
   # voc-ml-inference-delta y voc-ml-monitor ni sus triggers):
   #   bbva-voc-infra:ml_inference_image: "<registry>/ml-inference:<sha>@sha256:<digest>"
   bbva-voc-infra:deploy_workloads: "true"
+  # Correo de los avisos de deriva y de calidad del modelo. Sin él no se crean
+  # el canal ni las políticas de Cloud Monitoring; se fija con
+  #   pulumi config set bbva-voc-infra:alert_email <correo>
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
   bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"
@@ -54,5 +57,6 @@ config:
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
   bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:932c659add8b4e396c40908a9d04da105da8939f33f2811d56d514f843ebf28b
   bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:45f3addbfc572586f561f3b1c09e6e140ef45d24ecce9328d9162643818dee84
+  bbva-voc-infra:alert_email: jpaul.marquez.ruiz@gmail.com
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=
