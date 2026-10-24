@@ -4,6 +4,7 @@ import base64
 import json
 import runpy
 from pathlib import Path
+from typing import Any
 
 import pulumi
 import pytest
@@ -18,6 +19,7 @@ from infra.modules.cloud_run import _validate_hash_salt
 from infra.tests.conftest import (
     API_BACKEND_IMAGE,
     INGESTION_IMAGE,
+    ML_INFERENCE_IMAGE,
     SANITIZATION_IMAGE,
     WORKLOAD_CONFIG,
     InfrastructureMonitor,
@@ -28,10 +30,14 @@ from infra.tests.conftest import (
 
 
 @pytest.mark.parametrize("free_tier", [True, False])
-@pytest.mark.parametrize("vertex", [False, True])
+@pytest.mark.parametrize("ml", [False, True])
 def test_compute_and_scheduler_modes(
-    pulumi_mocks: InfrastructureMonitor, free_tier: bool, vertex: bool
+    pulumi_mocks: InfrastructureMonitor, free_tier: bool, ml: bool
 ) -> None:
+    ml_config = (
+        {"bbva-voc-infra:ml_inference_image": ML_INFERENCE_IMAGE} if ml else {}
+    )
+
     @pulumi.runtime.test
     def deploy() -> None:
         pulumi.runtime.set_all_config(
@@ -39,10 +45,10 @@ def test_compute_and_scheduler_modes(
                 "gcp:project": "test-voc-project",
                 "gcp:region": "us-central1",
                 "bbva-voc-infra:free_tier_mode": str(free_tier).lower(),
-                "bbva-voc-infra:enable_dedicated_vertex_endpoints": str(
-                    vertex
-                ).lower(),
+                # Flag retirado (P8-6): no crea el índice de 768 ni endpoints.
+                "bbva-voc-infra:enable_dedicated_vertex_endpoints": "true",
                 **WORKLOAD_CONFIG,
+                **ml_config,
                 "bbva-voc-infra:scraper_proxy_pool_urls": '["http://proxy:8080"]',
                 "bbva-voc-infra:user_hash_salt": "test-salt-1234567890",
             },
@@ -61,6 +67,8 @@ def test_compute_and_scheduler_modes(
         ("voc-ingestion-worker", "voc-sa-ingestion", INGESTION_IMAGE),
         ("voc-api-backend", "voc-sa-ml-backend", API_BACKEND_IMAGE),
     ):
+        # Valor por defecto de la API declarado para evitar deriva en preview.
+        assert states[name]["scaling"] == {"minInstanceCount": 0}
         template = states[name]["template"]
         assert template["executionEnvironment"] == "EXECUTION_ENVIRONMENT_GEN2"
         assert template["scaling"] == {
@@ -116,6 +124,12 @@ def test_compute_and_scheduler_modes(
     )
     assert env["PUBSUB_RAW_SUBSCRIPTION"] == "voc-raw-reviews-sub"
     assert env["BQ_SANITIZED_TDS_TABLE"] == "sanitized_reviews_tds"
+    for retired in (
+        "BQ_PREDICTIONS_TABLE",
+        "BQ_HITL_AUDIT_TABLE",
+        "ENABLE_DEDICATED_VERTEX_ENDPOINTS",
+    ):
+        assert retired not in env and retired not in worker_env
     assert states["voc-containers-repo"]["format"] == "DOCKER"
     invoker = (
         "serviceAccount:voc-sa-scheduler@"
@@ -130,7 +144,8 @@ def test_compute_and_scheduler_modes(
         assert states[name]["member"] == invoker
     assert all(s.get("member") != "allUsers" for s in states.values())
     schedules = {name: s for name, s in states.items() if "schedule" in s}
-    assert len(schedules) == (2 if free_tier else 6)
+    assert len(schedules) == (2 if free_tier else 6) + (2 if ml else 0)
+    _check_ml_jobs(pulumi_mocks, states, schedules, ml, free_tier, invoker)
     sanitizer_job = schedules.pop("voc-trigger-sanitization-daily")
     assert sanitizer_job["schedule"] == (
         "30 8 * * *" if free_tier else "30 9 * * *"
@@ -183,21 +198,60 @@ def test_compute_and_scheduler_modes(
         assert by_name["voc-sanitization-scheduler-invoker"].urn in deps
     if not free_tier:
         assert set(seen) == set(BankKey)
-    if vertex:
-        index = states["voc-vector-search-index"]
-        assert index["indexUpdateMethod"] == "BATCH_UPDATE"
-        assert index["metadata"]["config"]["dimensions"] == 768
-        assert (
-            index["metadata"]["config"]["distanceMeasureType"]
-            == "COSINE_DISTANCE"
+    assert not any("gcp:vertex/" in r.urn for r in registrations)
+
+
+def _check_ml_jobs(
+    monitor: InfrastructureMonitor,
+    states: dict[str, Any],
+    schedules: dict[str, Any],
+    ml: bool,
+    free_tier: bool,
+    invoker: str,
+) -> None:
+    """Jobs de ml-inference y sus triggers; se sacan de ``schedules``."""
+    names = ("voc-ml-inference-delta", "voc-ml-monitor")
+    triggers = {
+        "voc-ml-inference-delta": "voc-trigger-ml-delta-daily",
+        "voc-ml-monitor": "voc-trigger-ml-monitor-weekly",
+    }
+    if not ml:
+        assert not set(names) & set(states)
+        assert not set(triggers.values()) & set(schedules)
+        return
+    hour = 8 if free_tier else 9
+    expected = {
+        "voc-ml-inference-delta": ("delta", f"30 {hour + 1} * * *"),
+        "voc-ml-monitor": ("monitor", f"30 {hour + 2} * * 1"),
+    }
+    by_name = {r.urn.rsplit("::", 1)[-1]: r for r in monitor.resources.values()}
+    for name, (command, cron) in expected.items():
+        task = states[name]["template"]["template"]
+        assert task["serviceAccount"] == (
+            "voc-sa-ml-backend@test-voc-project.iam.gserviceaccount.com"
         )
+        assert task["timeout"] == "1800s" and task["maxRetries"] == 1
+        container = task["containers"][0]
+        assert container["image"] == ML_INFERENCE_IMAGE
+        assert container["args"] == [command]
+        assert container["resources"]["limits"] == {
+            "cpu": "1",
+            "memory": "2Gi",
+        }
+        env = {e["name"]: e["value"] for e in container["envs"]}
+        assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
+        grant = states[f"{name}-scheduler-invoker"]
+        assert grant["role"] == "roles/run.invoker"
+        assert grant["member"] == invoker
+        trigger = schedules.pop(triggers[name])
+        assert trigger["schedule"] == cron
+        assert trigger["timeZone"] == "America/Mexico_City"
+        assert trigger["httpTarget"]["uri"].endswith(f"/jobs/{name}:run")
+        assert "oauthToken" in trigger["httpTarget"]
         assert (
-            index["metadata"]["contentsDeltaUri"]
-            == "gs://voc-datalake-test-voc-project/vertex/embeddings/"
+            by_name[f"{name}-scheduler-invoker"].urn
+            in monitor.dependencies[triggers[name]]
         )
-        assert states["delora-tnss-endpoint"]["location"] == "us-central1"
-    else:
-        assert not any("gcp:vertex/" in r.urn for r in registrations)
 
 
 def test_production_requires_hash_salt() -> None:

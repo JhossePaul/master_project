@@ -125,7 +125,7 @@ para los defaults, fixtures y orden de activación con las épicas 2–4.
 ### Infraestructura Pulumi (Épica 2 implementada)
 
 La suite integrada y el orden del primer despliegue se documentan en
-[activación y preview](docs/deployment.md). El preview con proveedor sigue
+[activación y preview](docs/operations/deployment.md). El preview con proveedor sigue
 pendiente de configurar el stack/backend y credenciales reales.
 
 `infra` forma parte del workspace. Sincroniza desde la raíz con

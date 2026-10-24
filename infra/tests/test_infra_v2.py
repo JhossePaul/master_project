@@ -11,6 +11,7 @@ import pytest
 from voc_common import IngestionRunAudit, IngestionWatermarkState, Settings
 
 from infra.tests.conftest import (
+    BQ_TABLES,
     WORKLOAD_CONFIG,
     InfrastructureMonitor,
     assert_acyclic,
@@ -67,13 +68,8 @@ def test_complete_infrastructure_matrix(
         n for n, r in by_name.items() if "gcp:cloudrunv2/job:Job::" in r.urn
     }
     assert jobs == {"voc-ingestion-history-job", "voc-sanitization-job"}
-    tables = {n for n, s in states.items() if "tableId" in s}
-    assert tables == {
-        "ingestion_runs_log_v2",
-        "sanitized_reviews_tds",
-        "delora_predictions",
-        "hitl_triage_audit_log",
-    }
+    tables = {n for n, s in states.items() if "schema" in s}
+    assert tables == BQ_TABLES
     for name in tables:
         assert states[name]["deletionProtection"] == (environment != "dev")
         columns = {f["name"] for f in json.loads(states[name]["schema"])}
@@ -94,7 +90,11 @@ def test_complete_infrastructure_matrix(
             "action": {"type": "Delete"},
             "condition": {
                 "age": 7,
-                "matchesPrefixes": ["raw_staging/", "temp_beam/"],
+                "matchesPrefixes": [
+                    "raw_staging/",
+                    "temp_beam/",
+                    "backfill/",
+                ],
             },
         }
     ]

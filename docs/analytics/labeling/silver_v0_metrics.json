@@ -1,0 +1,1731 @@
+{
+  "filas": 99926,
+  "textos": 70284,
+  "por_split": {
+    "holdout_nuevo": 5336,
+    "holdout_visto": 3707,
+    "entrenamiento": 90883
+  },
+  "poblacion": {
+    "clase": {
+      "NEG": 0.2686,
+      "NEU": 0.0183,
+      "POS": 0.7092,
+      "NA": 0.0039
+    },
+    "menciona_falla": 0.2358,
+    "estrellas_difiere_de_plata": 0.1087,
+    "incongruencia_extremos": 0.0503
+  },
+  "plata_por_estrellas": [
+    {
+      "estrellas": 1,
+      "filas": 20374,
+      "neg": 0.9769,
+      "pos": 0.0121,
+      "neu": 0.0089,
+      "falla": 0.8231
+    },
+    {
+      "estrellas": 2,
+      "filas": 9348,
+      "neg": 0.9335,
+      "pos": 0.0369,
+      "neu": 0.0233,
+      "falla": 0.833
+    },
+    {
+      "estrellas": 3,
+      "filas": 11002,
+      "neg": 0.7326,
+      "pos": 0.2015,
+      "neu": 0.0582,
+      "falla": 0.6467
+    },
+    {
+      "estrellas": 4,
+      "filas": 15936,
+      "neg": 0.285,
+      "pos": 0.6728,
+      "neu": 0.0372,
+      "falla": 0.2645
+    },
+    {
+      "estrellas": 5,
+      "filas": 43266,
+      "neg": 0.0282,
+      "pos": 0.9533,
+      "neu": 0.0148,
+      "falla": 0.03
+    }
+  ],
+  "incongruencia_por_banco": [
+    {
+      "bank_id": "AZTECA",
+      "filas": 20001,
+      "p": 0.0356
+    },
+    {
+      "bank_id": "BANORTE",
+      "filas": 20002,
+      "p": 0.0653
+    },
+    {
+      "bank_id": "BBVA",
+      "filas": 20001,
+      "p": 0.0545
+    },
+    {
+      "bank_id": "NUBANK",
+      "filas": 19922,
+      "p": 0.0476
+    },
+    {
+      "bank_id": "SANTANDER",
+      "filas": 20000,
+      "p": 0.0472
+    }
+  ],
+  "incongruencia_por_periodo": [
+    {
+      "periodo": "2018",
+      "filas": 5805,
+      "p": 0.067
+    },
+    {
+      "periodo": "2019",
+      "filas": 10110,
+      "p": 0.0475
+    },
+    {
+      "periodo": "2020",
+      "filas": 9706,
+      "p": 0.0471
+    },
+    {
+      "periodo": "2021",
+      "filas": 11368,
+      "p": 0.0484
+    },
+    {
+      "periodo": "2022",
+      "filas": 10773,
+      "p": 0.0481
+    },
+    {
+      "periodo": "2023",
+      "filas": 9412,
+      "p": 0.0526
+    },
+    {
+      "periodo": "2024",
+      "filas": 11019,
+      "p": 0.0495
+    },
+    {
+      "periodo": "2025",
+      "filas": 12385,
+      "p": 0.0486
+    },
+    {
+      "periodo": "2026T1",
+      "filas": 6438,
+      "p": 0.049
+    },
+    {
+      "periodo": "<=2017",
+      "filas": 3867,
+      "p": 0.0582
+    },
+    {
+      "periodo": "holdout",
+      "filas": 9043,
+      "p": 0.0547
+    }
+  ],
+  "incongruencia_banco_periodo": [
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2018",
+      "filas": 791,
+      "p": 0.0402
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2019",
+      "filas": 2329,
+      "p": 0.0407
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020",
+      "filas": 2759,
+      "p": 0.0347
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2021",
+      "filas": 2998,
+      "p": 0.0376
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2022",
+      "filas": 2392,
+      "p": 0.0338
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023",
+      "filas": 2034,
+      "p": 0.0407
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2024",
+      "filas": 1824,
+      "p": 0.0352
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025",
+      "filas": 2099,
+      "p": 0.028
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2026T1",
+      "filas": 978,
+      "p": 0.0315
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2017",
+      "filas": 295,
+      "p": 0.0179
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "holdout",
+      "filas": 1502,
+      "p": 0.0309
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2018",
+      "filas": 1914,
+      "p": 0.0814
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2019",
+      "filas": 2257,
+      "p": 0.057
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020",
+      "filas": 1952,
+      "p": 0.0635
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2021",
+      "filas": 2166,
+      "p": 0.0689
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2022",
+      "filas": 2384,
+      "p": 0.0635
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023",
+      "filas": 1873,
+      "p": 0.057
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2024",
+      "filas": 1899,
+      "p": 0.0487
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025",
+      "filas": 2021,
+      "p": 0.0767
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2026T1",
+      "filas": 952,
+      "p": 0.0687
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2017",
+      "filas": 1108,
+      "p": 0.0597
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "holdout",
+      "filas": 1476,
+      "p": 0.0817
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2018",
+      "filas": 1809,
+      "p": 0.0596
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2019",
+      "filas": 2579,
+      "p": 0.0412
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020",
+      "filas": 1907,
+      "p": 0.0528
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2021",
+      "filas": 2128,
+      "p": 0.0491
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2022",
+      "filas": 1537,
+      "p": 0.0642
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023",
+      "filas": 1521,
+      "p": 0.0661
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2024",
+      "filas": 2168,
+      "p": 0.0582
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025",
+      "filas": 2199,
+      "p": 0.0553
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2026T1",
+      "filas": 939,
+      "p": 0.0495
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2017",
+      "filas": 1824,
+      "p": 0.059
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "holdout",
+      "filas": 1390,
+      "p": 0.0678
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020",
+      "filas": 717,
+      "p": 0.0446
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2021",
+      "filas": 1762,
+      "p": 0.0355
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2022",
+      "filas": 2328,
+      "p": 0.0418
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023",
+      "filas": 2050,
+      "p": 0.0742
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2024",
+      "filas": 3279,
+      "p": 0.058
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025",
+      "filas": 4152,
+      "p": 0.0449
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2026T1",
+      "filas": 2508,
+      "p": 0.0457
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "holdout",
+      "filas": 3126,
+      "p": 0.0416
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2018",
+      "filas": 1291,
+      "p": 0.0679
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2019",
+      "filas": 2945,
+      "p": 0.0533
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020",
+      "filas": 2371,
+      "p": 0.0493
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2021",
+      "filas": 2314,
+      "p": 0.0496
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2022",
+      "filas": 2132,
+      "p": 0.037
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023",
+      "filas": 1934,
+      "p": 0.046
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2024",
+      "filas": 1849,
+      "p": 0.044
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025",
+      "filas": 1914,
+      "p": 0.0339
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2026T1",
+      "filas": 1061,
+      "p": 0.0493
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2017",
+      "filas": 640,
+      "p": 0.0521
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "holdout",
+      "filas": 1549,
+      "p": 0.0472
+    }
+  ],
+  "neg_en_5_estrellas_banco_periodo": [
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2018",
+      "filas": 244,
+      "p": 0.0533
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2019",
+      "filas": 1140,
+      "p": 0.0202
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020",
+      "filas": 1333,
+      "p": 0.0158
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2021",
+      "filas": 1374,
+      "p": 0.0211
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2022",
+      "filas": 1178,
+      "p": 0.0153
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023",
+      "filas": 960,
+      "p": 0.0167
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2024",
+      "filas": 905,
+      "p": 0.021
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025",
+      "filas": 1057,
+      "p": 0.0142
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2026T1",
+      "filas": 488,
+      "p": 0.0164
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2017",
+      "filas": 92,
+      "p": 0.0109
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "holdout",
+      "filas": 730,
+      "p": 0.0178
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2018",
+      "filas": 824,
+      "p": 0.0473
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2019",
+      "filas": 1039,
+      "p": 0.0221
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020",
+      "filas": 665,
+      "p": 0.0526
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2021",
+      "filas": 872,
+      "p": 0.0378
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2022",
+      "filas": 1076,
+      "p": 0.0279
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023",
+      "filas": 908,
+      "p": 0.022
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2024",
+      "filas": 946,
+      "p": 0.018
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025",
+      "filas": 982,
+      "p": 0.0356
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2026T1",
+      "filas": 478,
+      "p": 0.0314
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2017",
+      "filas": 274,
+      "p": 0.0912
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "holdout",
+      "filas": 696,
+      "p": 0.0417
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2018",
+      "filas": 802,
+      "p": 0.0312
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2019",
+      "filas": 1112,
+      "p": 0.0198
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020",
+      "filas": 641,
+      "p": 0.053
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2021",
+      "filas": 828,
+      "p": 0.0266
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2022",
+      "filas": 635,
+      "p": 0.0504
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023",
+      "filas": 613,
+      "p": 0.0473
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2024",
+      "filas": 822,
+      "p": 0.056
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025",
+      "filas": 760,
+      "p": 0.0553
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2026T1",
+      "filas": 350,
+      "p": 0.0371
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2017",
+      "filas": 642,
+      "p": 0.0452
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "holdout",
+      "filas": 494,
+      "p": 0.0749
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020",
+      "filas": 336,
+      "p": 0.0357
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2021",
+      "filas": 845,
+      "p": 0.026
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2022",
+      "filas": 1073,
+      "p": 0.0308
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023",
+      "filas": 734,
+      "p": 0.0627
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2024",
+      "filas": 1394,
+      "p": 0.0495
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025",
+      "filas": 2001,
+      "p": 0.0325
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2026T1",
+      "filas": 1235,
+      "p": 0.03
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "holdout",
+      "filas": 1578,
+      "p": 0.0234
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2018",
+      "filas": 508,
+      "p": 0.0413
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2019",
+      "filas": 1193,
+      "p": 0.0159
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020",
+      "filas": 901,
+      "p": 0.0178
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2021",
+      "filas": 912,
+      "p": 0.0241
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2022",
+      "filas": 846,
+      "p": 0.0177
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023",
+      "filas": 814,
+      "p": 0.0209
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2024",
+      "filas": 847,
+      "p": 0.0236
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025",
+      "filas": 813,
+      "p": 0.016
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2026T1",
+      "filas": 461,
+      "p": 0.0282
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2017",
+      "filas": 169,
+      "p": 0.0296
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "holdout",
+      "filas": 646,
+      "p": 0.0248
+    }
+  ],
+  "contexto": {
+    "quincena": [
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 1,
+        "n_marca": 778,
+        "neg_marca": 0.9512,
+        "n_resto": 2733,
+        "neg_resto": 0.9583,
+        "p": 0.3885
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 2,
+        "n_marca": 333,
+        "neg_marca": 0.8498,
+        "n_resto": 1263,
+        "neg_resto": 0.8709,
+        "p": 0.314
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 3,
+        "n_marca": 464,
+        "neg_marca": 0.6056,
+        "n_resto": 1578,
+        "neg_resto": 0.5837,
+        "p": 0.3982
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 4,
+        "n_marca": 705,
+        "neg_marca": 0.1986,
+        "n_resto": 2646,
+        "neg_resto": 0.1878,
+        "p": 0.518
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 5,
+        "n_marca": 1992,
+        "neg_marca": 0.0211,
+        "n_resto": 7509,
+        "neg_resto": 0.0178,
+        "p": 0.3405
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 1,
+        "n_marca": 869,
+        "neg_marca": 0.9724,
+        "n_resto": 2692,
+        "neg_resto": 0.977,
+        "p": 0.4438
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 2,
+        "n_marca": 484,
+        "neg_marca": 0.9421,
+        "n_resto": 1243,
+        "neg_resto": 0.9356,
+        "p": 0.6158
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 3,
+        "n_marca": 574,
+        "neg_marca": 0.7753,
+        "n_resto": 1723,
+        "neg_resto": 0.7754,
+        "p": 0.9948
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 4,
+        "n_marca": 941,
+        "neg_marca": 0.3762,
+        "n_resto": 2716,
+        "neg_resto": 0.3387,
+        "p": 0.0377
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 5,
+        "n_marca": 2222,
+        "neg_marca": 0.0333,
+        "n_resto": 6538,
+        "neg_resto": 0.0347,
+        "p": 0.7514
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 1,
+        "n_marca": 1098,
+        "neg_marca": 0.9818,
+        "n_resto": 3881,
+        "neg_resto": 0.9817,
+        "p": 0.9862
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 2,
+        "n_marca": 468,
+        "neg_marca": 0.9594,
+        "n_resto": 1730,
+        "neg_resto": 0.9509,
+        "p": 0.4404
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 3,
+        "n_marca": 534,
+        "neg_marca": 0.8202,
+        "n_resto": 1722,
+        "neg_resto": 0.8049,
+        "p": 0.431
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 4,
+        "n_marca": 646,
+        "neg_marca": 0.3328,
+        "n_resto": 2223,
+        "neg_resto": 0.3567,
+        "p": 0.2625
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 5,
+        "n_marca": 1768,
+        "neg_marca": 0.0413,
+        "n_resto": 5931,
+        "neg_resto": 0.0435,
+        "p": 0.6875
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 1,
+        "n_marca": 835,
+        "neg_marca": 0.9701,
+        "n_resto": 3333,
+        "neg_resto": 0.9508,
+        "p": 0.0167
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 2,
+        "n_marca": 386,
+        "neg_marca": 0.8886,
+        "n_resto": 1485,
+        "neg_resto": 0.9044,
+        "p": 0.3549
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 3,
+        "n_marca": 502,
+        "neg_marca": 0.7689,
+        "n_resto": 1575,
+        "neg_resto": 0.7587,
+        "p": 0.6409
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 4,
+        "n_marca": 663,
+        "neg_marca": 0.4027,
+        "n_resto": 1947,
+        "neg_resto": 0.3544,
+        "p": 0.0257
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 5,
+        "n_marca": 2355,
+        "neg_marca": 0.0293,
+        "n_resto": 6841,
+        "neg_resto": 0.0368,
+        "p": 0.0856
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 1,
+        "n_marca": 1157,
+        "neg_marca": 0.9888,
+        "n_resto": 2998,
+        "neg_resto": 0.9787,
+        "p": 0.0303
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 2,
+        "n_marca": 481,
+        "neg_marca": 0.9563,
+        "n_resto": 1475,
+        "neg_resto": 0.9349,
+        "p": 0.0853
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 3,
+        "n_marca": 590,
+        "neg_marca": 0.7576,
+        "n_resto": 1740,
+        "neg_resto": 0.7092,
+        "p": 0.0233
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 4,
+        "n_marca": 800,
+        "neg_marca": 0.2587,
+        "n_resto": 2649,
+        "neg_resto": 0.2699,
+        "p": 0.5318
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 5,
+        "n_marca": 1826,
+        "neg_marca": 0.0252,
+        "n_resto": 6284,
+        "neg_resto": 0.0208,
+        "p": 0.2633
+      }
+    ],
+    "dia_pico_total": [
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 1,
+        "n_marca": 78,
+        "neg_marca": 1.0,
+        "n_resto": 3433,
+        "neg_resto": 0.9557,
+        "p": 0.0574
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 2,
+        "n_marca": 31,
+        "neg_marca": 0.871,
+        "n_resto": 1565,
+        "neg_resto": 0.8665,
+        "p": 0.9417
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 3,
+        "n_marca": 19,
+        "neg_marca": 0.8947,
+        "n_resto": 2023,
+        "neg_resto": 0.5858,
+        "p": 0.0064
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 4,
+        "n_marca": 13,
+        "neg_marca": 0.3077,
+        "n_resto": 3338,
+        "neg_resto": 0.1896,
+        "p": 0.2789
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 5,
+        "n_marca": 32,
+        "neg_marca": 0.125,
+        "n_resto": 9469,
+        "neg_resto": 0.0182,
+        "p": 0.0
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 1,
+        "n_marca": 198,
+        "neg_marca": 0.9747,
+        "n_resto": 3363,
+        "neg_resto": 0.9759,
+        "p": 0.9172
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 2,
+        "n_marca": 87,
+        "neg_marca": 0.8161,
+        "n_resto": 1640,
+        "neg_resto": 0.9439,
+        "p": 0.0
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 3,
+        "n_marca": 108,
+        "neg_marca": 0.7037,
+        "n_resto": 2189,
+        "neg_resto": 0.7789,
+        "p": 0.0676
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 4,
+        "n_marca": 111,
+        "neg_marca": 0.3514,
+        "n_resto": 3546,
+        "neg_resto": 0.3483,
+        "p": 0.9467
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 5,
+        "n_marca": 290,
+        "neg_marca": 0.0483,
+        "n_resto": 8470,
+        "neg_resto": 0.0339,
+        "p": 0.1858
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 1,
+        "n_marca": 165,
+        "neg_marca": 0.9758,
+        "n_resto": 4814,
+        "neg_resto": 0.9819,
+        "p": 0.5607
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 2,
+        "n_marca": 85,
+        "neg_marca": 0.9647,
+        "n_resto": 2113,
+        "neg_resto": 0.9522,
+        "p": 0.5944
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 3,
+        "n_marca": 55,
+        "neg_marca": 0.9455,
+        "n_resto": 2201,
+        "neg_resto": 0.8051,
+        "p": 0.009
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 4,
+        "n_marca": 57,
+        "neg_marca": 0.4386,
+        "n_resto": 2812,
+        "neg_resto": 0.3496,
+        "p": 0.1634
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 5,
+        "n_marca": 160,
+        "neg_marca": 0.0437,
+        "n_resto": 7539,
+        "neg_resto": 0.043,
+        "p": 0.9619
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 1,
+        "n_marca": 305,
+        "neg_marca": 0.9574,
+        "n_resto": 3863,
+        "neg_resto": 0.9544,
+        "p": 0.8124
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 2,
+        "n_marca": 171,
+        "neg_marca": 0.924,
+        "n_resto": 1700,
+        "neg_resto": 0.8988,
+        "p": 0.2936
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 3,
+        "n_marca": 304,
+        "neg_marca": 0.7829,
+        "n_resto": 1773,
+        "neg_resto": 0.7575,
+        "p": 0.3368
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 4,
+        "n_marca": 647,
+        "neg_marca": 0.3385,
+        "n_resto": 1963,
+        "neg_resto": 0.376,
+        "p": 0.0863
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 5,
+        "n_marca": 2954,
+        "neg_marca": 0.019,
+        "n_resto": 6242,
+        "neg_resto": 0.0425,
+        "p": 0.0
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 1,
+        "n_marca": 305,
+        "neg_marca": 0.9836,
+        "n_resto": 3850,
+        "neg_resto": 0.9813,
+        "p": 0.7736
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 2,
+        "n_marca": 118,
+        "neg_marca": 0.9746,
+        "n_resto": 1838,
+        "neg_resto": 0.938,
+        "p": 0.1041
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 3,
+        "n_marca": 140,
+        "neg_marca": 0.8143,
+        "n_resto": 2190,
+        "neg_resto": 0.7155,
+        "p": 0.0115
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 4,
+        "n_marca": 213,
+        "neg_marca": 0.3099,
+        "n_resto": 3236,
+        "neg_resto": 0.2645,
+        "p": 0.1476
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 5,
+        "n_marca": 388,
+        "neg_marca": 0.0464,
+        "n_resto": 7722,
+        "neg_resto": 0.0206,
+        "p": 0.0007
+      }
+    ],
+    "dia_pico_estrella": [
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 1,
+        "n_marca": 226,
+        "neg_marca": 0.9956,
+        "n_resto": 3285,
+        "neg_resto": 0.954,
+        "p": 0.003
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 2,
+        "n_marca": 57,
+        "neg_marca": 0.8947,
+        "n_resto": 1539,
+        "neg_resto": 0.8655,
+        "p": 0.5238
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 3,
+        "n_marca": 57,
+        "neg_marca": 0.9123,
+        "n_resto": 1985,
+        "neg_resto": 0.5793,
+        "p": 0.0
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 4,
+        "n_marca": 8,
+        "neg_marca": 0.125,
+        "n_resto": 3343,
+        "neg_resto": 0.1902,
+        "p": 0.6385
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 5,
+        "n_marca": 25,
+        "neg_marca": 0.08,
+        "n_resto": 9476,
+        "neg_resto": 0.0184,
+        "p": 0.0225
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 1,
+        "n_marca": 314,
+        "neg_marca": 0.9713,
+        "n_resto": 3247,
+        "neg_resto": 0.9763,
+        "p": 0.5855
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 2,
+        "n_marca": 79,
+        "neg_marca": 0.8987,
+        "n_resto": 1648,
+        "neg_resto": 0.9393,
+        "p": 0.1456
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 3,
+        "n_marca": 144,
+        "neg_marca": 0.7361,
+        "n_resto": 2153,
+        "neg_resto": 0.778,
+        "p": 0.2438
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 4,
+        "n_marca": 103,
+        "neg_marca": 0.3301,
+        "n_resto": 3554,
+        "neg_resto": 0.3489,
+        "p": 0.6929
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 5,
+        "n_marca": 243,
+        "neg_marca": 0.0453,
+        "n_resto": 8517,
+        "neg_resto": 0.034,
+        "p": 0.3438
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 1,
+        "n_marca": 343,
+        "neg_marca": 0.9854,
+        "n_resto": 4636,
+        "neg_resto": 0.9814,
+        "p": 0.5961
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 2,
+        "n_marca": 116,
+        "neg_marca": 0.9483,
+        "n_resto": 2082,
+        "neg_resto": 0.9529,
+        "p": 0.8183
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 3,
+        "n_marca": 86,
+        "neg_marca": 0.8488,
+        "n_resto": 2170,
+        "neg_resto": 0.8069,
+        "p": 0.3325
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 4,
+        "n_marca": 74,
+        "neg_marca": 0.4054,
+        "n_resto": 2795,
+        "neg_resto": 0.3499,
+        "p": 0.3236
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 5,
+        "n_marca": 187,
+        "neg_marca": 0.0267,
+        "n_resto": 7512,
+        "neg_resto": 0.0434,
+        "p": 0.2673
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 1,
+        "n_marca": 233,
+        "neg_marca": 0.9828,
+        "n_resto": 3935,
+        "neg_resto": 0.953,
+        "p": 0.0334
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 2,
+        "n_marca": 40,
+        "neg_marca": 0.975,
+        "n_resto": 1831,
+        "neg_resto": 0.8995,
+        "p": 0.1136
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 3,
+        "n_marca": 151,
+        "neg_marca": 0.8146,
+        "n_resto": 1926,
+        "neg_resto": 0.757,
+        "p": 0.1101
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 4,
+        "n_marca": 605,
+        "neg_marca": 0.3322,
+        "n_resto": 2005,
+        "neg_resto": 0.3771,
+        "p": 0.0449
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 5,
+        "n_marca": 3041,
+        "neg_marca": 0.0181,
+        "n_resto": 6155,
+        "neg_resto": 0.0432,
+        "p": 0.0
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 1,
+        "n_marca": 371,
+        "neg_marca": 0.9892,
+        "n_resto": 3784,
+        "neg_resto": 0.9807,
+        "p": 0.2461
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 2,
+        "n_marca": 132,
+        "neg_marca": 0.9773,
+        "n_resto": 1824,
+        "neg_resto": 0.9375,
+        "p": 0.0628
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 3,
+        "n_marca": 177,
+        "neg_marca": 0.7571,
+        "n_resto": 2153,
+        "neg_resto": 0.7185,
+        "p": 0.2717
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 4,
+        "n_marca": 204,
+        "neg_marca": 0.2941,
+        "n_resto": 3245,
+        "neg_resto": 0.2656,
+        "p": 0.3727
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 5,
+        "n_marca": 402,
+        "neg_marca": 0.0448,
+        "n_resto": 7708,
+        "neg_resto": 0.0206,
+        "p": 0.0012
+      }
+    ],
+    "tras_release_0_3": [
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 1,
+        "n_marca": 1120,
+        "neg_marca": 0.9491,
+        "n_resto": 2391,
+        "neg_resto": 0.9603,
+        "p": 0.1299
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 2,
+        "n_marca": 500,
+        "neg_marca": 0.85,
+        "n_resto": 1095,
+        "neg_resto": 0.874,
+        "p": 0.1917
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 3,
+        "n_marca": 637,
+        "neg_marca": 0.5542,
+        "n_resto": 1404,
+        "neg_resto": 0.604,
+        "p": 0.034
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 4,
+        "n_marca": 982,
+        "neg_marca": 0.1762,
+        "n_resto": 2363,
+        "neg_resto": 0.1955,
+        "p": 0.1939
+      },
+      {
+        "bank_id": "AZTECA",
+        "estrellas": 5,
+        "n_marca": 2845,
+        "neg_marca": 0.0179,
+        "n_resto": 6652,
+        "neg_resto": 0.0188,
+        "p": 0.7746
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 1,
+        "n_marca": 412,
+        "neg_marca": 0.9709,
+        "n_resto": 3149,
+        "neg_resto": 0.9765,
+        "p": 0.4842
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 2,
+        "n_marca": 208,
+        "neg_marca": 0.9375,
+        "n_resto": 1518,
+        "neg_resto": 0.9374,
+        "p": 0.9963
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 3,
+        "n_marca": 250,
+        "neg_marca": 0.796,
+        "n_resto": 2047,
+        "neg_resto": 0.7728,
+        "p": 0.4075
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 4,
+        "n_marca": 366,
+        "neg_marca": 0.3962,
+        "n_resto": 3289,
+        "neg_resto": 0.343,
+        "p": 0.0427
+      },
+      {
+        "bank_id": "BANORTE",
+        "estrellas": 5,
+        "n_marca": 861,
+        "neg_marca": 0.0256,
+        "n_resto": 7898,
+        "neg_resto": 0.0352,
+        "p": 0.1394
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 1,
+        "n_marca": 1381,
+        "neg_marca": 0.9747,
+        "n_resto": 3598,
+        "neg_resto": 0.9844,
+        "p": 0.0211
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 2,
+        "n_marca": 626,
+        "neg_marca": 0.9521,
+        "n_resto": 1572,
+        "neg_resto": 0.9529,
+        "p": 0.9325
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 3,
+        "n_marca": 634,
+        "neg_marca": 0.8123,
+        "n_resto": 1622,
+        "neg_resto": 0.807,
+        "p": 0.7747
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 4,
+        "n_marca": 753,
+        "neg_marca": 0.3533,
+        "n_resto": 2116,
+        "neg_resto": 0.3507,
+        "p": 0.8982
+      },
+      {
+        "bank_id": "BBVA",
+        "estrellas": 5,
+        "n_marca": 2083,
+        "neg_marca": 0.0422,
+        "n_resto": 5616,
+        "neg_resto": 0.0433,
+        "p": 0.8442
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 1,
+        "n_marca": 1993,
+        "neg_marca": 0.9553,
+        "n_resto": 2136,
+        "neg_resto": 0.9555,
+        "p": 0.9776
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 2,
+        "n_marca": 899,
+        "neg_marca": 0.9043,
+        "n_resto": 964,
+        "neg_resto": 0.8994,
+        "p": 0.7192
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 3,
+        "n_marca": 1016,
+        "neg_marca": 0.7707,
+        "n_resto": 1047,
+        "neg_resto": 0.7545,
+        "p": 0.3893
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 4,
+        "n_marca": 1326,
+        "neg_marca": 0.3552,
+        "n_resto": 1270,
+        "neg_resto": 0.3803,
+        "p": 0.1846
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 5,
+        "n_marca": 4899,
+        "neg_marca": 0.0314,
+        "n_resto": 4197,
+        "neg_resto": 0.0388,
+        "p": 0.055
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 1,
+        "n_marca": 931,
+        "neg_marca": 0.9807,
+        "n_resto": 3224,
+        "neg_resto": 0.9817,
+        "p": 0.8368
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 2,
+        "n_marca": 391,
+        "neg_marca": 0.9463,
+        "n_resto": 1565,
+        "neg_resto": 0.9387,
+        "p": 0.5691
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 3,
+        "n_marca": 494,
+        "neg_marca": 0.7024,
+        "n_resto": 1836,
+        "neg_resto": 0.7266,
+        "p": 0.2878
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 4,
+        "n_marca": 741,
+        "neg_marca": 0.2672,
+        "n_resto": 2708,
+        "neg_resto": 0.2674,
+        "p": 0.9935
+      },
+      {
+        "bank_id": "SANTANDER",
+        "estrellas": 5,
+        "n_marca": 1500,
+        "neg_marca": 0.0273,
+        "n_resto": 6610,
+        "neg_resto": 0.0206,
+        "p": 0.1058
+      }
+    ],
+    "jueves_nubank": [
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 1,
+        "n_marca": 693,
+        "neg_marca": 0.9452,
+        "n_resto": 3475,
+        "neg_resto": 0.9565,
+        "p": 0.1886
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 2,
+        "n_marca": 280,
+        "neg_marca": 0.8964,
+        "n_resto": 1591,
+        "neg_resto": 0.9019,
+        "p": 0.7754
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 3,
+        "n_marca": 343,
+        "neg_marca": 0.7638,
+        "n_resto": 1734,
+        "neg_resto": 0.7607,
+        "p": 0.8996
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 4,
+        "n_marca": 439,
+        "neg_marca": 0.3417,
+        "n_resto": 2171,
+        "neg_resto": 0.3717,
+        "p": 0.2337
+      },
+      {
+        "bank_id": "NUBANK",
+        "estrellas": 5,
+        "n_marca": 1741,
+        "neg_marca": 0.0253,
+        "n_resto": 7455,
+        "neg_resto": 0.0372,
+        "p": 0.015
+      }
+    ]
+  }
+}

@@ -6,8 +6,10 @@ Flujo de modelos:
         -> PlayStoreRpcCursor (scraper propio ``batchexecute``)
         -> RawReviewEvent (Pub/Sub + staging GCS, **pre-DLP**)
         -> SanitizedReviewRecord (BigQuery TDS, **post-DLP**)
-        -> AnalyzedReviewPrediction -> IncidentAlertMessage
-        -> HitlTriageAuditRecord
+
+Las salidas analíticas (predicciones, alertas de deriva y HITL) son los
+contratos v3 de ``predictions_v3``, ``operations_v3``, ``policies`` y
+``hitl_v3`` (EPIC-6, 6.1).
 
 ``IngestionWatermarkState`` describe el estado v2 persistido en
 ``gs://<bucket>/state/watermarks/{bank_id}.json``.
@@ -38,7 +40,6 @@ from voc_common.constants import (
     PLAYSTORE_DEFAULT_PAGE_SIZE,
     PLAYSTORE_PAGE_SIZE_POLICY_LIMIT,
     UNKNOWN_APP_VERSION,
-    ABSATopic,
     BankKey,
     CoverageStatus,
     IngestionMode,
@@ -49,7 +50,6 @@ from voc_common.constants import (
     RunAuditStatus,
     SanitizationStatus,
     ScanStatus,
-    SentimentLabel,
 )
 from voc_common.text_utils import (
     contar_palabras,
@@ -341,67 +341,6 @@ class SanitizedReviewRecord(_StrictModel):
             fecha_respuesta=raw.fecha_respuesta,
             source_observed_at=raw.ingested_at,
         )
-
-
-# ---------------------------------------------------------------------------
-# Tarea 1.3.5: Predicción, alertas y auditoría HITL
-# ---------------------------------------------------------------------------
-
-
-class AnalyzedReviewPrediction(_StrictModel):
-    """Salida del modelo DeLoRA para una reseña sanitizada."""
-
-    id_resena: str = Field(..., min_length=1)
-    bank_id: BankKey
-    version_app: str
-    fecha: UtcDatetime
-    estrellas: int = Field(..., ge=1, le=5)
-    votos_utilidad: int = Field(default=0, ge=0)
-    sentimiento_roberta: SentimentLabel
-    tnss_score: SentimentLabel
-    tnss_numeric_calibrated: float = Field(..., ge=1.0, le=5.0)
-    # Calculado automáticamente: estrellas >= 4 y tnss_score == NEG.
-    is_obligatory_5_star_bias: bool = False
-    topico: ABSATopic
-    priority_weight_score: float = Field(..., ge=0.0)
-    prediction_entropy: float = Field(..., ge=0.0, le=1.0)
-    requires_hitl: bool
-    embedding_vector: list[float] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def _compute_5_star_bias(self) -> Self:
-        self.is_obligatory_5_star_bias = (
-            self.estrellas >= 4 and self.tnss_score == SentimentLabel.NEG
-        )
-        return self
-
-
-class IncidentAlertMessage(_StrictModel):
-    """Alerta de pico de reseñas negativas por versión y tópico."""
-
-    alert_id: str = Field(..., min_length=1)
-    bank_id: BankKey
-    version_app: str
-    topico: ABSATopic
-    negative_reviews_spike_count: int = Field(..., ge=1)
-    accumulated_utility_votes: int = Field(..., ge=0)
-    sample_review_ids: list[str]
-    triggered_at: UtcDatetime = Field(default_factory=_utcnow)
-
-
-class HitlTriageAuditRecord(_StrictModel):
-    """Espejo de la tabla ``hitl_triage_audit_log`` (Épica 2)."""
-
-    audit_id: str = Field(..., min_length=1)
-    id_resena: str = Field(..., min_length=1)
-    bank_id: BankKey
-    original_tnss: SentimentLabel
-    validated_tnss: SentimentLabel
-    original_topic: ABSATopic
-    validated_topic: ABSATopic
-    reviewer_email_hash: str = Field(..., min_length=1)
-    backlog_jira_ticket: str | None = None
-    reviewed_at: UtcDatetime = Field(default_factory=_utcnow)
 
 
 # Feature 1.6: contratos v2. Reducer y GCS pertenecen a 1.7/EPIC-3.

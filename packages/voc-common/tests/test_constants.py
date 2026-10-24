@@ -6,14 +6,11 @@ import voc_common
 from voc_common.constants import (
     BACKFILL_LOOKBACK_DAYS,
     DEFAULT_USER_AGENTS,
-    MAX_REVIEW_WORDS,
-    MIN_REVIEW_WORDS,
     PLAYSTORE_BANK_APPS,
     PLAYSTORE_BATCHEXECUTE_URL,
     PLAYSTORE_DEFAULT_PAGE_SIZE,
     PLAYSTORE_REVIEWS_RPC_ID,
     SENTIMENT_DISPLAY_MAP,
-    ABSATopic,
     BankKey,
     IngestionMode,
     PlayStoreSortOrder,
@@ -69,13 +66,7 @@ def test_sentiment_display_map_covers_all_labels() -> None:
     assert SENTIMENT_DISPLAY_MAP[SentimentLabel.NEG] == "Negativo"
 
 
-def test_absa_topics_catalog() -> None:
-    assert len(ABSATopic) == 8
-    assert ABSATopic.BLOQUEO_SEGURIDAD_3702.value == "BLOQUEO_SEGURIDAD_3702"
-
-
-def test_eda_and_rpc_constants() -> None:
-    assert (MIN_REVIEW_WORDS, MAX_REVIEW_WORDS) == (2, 60)
+def test_backfill_and_rpc_constants() -> None:
     assert BACKFILL_LOOKBACK_DAYS == 365
     assert PLAYSTORE_BATCHEXECUTE_URL == (
         "https://play.google.com/_/PlayStoreUi/data/batchexecute"

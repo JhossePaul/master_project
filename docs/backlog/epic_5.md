@@ -1,277 +1,361 @@
-# EPIC-5: Core Analítico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (*Delora*), ABSA e Inferencia Idempotente
+# EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado:** Pendiente. Especificación sincronizada con contratos v2 (`EPIC-1`), esquemas BigQuery/IAM (`EPIC-2`) y cobertura TDS (`EPIC-4`).
-* **Semanas Objetivo:** Semanas 4 - 6
-* **Dependencias:** `EPIC-1` (`AnalyzedReviewPrediction`, `IncidentAlertMessage`, `ABSATopic`, `SentimentLabel`), `EPIC-2` (Tabla `delora_predictions`, tópico `voc-incident-alerts-topic`, cuenta `voc-sa-ml-backend`) y `EPIC-4` (Registros curados en `bbva_voc_tds.sanitized_reviews_tds`).
-* **Directorios y Archivos Afectados:**
-  * `services/ml-delora/pyproject.toml`
-  * `services/ml-delora/Dockerfile`
-  * `services/ml-delora/src/ml_delora/__init__.py`
-  * `services/ml-delora/src/ml_delora/baseline_roberta.py`
-  * `services/ml-delora/src/ml_delora/model.py`
-  * `services/ml-delora/src/ml_delora/absa_classifier.py`
-  * `services/ml-delora/src/ml_delora/scoring_and_entropy.py`
-  * `services/ml-delora/src/ml_delora/train.py`
-  * `services/ml-delora/src/ml_delora/evaluate.py`
-  * `services/ml-delora/src/ml_delora/inference_pipeline.py`
-  * `services/ml-delora/tests/__init__.py`
-  * `services/ml-delora/tests/test_model_and_scoring.py`
-  * `services/ml-delora/tests/test_absa_and_dialect.py`
-  * `services/ml-delora/tests/test_inference_and_alerts.py`
+* **Estado (2026-10-23):** **Cerrada.** 5.1 a 5.9 cerradas y criterios de cierre cumplidos el 2026-10-23 (FMEA F-11, F-14 y F-15 a F-20; ver el [checklist](#-checklist-de-aceptación-de-la-épica-5-fases-1-y-2)). El [registro de decisión](../analytics/decision_record.md) está aprobado: M4 RoBERTuito (`M4_robertuito_s1_ppi`) en producción, *gap* en estrellas con PPI (P8-9) y frontal de EPIC-7 por niveles (P8-12). El primer backfill de M4 está hecho. 5.9 se cerró el 2026-10-23, acotada a lo descriptivo: temas por día y vista por versión para el dashboard, backfills de familias, tópicos y embeddings para EPIC-6 y la validación única de la cola HITL; la detección de incidentes pasó a trabajo futuro. Quedan los criterios de cierre de EPIC-5 (checklist). Los frontales de curaduría HITL (sentimiento, aspectos y tópicos) pasan a EPIC-7 (7.7) y su base de datos a EPIC-6 (6.2). Ver [estado por feature](#-estado-por-feature), el [registro de decisiones](#decisiones-pendientes) y los [siguientes pasos](#siguientes-pasos).
+* **Historia de los resultados:** [`docs/analytics/README.md`](../analytics/README.md) ordena los reportes como una historia y dice qué cifra está vigente. Este documento solo guarda el planteamiento, el estado y lo que falta; la cronología detallada está en los reportes.
+* **Fases:** (1) planteamiento analítico viable → (2) experimentación para elegir la estrategia de producción → (3) despliegue de la estrategia elegida. Desde la reorganización del backlog (2026-10-22), la fase 3 es [EPIC-6](epic_6.md), que conserva la especificación anterior como anexo no vigente. EPIC-6 quedó detallada el 2026-10-23 a partir del registro de decisión; ninguna feature espera a 5.9.
+* **Dependencias:** EPIC-1 a EPIC-4 cerradas ([cierre](epics.md#cierre-de-las-épicas-1-a-4)). Corpus: `bbva_voc_tds.sanitized_reviews_tds`, **2 649 047 reseñas** en el snapshot del EDA (`tds_20261016T054714Z`) de BBVA, NUBANK, SANTANDER, AZTECA y BANORTE (2011-04 a 2026-10), con `source_observed_at`. El backfill de M4 cubrió 2 653 238 filas y 1 429 675 textos únicos (TDS al 2026-10-20). Bibliografía: [`references.md`](../governance/references.md).
+* **Directorios:**
+  * `experiments/analytics/`: proyecto `uv` **independiente del workspace** (su propio `pyproject.toml` y `uv.lock`), para que las dependencias de experimentación no entren al lock de producción. El código es el paquete `voc_analytics` (`src/`), agrupado por etapa: `snapshot`, `eda`, `labeling`, `sampling`, `annotation`, `analysis`, `sentiment`, `topics`, `calibration` (5.6) y `scale` (5.7). Comandos en su [README](../../experiments/analytics/README.md).
+  * `docs/analytics/`: reportes por etapa, con las mismas carpetas que el paquete (`eda/`, `labeling/`, `sentiment/`, `topics/`, `calibration/`, `scale/`) y el registro de decisión de 5.8 ([`decision_record.md`](../analytics/decision_record.md), aprobado).
+  * `docs/contracts/`: el [esquema de salida v3](../contracts/analytics_outputs_v3.md), aprobado en 5.8 (P8-5, P8-11).
+  * `docs/governance/`: [Data Card](../governance/data_card.md) `v0.2`, [Model Card](../governance/model_card.md) 0.1 y [matriz FMEA](../governance/ethical_fmea_matrix.md) (filas F-10 a F-20 de EPIC-5).
 
 ---
 
-## 🎯 Objetivo y Límites de la Garantía
+## 🎯 Objetivo y principios
 
-Consumir las reseñas curadas y desidentificadas desde `bbva_voc_tds.sanitized_reviews_tds` (`texto_limpio`, `estrellas`, `votos_utilidad`, `version_app`), ejecutar el modelo baseline (**RoBERTa** en español), aplicar la arquitectura **Dual LoRA (*Delora*)** para desacoplar el *Label Noise Bias* (*Obligatory 5-Star*) y obtener el **True Net Satisfaction Score (TNSS)**, clasificar la categoría de fallo operativo (**ABSA**), generar *embeddings* densos de **768 dimensiones**, persistir de forma idempotente en `bbva_voc_tds.delora_predictions` y emitir alertas hacia `voc-incident-alerts-topic` cuando se detecten picos de quejas con alta tracción comunitaria.
+Diseñar, con evidencia, el pipeline analítico que responde a cuatro preguntas del caso de uso, y elegir la estrategia de producción **antes** de escribir el paquete desplegable:
 
-* **Límite de inferencia y generalización:** La separación entre la rama *Clean* (`θ + Δθ_c`) y la rama *Noisy* (`Δθ_n` condicionada a `estrellas`) reduce la contaminación por etiquetas ruidosas, pero no certifica verdad absoluta sobre la intención subjetiva del usuario. Por ello, las predicciones con entropía normalizada `prediction_entropy >= hitl_entropy_threshold` (`0.65`) o alta severidad activan obligatoriamente `requires_hitl = True` para validación humana en `EPIC-6`.
-* **No re-inspeccionar ni alterar tokens DLP:** El modelo recibe `texto_limpio` junto con los tokens semánticos entre corchetes (`[PERSON_NAME]`, `[MX_CLABE_BANCARIA]`, `[BBVA_ACCOUNT_NUMBER]`, etc.) y códigos técnicos conservados (`ref: 3702:65c5:9xhchi`). El tokenizador debe tratar dichos tokens como vocabulario válido sin eliminarlos, ya que aportan contexto semántico directo para tópicos como `BLOQUEO_SEGURIDAD_3702` o `TRANSFERENCIAS_SPEI`.
+| Pregunta | Salida candidata | Feature |
+| :--- | :--- | :---: |
+| Q1. ¿Cuál es el sentimiento real del texto, separado de las estrellas? | Polaridad por reseña con M4 RoBERTuito (P8-1) y *gap* en estrellas: promedio de estrellas menos el puntaje del texto, con PPI (P8-9), +0.21 [0.17, 0.24]. Desglose medido en 5.6: el texto es más negativo que las estrellas en el 10.5 % de las reseñas y más positivo en el 0.9 %. **Resuelta en 5.8** | 5.4, 5.6, 5.8 |
+| Q2. ¿Qué temas recurrentes hay en las quejas y cómo cambian en el tiempo? | Familias de aspectos `v2.1` (núcleo) y tópicos curados (detalle) sobre las reseñas negativas, por banco y periodo. **Resuelta en 5.5** | 5.5 |
+| Q3. ¿Qué temas acompañan los días con más negativas? | Familias `v2.1` y tópicos curados por banco y día, como etiquetas descriptivas del dashboard (5.9). La detección automática de incidentes quedó fuera del alcance (decisión del autor, 2026-10-22): la señal de 5.5 detecta 2 de 3 incidentes de BBVA y la comparación de ventanas de 5.9 queda como hallazgo exploratorio | 5.5, 5.9 |
+| Q4. ¿Qué atender primero? | Volumen de negativas por familia y marca `u`, en nivel y en anomalía; los votos solo como contexto. **Resuelta en 5.6** | 5.6 |
 
----
+Principios:
 
-## 🔗 Alineación Estricta con Contratos e Infraestructura Existente (EPIC-1, EPIC-2 y EPIC-4)
+* **Ningún modelo, dependencia, tópico ni esquema de salida era definitivo** hasta el registro de decisión (5.8). Se cumplió: lo vigente está en el [registro](../analytics/decision_record.md). RoBERTuito, Delora y los 8 `ABSATopic` de `voc-common` eran hipótesis: Delora se descartó en 5.4, 5.5 reemplazó los 8 `ABSATopic` por las 11 familias `v2.1` (multi-etiqueta, con las marcas `u` y `s`) y los tópicos como capa aparte, y 5.8 eligió M4 RoBERTuito.
+* **Las estrellas son una etiqueta ruidosa del sentimiento del texto**, no la verdad. El sentimiento real nunca recibe las estrellas como entrada.
+* **Calidad y costo se miden juntos:** con 2.65 M de reseñas, la velocidad y el costo de inferencia son criterio de selección al mismo nivel que la métrica de calidad.
+* **Toda cifra de la literatura o de conversaciones con LLM es una hipótesis** hasta medirla sobre este corpus (ver `references.md`, columna *Verif.*).
+* **Etiquetado humano limitado:** 1 000 reseñas como base y hasta 2 000 con esfuerzo extra. Nunca se etiqueta el corpus completo; las 2.65 M solo se predicen.
 
-El Agente IA **DEBE** acatar las siguientes 5 restricciones de acoplamiento con lo ya implementado en el monorepo:
-
-1. **Esquema Fijo de 15 Columnas en `bbva_voc_tds.delora_predictions` (EPIC-1 Feature 1.3.5 y EPIC-2 Feature 2.4.2):**
-   * Prohibido añadir o renombrar columnas al escribir en BigQuery. Toda fila insertada debe validarse previamente con `AnalyzedReviewPrediction` de `voc_common` (`extra="forbid"`), respetando exactamente las 15 columnas aprovisionadas en `storage_bq.py`:
-     `id_resena`, `bank_id`, `version_app`, `fecha`, `estrellas`, `votos_utilidad`, `sentimiento_roberta`, `tnss_score`, `tnss_numeric_calibrated`, `is_obligatory_5_star_bias`, `topico`, `priority_weight_score`, `prediction_entropy`, `requires_hitl`, y `embedding_vector` (`FLOAT REPEATED` de longitud **768**, coincidiendo con la dimensión declarada en `infra/modules/vertex_ai.py`).
-2. **Invariante del Sesgo *Obligatory 5-Star* (`is_obligatory_5_star_bias`):**
-   * En `AnalyzedReviewPrediction` (EPIC-1), `is_obligatory_5_star_bias` se recalcula automáticamente como `bool(estrellas >= 4 and tnss_score == SentimentLabel.NEG)`. El motor analítico no debe sobreescribir esta regla con heurísticas contradictorias.
-3. **Ejecución Batch Serverless Compatible con GCP Free Tier (`enable_dedicated_vertex_endpoints: false`):**
-   * En `EPIC-2`, los endpoints dedicados de Vertex AI y Vertex Vector Search están desactivados por defecto (`enable_dedicated_vertex_endpoints=False`) para evitar cargos de nodos encendidos 24/7.
-   * Por tanto, `inference_pipeline.py` debe operar por defecto en modo **`BATCH_BIGQUERY_INCREMENTAL`** (ejecutable en CPU local/Cloud Run Job bajo la identidad `voc-sa-ml-backend`), seleccionando únicamente las filas de `sanitized_reviews_tds` que aún no tienen predicción vigente en `delora_predictions`, y dejando el modo `VERTEX_ENDPOINT_ONLINE` como adaptador opt-in cuando el flag esté activo.
-4. **Persistencia Idempotente vía Tabla Temporal y `MERGE` (Sin *Streaming Inserts*):**
-   * Siguiendo el mismo patrón de `EPIC-4`, las predicciones no se insertan mediante `insert_all` (streaming). Se cargan en una tabla efímera `bbva_voc_tds._staging_predictions_{run_id}` (con expiración de 1 hora) vía `load_table_from_json` (`FILE_LOADS`) y se consolidan en `bbva_voc_tds.delora_predictions` mediante una sentencia `MERGE` por `(bank_id, id_resena)`.
-5. **Emisión de Alertas Estrictamente Tipadas (`IncidentAlertMessage`):**
-   * La cuenta `voc-sa-ml-backend` ya cuenta con `roles/pubsub.publisher` (EPIC-2 Feature 2.2). Las alertas enviadas a `voc-incident-alerts-topic` deben serializarse con `IncidentAlertMessage` de `voc-common`, sin incluir jamás textos crudos ni PII en el payload.
+La evidencia inicial sobre el corpus (longitudes, duplicados y deriva por banco y año, 2026-10-16) está en el [capítulo 1 de la historia](../analytics/README.md#1-problema-y-corpus).
 
 ---
 
-## 📦 Desglose de Features e Historias Técnicas
+## 📦 Estado por feature
 
-### FEATURE 5.1: Configuración del Paquete `ml-delora` y Baseline RoBERTa (`baseline_roberta.py`)
+| Feature | Estado | Reportes |
+| :--- | :--- | :--- |
+| 5.1 Planteamiento y elegibilidad | **Cerrada (2026-10-22).** `TNSS_SINGLE_WORD` por léxico (P8-3) y `eligibility_rules_v1` publicada con sus conteos (P8-4): sentimiento 81.7 % por M4, 16.7 % por léxico y 1.6 % excluido; familias y tópicos sobre el 26.6 % de las filas | [Reglas](../analytics/eda/eligibility_rules.md), [conteos](../analytics/eda/eligibility_v1_counts.json), [guía](../analytics/labeling/annotation_guideline.md) |
+| 5.2 EDA | **Cerrada (2026-10-21).** EDA global, patrones temporales, tokens, léxico para una palabra (95 % de cobertura) y guía de aspectos `v2.1` (reabierta para 5.5): 11 familias más las marcas `u` y `s`; `UX` pasó de κ 0.55 a 0.74 y `DV` queda separado; multi-aspecto del 24.7 % (32.1 % con `v1`). *Data Card* `v0.2` | [EDA](../analytics/eda/eda_report.md), [temporal](../analytics/eda/eda_temporal_report.md), [guía de aspectos `v2.1`](../analytics/eda/eda_aspects_guideline.md) |
+| 5.3 Etiquetado | **Cerrada (2026-10-20).** Oro (1 730 ítems) y plata vigentes; acuerdo entre personas medido (κ 0.81). 5.5 cerró sin usar `menciona_falla` (`prompt_v4` no se necesita). 5.6 y 5.8 cerraron sin pedir más oro y el *test* quedó consumido en 5.8. Se reabre solo si se suman anotadores (guía `v2.3`) | [Capítulo 3](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata) |
+| 5.4 Modelos de sentimiento | **Cerrada (2026-10-20):** M0–M9 evaluados; M4 RoBERTuito es el mejor modelo propio y 5.8 lo eligió frente a M9 con el oro *test* (κ 0.929 contra 0.943, sin diferencia significativa) | [Protocolo](../analytics/sentiment/sentiment_models_protocol.md), [capítulo 4](../analytics/README.md#4-competencia-de-modelos-de-sentimiento) |
+| 5.5 Tópicos y ABSA | **Cerrada (2026-10-22).** Recomendación aprobada por el autor, con el agregado de llevar los frontales de curaduría HITL (sentimiento, aspectos y tópicos) a EPIC-7 y su base de datos a EPIC-6. Híbrido: familias `aspects_v2_1` y la marca `u` como núcleo de medición y alerta (la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas; `DV` y `UX` avisaron del rediseño de BBVA un mes antes), y tópicos por cláusulas como capa de detalle curada para producto e ingeniería. Los tópicos no encontraron temas fuera de la taxonomía; cerca de un tercio de su peso es ruido. `TOPIC_TOO_SHORT` con k = 1 (decidido). Costo: ~$0.60 al mes de Gemini y ~30–60 min de curaduría por trimestre | [Plan](../analytics/topics/topics_design.md), [reporte](../analytics/topics/topics_report.md), [nota para 5.8](../analytics/topics/topics_decision_note.md) |
+| 5.6 Calibración, HITL y priorización | **Cerrada (2026-10-22).** *temperature scaling* adoptado; umbral HITL al 90 % de cobertura (parámetro configurable); PPI con Gemini y con M4 hecho; M4 reentrenado con pesos guardados (lote `m4_ppi`); priorización por volumen de negativas por familia y marca `u`, sin fórmula anterior ni votos (decisión del autor) | [Plan](../analytics/calibration/calibration_design.md), [reporte](../analytics/calibration/calibration_report.md) |
+| 5.7 Escala, ciclo de vida y monitoreo | **Cerrada (2026-10-22).** Benchmark en el Mac y en Cloud Run, línea base de deriva, costos de Gemini, búsqueda vectorial, Vertex Model Registry y explicabilidad medidos; P7-1 a P7-4 y P7-6 a P7-11 decididas (HITL global en `risk_policy`, alertas de deriva por banco en `drift_policy`, reentrenamiento de M4 y revalidación de las familias) | [Plan](../analytics/scale/scale_design.md), [reporte de 5.7](../analytics/scale/scale_report.md) |
+| 5.8 Registro de decisión | **Cerrada (2026-10-22):** P8-1 a P8-12 decididas (M4 RoBERTuito tras el oro *test*, *gap* en estrellas, frontal de EPIC-7 por niveles); `eligibility_rules_v1` publicada con sus conteos; Model Card 0.1 y FMEA F-14 a F-20; incompatibilidades resueltas. Primer backfill de M4 hecho (`s1` en producción) | [`decision_record.md`](../analytics/decision_record.md), [esquemas](../contracts/analytics_outputs_v3.md) |
+| 5.9 Temas por día y versiones (descriptivo) | **Cerrada (2026-10-23).** Acotada a lo descriptivo por decisión del autor: preparación, comparación de ventanas (hallazgo exploratorio), backfills de familias, tópicos y embeddings, top 5 diario de temas (P9-4), vista por versión (P9-2) y validación única de la cola HITL (corrección 18.3 %) | [Reporte](../analytics/incidents/incidents_report.md) |
 
-**Objetivo:** Configurar el paquete dentro del workspace de `uv` (usando ruedas de PyTorch CPU ligeras en CI/Docker para no exceder límites de imagen ni memoria en Cloud Run) e implementar el evaluador base con RoBERTa en español (`pysentimiento` / `robertuito-sentiment-analysis`) validado en el notebook del EDA.
+### FEATURE 5.1: Planteamiento, Volumetría y Contrato Analítico
 
-#### Tarea 5.1.1: Configurar `services/ml-delora/pyproject.toml`
+**Objetivo:** fijar qué se predice, sobre qué filas y con qué presupuesto, antes de experimentar.
 
-Escribir `services/ml-delora/pyproject.toml` integrando `voc-common` desde el workspace:
+* **Etiquetas de sentimiento:** decidido. `NEG`/`NEU`/`POS` más la marca `NO_EVALUABLE`, con `menciona_falla`, `duda` y `nombre_persona`; cualquier queja concreta es `NEG`. Ver la [guía `v2.2`](../analytics/labeling/annotation_guideline.md).
+* **Reglas deterministas de elegibilidad** ([`eligibility_rules_v1`](../analytics/eda/eligibility_rules.md), publicada el 2026-10-22 con sus conteos por banco × periodo × motivo):
+  * se evalúan por fila antes de la inferencia, sin modelos ni aleatoriedad; gana la primera que coincide;
+  * la fila excluida queda `NOT_PREDICTED` con su código, se conserva y se reporta por banco × periodo × motivo;
+  * la inferencia corre una vez por texto único elegible y se propaga a sus filas;
+  * `TOPIC_NOT_NEGATIVE` usa el TNSS **predicho**, nunca las estrellas, así que el backfill de tópicos es posterior al de TNSS;
+  * el EDA puede añadir reglas, cada una con código, criterio, conteo y justificación.
+* **Decisiones vigentes:** corte de NUBANK en 2020-01-01 (`TNSS_TIME_OUTLIER`, 175 filas); `TNSS_NOT_SPANISH` descartada; `TOPIC_TOO_SHORT` con k = 1 (decisión del autor, 2026-10-22): del análisis de tópicos y familias se excluyen solo las negativas de una palabra ([`topics_report.md`](../analytics/topics/topics_report.md#43-topic_too_short-k--1-se-confirma-con-v21-y-los-5-bancos), sección 4.3).
+* **`TNSS_SINGLE_WORD` (decisión del autor, 2026-10-22, P8-3):** las 484 829 filas de una palabra (18.3 %) se asignan con el léxico determinista (`RULE_BASED`; 151 formas cubren el 95.3 % con 99 % de exactitud en el oro *dev*) y se excluyen las no cubiertas, con un sesgo de −0.001 a −0.007 estrellas. Excluirlas todas habría sesgado de −0.10 a −0.21 estrellas por banco. Las reglas `v1` se aprobaron (P8-4) y se publicaron con sus conteos (2026-10-22).
+* **Envolvente de volumetría y costo:** backfill único sobre ≤ 1.60 M textos únicos (1 383 138 en el snapshot del EDA; 1 429 675 en el backfill de M4, con el TDS al 2026-10-20) y delta diario de cientos de reseñas. Cualquier estrategia que no quepa queda descartada aunque gane en calidad. Costos medidos hasta ahora en la [sección de cómputo](#-cómputo-y-presupuesto).
+* **Salidas de producción:** el [esquema v3](../contracts/analytics_outputs_v3.md) reemplaza a `delora_predictions` y `hitl_triage_audit_log` (las dos están vacías). Decidido en 5.8 (P8-5, P8-11), con la cobertura del frontal de EPIC-7 revisada.
 
-```toml
-[project]
-name = "ml-delora"
-version = "0.1.0"
-description = "Core Analitico NLP: Baseline RoBERTa, Arquitectura Dual LoRA (Delora), ABSA e Inferencia hacia BigQuery"
-requires-python = ">=3.11"
-dependencies = [
-    "torch>=2.2.0,<3.0.0",
-    "transformers>=4.40.0,<5.0.0",
-    "peft>=0.10.0,<1.0.0",
-    "numpy>=1.26.0,<3.0.0",
-    "scikit-learn>=1.4.0,<2.0.0",
-    "google-cloud-bigquery>=3.20.0,<4.0.0",
-    "google-cloud-storage>=2.16.0,<3.0.0",
-    "google-cloud-pubsub>=2.21.0,<3.0.0",
-    "pydantic>=2.6.0,<3.0.0",
-    "voc-common",
-]
+### FEATURE 5.2: EDA Global y Pipeline de Limpieza
 
-[tool.uv.sources]
-voc-common = { workspace = true }
+> **Cerrada de nuevo (2026-10-21) con la guía de aspectos `v2.1`** ([EDA, sección 5.2.1](../analytics/eda/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55)): taxonomía final de 11 familias con las marcas `u` y `s`; `UX` κ 0.74; `DV` separado como excepción por prevalencia (1.8 %); multi-aspecto 24.7 %. Se reabrió el 2026-10-20: lo pidió 5.5 ([plan de tópicos](../analytics/topics/topics_design.md), sección 6) y lo aprobó el autor. El resto sigue cerrado: EDA global, patrones temporales y los pendientes de tokens, multi-aspecto y léxico ([sección 5 del EDA](../analytics/eda/eda_report.md#5-pendientes-cerrados-tokens-multi-aspecto-y-léxico)); *Data Card* `v0.2`.
+>
+> **Reapertura (2026-10-20 a 2026-10-21), en resumen:** `DS` se partió en `DV`, `UX` y `FQ`; la regla 3 pasó a la marca `u` y se agregó la marca de seguridad `s`; `OT` dejó de ser caja de sastre. Tras tres rondas de calibración y una muestra de 300 codificada a ciegas por el autor y por Gemini, la `v2.1` fusionó `FQ` en `UX` (prevalencia 0.8 %) y mantuvo `DV` separado como excepción explícita del autor. Proceso, regla de decisión y cifras: [EDA, sección 5.2.1](../analytics/eda/eda_report.md#521-guía-de-aspectos-v2-y-v21-reapertura-para-55), y registro de rondas en la [guía](../analytics/eda/eda_aspects_guideline.md), sección 7. Límite: la marca `s` tiene muy pocos positivos y su κ autor–Gemini (0.56) no es concluyente.
+>
+> **Entregado a 5.5:** la guía `v2.1`, las etiquetas `aspects_v2_1` con su esquema de columnas, y `aspects_v2_metrics.json` y `aspects_v2_1_metrics.json`.
+>
+> **Se vuelve a reabrir si hay un snapshot nuevo del TDS.**
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+**Objetivo:** describir los 15 años y 5 bancos y decidir la limpieza y la elegibilidad.
 
-```
+* **Hecho:** [EDA global](../analytics/eda/eda_report.md) (2026-10-16), [patrones temporales](../analytics/eda/eda_temporal_report.md) (2026-10-18) y [segunda pasada](../analytics/eda/eda_report.md#5-pendientes-cerrados-tokens-multi-aspecto-y-léxico) (2026-10-20). Conclusiones en el [capítulo 2](../analytics/README.md#2-eda-y-elegibilidad).
+* **Decisiones vigentes:**
+  * sin filtro de longitud: la longitud predice las estrellas y filtrar sesga los agregados;
+  * deduplicar por texto único antes de etiquetar y predecir;
+  * la plata no necesita estratos de quincena, día de la semana ni trimestre; los atributos temporales se guardan por fila;
+  * las ventanas de deriva de 5.7 siguen la cadencia de cada banco (semanal en NUBANK, 2–5 semanas en el resto);
+  * el tope de 128 tokens de 5.4 se mantiene: trunca menos del 0.1 % de las filas (RoBERTuito 0.03 %, BETO 0.07 %).
+* **Evidencia para otras features:**
+  * **5.5, multi-aspecto (`v1`, superada por `v2.1`: 24.7 % [22.6, 26.8], ver 5.2.1):** según Gemini (`aspects_v1`), el 32 % [30, 34] de las filas `NEG` tiene dos o más problemas, y el 51 % de las de 20 palabras o más. El autor, a ciegas en 100 textos, marca 44 % [35, 54] (κ 0.42), así que el 32 % es una cota inferior. Un tercio o más de las quejas mezcla problemas: conviene un esquema de varios aspectos por reseña;
+  * **5.5, `TOPIC_TOO_SHORT`:** decidido k = 1 (ver 5.1). Las negativas cortas casi nunca son multi-aspecto, pero sí nombran problemas concretos (corregido por 5.5 el 2026-10-21; [`topics_report.md`](../analytics/topics/topics_report.md#43-topic_too_short-k--1-se-confirma-con-v21-y-los-5-bancos), sección 4.3);
+  * **5.8, `TNSS_SINGLE_WORD` (decidido, P8-3):** 151 formas cubren el 95.3 % de las reseñas de una palabra, con 99 % de exactitud en el oro *dev*; excluir solo las no cubiertas deja un sesgo de −0.001 a −0.007 estrellas.
+* **Resuelto en otras features:**
+  * proxy de incongruencia estrellas–texto: lo midieron el oro y la plata (5.3);
+  * limpieza por familia de modelos: `texto_sanitizado` sin `limpiar_texto_bancario` (5.4).
 
-#### Tarea 5.1.2: Implementar `BaselineRobertaEvaluator` en `baseline_roberta.py`
+### FEATURE 5.3: Estrategia de Etiquetado (Oro y Plata)
 
-1. **Modelo Base Fundacional:**
+> **Cerrada (2026-10-20).** Oro vigente de 1 730 ítems, plata `silver_v0`, guía `v2.2`, segundo anotador (κ 0.81) y F-01 en monitoreo. Se reabre solo si:
+> 1. ~~5.5 usa `menciona_falla` en sus métricas (`prompt_v4`)~~: descartada, 5.5 cerró (2026-10-22) sin usarla;
+> 2. ~~5.6 o 5.8 necesitan más oro~~: descartada, cerraron sin pedirlo y el *test* quedó consumido en 5.8;
+> 3. se suman anotadores (guía `v2.3` con ejemplos largos de elogio con una queja menor).
 
-* Utilizar el checkpoint en español `pysentimiento/robertuito-sentiment-analysis` (basado en RoBERTa con dimensión oculta $d = 768$) a través de `AutoTokenizer` y `AutoModelForSequenceClassification` de `transformers`.
-* Soportar carga desde caché local o ruta en Cloud Storage (`gs://voc-datalake-{project_id}/ml_artifacts/roberta_base/`) y permitir inyección de un modelo/tokenizador *mock* ligero para pruebas unitarias en CI sin descargas de red.
+**Objetivo:** obtener etiquetas limpias suficientes para entrenar y, sobre todo, para evaluar sin sesgo, con 1 000–2 000 etiquetas humanas.
 
-1. **Inferencia en Batch y Extracción de Embeddings (768-d):**
+* **Hecho:** guía de anotación, piloto de Gemini, oro en dos rondas más una re-anotación a ciegas, y plata v0. Historia y cifras vigentes en el [capítulo 3](../analytics/README.md#3-etiquetado-guía-pilotos-oro-y-plata).
+* **Decisiones vigentes:**
+  * **Gemini Flash vía Vertex AI en el proyecto:** los datos no salen de GCP y se paga con créditos. La API se habilita con el flag `enable_vertex_ai_api`; **no** se usa `enable_dedicated_vertex_endpoints`.
+  * **Etiquetador:** `gemini-3.6-flash` con `prompt_v3` (guía `v2`): κ 0.92 contra el oro en 600 textos nuevos, $0.045–0.048 por 1 000 textos. Se versionan el prompt, el modelo exacto y la fecha. Las etiquetas de plata nunca se usan como verdad para reportar KPIs.
+  * **Todo el oro se anota a ciegas,** tras medir un anclaje de +7 puntos en modo asistido.
+  * **Oro vigente** (`gold_v0_r2` + `gold_v1`, 1 730 ítems): *dev* aleatorio 799, *dev* dirigido 300, *test* 601 y 30 de calibración. Solo el bloque aleatorio da cifras poblacionales; el *test* se evaluó una sola vez, en 5.8, y quedó consumido. Diseño en [`gold_v1_design.md`](../analytics/labeling/gold_v1_design.md).
+  * **Plata vigente:** `silver_v0`, 99 926 filas y 70 284 textos únicos por $3.37, con holdout temporal desde 2026-04-01.
+  * **Herramienta del oro:** app Streamlit local (`voc_analytics.annotation`), solo en `localhost`; guarda en CSV fuera de git y registra el tiempo por reseña.
+  * `prompt_v4` solo se justificaba si `menciona_falla` entraba a las métricas de 5.5; 5.5 cerró sin usarla, así que no se necesita.
+* **Segundo anotador (2026-10-20):** 100 ítems a ciegas de `gold_v1`, con la guía `v2.2`. κ entre personas 0.81 [0.70, 0.91] con 4 clases y 0.87 con 3; Gemini coincide con cada anotador (0.91 y 0.88 en *dev*) tanto o más que ellos entre sí. El desacuerdo principal es la regla 2 amplia: el segundo anotador decide por el tono. Ver el [reporte](../analytics/labeling/gold_v1_report.md), sección 7.
+* **F-01 (hecho, 2026-10-20):** la [matriz FMEA](../governance/ethical_fmea_matrix.md#f-01-nombres-propios-en-texto-libre) registra la tasa medida de nombres propios, 0 en 1 300 anotadas. RPN 105 → 70; la fila pasa a monitoreo.
 
-* Implementar `predict_batch(self, texts: list[str], batch_size: int = 32) -> list[BaselineOutput]`:
-* Devuelve para cada `texto_limpio`:
-* `label: SentimentLabel` (`NEG`, `NEU`, `POS`).
-* `probabilities: tuple[float, float, float]` ($P(\text{NEG}), P(\text{NEU}), P(\text{POS})$ tras `softmax`).
-* `pooled_embedding: list[float]` (Vector normalizado $L_2$ de **768 dimensiones** extraído del estado oculto del token `<s>` / mean pooling de la última capa, listo para almacenarse en `embedding_vector`).
+### FEATURE 5.4: Competencia de Modelos de Sentimiento con Etiquetas Ruidosas
+
+**Objetivo:** elegir el modelo de Q1 por evidencia, con el mismo protocolo para todos.
+
+* **Candidatos y protocolo:** escalera M0–M9, particiones, métricas y regla de decisión en [`sentiment_models_protocol.md`](../analytics/sentiment/sentiment_models_protocol.md). M8 (Delora), el más caro y el menos validado, se time-boxeó y se descartó (ver abajo).
+* **Hecho:** fase A en el Mac (M0, M1, M2, T0, M9), escalera de ruido con TF-IDF (M3, M6, M7), M4 con RoBERTuito y BETO (3 semillas cada uno), M8 Delora (búsqueda del detector y 3 semillas), M5 (*label smoothing* sobre M4, 2 valores de ε y 3 semillas) en Kaggle y un sesgo de `NEU` sobre M4, evaluados con el *dev* ampliado. Detalle en las secciones 12 a 14 del [reporte](../analytics/sentiment/sentiment_models_v0_report.md). Ver el [capítulo 4](../analytics/README.md#4-competencia-de-modelos-de-sentimiento).
+* **Decisiones vigentes:**
+  * entrada `texto_sanitizado`, un ejemplo por texto único, sin pesos ni filtro de longitud; las métricas se desglosan por longitud;
+  * se excluyen del entrenamiento las reseñas de todas las colas del oro;
+  * descartados con motivo: T0 y M2 sin ajustar (dominio), M3, M6 y M7 (estrellas como etiqueta), **M8 Delora** (−0.04 a −0.05 de κ contra M4 en las tres semillas, más caro; su detector queda como candidato para la incongruencia) y **M5** (empata con M4 y calibra peor);
+  * M4 RoBERTuito es el mejor modelo propio: empata con BETO en el aleatorio y gana en el dirigido;
+  * entrenamiento con GPU en Kaggle, sin el oro *test* (riesgo F-13 aceptado por el autor); nada de GPU en GCP sin su aprobación.
+* **Resultado vigente** (κ *dev* aleatorio, n = 794; M4 y M8, media de 3 semillas): M0 0.68, M1 0.87, M8 0.87, M4 0.92, M9 0.93. M4 − M1 entre +0.043 y +0.053, significativo en las seis corridas; M9 − M4 = +0.021 [−0.000, 0.043], concentrado en `NEU` (F1 0.73 contra 0.55).
+* **Cerrado (2026-10-20):** escalera M0–M9 completa. Un sesgo de `NEU` sobre M4, elegido con la plata de `holdout_nuevo`, no mejora en el oro (Δκ medio −0.001) y no se adopta. **M4 RoBERTuito queda como el mejor modelo propio**; la elección entre M4 y M9 se hizo en 5.8 (ver abajo).
+* **Resultado en el oro *test* (5.8, 2026-10-22):** M4 κ 0.929 (media de 3 semillas) contra M9 0.943 en 594 evaluables; M9 − M4 de +0.010 a +0.017, con todos los IC conteniendo el 0, y sin diferencia en `NEG` (recall 0.975 contra 0.981). Con la regla aprobada antes de evaluar, **se eligió M4 RoBERTuito** (P8-1) y `s1` va a producción. Ver la [sección 15 del reporte](../analytics/sentiment/sentiment_models_v0_report.md#15-evaluación-única-en-el-oro-test-58-2026-10-22).
+
+### FEATURE 5.5: Descubrimiento de Tópicos y Decisión sobre ABSA
+
+**Objetivo:** decidir con evidencia si se necesita una taxonomía fija (ABSA), tópicos dinámicos o un híbrido, para Q2 y Q3.
+
+* **Estado (2026-10-22):** **cerrada.** Recomendación aprobada por el autor; agregado: los flujos de curaduría pasan al frontal HITL de EPIC-7 (7.7) y la base de datos de curadurías para el reentrenamiento a EPIC-6 (6.2) ([requisitos y borrador del modelo de datos](../analytics/topics/topics_decision_note.md#agregado-del-autor-2026-10-22-curaduría-hitl-en-epic-6-y-epic-7)). [Plan aprobado](../analytics/topics/topics_design.md), [reporte](../analytics/topics/topics_report.md) (fases 0 a 4) y [nota para el registro de decisión](../analytics/topics/topics_decision_note.md). Todo en local sobre la plata, sin backfill de sentimiento; la vía B a escala costó $3.64.
+
+* **Descubrimiento (hecho):** sobre las reseñas negativas elegibles para tópico, agrupar embeddings por periodo (estilo BERTopic: embeddings → reducción de dimensión → HDBSCAN → términos representativos por c-TF-IDF y nombre propuesto por un LLM).
+* **Lectura temporal (hecha, [reporte](../analytics/topics/topics_report.md) §3.2):** qué tópicos son estables, cuáles aparecen tras una versión concreta y cuáles desaparecen, por banco.
+* **Validación humana (hecha, fase 4, [reporte](../analytics/topics/topics_report.md) §4.7):** revisión de los tópicos principales (coherencia, utilidad para producto) y contraste con la taxonomía hipotética de 8 `ABSATopic`.
+* **Opciones (decidido: híbrido, 2026-10-22):**
+
+  | Opción | Ventaja | Riesgo |
+  | :--- | :--- | :--- |
+  | Taxonomía fija (ABSA ligero) | Estable, comparable en el tiempo, simple de reportar | No ve incidentes nuevos; envejece |
+  | Tópicos dinámicos | Detecta temas nuevos sin reentrenar | Nombres e identidad cambian entre corridas; requiere curaduría |
+  | **Híbrido: núcleo estable + "emergentes" (elegido)** | Comparabilidad y detección de lo nuevo | Más complejidad operativa |
+
+* **Detección de incidentes (Q3, hecha: la marca `u` detecta 2 de 3 incidentes de BBVA con 4 % de falsas alarmas; `DV` y `UX` avisaron del rediseño un mes antes; [reporte](../analytics/topics/topics_report.md) §3.3 y §4.4):** proponer una señal (aparición o crecimiento anómalo de un tópico por banco y versión) y probarla hacia atrás con los picos que ya mostró el EDA (BBVA 2024-07, 2025-10 y 2025-11) y con los días pico de SANTANDER y AZTECA donde las 5★ esconden quejas.
+* **Insumos de 5.2** ([EDA](../analytics/eda/eda_report.md#52-proporción-multi-aspecto-de-las-negativas), sección 5.2): entre el 32 % (Gemini, cota inferior) y el 44 % (autor) de las negativas es multi-aspecto, y la mitad de las de 20 palabras o más, lo que favorece tópicos por cláusula o ABSA multi-etiqueta sobre un tópico por reseña. Las negativas cortas casi nunca son multi-aspecto, pero sí nombran un problema concreto; `TOPIC_TOO_SHORT` con k = 1 (ver 5.1). Con la guía `v2.1`, las familias más frecuentes son falla general (29.5 %), acceso (24.4 %), transferencias (13.7 %), productos (11.5 %) y lentitud (10.6 %), y el multi-aspecto es 24.7 %. Para codificar aspectos con Gemini está la [guía de aspectos `v2.1`](../analytics/eda/eda_aspects_guideline.md) (validada por el autor; prompt `aspects_v2_1`), que reemplaza `DS` (κ 0.39 en `v1`) por `DV` y `UX` (κ 0.74 cada una), pasa la instalación y la actualización a `CO` y el token a `AC`, y agrega las marcas `u` (actualización, κ 0.70) y `s` (seguridad, no concluyente).
+* **Entregable:** recomendación con su costo de operación (frecuencia de re-clustering, curaduría humana, estabilidad de identificadores de tópico). **Aprobada (2026-10-22):** [reporte, sección 5](../analytics/topics/topics_report.md#5-recomendación-aprobada-por-el-autor-2026-10-22) y [nota para 5.8](../analytics/topics/topics_decision_note.md). Pasaron a 5.9 los umbrales de la señal y el análisis por versión; a 5.7, el emparejamiento de tópicos entre reajustes y el monitoreo de `OT` (P7-8); a 5.8, el modelo de sentimiento del que dependen las familias (P8-1, resuelto: M4).
+
+### FEATURE 5.6: Calibración, Incertidumbre, HITL y Priorización
+
+> **Cerrada (2026-10-22).** [Plan](../analytics/calibration/calibration_design.md) y [reporte](../analytics/calibration/calibration_report.md). Todo se hizo con el oro *dev* (el *test* sigue intacto), la plata y una muestra nueva sin etiqueta; código en `voc_analytics.calibration`.
+
+**Objetivo:** dejar calibradas las probabilidades, fijar la revisión humana, estimar proporciones poblacionales con intervalos válidos y decidir cómo se prioriza (Q4).
+
+* **Calibración (decisión del autor):** *temperature scaling* con una T por semilla de M4 (≈ 1.7). M4 está sobreconfiado (confianza 0.995 y acierto 0.972); el ECE baja de ~0.025 a ~0.01 sin cambiar la exactitud. *Vector scaling* se descartó.
+* **Umbral HITL de sentimiento (decisión del autor):** probabilidad máxima calibrada, **90 % de cobertura por defecto** como parámetro configurable. Se revisa el ~10 % menos seguro (~350 textos únicos por semana, 40–60 min) y el error entre lo aceptado baja de 2.8 % a 0.4 %. Revisar más del 10 % casi no mejora. Es un costo de operación del escenario de producción, no una carga semanal del autor; para la tesis basta una validación única. La curva y el parámetro son estado de la aplicación (EPIC-6, 6.1 a 6.4; EPIC-7, 7.10).
+* **Descartes:** el ensamble de 3 semillas, BETO para el HITL, el disparador por impacto (4–5★, `NEG` y votos ≥ 5) como señal de error y la marca `duda` de Gemini (0 de 199).
+* **PPI** (decisión del autor: medir con Gemini y con M4): los intervalos poblacionales son 2 a 4 veces más estrechos que con el oro solo, con cualquiera de los dos predictores (estrellas distintas del texto: 11.6 % [10.5, 12.6] con Gemini y 11.7 % [10.6, 12.8] con M4). Para M4 se usó una muestra nueva del snapshot (`ppi_v0`, 69 534 textos sin plata ni oro), porque M4 se entrenó con la plata.
+* **Modelos con pesos:** el lote `m4_ppi` de Kaggle reentrenó M4 RoBERTuito con las semillas 1 a 3 y **guardó los pesos** (218 MB cada uno en fp16, `data/models/weights/`, fuera de git). Reproducen a 5.4 (κ 0.912–0.923) y son los candidatos desplegables.
+* **Priorización, Q4 (decisión del autor):** volumen de negativas por familia y marca `u`, en nivel y en anomalía. La fórmula anterior (`priority_weight_score`) ordena los incidentes igual que contar negativas, y los votos empeoran el orden (se acumulan con el tiempo), así que salen del contrato; los votos se muestran como contexto.
+* **Límite:** en los casos difíciles (*dev* dirigido) el error sigue en 17–23 % aun revisando el 20 %.
+* **Pasa a otras features:** D1 (cuándo la deriva o un tema nuevo suben la revisión) a 5.7 ([P7-6](#decisiones-pendientes), decidido); la priorización errónea quedó en la FMEA como F-17 (por calificar), y la validación única de la cola HITL pasa a 5.9.
+
+### FEATURE 5.7: Escala, Ciclo de Vida y Monitoreo
+
+> **Cerrada (2026-10-22).** [Plan](../analytics/scale/scale_design.md) (E1: medir en Cloud Run; E2: medir int8; E3: periodo de referencia por banco, no fecha común) y [reporte de 5.7](../analytics/scale/scale_report.md). Código en `voc_analytics.scale`. Todos los recursos temporales en GCP se borraron.
+
+**Objetivo:** medir el tiempo y el costo de operar el pipeline y fijar cómo se versionan, promueven y vigilan los modelos.
+
+* **Benchmark de inferencia (P7-1, P7-2; reporte §1):** M4 en Cloud Run con 1 vCPU, ordenado por longitud, hace 22.6 textos/s en fp32 y 27.2 en int8; con 2 vCPU en int8, 88. Ordenar por longitud acelera ~4×. int8 no pierde calidad (κ 0.918 contra 0.912). La memoria pico es de 1.2–1.4 GB, así que 1 GiB no alcanza. El backfill tardaría ~17 h en 1 vCPU y ~9 min en la T4 de Kaggle; el delta diario, ~25 s.
+* **Decisiones del autor:** backfill y *re-scoring* completo en Kaggle con un pipeline desde GCP, asumiendo y declarando el riesgo de subir el corpus (P7-1, P7-4); delta diario en Cloud Run con 1 vCPU y 2 GiB (P7-2); Vertex Model Registry, con alias para promover y regresar (P7-3; reporte §6); subidas automáticas de la revisión HITL solo para el banco que alertó (P7-6); muestra humana de monitoreo y re-ajuste trimestral de tópicos como parámetros de la política de riesgo global (P7-7, P7-8); umbrales de deriva por banco en `drift_policy` (P7-9); reentrenamiento de M4 si el κ trimestral cae debajo de 0.89 y revalidación de las familias al cambiar Gemini (P7-10, P7-11; reporte §8).
+* **Línea base de deriva (E3; reporte §2):** las tasas de alerta son mucho más altas en los años de arranque de cada banco. Con la regla propuesta (12 meses seguidos con al menos 200 filas) cada banco entra al monitor en su propio mes: BBVA 2016-04, AZTECA 2018-09, BANORTE 2018-10, SANTANDER 2019-04 y NUBANK 2021-12. Con z ≥ 4, cada serie alerta de 0 a 1.4 meses al año por banco (tabla por banco en el reporte). Estos umbrales son la plantilla de la **`drift_policy` de cada banco** (P7-9); la política HITL (`risk_policy`) es global.
+* **Costos medidos para 5.8:** familias con Gemini, $0.091 por 1 000 textos (~$72 el llenado histórico; reporte §3); explicabilidad precalculada para el HITL, ~9 min de CPU por semana (§4); `VECTOR_SEARCH` en BigQuery, 4.26 GB por búsqueda sobre todo el corpus y ~0.5 GB con una ventana de 12 meses en una tabla particionada (§5 y §5.1).
+* **Propuesta de ciclo de vida y monitoreo:** reporte §7 (candidato, registro, promoción, rollback y política HITL; umbrales del monitor por nivel).
+* **Backfill de M4 (P7-1, hecho en 5.8; [reporte §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)):** 1 429 675 textos únicos con las 3 semillas, 346–357 s de T4 por semilla y 27 min de preparación. `s1` va a producción y las predicciones quedan en local para 5.9.
+* **Heredado de 5.5 y 5.6:** el emparejamiento de tópicos entre reajustes y el monitoreo de `OT` quedan en P7-8; el análisis por versión pasó a 5.9 (descriptivo); la señal de incidentes quedó fuera del alcance (2026-10-22).
+
+### FEATURE 5.8: Registro de Decisión
+
+> **Cerrada (2026-10-22).** [`decision_record.md`](../analytics/decision_record.md) aprobado, con la evidencia de 5.2–5.7 y P8-1 a P8-12 decididas.
+
+**Objetivo:** fijar la estrategia de producción con la evidencia de 5.2–5.7 antes de EPIC-6 y EPIC-7.
+
+* **Modelo de sentimiento (P8-1, P8-2):** evaluación única en el oro *test*, con protocolo y regla aprobados antes de mirarlo. Ganó M4 RoBERTuito (κ 0.929 contra 0.943 de M9, sin diferencia significativa). La licencia no comercial se acepta para la tesis.
+* **Elegibilidad (P8-3, P8-4):** [`eligibility_rules_v1`](../analytics/eda/eligibility_rules.md) publicada con sus conteos.
+* ***Satisfaction Gap* y estimaciones (P8-9, P8-10):** *gap* en estrellas con PPI, +0.21 [0.17, 0.24]; series crudas y KPI con PPI.
+* **Frontal y esquema (P8-12, P8-5, P8-11):** EPIC-7 reescrita con el alcance por niveles; el [esquema v3](../contracts/analytics_outputs_v3.md) se revisó pantalla por pantalla.
+* **Búsqueda, explicabilidad y familias (P8-6 a P8-8):** MiniLM en BigQuery `VECTOR_SEARCH`, oclusión fuera de la pantalla HITL y familias con Gemini en GCP.
+* **Gobierno:** [Model Card](../governance/model_card.md) 0.1 y filas F-14 a F-20 de la [FMEA](../governance/ethical_fmea_matrix.md) (F-16, F-17, F-18 y F-20 calificadas y F-15 y F-19 asignadas a EPIC-7, el 2026-10-23).
+* **Backfill de M4 (P7-1):** hecho; `M4_robertuito_s1_ppi` va a producción y la carga a BigQuery es de EPIC-6 (6.2, 6.3) ([reporte de 5.7, §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)).
+* **Incompatibilidades:** todas resueltas ([tabla](#incompatibilidades-entre-el-diseño-de-epic-6-y-epic-7-y-la-evidencia)).
+* **Sigue:** EPIC-6 y EPIC-7 pueden empezar. Con 5.9 acotada (2026-10-22), 6.4 ya no espera umbrales de incidentes; el cockpit (7.5) toma las etiquetas de temas por día de 5.9.
+
+### FEATURE 5.9: Temas por día y versiones (descriptivo)
+
+> **Acotada a lo descriptivo (decisión del autor, 2026-10-22).** La detección de incidentes (series de tiempo, anomalías, umbrales y su validación, y el cruce con redes sociales) es un problema con metodología propia y supera el alcance de la tesis: queda como trabajo futuro. 5.9 se queda en lo descriptivo: qué temas acompañan cada día en el dashboard. Usa la estrategia elegida en 5.8: sentimiento con M4 `s1` (P8-1) y familias con Gemini `aspects_v2_1` (P8-7).
+
+**Objetivo:** dar al dashboard de KPIs, por banco y día, los temas de las negativas (familias y tópicos curados), para que el lector relacione temas con sentimiento; y, si alcanza el tiempo, una vista descriptiva por versión de la app.
+
+**Datos (en local, fuera de git):**
+
+* sentimiento de M4 `s1` para todo el corpus: `data/backfill/20261022/preds/` (1 429 675 textos únicos, que se unen a las filas por `text_key`);
+* backfill de familias y tópicos (P9-3, hecho): familias de Gemini, cláusulas, embeddings MiniLM, modelo de tópicos congelado y tópicos de las 659 416 negativas únicas, por `text_key`, en `data/backfill/20261022/aspects/` y `topics/`.
+
+Tareas:
+
+0. **Preparación (hecha, 2026-10-22; [reporte §0](../analytics/incidents/incidents_report.md#0-preparación-tarea-0)).** Snapshot unido al backfill de M4 (99 de 1 427 640 textos sin predicción), `eligibility_rules_v1` aplicada y series por banco, mes y día.
+1. **Ventana de la señal (hecha como hallazgo exploratorio; [reporte §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)).** Con la lista de 107 incidentes de medios que reunió el autor (no exhaustiva; fuera de git), la ventana de 1 día capta más incidentes que las de 2 a 30 días y que el mes calendario, también con una tolerancia de fecha de ±7 días: 54.5 % con el 10 % de días marcados. No se fijan umbrales (P9-1 quedó fuera del alcance). El hallazgo respalda usar el día como unidad de las etiquetas y queda como antecedente para un proyecto de incidentes.
+2. **Backfill de familias y tópicos (P9-3, hecho, 2026-10-22; [reporte §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3)).** Familias de Gemini para 659 316 de 659 416 negativas únicas ($60.61; marca `u` 17.7 %; acuerdo exacto entre corridas 68 %) y tópicos con el modelo de 5.5 congelado, que reproduce el 100 % de sus conjuntos (72.9 % de los textos con tópico). Los artefactos se conservan por `text_key` para cargarlos en 6.3. Además, embeddings MiniLM por texto de los 1 429 675 textos únicos, para `text_embeddings` y la búsqueda semántica de EPIC-6 (P8-6; [reporte §2.3](../analytics/incidents/incidents_report.md#23-embeddings-por-texto-para-la-búsqueda-semántica-p8-6)).
+3. **Top 5 diario de temas (P9-4, hecho, 2026-10-22; [reporte §4](../analytics/incidents/incidents_report.md#4-top-5-diario-de-temas-p9-4)).** Por banco y día, las 5 familias y los 5 tópicos útiles (los 19 que el autor juzgó útiles en 5.5) con más negativas, con su participación del día y la habitual de los 28 días previos, para el cockpit (7.5). 19 343 días × banco; el 41 % de las negativas tiene un tópico útil. Queda en `data/incidents/daily_topics_v0.parquet` (fuera de git) y como vista `daily_topic_labels` del esquema v3 para 6.3.
+4. **Vista por versión (P9-2, hecha, 2026-10-22; [reporte §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2)).** Por decisión del autor se muestra en el dashboard: por banco y versión normalizada, proporción cruda de `NEG` con IC de Wilson, marca `u` y familias, sin pruebas de cambio de nivel. El 90.9 % de las reseñas tiene versión; las versiones con más `NEG` coinciden con episodios conocidos (BBVA 25.100.15, el rediseño de octubre de 2025; NUBANK 9.5.66, octubre de 2023).
+5. **Validación única de la cola HITL (heredada de 5.6; hecha, 2026-10-23; [reporte §6](../analytics/incidents/incidents_report.md#6-validación-única-de-la-cola-hitl-heredada-de-56)).** Revisión del autor a ciegas de la última semana completa (2026-10-05 a 11). Con el umbral del 90 % del *dev*, la cola fue de 387 textos (cobertura real 86.4 %). Tasa de corrección **18.3 % [14.6, 22.6]**, menor que el 24.9 % esperado; los errores se concentran en lo predicho `POS` (33 %, casi siempre quejas dentro de un elogio). ~80 min activos, mediana de 7 s por reseña.
+
+* **Fuera del alcance (trabajo futuro):** umbrales y calibración de una señal de incidentes, validación de episodios candidatos, precisión fuera de BBVA, descubrimiento de tópicos por ventana (por ejemplo, `topics_over_time` de BERTopic) y cruce con redes sociales.
+* **Consume:** 5.8 (predictor, familias, reglas). **Alimenta:** EPIC-6, 6.3 (familias y tópicos del backfill, etiquetas diarias); EPIC-7, cockpit (7.5) y pestaña por versión (deseable); Model Card (límite 7) y FMEA (F-19). Ninguna feature de EPIC-6 espera a 5.9 para empezar.
+
+<a id="decisiones-pendientes"></a>
+
+## 🗂️ Registro de decisiones
+
+Seguimiento de las decisiones del autor de 5.7 a 5.9. La columna "Bloquea" dice qué feature depende de cada una. El [`decision_record.md`](../analytics/decision_record.md) junta todo por tema, con su evidencia. Actualizado: 2026-10-22.
+
+**Resumen:**
+
+| Bloque | Decididas | Pendientes |
+| :--- | :--- | :--- |
+| 5.7 | P7-1 a P7-4 y P7-6 a P7-11 | Ninguna (cerrada) |
+| 5.8 | P8-1 a P8-12 (P8-5 y P8-11 con la condición del frontal cumplida) | Ninguna (cerrada) |
+| 5.9 | P9-1 (fuera del alcance), P9-2 (descriptiva), P9-3 (provisional) y P9-4 | Ninguna |
+
+### Decididas (5.7 y 5.8)
+
+Historia compacta. Las opciones y la evidencia de cada una están en el [registro de decisión](../analytics/decision_record.md) y en los reportes de 5.6 y 5.7.
+
+| ID | Decisión | Resultado (2026-10-22) | Bloquea |
+| :--- | :--- | :--- | :--- |
+| P7-1 | Entorno del backfill | Kaggle T4 con un pipeline desde GCP; riesgo de subir el corpus aceptado (F-14). Primer backfill hecho: `s1` en producción ([reporte de 5.7, §9](../analytics/scale/scale_report.md#9-backfill-de-m4-en-kaggle-p7-1-58-2026-10-22)) | 6.2, 6.3 |
+| P7-2 | Recursos del delta diario | Cloud Run Job de 1 vCPU y 2 GiB (~25 s por 500 textos), con M4 en fp32: los pesos fp16 del registro se cargan en fp32, sin int8 (D4 de [EPIC-6](epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23), 2026-10-23) | 6.2 |
+| P7-3 | Registro de artefactos | Vertex Model Registry, con alias para promover y regresar | 6.2, 6.4 |
+| P7-4 | Promoción, rollback y *re-scoring* | Re-predecir todo el histórico en Kaggle al promover; `model_version` por predicción y las anteriores conservadas | 6.3, 6.4 |
+| P7-6 | Subida de la revisión HITL por deriva o tema nuevo | Automática, solo para el banco que alertó (`hitl_boosts`), con las reglas de la `risk_policy` global | 6.4, 7.10 |
+| P7-7 | Monitoreo de concepto | Muestra humana periódica; tamaño y frecuencia configurables en la `risk_policy` | 6.4 |
+| P7-8 | Re-ajuste de tópicos | Trimestral, con emparejamiento por centroides; frecuencia configurable | 6.4, 7.7.1 |
+| P7-9 | Umbrales del monitor de deriva | Por banco en `drift_policy`, desde una plantilla: z ≥ 4, PSI ≥ 0.25 en la longitud y entrada con 12 meses seguidos de ≥ 200 filas | 6.4 |
+| P7-10 | Desempeño de M4 | Reentrenar si el κ trimestral (300 revisiones) baja de 0.89; avisos: corrección > 28 % y acuerdo M4–Gemini < 94 % | 6.4 |
+| P7-11 | Calidad de las familias de Gemini | Al cambiar modelo o prompt, repetir `muestra_v21` y aceptar con acuerdo exacto ≥ 53 % | 6.3, 6.4 |
+| P8-1 | Modelo de sentimiento | **M4 RoBERTuito**, con la regla aprobada antes del *test*: κ 0.929 contra 0.943 de M9; M9 − M4 de +0.010 a +0.017, con todos los IC conteniendo el 0, y sin diferencia en `NEG` | 6.1–6.3, 7.1, 7.2 |
+| P8-2 | Licencia del modelo | RoBERTuito para la tesis; el límite comercial va en la Model Card y en la FMEA (F-16) | P8-1, 7.5 |
+| P8-3 | `TNSS_SINGLE_WORD` | Léxico determinista para las cubiertas (95.3 %) y exclusión del resto | 6.1, 6.3 |
+| P8-4 | Reglas de elegibilidad | `eligibility_rules_v1` publicada con sus conteos | 6.1, 6.3 |
+| P8-5 | Esquema de salida y migración | [Esquema v3](../contracts/analytics_outputs_v3.md) aprobado; cubre el frontal de EPIC-7, revisado pantalla por pantalla | 6.1, 6.2, 7.1 |
+| P8-6 | Búsqueda semántica | MiniLM (384) en BigQuery `VECTOR_SEARCH`, tabla particionada por mes, ventana de 12 meses por defecto | 6.2, 7.1, 7.3, 7.4 |
+| P8-7 | Familias en producción | Gemini `aspects_v2_1` en GCP; llenado histórico ~$72 | 6.1, 6.3 |
+| P8-8 | Explicabilidad | Oclusión precalculada para la cola HITL y bajo pedido; solo en la ficha del Explorador (7.6), nunca en el HITL | 7.1, 7.6 |
+| P8-9 | *Satisfaction Gap* | *Gap* en estrellas: promedio de estrellas menos el puntaje del texto (`NEG` = 1, `NEU` = 3, `POS` = 5), con PPI; +0.21 [0.17, 0.24] | 7.1, 7.4, 7.6 |
+| P8-10 | Estimaciones del portal | Crudas en las series diarias; PPI en los KPI por banco y periodo | 7.1, 7.4 |
+| P8-11 | Registro de las revisiones | Tablas `hitl_items`, `hitl_events` y `hitl_reviews`; se elimina `hitl_triage_audit_log` | 6.1, 6.2, 7.2 |
+| P8-12 | Alcance de EPIC-7 | Por niveles: imprescindible, importante y deseable ([mapa del portal](epic_7.md#mapa-del-portal)) | 7.1–7.12 |
+
+### Para 5.9
+
+| ID | Decisión | Opciones | Evidencia hoy | Propuesta | Bloquea |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| P9-1 | Ventana y umbrales de la señal de incidentes | Ventana de 1 a 30 días o mes calendario; z, línea base y presupuesto de alertas | 5.5: la marca `u` detecta 2 de 3 incidentes con 4 % de falsas alarmas. Lista externa del autor (101 incidentes evaluables, [reporte §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)): con el 10 % de días marcados, la ventana de 1 día capta el 54.5 %, la de 7 días el 30.7 % y el mes calendario el 15.8 % | **Fuera del alcance (decisión del autor, 2026-10-22):** la detección de incidentes pasa a trabajo futuro. La comparación de ventanas queda como hallazgo exploratorio; antes se había elegido la ventana de 1 día como señal principal y una larga como complementaria | — |
+| P9-2 | Datos para el análisis por versión | Plata + `ppi_v0`; backfill de M4 | 5.5: con la plata sola domina el ruido; el backfill de M4 ya está en local (5.8) | **Decidido por el autor (2026-10-22):** descriptiva y en el dashboard (los datos ya existen): proporción de `NEG` con IC, marca `u` y familias por versión, con los backfills de M4 y de P9-3, sin pruebas de cambio de nivel. Hecha ([reporte §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2)) | 7.5 (pestaña por versión, deseable) |
+| P9-3 | Cobertura de familias y marca `u` para la señal | Muestras actuales (~83 000 negativas, $0); muestra estratificada por banco y mes (~$10); backfill completo de familias (~659 000 textos, ~$60, Gemini en GCP, reutilizable en 6.3) y, si hace falta, de tópicos | Medido en la tarea 0 ([reporte §0.3](../analytics/incidents/incidents_report.md#03-series-por-banco-y-mes)): las muestras cubren el 11.8 % de las negativas; por banco y mes, mediana de 114 a 192 negativas con familias y un IC 95 % de la marca `u` de 7 a 13 puntos, con una prevalencia de ~17 % | **Decidido por el autor (2026-10-22), provisional:** backfill de familias con Gemini para las 659 416 negativas únicas (autorizado), cláusulas y embeddings MiniLM en local, y asignación con el modelo global de 5.5 reajustado y congelado. Es provisional: el descubrimiento de tópicos por ventana (por ejemplo, `topics_over_time` de BERTopic) queda como trabajo futuro con la detección de incidentes. Los artefactos se conservan para EPIC-6 (6.3) ([reporte §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3)) | 5.9, 6.3 |
+| P9-4 | Etiquetas de temas por día | Cuántas familias y tópicos por día; todos los tópicos o solo los curados; marcar o no un tema por encima de su línea base | 5.5: el autor juzgó útiles 19 de 35 tópicos y cerca de un tercio del peso de los tópicos principales es ruido | **Decidido por el autor (2026-10-22):** algo sencillo, un top 5 diario: por banco y día, las 5 familias y los 5 tópicos útiles con más negativas, con su participación del día y su participación habitual de los 28 días previos como dato al lado, sin umbral ni marca. Van las dos listas; la forma visual se decide en 7.5 | 6.3, 7.5 |
+
+### Incompatibilidades entre el diseño de EPIC-6 y EPIC-7 y la evidencia
+
+Piezas del texto original de EPIC-1, EPIC-2 y EPIC-7 que chocaban con lo decidido en EPIC-5. **Todas resueltas (2026-10-22);** la columna "Estado" dice dónde se reescribe cada una.
+
+| Pieza (dónde) | Choca con | Estado |
+| :--- | :--- | :--- |
+| `AnalyzedReviewPrediction` con `sentimiento_roberta` y docstring "DeLoRA" (EPIC-1) | Delora descartado (5.4) | Resuelta con P8-1 (M4 RoBERTuito, 2026-10-22); se reescribe en 6.1 |
+| `ABSATopic` único por reseña (EPIC-1; EPIC-7 anexo B.1, B.2, B.4, B.6) | Familias multi-etiqueta `v2.1` y marcas `u` y `s` (5.5) | Resuelta en 5.5; se reescribe en 6.1 |
+| `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` (EPIC-1; EPIC-7 anexo B.2 "de 2 a 60 palabras") | Sin filtro de longitud (5.2); elegibilidad por reglas | Resuelta con P8-3 y P8-4: `eligibility_rules_v1` publicada con sus conteos (2026-10-22); se reescribe en 6.1 |
+| `priority_weight_score`, `tnss_numeric_calibrated` y `prediction_entropy` (EPIC-1; EPIC-7 anexo B.1, B.2) | Priorización por volumen y marca `u`; HITL por probabilidad máxima calibrada (5.6) | Resuelta en 5.6; se reescribe en 6.1 |
+| `delora_predictions` de 15 columnas agrupada por `topico` (EPIC-2) | Esquema versionado por modelo, calibración y política HITL | Resuelta con P8-5 (la condición del frontal se cumplió el 2026-10-22): se elimina; se reescribe en 6.1 y 6.2 |
+| `embedding_vector` de 768 dimensiones e índice de Vertex de 768 (EPIC-2; EPIC-7 anexo B.1, B.3, B.6) | Delora descartado; MiniLM de 384 en tópicos | Resuelta con P8-6: MiniLM de 384 en BigQuery, tabla particionada por mes; se retira el índice de Vertex. Se reescribe en 6.2 y 7.1 |
+| `hitl_entropy_threshold = 0.65` en `Settings` (EPIC-1; EPIC-7 objetivo y anexo B.5) | 90 % de cobertura como política versionada (5.6) | Resuelta en 5.6; se reescribe en 6.1 y 7.10 |
+| `hitl_triage_audit_log` con `original_topic`/`validated_topic` (EPIC-2; EPIC-7 anexo B.2) | Curadurías de sentimiento, aspectos y tópicos (5.5) | Resuelta con P8-11: se elimina; las tablas nuevas se revisaron contra el frontal (2026-10-22) |
+| *Satisfaction Gap* como estrellas menos TNSS continuo, prueba con gap −1.11 (EPIC-7 anexo B.1, B.6) | `tnss_numeric_calibrated` descartado (5.6); P8-9 decide estrellas menos el puntaje 1/3/5 por clase, con PPI (*gap* positivo, ~+0.21) | Resuelta en 5.8 (P8-9); ya reescrita en EPIC-7 (7.5) |
+| Explicador de < 150 ms en 1 vCPU y 1 GiB (EPIC-7 anexo B.2) | Velocidad medida de M4 en CPU | Resuelta con P8-8: oclusión precalculada para la cola HITL y bajo pedido, mostrada solo en el Explorador (7.6) |
+| Model Card con Delora, paridad dialectal sintética y umbral 0.65 (EPIC-7 anexo B.5) | 5.4 y 5.6 | Resuelta: [Model Card](../governance/model_card.md) 0.1 escrita en 5.8 (2026-10-22) |
+| FMEA: "Label Noise mitigado por Dual LoRA" y "priorización mitigada por entropía ≥ 0.65" (EPIC-7 anexo B.5) | M4 ajustado con la plata; HITL por cobertura | Resuelta: filas F-17 (priorización con predicciones inciertas) y *Label Noise Bias* confirmada con el oro *test* (2026-10-22); F-17 queda por calificar |
+| *Concept drift* con JSD de 8 tópicos y umbrales PSI 0.25 / JSD 0.20 (anexo de EPIC-6, A.7) | Familias y marca `u` (5.5); línea base de 5.7 | Resuelta para la deriva con P7-9 (`drift_policy` por banco, 5.7); la señal de incidentes quedó fuera del alcance (P9-1, 2026-10-22) |
+| Backfill "dentro de GCP" contra la medición en Kaggle | Principio de que los datos no salen de GCP | Resuelta con P7-1: backfill en Kaggle con riesgo aceptado y declarado en la FMEA; en producción, todo en GCP |
+| IAM de Vertex AI para el modelo de producción (EPIC-6 6.2) | Las familias usan Gemini en GCP (P8-7) y el registro es Vertex (P7-3) | Resuelta: `voc-sa-ml-backend` necesita Vertex AI para Gemini y el registro; M9 solo cambia el volumen |
 
 ---
 
-### FEATURE 5.2: Arquitectura Dual LoRA (*Delora*) para Desacoplamiento de Ruido y Cálculo de TNSS (`model.py`, `scoring_and_entropy.py`)
 
-**Objetivo:** Implementar la arquitectura matemática **Dual LoRA (*Delora*)** en PyTorch para separar la polaridad semántica real (**TNSS**) del sesgo conductual de calificación por estrellas (*Label Noise Bias*), junto con las funciones puras de calibración numérica, entropía de Shannon y ponderación de severidad.
+<a id="siguientes-pasos"></a>
 
-#### Tarea 5.2.1: Implementar `DeloraDualAdapterModel(nn.Module)` en `model.py`
+## 🧭 Siguientes pasos
 
-1. **Estructura de Doble Rama sobre el Encoder Base ($d = 768$):**
+En orden. Los pasos 1 a 13 están hechos (2026-10-20 a 2026-10-22), de 5.2 a 5.8; su detalle está en los reportes de cada feature y en la historia de git.
 
-* **Rama Limpia (*Clean Adapter* — $\Delta\theta_{\text{clean}}$):** Adaptador LoRA ($r=8, \alpha=16$, aplicado sobre proyecciones `query` y `value`) conectado al cabezal de clasificación limpio $W_{\text{clean}} \in \mathbb{R}^{768 \times 3}$. Esta rama recibe **únicamente el texto** (`input_ids`, `attention_mask`) y produce los logits depurados $z_{\text{clean}} = (z_{\text{NEG}}, z_{\text{NEU}}, z_{\text{POS}})$ que determinan el **`tnss_score`** (`SentimentLabel`).
-* **Rama de Ruido (*Noisy Adapter / Transition Matrix* — $\Delta\theta_{\text{noisy}}$):** Segundo adaptador LoRA + módulo de transición condicional $T(h, y_{\text{stars}})$ que recibe la representación oculta $h$ y el embedding de `estrellas` ($1..5$) durante el entrenamiento para absorber la discrepancia sistemática donde textos con quejas operativas fueron etiquetados con 4 o 5 estrellas (*Obligatory 5-Star*).
-* **Desacoplamiento en Tiempo de Inferencia (`forward_clean_inference`):** Durante la inferencia en producción para calcular el **TNSS**, se desactiva la rama de ruido ($\Delta\theta_{\text{noisy}}$) y se evalúa exclusivamente la rama limpia ($\theta_0 + \Delta\theta_{\text{clean}}$), aislando el sentimiento real del texto sin contaminación de la calificación inercial.
-
-#### Tarea 5.2.2: Implementar Fórmulas de Calibración, Entropía y Priorización en `scoring_and_entropy.py`
-
-Implementar funciones matemáticas puras, deterministas y 100% testeables sin GPU:
-
-1. **Score Continuo Recalibrado (`compute_tnss_numeric_calibrated`):**
-
-* Dadas las probabilidades limpias $p = (p_{\text{NEG}}, p_{\text{NEU}}, p_{\text{POS}})$ donde $\sum p_i = 1$:
-
-$$\text{tnss\_numeric\_calibrated} = \text{clip}\left(1.0 \cdot p_{\text{NEG}} + 3.0 \cdot p_{\text{NEU}} + 5.0 \cdot p_{\text{POS}},\, 1.0,\, 5.0\right)$$
-
-* Permite calcular directamente el **Satisfaction Gap** ($\overline{\text{TNSS}}_{\text{calibrado}} - \overline{\text{Estrellas}}_{\text{oficial}}$) en escala de 1.0 a 5.0 para los dashboards de `EPIC-6`.
-
-1. **Entropía Normalizada de Shannon y Disparo HITL (`compute_entropy_and_hitl_flag`):**
-
-* Calcula la entropía sobre la distribución de probabilidad limpia $p \in \Delta^2$ normalizada por $\ln(3)$ para que viva estrictamente en el intervalo $[0.0, 1.0]$ requerido por `AnalyzedReviewPrediction`:
-
-$$H_{\text{norm}}(p) = -\frac{1}{\ln(3)} \sum_{c \in \{\text{NEG, NEU, POS}\}} p_c \ln(\max(p_c, 10^{-12}))$$
-
-* Determina `requires_hitl: bool`:
-* Retorna `True` si `prediction_entropy >= hitl_entropy_threshold` (`0.65` por defecto en `Settings`), **o** si `is_obligatory_5_star_bias is True and votos_utilidad >= 5`, asegurando que tanto las predicciones inciertas como las quejas graves ocultas en 5 estrellas con tracción comunitaria pasen a validación humana.
-
-1. **Ponderador de Severidad para el Backlog (`compute_priority_weight_score`):**
-
-* Basado en el hallazgo del gráfico de violín del EDA (donde las reseñas negativas concentran picos de hasta ~100 votos de utilidad, validando tracción comunitaria):
-
-$$\text{priority\_weight\_score} = \text{round}\left( \left(p_{\text{NEG}} + 0.5 \cdot \mathbb{I}[\text{is\_obligatory\_5\_star\_bias}]\right) \cdot \left(1.0 + \ln(1 + \text{votos\_utilidad})\right),\, 4 \right)$$
-
-* Si `tnss_score == SentimentLabel.POS`, el multiplicador de severidad se atenúa por $(1 - p_{\text{POS}})$ para no inflar el backlog de ingeniería con comentarios positivos.
+| # | Paso | Dueña | Depende de | Terminado cuando |
+| :---: | :--- | :---: | :--- | :--- |
+| 14 | ~~**5.9, preparación**~~ **Hecho (2026-10-22):** ver el [reporte, §0](../analytics/incidents/incidents_report.md#0-preparación-tarea-0) | 5.9 | — | — |
+| 15 | ~~**5.9, ventana de la señal**~~ **Hecho como hallazgo exploratorio (2026-10-22):** ver el [reporte, §1](../analytics/incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1); la detección de incidentes quedó fuera del alcance | 5.9 | — | — |
+| 16 | ~~**5.9, backfill de familias y tópicos (P9-3)**~~ **Hecho (2026-10-22):** ver el [reporte, §2](../analytics/incidents/incidents_report.md#2-backfill-de-familias-y-tópicos-p9-3) | 5.9 | — | — |
+| 17 | ~~**5.9, top 5 diario de temas (P9-4)**~~ **Hecho (2026-10-22):** ver el [reporte, §4](../analytics/incidents/incidents_report.md#4-top-5-diario-de-temas-p9-4); también los embeddings por texto para EPIC-6 (§2.3) | 5.9 | — | — |
+| 18 | ~~**5.9, validación única de la cola HITL**~~ **Hecho (2026-10-23):** ver el [reporte, §6](../analytics/incidents/incidents_report.md#6-validación-única-de-la-cola-hitl-heredada-de-56) | Autor | — | — |
+| 19 | ~~**5.9, vista por versión (P9-2)**~~ **Hecho (2026-10-22):** ver el [reporte, §5](../analytics/incidents/incidents_report.md#5-vista-por-versión-de-la-app-p9-2) | 5.9 | — | — |
+| 20 | **EPIC-6:** detallar las features a partir del registro (sesión paralela) | EPIC-6 | — | [`epic_6.md`](epic_6.md) detallada; ninguna feature espera a 5.9 |
+| 21 | **Cierre de EPIC-5** | EPIC-5 | 16–18 | Criterios de cierre del checklist |
 
 ---
 
-### FEATURE 5.3: Clasificador por Aspectos (ABSA) Híbrido para Dominio Bancario (`absa_classifier.py`)
+## 💻 Cómputo y presupuesto
 
-**Objetivo:** Asignar cada reseña a uno de los 8 tópicos de `ABSATopic` (`voc-common`) combinando reglas léxicas de alta precisión para códigos/fallos bancarios explícitos con clasificación basada en similitud de embeddings / cabezal neuronal.
+| Tarea | Dónde | Costo |
+| :--- | :--- | :--- |
+| EDA, deduplicación, muestreo y modelos lineales | Mac M2 8 GB (polars/duckdb, CPU) | $0 |
+| Etiquetas de plata y M9 (5.3, 5.4) | Vertex AI, `gemini-3.6-flash` | Medido: plata v0 $3.37 por 70 284 textos. M9 no se eligió (P8-1) |
+| Codificación de aspectos (5.2) | Vertex AI, `gemini-3.6-flash` | Medido: $0.17 por dos rondas de 1 434 textos negativos (`aspects_v0` y `aspects_v1`); $0.17 y $0.16 en `aspects_v2` y `aspects_v2_1` (guía `v2.1`); $3.64 por las 40 382 negativas de la plata en 5.5 (vía B a escala) |
+| Ajuste de encoders y semillas | Kaggle (~30 h/semana de GPU, no garantizadas); el Mac solo para validar el pipeline (M4 en 46–48 min, una semilla). Medido en la T4: M4 y M5 ~6 min por corrida; M8 ~1 h por semilla | $0 |
+| Backfill de M4 (2.65 M filas, 1 429 675 textos únicos) | Kaggle T4 con pipeline desde GCP (P7-1) | Medido (5.8): 346–357 s de GPU por semilla más 27 min de preparación ($0); en Cloud Run serían ~17 h con 1 vCPU |
+| Delta diario | Cloud Run Job de 1 vCPU y 2 GiB (P7-2; free tier: 180 000 vCPU-s/mes) | Medido: ~25 s por 500 textos ($0) |
+| Familias con Gemini (P8-7) | Vertex AI, `gemini-3.6-flash` | Medido: $3.60 por 39 635 negativas de `ppi_v0` ($0.091 por 1 000); llenado histórico ~$72 (precio introductorio hasta el 2026-12-31) |
+| Búsqueda semántica (P8-6) | BigQuery `VECTOR_SEARCH` | Medido: 4.26 GB por búsqueda sobre todo el corpus; ~0.5 GB con ventana de 12 meses (free tier: 1 TiB al mes) |
+| Benchmarks de 5.7 | Cloud Run, Cloud Build, BigQuery y Vertex | Recursos temporales, borrados al terminar |
+| Temas por día (5.9) | Mac (polars en CPU; MiniLM en MPS) y Vertex AI para las familias (P9-3) | Medido: familias $60.61 por 659 316 textos ($0.092 por 1 000); embeddings de 1 035 052 cláusulas en 14 min y tópicos en 3 min; embeddings por texto de 1 429 675 textos en el Mac ($0) |
 
-#### Tarea 5.3.1: Implementar `BankingABSAClassifier` en `absa_classifier.py`
-
-Clasificar el `texto_limpio` hacia las 8 categorías exactas de `ABSATopic`:
-
-1. **`BLOQUEO_SEGURIDAD_3702`:** Prioridad alta ante presencia de códigos `ref: 3702`, `"suspendimos temporalmente tu acceso"`, `"motivos de seguridad"`, `"restaurar de fábrica"`, `"formatear"`, `"antivirus"`, `"opciones de accesibilidad"`, `"app sospechosa"`.
-2. **`BIOMETRIA_RECONOCIMIENTO`:** Patrones y semántica de `"reconocimiento facial"`, `"huella dactilar"`, `"face id"`, `"biométrico"`, `"escaneo de mi cara"`, `"selfie"`, `"lector de huella"`.
-3. **`TRANSFERENCIAS_SPEI`:** `"spei"`, `"transferencia"`, `"pago en tránsito"`, `"no llega el depósito"`, `"clabe"`, `"enviar dinero"`, `"codi"`, `[MX_CLABE_BANCARIA]`.
-4. **`RENDIMIENTO_CRASH_POST_RELEASE`:** `"pantalla azul"`, `"pantalla en blanco"`, `"pantalla negra"`, `"se congela"`, `"se cierra forzosamente"`, `"borrar caché"`, `"forzar cierre"`, `"consume mucha batería"`, `"segundo plano"`, `"muy lenta"`.
-5. **`SALDOS_Y_APARTADOS`:** `"apartados"`, `"aparecen unos puntitos"`, `"no veo mi saldo"`, `"desapareció mi dinero"`, `"historial de movimientos"`, `"saldo negativo"`.
-6. **`TOKEN_Y_NOTIFICACIONES`:** `"token móvil"`, `"activar el token"`, `"notificaciones"`, `"no me avisa"`, `"código sms"`.
-7. **`UX_INTERFAZ_Y_PUBLICIDAD`:** `"interfaz"`, `"nuevo diseño"`, `"publicidad"`, `"anuncios"`, `"ofertas de préstamos"`, `"versión anterior era más sencilla"`, `"poco intuitiva"`.
-8. **`OTROS_SERVICIOS_GENERALES`:** Categoría por defecto o cuando el sentimiento es puramente elogioso general (`"excelente app"`, `"muy buen banco"`) sin fricción específica.
-
-* **Mecanismo de respaldo semántico:** Cuando ninguna regla léxica de alta precisión dispara un match directo, calcular la similitud coseno entre el `embedding_vector` (768-d) de la reseña y los centroides prototípicos de cada `ABSATopic` (o cabezal lineal entrenado), seleccionando el `argmax`.
+Crédito disponible: ~$5 000 MXN. La restricción del etiquetado es el tiempo humano, no el gasto. Las cifras de throughput, costo y duplicados de la literatura o de conversaciones con otros LLM no se usan para decidir hasta medirlas.
 
 ---
 
-### FEATURE 5.4: Entrenamiento, Evaluación EDD y Paridad Dialectal (`train.py`, `evaluate.py`)
+## ⚠️ Riesgos y limitaciones a declarar
 
-**Objetivo:** Proveer los scripts de entrenamiento de los adaptadores Dual LoRA y la suite de **Eval-Driven Development (EDD)** que audita los KPIs técnicos exigidos por la gobernanza de modelos de BBVA: *Negative Recall*, *Eficacia de Desacoplamiento de Ruido* y *Paridad Dialectal* en español mexicano.
+Los límites del modelo están en la [Model Card](../governance/model_card.md), sección 5: licencia, `NEU`, casos difíciles, criterio de Gemini, anotador único, familias de Gemini, señal de incidentes, `fecha` de última edición, PII residual, corpus fuera de GCP, paridad dialectal y representatividad. Cada riesgo tiene su fila en la [FMEA](../governance/ethical_fmea_matrix.md) (F-01 y F-10 a F-20). Aquí quedan solo los del proceso de EPIC-5:
 
-#### Tarea 5.4.1: Implementar `train.py` y Gestión de Artefactos en GCS
-
-* Permitir entrenar los adaptadores `clean_adapter` y `noisy_adapter` a partir de un dataset en formato Parquet/JSONL o tabla de BigQuery (`sanitized_reviews_tds`), utilizando una función de pérdida conjunta con regularización de separación para que el adaptador limpio maximice la coherencia semántica con el texto mientras el adaptador ruidoso absorbe la transición hacia `estrellas`.
-* Guardar y cargar los pesos de los adaptadores en `gs://voc-datalake-{project_id}/ml_artifacts/delora_v1/`.
-
-#### Tarea 5.4.2: Implementar `evaluate.py` con las 3 Métricas de Gobernanza (KPIs)
-
-Implementar la función `evaluate_delora_governance_metrics(...) -> GovernanceEvaluationReport`:
-
-1. **`negative_recall` ($\ge 0.85$ objetivo):** Recall de la clase `SentimentLabel.NEG` sobre el conjunto de evaluación curado, asegurando mínima omisión de quejas legítimas.
-2. **`noise_decoupling_efficacy`:** Porcentaje de reseñas en el subconjunto ruidoso (*Obligatory 5-Star*: texto comprobadamente negativo pero con `estrellas` $\in \{4, 5\}$) donde `tnss_score` predice correctamente `SentimentLabel.NEG` en contraste con un clasificador condicionado a las estrellas.
-3. **`dialect_parity_gap` (*Ethics by Design — Paridad Dialectal*):**
-
-* Evalúa la diferencia absoluta de *Negative Recall* y *F1-Score* entre reseñas en **español estándar** (ej. `"la aplicación no funciona correctamente y presenta errores"`) y reseñas equivalentes con **modismos regionales mexicanos** reales presentes en el corpus del EDA (ej. `"no jala"`, `"se traba bien feo"`, `"chafa"`, `"un batallar"`, `"no pasa de ahí"`, `"a lo menso"`).
-* Verifica que la brecha de precisión $\vert{}\text{Recall}_{\text{estándar}} - \text{Recall}_{\text{modismos\_mx}}\vert{} \le 0.05$ (degradación menor al 5%).
+* **El ruido de las estrellas depende de la instancia y del periodo** (NoisyAG-News, 2024): los resultados con ruido sintético no transfieren.
+* **Las etiquetas de plata heredan sesgos de Gemini** (sarcasmo, jerga bancaria mexicana, `NEU`); solo el oro sirve para reportar.
+* **Los tópicos dinámicos requieren curaduría humana continua;** sin ella pierden identidad entre corridas (P7-8).
+* **No hay detección automática de incidentes:** quedó fuera del alcance (2026-10-22). Las etiquetas de temas por día son descriptivas; un pico de negativas no se interpreta como incidente confirmado (F-19).
+* **El corpus del backfill ya no está en Kaggle** (F-14): el dataset `voc-backfill-corpus` se borró el 2026-10-23, al cerrar la épica. El *re-scoring* de EPIC-6 sube un dataset por corrida y lo borra al verificar la carga (6.3).
 
 ---
 
-### FEATURE 5.5: Pipeline de Inferencia Incremental hacia BigQuery y Motor de Alertas Pub/Sub (`inference_pipeline.py`, `Dockerfile`)
+## ✅ Checklist de Aceptación de la Épica 5 (fases 1 y 2)
 
-**Objetivo:** Ejecutar la inferencia por lotes sobre las reseñas nuevas en `sanitized_reviews_tds`, persistir las 15 columnas en `delora_predictions` mediante `MERGE` y emitir alertas `IncidentAlertMessage` hacia `voc-incident-alerts-topic` cuando se detecten anomalías operativas post-release.
-
-#### Tarea 5.5.1: Implementar `DeloraBatchInferenceRunner` en `inference_pipeline.py`
-
-1. **Consulta Incremental (Delta de Inferencia):**
-
-* Consultar en BigQuery únicamente los registros de `bbva_voc_tds.sanitized_reviews_tds` (`s`) que no existan aún en `bbva_voc_tds.delora_predictions` (`p`) o cuya `s.sanitized_at > p.fecha` (acotado por `--limit`, default `2000` reseñas por ejecución):
-
-```sql
-SELECT s.id_resena, s.bank_id, s.version_app, s.fecha, s.estrellas, s.votos_utilidad, s.texto_limpio
-FROM `{project}.{dataset}.sanitized_reviews_tds` s
-LEFT JOIN `{project}.{dataset}.delora_predictions` p
-  ON s.bank_id = p.bank_id AND s.id_resena = p.id_resena
-WHERE p.id_resena IS NULL
-ORDER BY s.fecha DESC
-LIMIT @batch_limit
-
-```
-
-1. **Ejecución del Core Analítico y Validación Pydantic:**
-
-* Procesar los textos en micro-lotes obteniendo `sentimiento_roberta`, `embedding_vector` (768 floats), `tnss_score`, `tnss_numeric_calibrated`, `is_obligatory_5_star_bias`, `topico`, `priority_weight_score`, `prediction_entropy` y `requires_hitl`.
-* Instanciar y validar cada fila con `AnalyzedReviewPrediction` de `voc-common`.
-
-1. **Upsert Idempotente en `bbva_voc_tds.delora_predictions`:**
-
-* Crear tabla temporal `bbva_voc_tds._staging_predictions_{run_id}` con TTL de 1 hora, cargar el lote mediante `load_table_from_json` (`FILE_LOADS`), ejecutar `MERGE INTO bbva_voc_tds.delora_predictions` por `ON target.bank_id = source.bank_id AND target.id_resena = source.id_resena` y borrar la tabla temporal en un bloque `finally`.
-
-1. **Detector de Picos de Incidencias y Publicación en `voc-incident-alerts-topic`:**
-
-* Agrupar las predicciones recién procesadas por `(bank_id, version_app, topico)` donde `tnss_score == SentimentLabel.NEG`.
-* Si para una tupla `(bank_id, version_app, topico)` el conteo de quejas negativas en la ventana supera `spike_min_reviews_threshold` (default `10`) **y** la suma de `votos_utilidad` supera `spike_min_utility_votes` (default `25`, reflejando validación comunitaria alta), construir un `IncidentAlertMessage` con hasta 10 `sample_review_ids` y publicarlo en `projects/{project_id}/topics/{pubsub_alerts_topic}`.
-
-#### Tarea 5.5.2: Implementar `services/ml-delora/Dockerfile`
-
-Construir un `Dockerfile` multi-stage con `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`, usuario no-root (`appuser`), instalando PyTorch CPU y el paquete `ml-delora` desde el workspace, con `ENTRYPOINT ["python", "-m", "ml_delora.inference_pipeline"]`.
-
----
-
-### FEATURE 5.6: Suite de Pruebas Unitarias, Matemáticas y de Paridad Dialectal (`tests/`)
-
-**Objetivo:** Verificar determinísticamente en CI (en menos de 10 segundos y sin descargar modelos pesados de HuggingFace ni conectarse a GCP) toda la arquitectura Dual LoRA, las ecuaciones de calibración/entropía/severidad, el clasificador ABSA y el disparo de alertas.
-
-#### Tarea 5.6.1: Implementar `test_model_and_scoring.py`, `test_absa_and_dialect.py` y `test_inference_and_alerts.py`
-
-Escribir pruebas con `pytest` que verifiquen obligatoriamente:
-
-1. **`test_delora_dual_branch_decoupling_and_dimensions`**:
-
-* Instanciar `DeloraDualAdapterModel` con una configuración mini/sintética ($d=768$ en la salida de proyección). Verificar que `forward_clean_inference` produzca logits de 3 clases (`NEG`, `NEU`, `POS`), probabilidades que sumen `1.0` y un `embedding_vector` de exactamente **768 floats** sin requerir la entrada `estrellas`.
-
-1. **`test_tnss_calibration_entropy_and_hitl_thresholds`**:
-
-* Para una distribución uniforme $p = (1/3, 1/3, 1/3)$, comprobar que `prediction_entropy` sea `1.0` (`>= 0.65`) y active `requires_hitl = True`.
-* Para una distribución segura $p = (0.95, 0.03, 0.02)$ con `estrellas = 5` (*Obligatory 5-Star*) y `votos_utilidad = 20`, comprobar que `tnss_score == SentimentLabel.NEG`, `is_obligatory_5_star_bias is True`, `tnss_numeric_calibrated` sea cercano a `1.14` (evidenciando un *Satisfaction Gap* de `-3.86` puntos frente a las 5 estrellas) y que `priority_weight_score` pondere logarítmicamente los votos de utilidad.
-
-1. **`test_absa_classification_on_real_eda_examples`**:
-
-* Probar ejemplos reales del notebook del EDA:
-* `"no me deja entrar me sale que restringieron mi cuenta por motivos de seguridad: ref: 3702:65c5:9xhchi"` $\rightarrow$ `ABSATopic.BLOQUEO_SEGURIDAD_3702`.
-* `"pide reconocimiento facial y no la valida dice que es incorrecto"` $\rightarrow$ `ABSATopic.BIOMETRIA_RECONOCIMIENTO`.
-* `"las transferencias spei a otros bancos son muy tardías"` $\rightarrow$ `ABSATopic.TRANSFERENCIAS_SPEI`.
-* `"se queda congelada en la pantalla azul y tengo que borrar caché"` $\rightarrow$ `ABSATopic.RENDIMIENTO_CRASH_POST_RELEASE`.
-* `"desapareció mis apartados y solo se ven unos puntitos en mi saldo"` $\rightarrow$ `ABSATopic.SALDOS_Y_APARTADOS`.
-
-1. **`test_mexican_dialect_parity_evaluation`**:
-
-* Ejecutar `evaluate_delora_governance_metrics` sobre un corpus sintético pareado (español estándar vs. modismos mexicanos como `"no jala la app"`, `"está bien chafa"`, `"puro batallar"`), verificando el cálculo de `negative_recall`, `noise_decoupling_efficacy` y `dialect_parity_gap`.
-
-1. **`test_bigquery_merge_schema_and_pubsub_spike_alert`**:
-
-* Verificar con mocks de BigQuery y Pub/Sub que `DeloraBatchInferenceRunner` serialice exactamente las **15 columnas** de `delora_predictions`, limpie la tabla temporal `_staging_predictions_*` en el bloque `finally`, y emita un `IncidentAlertMessage` válido en `voc-incident-alerts-topic` cuando un tópico supere los umbrales de quejas y votos de utilidad.
-
----
-
-## ✅ Checklist de Aceptación de la Épica 5
-
-* [ ] Genera objetos `AnalyzedReviewPrediction` 100% compatibles con las 15 columnas de `bbva_voc_tds.delora_predictions` en BigQuery, incluyendo `embedding_vector` de 768 dimensiones.
-* [ ] Aísla el sesgo *Obligatory 5-Star* (`is_obligatory_5_star_bias = True` cuando `estrellas >= 4` y `tnss_score == NEG`) y calcula el score continuo `tnss_numeric_calibrated` en escala `[1.0, 5.0]`.
-* [ ] Clasifica los 8 tópicos de `ABSATopic` aprovechando tanto códigos preservados (`ref: 3702`) y tokens DLP (`[MX_CLABE_BANCARIA]`) como similitud semántica.
-* [ ] Opera por defecto en modo batch incremental sobre BigQuery (`FILE_LOADS` + `MERGE` sin *Streaming Inserts*), respetando el modo *Free Tier* (`enable_dedicated_vertex_endpoints: false`).
-* [ ] Emite alertas `IncidentAlertMessage` hacia `voc-incident-alerts-topic` sin exponer PII ni texto crudo.
-* [ ] Los comandos `uv run ruff check services/ml-delora`, `uv run ruff format --check services/ml-delora`, `uv run pyrefly check`, `uv run bandit -c pyproject.toml -r services/ml-delora` y `uv run pytest services/ml-delora/tests --cov=services/ml-delora/src --cov-fail-under=85` pasan con **0 errores**.
+* [x] Guía de anotación, reglas deterministas de elegibilidad por tarea (con códigos, precedencia y versión) y envolvente de costo aprobados (5.1). *Guía `v2.2`; [`eligibility_rules_v1`](../analytics/eda/eligibility_rules.md) aprobada (P8-3, P8-4) y publicada con sus conteos (2026-10-22); costos de etiquetado, inferencia y familias medidos.*
+* [x] Reporte de cobertura por banco × periodo × motivo, y decisión sobre `TNSS_SINGLE_WORD` (excluir o léxico determinista) con su sesgo medido (5.2, 5.8). *Excluirlas todas sesga de −0.10 a −0.21 estrellas por banco; el léxico (95.3 % de cobertura, 99 % de exactitud) con exclusión del resto deja de −0.001 a −0.007 (P8-3). Cobertura con las reglas `v1` en [`eligibility_v1_counts.json`](../analytics/eda/eligibility_v1_counts.json).*
+* [x] EDA global de los 5 bancos y 15 años, con reglas de limpieza versionadas y Data Card actualizada (5.2). *EDA global, temporal y segunda pasada hechos; limpieza decidida en 5.4; Data Card `v0.2` con el EDA completo, el oro, la plata y los aspectos.*
+* [x] Conjunto de plata con prompt, modelo y costo versionados; conjunto de oro con bloque aleatorio documentado y medición de anclaje (5.3).
+* [x] Al menos M0–M7 evaluados con el mismo protocolo; M8 y M9 evaluados o descartados con motivo (5.4). *M4 RoBERTuito es el mejor modelo propio; M5 y M8 descartados con motivo; 5.8 eligió M4 frente a M9 con el oro *test*.*
+* [x] Decisión sobre ABSA, tópicos dinámicos o híbrido, con una señal de incidentes probada hacia atrás (5.5). *Híbrido aprobado por el autor (2026-10-22): familias `v2.1` y marca `u` como núcleo y alerta, tópicos como capa de detalle curada; señal probada con los 3 incidentes de BBVA ([reporte](../analytics/topics/topics_report.md), sección 5).*
+* [x] Calibración y umbral HITL elegidos por cobertura–riesgo (5.6). *Temperature scaling (T ≈ 1.7) y 90 % de cobertura por defecto como parámetro configurable; PPI y priorización decididos ([reporte](../analytics/calibration/calibration_report.md)).*
+* [x] Benchmark de escala, propuesta de ciclo de vida y plan de monitoreo (5.7). *Benchmark en Cloud Run, ciclo de vida y monitoreo ([reporte de 5.7](../analytics/scale/scale_report.md), §1 y §7); P7-1 a P7-4 y P7-6 a P7-11 decididas.*
+* [x] Registro de decisión ([`decision_record.md`](../analytics/decision_record.md)) aprobado, con P8-1 a P8-12 decididas (5.8, 2026-10-22). Detallar [EPIC-6](epic_6.md) a partir de él es la primera tarea de EPIC-6.
+* [x] Top 5 diario de temas con las familias y los tópicos del backfill, vista por versión y validación única de la cola HITL (5.9, 2026-10-23). La detección de incidentes quedó fuera del alcance (2026-10-22).
+* [x] Experimentos reproducibles en `experiments/analytics/` (proyecto `uv` propio, semillas fijas), sin dependencias de experimentación en el `uv.lock` de producción.
+* [x] Cierre de EPIC-5 (decisiones del autor, 2026-10-23). *Dataset `voc-backfill-corpus` borrado de Kaggle (F-14; el* re-scoring *de EPIC-6 usa un dataset por corrida); snapshot y archivo de EPIC-5 en GCS (`archive/epic5/`), duplicados locales borrados y lo que carga 6.3 en local hasta verificarla (F-11); F-16, F-17, F-18 y F-20 calificadas (RPN 20 a 75, bajo el umbral) y F-15 y F-19 asignadas a EPIC-7.*

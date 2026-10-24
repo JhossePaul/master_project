@@ -1,6 +1,8 @@
 # EPIC-1: Fundamentos del Monorepo, Contratos de Datos (`voc-common`) y Quality Gates
 
 * **Estado:** IMPLEMENTADO — Features 1.1–1.8 completadas y verificadas localmente. Contratos, eventos, reducer, configuración v2 disponibles; activación de recursos/consumidores corresponde a EPIC-2/EPIC-3/EPIC-4.
+* **Contratos de predicción reemplazados (EPIC-6, 6.1, 2026-10-23):** `AnalyzedReviewPrediction`, `HitlTriageAuditRecord` e `IncidentAlertMessage` (`schemas.py`), `ABSATopic`, `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS` (`constants.py`), `cumple_umbral_palabras` (`text_utils.py`) y, en `Settings` y `.env.example`, `bq_predictions_table`, `bq_hitl_audit_table`, `hitl_entropy_threshold` y `enable_dedicated_vertex_endpoints` se retiraron de `voc-common`. Los reemplazan los contratos v3 (`analytics_codes`, `predictions_v3`, `operations_v3`, `policies`, `hitl_v3` y `bq_schema`), documentados en el [contrato v3](../contracts/analytics_outputs_v3.md#7-implementación-tabla--modelo--módulo). La tarea 1.3.5 y las menciones de esos nombres abajo quedan como historia.
+* **Antes (2026-10-18; actualizado 2026-10-22):** los contratos de predicción quedaban condicionados: se reemplazarían en [EPIC-6](epic_6.md) (feature 6.1) cuando se aprobara el registro de decisión de EPIC-5 (5.8). Aplicaba a `AnalyzedReviewPrediction` (campo `sentimiento_roberta`, docstring "DeLoRA" en `schemas.py`, `topico: ABSATopic` obligatorio, `embedding_vector` y `prediction_entropy`) y a `MIN_REVIEW_WORDS`/`MAX_REVIEW_WORDS = (2, 60)` con `cumple_umbral_palabras`. Qué cambia y qué lo decide: [insumos de EPIC-5 en EPIC-6](epic_6.md#-insumos-de-epic-5-que-cambian-epic-1-y-epic-2).
 * **Semanas Objetivo:** Semana 1
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/pyproject.toml`

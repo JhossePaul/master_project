@@ -54,7 +54,7 @@ dentro de `projects/{GCP_PROJECT_ID}/locations/{GCP_REGION}` (son regionales).
 ## Política de sanitización (decisión basada en datos)
 
 Solo el texto de la reseña llega al TDS. Se tomó el 2026-10-15 con una
-medición sobre las capturas de `evidence/` (798 reseñas únicas de BBVA,
+medición sobre las capturas de `experiments/playstore/evidence/` (798 reseñas únicas de BBVA,
 parseadas con el adaptador del proyecto; muestra no aleatoria, mediana de 4
 palabras, 133 reseñas con ≥20 palabras y 63 con ≥40):
 
@@ -163,7 +163,7 @@ microbatch de 1000. `RunReport.phase_seconds` desglosa el tiempo en `pull_s`,
 `reconcile_s`; aparece en el informe «Sanitization run finished» y, por
 microbatch, en `Microbatch finished` (con `run_id`, `batch_seconds`,
 `messages_per_second` y `pages`); cada cierre de página registra `Page closed`.
-Consultas en [deployment.md](../../docs/deployment.md#logs-estructurados-y-cómo-consultarlos). La mejora
+Consultas en [deployment.md](../../docs/operations/deployment.md#logs-estructurados-y-cómo-consultarlos). La mejora
 real **no está medida**: comparar `messages / elapsed_sec` de la siguiente
 corrida con los 2.5 de referencia.
 
@@ -195,7 +195,7 @@ ledger.reconcile_page(bank, stream_id, page_id)  # RESOLVED / GAPS_DETECTED / PE
 | --- | --- | --- |
 | `BATCH_PULL_SERVERLESS` (default) | Pull síncrono de `PUBSUB_RAW_SUBSCRIPTION` en microbatches | `ack` de terminales tras `MERGE` y recibos; `nack` de reintentables |
 | `GCS_BACKFILL_MANIFESTS` | Páginas comprometidas sin cierre, desde su captura (URI + generación) | Sin Pub/Sub; captura expirada => cierre `STAGING_EXPIRED` |
-| `GCS_FAST_REPLAY` | Igual que el anterior, pero **sin recibo por evento**: lee las capturas en paralelo, carga ~10 000 filas por `MERGE` (filtrado por `bank_id`, nunca por `fecha`) y escribe solo el `PageClosure` de cada página | Solo regex local (rechaza `--use-cloud-dlp-api`); un fallo de BigQuery deja abiertas las páginas del lote; no consume Pub/Sub. Ver [plan del full](../../docs/full_backfill.md) |
+| `GCS_FAST_REPLAY` | Igual que el anterior, pero **sin recibo por evento**: lee las capturas en paralelo, carga ~10 000 filas por `MERGE` (filtrado por `bank_id`, nunca por `fecha`) y escribe solo el `PageClosure` de cada página | Solo regex local (rechaza `--use-cloud-dlp-api`); un fallo de BigQuery deja abiertas las páginas del lote; no consume Pub/Sub. Ver [plan del full](../../docs/operations/full_backfill.md) |
 
 Por microbatch: deduplicar por `event_id` (todos los `ack_ids`), confirmar lo
 ya resuelto copiando el recibo a la página nueva, DLP en Beam (`FnApiRunner` en

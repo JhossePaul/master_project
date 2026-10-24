@@ -1,0 +1,8 @@
+# La app muestra texto de reseñas: solo escucha en la máquina local y no
+# envía estadísticas de uso.
+[server]
+address = "localhost"
+headless = true
+
+[browser]
+gatherUsageStats = false

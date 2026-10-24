@@ -1,0 +1,1300 @@
+{
+  "generated_at": "2026-10-22T04:22:50+00:00",
+  "source": "topics_working_v0 (plata NEG); bancos en cada params",
+  "aspects_reference": "aspects_v1, aspects_v2 (provisional) y aspects_v2_1 (vigente) de 5.2",
+  "grid": {
+    "params": {
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "mcs": [
+        25,
+        50,
+        100
+      ],
+      "ms": [
+        5,
+        10,
+        null
+      ],
+      "umap": "5d, 15 vecinos, coseno"
+    },
+    "results": [
+      {
+        "emb": "minilm",
+        "min_cluster_size": 25,
+        "min_samples": 5,
+        "topicos": 117,
+        "ruido": 0.3982,
+        "ruido_tras_reduce_outliers": 0.3033,
+        "ruido_por_largo": {
+          "1-5": 0.2356,
+          "16-40": 0.435,
+          "41+": 0.4812,
+          "6-15": 0.3523
+        },
+        "npmi": 0.0995,
+        "diversidad": 0.5408,
+        "alineacion_aspects_v1": {
+          "n": 372,
+          "pureza": 0.8015,
+          "nmi": 0.411
+        },
+        "alineacion_aspects_v2": {
+          "n": 372,
+          "pureza": 0.7165,
+          "nmi": 0.425
+        },
+        "ruido_semillas": [
+          0.3982,
+          0.4133,
+          0.3942
+        ],
+        "ari_semillas": 0.8387,
+        "segundos": 5.4
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 25,
+        "min_samples": 10,
+        "topicos": 91,
+        "ruido": 0.3978,
+        "ruido_tras_reduce_outliers": 0.2778,
+        "ruido_por_largo": {
+          "1-5": 0.3062,
+          "16-40": 0.4201,
+          "41+": 0.4398,
+          "6-15": 0.3726
+        },
+        "npmi": 0.111,
+        "diversidad": 0.5596,
+        "alineacion_aspects_v1": {
+          "n": 386,
+          "pureza": 0.7419,
+          "nmi": 0.4011
+        },
+        "alineacion_aspects_v2": {
+          "n": 386,
+          "pureza": 0.6948,
+          "nmi": 0.4282
+        },
+        "ruido_semillas": [
+          0.3978,
+          0.4357,
+          0.4246
+        ],
+        "ari_semillas": 0.431,
+        "segundos": 3.5
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 25,
+        "min_samples": null,
+        "topicos": 73,
+        "ruido": 0.3815,
+        "ruido_tras_reduce_outliers": 0.2788,
+        "ruido_por_largo": {
+          "1-5": 0.1247,
+          "16-40": 0.4443,
+          "41+": 0.5091,
+          "6-15": 0.3041
+        },
+        "npmi": 0.1541,
+        "diversidad": 0.5558,
+        "alineacion_aspects_v1": {
+          "n": 386,
+          "pureza": 0.6841,
+          "nmi": 0.3495
+        },
+        "alineacion_aspects_v2": {
+          "n": 386,
+          "pureza": 0.5896,
+          "nmi": 0.3636
+        },
+        "ruido_semillas": [
+          0.3815,
+          0.4639,
+          0.4593
+        ],
+        "ari_semillas": 0.6153,
+        "segundos": 3.6
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 50,
+        "min_samples": 5,
+        "topicos": 65,
+        "ruido": 0.3579,
+        "ruido_tras_reduce_outliers": 0.2583,
+        "ruido_por_largo": {
+          "1-5": 0.3067,
+          "16-40": 0.376,
+          "41+": 0.3865,
+          "6-15": 0.3324
+        },
+        "npmi": 0.1209,
+        "diversidad": 0.5239,
+        "alineacion_aspects_v1": {
+          "n": 401,
+          "pureza": 0.7255,
+          "nmi": 0.3863
+        },
+        "alineacion_aspects_v2": {
+          "n": 401,
+          "pureza": 0.642,
+          "nmi": 0.3839
+        },
+        "ruido_semillas": [
+          0.3579,
+          0.4304,
+          0.3632
+        ],
+        "ari_semillas": 0.4001,
+        "segundos": 3.4
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 50,
+        "min_samples": 10,
+        "topicos": 55,
+        "ruido": 0.3692,
+        "ruido_tras_reduce_outliers": 0.2621,
+        "ruido_por_largo": {
+          "1-5": 0.3387,
+          "16-40": 0.3842,
+          "41+": 0.3873,
+          "6-15": 0.3468
+        },
+        "npmi": 0.115,
+        "diversidad": 0.5681,
+        "alineacion_aspects_v1": {
+          "n": 398,
+          "pureza": 0.7266,
+          "nmi": 0.3849
+        },
+        "alineacion_aspects_v2": {
+          "n": 398,
+          "pureza": 0.6187,
+          "nmi": 0.376
+        },
+        "ruido_semillas": [
+          0.3692,
+          0.4361,
+          0.3577
+        ],
+        "ari_semillas": 0.7125,
+        "segundos": 3.3
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 50,
+        "min_samples": null,
+        "topicos": 5,
+        "ruido": 0.0,
+        "ruido_tras_reduce_outliers": 0.0,
+        "ruido_por_largo": {
+          "1-5": 0.0,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.1068,
+        "diversidad": 0.6905,
+        "alineacion_aspects_v1": {
+          "n": 651,
+          "pureza": 0.4258,
+          "nmi": 0.0648
+        },
+        "alineacion_aspects_v2": {
+          "n": 651,
+          "pureza": 0.3694,
+          "nmi": 0.0701
+        },
+        "ruido_semillas": [
+          0.0,
+          0.1139,
+          0.0
+        ],
+        "ari_semillas": 0.5457,
+        "segundos": 3.3
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 100,
+        "min_samples": 5,
+        "topicos": 27,
+        "ruido": 0.2753,
+        "ruido_tras_reduce_outliers": 0.1908,
+        "ruido_por_largo": {
+          "1-5": 0.0986,
+          "16-40": 0.3245,
+          "41+": 0.3602,
+          "6-15": 0.215
+        },
+        "npmi": 0.1146,
+        "diversidad": 0.5226,
+        "alineacion_aspects_v1": {
+          "n": 449,
+          "pureza": 0.606,
+          "nmi": 0.3059
+        },
+        "alineacion_aspects_v2": {
+          "n": 449,
+          "pureza": 0.5075,
+          "nmi": 0.2838
+        },
+        "ruido_semillas": [
+          0.2753,
+          0.2886,
+          0.2633
+        ],
+        "ari_semillas": 0.975,
+        "segundos": 3.1
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 100,
+        "min_samples": 10,
+        "topicos": 8,
+        "ruido": 0.0151,
+        "ruido_tras_reduce_outliers": 0.0119,
+        "ruido_por_largo": {
+          "1-5": 0.0033,
+          "16-40": 0.0187,
+          "41+": 0.0195,
+          "6-15": 0.0116
+        },
+        "npmi": 0.1288,
+        "diversidad": 0.6885,
+        "alineacion_aspects_v1": {
+          "n": 646,
+          "pureza": 0.4228,
+          "nmi": 0.0748
+        },
+        "alineacion_aspects_v2": {
+          "n": 646,
+          "pureza": 0.3688,
+          "nmi": 0.0802
+        },
+        "ruido_semillas": [
+          0.0151,
+          0.2796,
+          0.2401
+        ],
+        "ari_semillas": 0.1132,
+        "segundos": 3.0
+      },
+      {
+        "emb": "minilm",
+        "min_cluster_size": 100,
+        "min_samples": null,
+        "topicos": 5,
+        "ruido": 0.0052,
+        "ruido_tras_reduce_outliers": 0.0041,
+        "ruido_por_largo": {
+          "1-5": 0.001,
+          "16-40": 0.0058,
+          "41+": 0.0067,
+          "6-15": 0.0047
+        },
+        "npmi": 0.1076,
+        "diversidad": 0.6829,
+        "alineacion_aspects_v1": {
+          "n": 648,
+          "pureza": 0.4224,
+          "nmi": 0.0613
+        },
+        "alineacion_aspects_v2": {
+          "n": 648,
+          "pureza": 0.3657,
+          "nmi": 0.066
+        },
+        "ruido_semillas": [
+          0.0052,
+          0.0058,
+          0.0028
+        ],
+        "ari_semillas": 0.9924,
+        "segundos": 3.6
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 25,
+        "min_samples": 5,
+        "topicos": 5,
+        "ruido": 0.0,
+        "ruido_tras_reduce_outliers": 0.0,
+        "ruido_por_largo": {
+          "1-5": 0.0,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2726,
+        "diversidad": 0.8485,
+        "alineacion_aspects_v1": {
+          "n": 651,
+          "pureza": 0.4525,
+          "nmi": 0.0865
+        },
+        "alineacion_aspects_v2": {
+          "n": 651,
+          "pureza": 0.3635,
+          "nmi": 0.0632
+        },
+        "ruido_semillas": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ari_semillas": 0.9971,
+        "segundos": 3.0
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 25,
+        "min_samples": 10,
+        "topicos": 5,
+        "ruido": 0.0,
+        "ruido_tras_reduce_outliers": 0.0,
+        "ruido_por_largo": {
+          "1-5": 0.0,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2726,
+        "diversidad": 0.8485,
+        "alineacion_aspects_v1": {
+          "n": 651,
+          "pureza": 0.4525,
+          "nmi": 0.0865
+        },
+        "alineacion_aspects_v2": {
+          "n": 651,
+          "pureza": 0.3635,
+          "nmi": 0.0632
+        },
+        "ruido_semillas": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ari_semillas": 0.959,
+        "segundos": 3.1
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 25,
+        "min_samples": null,
+        "topicos": 4,
+        "ruido": 0.0,
+        "ruido_tras_reduce_outliers": 0.0,
+        "ruido_por_largo": {
+          "1-5": 0.0,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2753,
+        "diversidad": 0.8214,
+        "alineacion_aspects_v1": {
+          "n": 651,
+          "pureza": 0.4525,
+          "nmi": 0.0865
+        },
+        "alineacion_aspects_v2": {
+          "n": 651,
+          "pureza": 0.3635,
+          "nmi": 0.0632
+        },
+        "ruido_semillas": [
+          0.0,
+          0.0001,
+          0.0
+        ],
+        "ari_semillas": 0.9815,
+        "segundos": 3.2
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 50,
+        "min_samples": 5,
+        "topicos": 4,
+        "ruido": 0.0059,
+        "ruido_tras_reduce_outliers": 0.0037,
+        "ruido_por_largo": {
+          "1-5": 0.055,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2726,
+        "diversidad": 0.8485,
+        "alineacion_aspects_v1": {
+          "n": 647,
+          "pureza": 0.4483,
+          "nmi": 0.0727
+        },
+        "alineacion_aspects_v2": {
+          "n": 647,
+          "pureza": 0.3583,
+          "nmi": 0.0532
+        },
+        "ruido_semillas": [
+          0.0059,
+          0.0059,
+          0.0113
+        ],
+        "ari_semillas": 0.9592,
+        "segundos": 3.0
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 50,
+        "min_samples": 10,
+        "topicos": 4,
+        "ruido": 0.0059,
+        "ruido_tras_reduce_outliers": 0.0037,
+        "ruido_por_largo": {
+          "1-5": 0.055,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2726,
+        "diversidad": 0.8485,
+        "alineacion_aspects_v1": {
+          "n": 647,
+          "pureza": 0.4483,
+          "nmi": 0.0727
+        },
+        "alineacion_aspects_v2": {
+          "n": 647,
+          "pureza": 0.3583,
+          "nmi": 0.0532
+        },
+        "ruido_semillas": [
+          0.0059,
+          0.0059,
+          0.0059
+        ],
+        "ari_semillas": 0.9582,
+        "segundos": 2.9
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 50,
+        "min_samples": null,
+        "topicos": 3,
+        "ruido": 0.0059,
+        "ruido_tras_reduce_outliers": 0.0038,
+        "ruido_por_largo": {
+          "1-5": 0.055,
+          "16-40": 0.0,
+          "41+": 0.0,
+          "6-15": 0.0
+        },
+        "npmi": 0.2753,
+        "diversidad": 0.8214,
+        "alineacion_aspects_v1": {
+          "n": 647,
+          "pureza": 0.4483,
+          "nmi": 0.0727
+        },
+        "alineacion_aspects_v2": {
+          "n": 647,
+          "pureza": 0.3583,
+          "nmi": 0.0532
+        },
+        "ruido_semillas": [
+          0.0059,
+          0.0059,
+          0.0059
+        ],
+        "ari_semillas": 0.9984,
+        "segundos": 3.4
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 100,
+        "min_samples": 5,
+        "topicos": 2,
+        "ruido": 0.0065,
+        "ruido_tras_reduce_outliers": 0.0045,
+        "ruido_por_largo": {
+          "1-5": 0.0554,
+          "16-40": 0.0006,
+          "41+": 0.0009,
+          "6-15": 0.0007
+        },
+        "npmi": 0.0332,
+        "diversidad": 0.7222,
+        "alineacion_aspects_v1": {
+          "n": 645,
+          "pureza": 0.4481,
+          "nmi": 0.0652
+        },
+        "alineacion_aspects_v2": {
+          "n": 645,
+          "pureza": 0.3579,
+          "nmi": 0.0478
+        },
+        "ruido_semillas": [
+          0.0065,
+          0.0065,
+          0.0065
+        ],
+        "ari_semillas": 0.9991,
+        "segundos": 2.9
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 100,
+        "min_samples": 10,
+        "topicos": 2,
+        "ruido": 0.0065,
+        "ruido_tras_reduce_outliers": 0.0045,
+        "ruido_por_largo": {
+          "1-5": 0.0554,
+          "16-40": 0.0006,
+          "41+": 0.0009,
+          "6-15": 0.0007
+        },
+        "npmi": 0.0332,
+        "diversidad": 0.7222,
+        "alineacion_aspects_v1": {
+          "n": 645,
+          "pureza": 0.4481,
+          "nmi": 0.0652
+        },
+        "alineacion_aspects_v2": {
+          "n": 645,
+          "pureza": 0.3579,
+          "nmi": 0.0478
+        },
+        "ruido_semillas": [
+          0.0065,
+          0.0065,
+          0.007
+        ],
+        "ari_semillas": 0.9551,
+        "segundos": 2.9
+      },
+      {
+        "emb": "robertuito",
+        "min_cluster_size": 100,
+        "min_samples": null,
+        "topicos": 2,
+        "ruido": 0.0065,
+        "ruido_tras_reduce_outliers": 0.0045,
+        "ruido_por_largo": {
+          "1-5": 0.0554,
+          "16-40": 0.0006,
+          "41+": 0.0009,
+          "6-15": 0.0007
+        },
+        "npmi": 0.0332,
+        "diversidad": 0.7222,
+        "alineacion_aspects_v1": {
+          "n": 645,
+          "pureza": 0.4481,
+          "nmi": 0.0652
+        },
+        "alineacion_aspects_v2": {
+          "n": 645,
+          "pureza": 0.3579,
+          "nmi": 0.0478
+        },
+        "ruido_semillas": [
+          0.0065,
+          0.0065,
+          0.0065
+        ],
+        "ari_semillas": 0.9991,
+        "segundos": 4.0
+      }
+    ]
+  },
+  "short_minilm_mcs50_ms10": {
+    "params": {
+      "emb": "minilm",
+      "mcs": 50,
+      "ms": 10,
+      "k": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        8,
+        10
+      ]
+    },
+    "results": [
+      {
+        "k": 0,
+        "excluidas": 0.0,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 0,
+        "excluidas_con_problema": null,
+        "topicos": 55,
+        "ruido": 0.3692,
+        "ruido_tras_reduce_outliers": 0.2621,
+        "ruido_por_largo": {
+          "1-5": 0.3387,
+          "16-40": 0.3842,
+          "41+": 0.3873,
+          "6-15": 0.3468
+        },
+        "npmi": 0.115,
+        "diversidad": 0.5681,
+        "alineacion_aspects_v1": {
+          "n": 398,
+          "pureza": 0.7266,
+          "nmi": 0.3849
+        },
+        "alineacion_aspects_v2": {
+          "n": 398,
+          "pureza": 0.6187,
+          "nmi": 0.376
+        }
+      },
+      {
+        "k": 2,
+        "excluidas": 0.0311,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 16,
+        "excluidas_con_problema": 0.2,
+        "topicos": 41,
+        "ruido": 0.3008,
+        "ruido_tras_reduce_outliers": 0.2169,
+        "ruido_por_largo": {
+          "1-5": 0.1334,
+          "16-40": 0.3357,
+          "41+": 0.4101,
+          "6-15": 0.2253
+        },
+        "npmi": 0.1291,
+        "diversidad": 0.5368,
+        "alineacion_aspects_v1": {
+          "n": 438,
+          "pureza": 0.6578,
+          "nmi": 0.3291
+        },
+        "alineacion_aspects_v2": {
+          "n": 438,
+          "pureza": 0.5563,
+          "nmi": 0.3247
+        }
+      },
+      {
+        "k": 3,
+        "excluidas": 0.0517,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 30,
+        "excluidas_con_problema": 0.3429,
+        "topicos": 51,
+        "ruido": 0.3705,
+        "ruido_tras_reduce_outliers": 0.2643,
+        "ruido_por_largo": {
+          "1-5": 0.3175,
+          "16-40": 0.3814,
+          "41+": 0.4068,
+          "6-15": 0.3418
+        },
+        "npmi": 0.1139,
+        "diversidad": 0.5552,
+        "alineacion_aspects_v1": {
+          "n": 394,
+          "pureza": 0.7125,
+          "nmi": 0.356
+        },
+        "alineacion_aspects_v2": {
+          "n": 394,
+          "pureza": 0.6118,
+          "nmi": 0.3582
+        }
+      },
+      {
+        "k": 5,
+        "excluidas": 0.107,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 69,
+        "excluidas_con_problema": 0.5733,
+        "topicos": 44,
+        "ruido": 0.4312,
+        "ruido_tras_reduce_outliers": 0.314,
+        "ruido_por_largo": {
+          "16-40": 0.4493,
+          "41+": 0.4684,
+          "6-15": 0.381
+        },
+        "npmi": 0.1291,
+        "diversidad": 0.543,
+        "alineacion_aspects_v1": {
+          "n": 335,
+          "pureza": 0.727,
+          "nmi": 0.36
+        },
+        "alineacion_aspects_v2": {
+          "n": 335,
+          "pureza": 0.6293,
+          "nmi": 0.3685
+        }
+      },
+      {
+        "k": 6,
+        "excluidas": 0.1357,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 89,
+        "excluidas_con_problema": 0.6042,
+        "topicos": 52,
+        "ruido": 0.402,
+        "ruido_tras_reduce_outliers": 0.3055,
+        "ruido_por_largo": {
+          "16-40": 0.413,
+          "41+": 0.4573,
+          "6-15": 0.3455
+        },
+        "npmi": 0.1268,
+        "diversidad": 0.5462,
+        "alineacion_aspects_v1": {
+          "n": 326,
+          "pureza": 0.7642,
+          "nmi": 0.3489
+        },
+        "alineacion_aspects_v2": {
+          "n": 326,
+          "pureza": 0.6269,
+          "nmi": 0.344
+        }
+      },
+      {
+        "k": 8,
+        "excluidas": 0.195,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 128,
+        "excluidas_con_problema": 0.6838,
+        "topicos": 40,
+        "ruido": 0.3814,
+        "ruido_tras_reduce_outliers": 0.2799,
+        "ruido_por_largo": {
+          "16-40": 0.396,
+          "41+": 0.407,
+          "6-15": 0.3267
+        },
+        "npmi": 0.1293,
+        "diversidad": 0.5267,
+        "alineacion_aspects_v1": {
+          "n": 308,
+          "pureza": 0.6792,
+          "nmi": 0.3225
+        },
+        "alineacion_aspects_v2": {
+          "n": 308,
+          "pureza": 0.6101,
+          "nmi": 0.3421
+        }
+      },
+      {
+        "k": 10,
+        "excluidas": 0.2535,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 169,
+        "excluidas_con_problema": 0.7416,
+        "topicos": 35,
+        "ruido": 0.3788,
+        "ruido_tras_reduce_outliers": 0.283,
+        "ruido_por_largo": {
+          "16-40": 0.3829,
+          "41+": 0.4067,
+          "6-15": 0.3311
+        },
+        "npmi": 0.1168,
+        "diversidad": 0.4661,
+        "alineacion_aspects_v1": {
+          "n": 284,
+          "pureza": 0.6803,
+          "nmi": 0.3011
+        },
+        "alineacion_aspects_v2": {
+          "n": 284,
+          "pureza": 0.6088,
+          "nmi": 0.3149
+        }
+      }
+    ]
+  },
+  "short_minilm_mcs100_ms5": {
+    "params": {
+      "emb": "minilm",
+      "mcs": 100,
+      "ms": 5,
+      "k": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        8,
+        10
+      ]
+    },
+    "results": [
+      {
+        "k": 0,
+        "excluidas": 0.0,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 0,
+        "excluidas_con_problema": null,
+        "topicos": 27,
+        "ruido": 0.2753,
+        "ruido_tras_reduce_outliers": 0.1908,
+        "ruido_por_largo": {
+          "1-5": 0.0986,
+          "16-40": 0.3245,
+          "41+": 0.3602,
+          "6-15": 0.215
+        },
+        "npmi": 0.1146,
+        "diversidad": 0.5226,
+        "alineacion_aspects_v1": {
+          "n": 449,
+          "pureza": 0.606,
+          "nmi": 0.3059
+        },
+        "alineacion_aspects_v2": {
+          "n": 449,
+          "pureza": 0.5075,
+          "nmi": 0.2838
+        }
+      },
+      {
+        "k": 2,
+        "excluidas": 0.0311,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 16,
+        "excluidas_con_problema": 0.2,
+        "topicos": 25,
+        "ruido": 0.2993,
+        "ruido_tras_reduce_outliers": 0.2109,
+        "ruido_por_largo": {
+          "1-5": 0.1427,
+          "16-40": 0.3377,
+          "41+": 0.3777,
+          "6-15": 0.2345
+        },
+        "npmi": 0.1145,
+        "diversidad": 0.5138,
+        "alineacion_aspects_v1": {
+          "n": 443,
+          "pureza": 0.6362,
+          "nmi": 0.2969
+        },
+        "alineacion_aspects_v2": {
+          "n": 443,
+          "pureza": 0.5272,
+          "nmi": 0.2884
+        }
+      },
+      {
+        "k": 3,
+        "excluidas": 0.0517,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 30,
+        "excluidas_con_problema": 0.3429,
+        "topicos": 25,
+        "ruido": 0.2487,
+        "ruido_tras_reduce_outliers": 0.1752,
+        "ruido_por_largo": {
+          "1-5": 0.1649,
+          "16-40": 0.2667,
+          "41+": 0.3113,
+          "6-15": 0.1992
+        },
+        "npmi": 0.1075,
+        "diversidad": 0.5323,
+        "alineacion_aspects_v1": {
+          "n": 460,
+          "pureza": 0.6541,
+          "nmi": 0.2805
+        },
+        "alineacion_aspects_v2": {
+          "n": 460,
+          "pureza": 0.5283,
+          "nmi": 0.2869
+        }
+      },
+      {
+        "k": 5,
+        "excluidas": 0.107,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 69,
+        "excluidas_con_problema": 0.5733,
+        "topicos": 26,
+        "ruido": 0.3068,
+        "ruido_tras_reduce_outliers": 0.2115,
+        "ruido_por_largo": {
+          "16-40": 0.3299,
+          "41+": 0.3572,
+          "6-15": 0.241
+        },
+        "npmi": 0.1076,
+        "diversidad": 0.5,
+        "alineacion_aspects_v1": {
+          "n": 403,
+          "pureza": 0.6619,
+          "nmi": 0.2945
+        },
+        "alineacion_aspects_v2": {
+          "n": 403,
+          "pureza": 0.5564,
+          "nmi": 0.3053
+        }
+      },
+      {
+        "k": 6,
+        "excluidas": 0.1357,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 89,
+        "excluidas_con_problema": 0.6042,
+        "topicos": 8,
+        "ruido": 0.0094,
+        "ruido_tras_reduce_outliers": 0.0072,
+        "ruido_por_largo": {
+          "16-40": 0.0087,
+          "41+": 0.0096,
+          "6-15": 0.0105
+        },
+        "npmi": 0.1334,
+        "diversidad": 0.6667,
+        "alineacion_aspects_v1": {
+          "n": 560,
+          "pureza": 0.474,
+          "nmi": 0.0779
+        },
+        "alineacion_aspects_v2": {
+          "n": 560,
+          "pureza": 0.3941,
+          "nmi": 0.088
+        }
+      },
+      {
+        "k": 8,
+        "excluidas": 0.195,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 128,
+        "excluidas_con_problema": 0.6838,
+        "topicos": 28,
+        "ruido": 0.3552,
+        "ruido_tras_reduce_outliers": 0.2595,
+        "ruido_por_largo": {
+          "16-40": 0.3658,
+          "41+": 0.3543,
+          "6-15": 0.3332
+        },
+        "npmi": 0.1004,
+        "diversidad": 0.5117,
+        "alineacion_aspects_v1": {
+          "n": 330,
+          "pureza": 0.6804,
+          "nmi": 0.3006
+        },
+        "alineacion_aspects_v2": {
+          "n": 330,
+          "pureza": 0.6158,
+          "nmi": 0.3202
+        }
+      },
+      {
+        "k": 10,
+        "excluidas": 0.2535,
+        "referencia_problema": "aspects_v2",
+        "excluidas_codificadas": 169,
+        "excluidas_con_problema": 0.7416,
+        "topicos": 4,
+        "ruido": 0.0071,
+        "ruido_tras_reduce_outliers": 0.0044,
+        "ruido_por_largo": {
+          "16-40": 0.0064,
+          "41+": 0.0063,
+          "6-15": 0.0103
+        },
+        "npmi": 0.1258,
+        "diversidad": 0.75,
+        "alineacion_aspects_v1": {
+          "n": 479,
+          "pureza": 0.4909,
+          "nmi": 0.0652
+        },
+        "alineacion_aspects_v2": {
+          "n": 479,
+          "pureza": 0.3935,
+          "nmi": 0.0751
+        }
+      }
+    ]
+  },
+  "bancos_ultima_corrida": [
+    "AZTECA",
+    "BANORTE",
+    "BBVA",
+    "NUBANK",
+    "SANTANDER"
+  ],
+  "short_minilm_mcs100_ms10_5bancos": {
+    "params": {
+      "emb": "minilm",
+      "mcs": 100,
+      "ms": 10,
+      "k": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        8,
+        10
+      ],
+      "bancos": [
+        "AZTECA",
+        "BANORTE",
+        "BBVA",
+        "NUBANK",
+        "SANTANDER"
+      ]
+    },
+    "results": [
+      {
+        "k": 0,
+        "excluidas": 0.0,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 0,
+        "excluidas_con_problema": null,
+        "topicos": 57,
+        "ruido": 0.3745,
+        "ruido_tras_reduce_outliers": 0.2585,
+        "ruido_por_largo": {
+          "1-5": 0.2877,
+          "16-40": 0.406,
+          "41+": 0.4309,
+          "6-15": 0.3495
+        },
+        "npmi": 0.1208,
+        "diversidad": 0.5315,
+        "alineacion_aspects_v1": {
+          "n": 873,
+          "pureza": 0.6878,
+          "nmi": 0.3532
+        },
+        "alineacion_aspects_v2": {
+          "n": 873,
+          "pureza": 0.6362,
+          "nmi": 0.3393
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 873,
+          "pureza": 0.6459,
+          "nmi": 0.3605
+        }
+      },
+      {
+        "k": 2,
+        "excluidas": 0.0468,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 47,
+        "excluidas_con_problema": 0.3077,
+        "topicos": 59,
+        "ruido": 0.3578,
+        "ruido_tras_reduce_outliers": 0.2486,
+        "ruido_por_largo": {
+          "1-5": 0.2601,
+          "16-40": 0.3917,
+          "41+": 0.4161,
+          "6-15": 0.3195
+        },
+        "npmi": 0.1266,
+        "diversidad": 0.5405,
+        "alineacion_aspects_v1": {
+          "n": 880,
+          "pureza": 0.6755,
+          "nmi": 0.3428
+        },
+        "alineacion_aspects_v2": {
+          "n": 880,
+          "pureza": 0.617,
+          "nmi": 0.3323
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 880,
+          "pureza": 0.638,
+          "nmi": 0.3543
+        }
+      },
+      {
+        "k": 3,
+        "excluidas": 0.0749,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 85,
+        "excluidas_con_problema": 0.4118,
+        "topicos": 53,
+        "ruido": 0.366,
+        "ruido_tras_reduce_outliers": 0.2586,
+        "ruido_por_largo": {
+          "1-5": 0.3101,
+          "16-40": 0.3903,
+          "41+": 0.4063,
+          "6-15": 0.3299
+        },
+        "npmi": 0.1124,
+        "diversidad": 0.542,
+        "alineacion_aspects_v1": {
+          "n": 845,
+          "pureza": 0.6686,
+          "nmi": 0.3373
+        },
+        "alineacion_aspects_v2": {
+          "n": 845,
+          "pureza": 0.6053,
+          "nmi": 0.3241
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 845,
+          "pureza": 0.6237,
+          "nmi": 0.3441
+        }
+      },
+      {
+        "k": 5,
+        "excluidas": 0.1443,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 186,
+        "excluidas_con_problema": 0.6116,
+        "topicos": 48,
+        "ruido": 0.3947,
+        "ruido_tras_reduce_outliers": 0.2788,
+        "ruido_por_largo": {
+          "16-40": 0.4262,
+          "41+": 0.4676,
+          "6-15": 0.3229
+        },
+        "npmi": 0.1248,
+        "diversidad": 0.5096,
+        "alineacion_aspects_v1": {
+          "n": 755,
+          "pureza": 0.6632,
+          "nmi": 0.3169
+        },
+        "alineacion_aspects_v2": {
+          "n": 755,
+          "pureza": 0.6026,
+          "nmi": 0.31
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 755,
+          "pureza": 0.6181,
+          "nmi": 0.3311
+        }
+      },
+      {
+        "k": 6,
+        "excluidas": 0.1792,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 240,
+        "excluidas_con_problema": 0.6595,
+        "topicos": 45,
+        "ruido": 0.3842,
+        "ruido_tras_reduce_outliers": 0.2811,
+        "ruido_por_largo": {
+          "16-40": 0.4152,
+          "41+": 0.4612,
+          "6-15": 0.3021
+        },
+        "npmi": 0.122,
+        "diversidad": 0.5329,
+        "alineacion_aspects_v1": {
+          "n": 738,
+          "pureza": 0.6319,
+          "nmi": 0.2805
+        },
+        "alineacion_aspects_v2": {
+          "n": 738,
+          "pureza": 0.5646,
+          "nmi": 0.2818
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 738,
+          "pureza": 0.5937,
+          "nmi": 0.3045
+        }
+      },
+      {
+        "k": 8,
+        "excluidas": 0.2472,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 352,
+        "excluidas_con_problema": 0.715,
+        "topicos": 44,
+        "ruido": 0.4179,
+        "ruido_tras_reduce_outliers": 0.3045,
+        "ruido_por_largo": {
+          "16-40": 0.4375,
+          "41+": 0.4529,
+          "6-15": 0.3587
+        },
+        "npmi": 0.1238,
+        "diversidad": 0.5194,
+        "alineacion_aspects_v1": {
+          "n": 625,
+          "pureza": 0.6672,
+          "nmi": 0.3046
+        },
+        "alineacion_aspects_v2": {
+          "n": 625,
+          "pureza": 0.6143,
+          "nmi": 0.3103
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 625,
+          "pureza": 0.6205,
+          "nmi": 0.3158
+        }
+      },
+      {
+        "k": 10,
+        "excluidas": 0.3139,
+        "referencia_problema": "aspects_v2_1",
+        "excluidas_codificadas": 446,
+        "excluidas_con_problema": 0.7464,
+        "topicos": 38,
+        "ruido": 0.4344,
+        "ruido_tras_reduce_outliers": 0.3306,
+        "ruido_por_largo": {
+          "16-40": 0.4352,
+          "41+": 0.4778,
+          "6-15": 0.3906
+        },
+        "npmi": 0.1147,
+        "diversidad": 0.5374,
+        "alineacion_aspects_v1": {
+          "n": 560,
+          "pureza": 0.6215,
+          "nmi": 0.2725
+        },
+        "alineacion_aspects_v2": {
+          "n": 560,
+          "pureza": 0.5729,
+          "nmi": 0.2718
+        },
+        "alineacion_aspects_v2_1": {
+          "n": 560,
+          "pureza": 0.6042,
+          "nmi": 0.3029
+        }
+      }
+    ]
+  }
+}

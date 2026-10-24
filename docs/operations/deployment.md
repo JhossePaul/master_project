@@ -257,11 +257,11 @@ fase 2. Volver a `false` tras la fase 2 elimina las cargas en el siguiente
 Las imágenes no se construyen con Pulumi (`pulumi_docker` construiría arm64 en
 una Mac). El flujo es GitHub → Cloud Build → Artifact Registry:
 
-- [`cloudbuild.yaml`](../cloudbuild.yaml) construye `services/<_SERVICE>/Dockerfile`
+- [`cloudbuild.yaml`](../../cloudbuild.yaml) construye `services/<_SERVICE>/Dockerfile`
   con contexto en la raíz del workspace uv, `--platform=linux/amd64`, y publica
   `<region>-docker.pkg.dev/<proyecto>/voc-containers-repo/<servicio>:<_TAG>`.
   Rechaza `_TAG` que no sea un SHA de 40 caracteres y Dockerfiles vacíos.
-- [`.github/workflows/cd-cloud-build.yaml`](../.github/workflows/cd-cloud-build.yaml)
+- [`.github/workflows/cd-cloud-build.yaml`](../../.github/workflows/cd-cloud-build.yaml)
   lo invoca por servicio al hacer merge a `main` (cambios en `services/`,
   `packages/`, lock o pipeline) o con `workflow_dispatch`, siempre desde `main`.
   No tiene disparador `pull_request`, así que las credenciales nunca llegan a
@@ -269,9 +269,9 @@ una Mac). El flujo es GitHub → Cloud Build → Artifact Registry:
   `ingestion-worker` (feature 3.5) y `sanitization-pipeline` (feature 4.4);
   `api-backend` entra cuando tenga Dockerfile. `develop` no publica imágenes:
   se publican al integrar en `main` por PR.
-- Solo se sube a Cloud Build lo que permite [`.gcloudignore`](../.gcloudignore)
+- Solo se sube a Cloud Build lo que permite [`.gcloudignore`](../../.gcloudignore)
   (nunca `.env` ni `evidence/`), y el contexto Docker lo restringe
-  [`.dockerignore`](../.dockerignore); el build usa BuildKit
+  [`.dockerignore`](../../.dockerignore); el build usa BuildKit
   (`DOCKER_BUILDKIT=1`) por los montajes de caché del Dockerfile.
 - El repositorio tiene tags inmutables: un re-run del mismo commit reutiliza la
   imagen publicada. El resumen del job muestra el digest y el comando
@@ -392,7 +392,7 @@ pulumi config set --secret --stack dev bbva-voc-infra:user_hash_salt "$(openssl 
 
 Cifrada en el repositorio, la sal llega a Cloud Run como variable de entorno en
 claro, no desde Secret Manager: quien pueda leer el servicio la ve (riesgo
-residual F-04 de la [Matriz Ethical FMEA](governance/ethical_fmea_matrix.md)).
+residual F-04 de la [Matriz Ethical FMEA](../governance/ethical_fmea_matrix.md)).
 
 ## Runbook del primer despliegue (alimentar el TDS)
 
@@ -593,6 +593,66 @@ página en lugar de un recibo por evento.
   limitación (`RateLimitedError`) o con una página distinta, la primera corrida
   lo mostrará en los logs y en la auditoría.
 
+## Desplegar nuevas imágenes de los workers
+
+Las dos imágenes (`ingestion-worker` y `sanitization-pipeline`) comparten
+código (`ingestion_worker` va dentro de la de sanitización), así que **siempre
+se despliegan juntas y con el mismo SHA**. El 2026-10-16 se actualizó solo la de
+ingesta y las páginas finales de los cinco bancos se cerraron con hueco (F-08).
+`tools/deploy_images.py` lo hace en un paso y se niega a mezclar versiones:
+
+```bash
+uv run python tools/deploy_images.py --project <proyecto>            # preview
+uv run python tools/deploy_images.py --project <proyecto> --apply    # + pulumi up
+uv run python tools/deploy_images.py --project <proyecto> --sha <40 hex>
+```
+
+1. Lee en Artifact Registry las dos imágenes y elige el SHA más reciente que
+   existe en **ambas** (o el de `--sha`; falla si falta en alguna). Solo cuentan
+   digests `sha256:` y tags de 40 hex; `latest` se ignora.
+2. Fija `ingestion_worker_image` y `sanitization_job_image` con
+   `<registro>/<imagen>:<sha>@<digest>` (`pulumi config set`; esto modifica
+   `infra/Pulumi.dev.yaml` aunque no uses `--apply`).
+3. Muestra `pulumi preview --diff`. Con `--apply` ejecuta `pulumi up` solo si el
+   preview no borra ni reemplaza recursos; si lo hace, se detiene.
+4. No hace commit: versiona `infra/Pulumi.dev.yaml` en un commit aparte
+   ("Actualiza las imágenes desplegadas a <sha>").
+
+Se fija por digest y no por `latest` porque Pulumi despliega por diferencias:
+un tag mutable no cambia en el texto y no dispara una revisión nueva (el código
+de `infra/modules/cloud_run.py` lo rechaza), y el digest deja trazable qué
+código produjo cada dato.
+
+## Validación de la operación diaria (2026-10-18)
+
+Venía del cierre de EPIC-1 a EPIC-4 (ahora en [`epics.md`](../backlog/epics.md#cierre-de-las-épicas-1-a-4)).
+
+Dos días de corridas programadas tras la carga (16 y 17 de octubre):
+
+| Comprobación | Resultado |
+| --- | --- |
+| Ingesta incremental (14:00Z, 5 bancos × 2 días) | Las 10 en `TARGET_REACHED`, 9–23 s; 1 000 reseñas publicadas por banco (500 NUBANK) por la ventana de revisita de 3 días |
+| Sanitización (14:30Z) | `exit_code: 0`, `stop_reason: drained`; 4 500 mensajes cada día (847 y 901 filas escritas, el resto ya procesado); 0 cuarentenas, 0 reintentos, 0 `poison`, 0 capturas expiradas, sin errores por banco |
+| Cierre de páginas | Las 9 páginas de cada día `RESOLVED` |
+| TDS | Sin duplicados; crece cada día (+226 AZTECA, +349 BANORTE, +401 BBVA, +102 NUBANK, +382 SANTANDER desde el cierre de la carga) |
+| Colas | `voc-raw-reviews-sub` y DLQ en 0 |
+| Infraestructura | `pulumi preview`: 54 recursos sin cambios |
+| Permisos temporales | Revocados: `run.invoker` de usuarios sobre `voc-ingestion-worker` y `serviceAccountTokenCreator` sobre `voc-sa-scheduler` |
+
+Observaciones que no bloquean:
+
+- **Retraso de ~24 h estable.** La reseña más reciente de cada banco es de las
+  ~13:50 del día anterior a la corrida de las 14:00Z, los dos días. El patrón es
+  constante (apunta al origen, no al pipeline), pero no está demostrado contra
+  la ficha de Play en vivo.
+- **Contador `PENDING` del informe final.** `Sanitization run finished` suma los
+  estados intermedios de cada microbatch (p. ej. `PENDING: 16, RESOLVED: 9`)
+  aunque todas las páginas cierren `RESOLVED`. Es un defecto de presentación del
+  informe; mejora menor: reportar solo el estado final por página.
+- **Propietarios del proyecto.** Hay tres cuentas con `roles/owner`
+  (`0287289@up.edu.mx`, `traslasnovenas@gmail.com`, `jpaul.marquez.ruiz@gmail.com`);
+  no se tocaron. Confirmar que ese nivel es intencional.
+
 ## Orden de activación (resumen y verificaciones)
 
 1. Aplicar la fase 1 y configurar la identidad de CI.
@@ -611,4 +671,4 @@ página en lugar de un recibo por evento.
 
 Los consumidores reciben configuración desde outputs/variables del despliegue.
 Para detalles de identidad, rutas, presupuestos y overrides, consultar los
-[contratos de ingesta](contracts/ingestion_v2.md).
+[contratos de ingesta](../contracts/ingestion_v2.md).

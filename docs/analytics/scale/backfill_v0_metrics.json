@@ -1,0 +1,67 @@
+{
+  "generado": "2026-10-22T23:00:29+00:00",
+  "corrida": "20261022",
+  "textos_exportados": 1429675,
+  "filas_tds": 2653238,
+  "filas_cubiertas": 2653238,
+  "log_kaggle": {
+    "textos": 1429675,
+    "preparacion_s": 1630.0,
+    "s1": {
+      "segundos": 346.4,
+      "textos_por_segundo": 4127.0
+    },
+    "s2": {
+      "segundos": 356.3,
+      "textos_por_segundo": 4013.0
+    },
+    "s3": {
+      "segundos": 356.5,
+      "textos_por_segundo": 4010.2
+    }
+  },
+  "semillas": {
+    "s1": {
+      "textos_predichos": 1429675,
+      "faltantes": 0,
+      "control_ppi_v0": {
+        "textos": 69528,
+        "acuerdo_clase": 0.9999,
+        "max_dif_prob": 0.0123
+      },
+      "proporcion_por_clase_textos": {
+        "POS": 0.5177,
+        "NEU": 0.0192,
+        "NEG": 0.4631
+      }
+    },
+    "s2": {
+      "textos_predichos": 1429675,
+      "faltantes": 0,
+      "control_ppi_v0": {
+        "textos": 69528,
+        "acuerdo_clase": 1.0,
+        "max_dif_prob": 0.0077
+      },
+      "proporcion_por_clase_textos": {
+        "NEU": 0.018,
+        "NEG": 0.4635,
+        "POS": 0.5184
+      }
+    },
+    "s3": {
+      "textos_predichos": 1429675,
+      "faltantes": 0,
+      "control_ppi_v0": {
+        "textos": 69528,
+        "acuerdo_clase": 1.0,
+        "max_dif_prob": 0.0122
+      },
+      "proporcion_por_clase_textos": {
+        "NEG": 0.4614,
+        "POS": 0.5196,
+        "NEU": 0.019
+      }
+    }
+  }
+}

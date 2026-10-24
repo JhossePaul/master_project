@@ -8,8 +8,6 @@ del ``userName`` de Google Play.
 import hashlib
 import re
 
-from voc_common.constants import MAX_REVIEW_WORDS, MIN_REVIEW_WORDS
-
 _URL_REGEX = re.compile(r"http\S+|www\S+|https\S+", flags=re.MULTILINE)
 # Menciones completas (@usuario) y hashtags completos (#etiqueta) o '#' suelto.
 _MENTION_HASHTAG_REGEX = re.compile(r"@\w+|#\w*")
@@ -46,12 +44,14 @@ def contar_palabras(texto: str) -> int:
     return len(stripped.split())
 
 
-def cumple_umbral_palabras(texto: str) -> bool:
-    """Indica si el texto está dentro del rango del EDA (2 a 60 palabras).
+def text_key(texto_sanitizado: str) -> str:
+    """Clave del texto único del esquema v3: SHA-256 hexadecimal de UTF-8.
 
-    Solo para el análisis. La ingesta y el TDS no filtran por longitud.
+    Coincide con ``TO_HEX(SHA256(texto_sanitizado))`` de BigQuery, que hashea
+    los bytes UTF-8 del ``STRING``. No normaliza: el texto se hashea tal como
+    vive en el TDS.
     """
-    return MIN_REVIEW_WORDS <= contar_palabras(texto) <= MAX_REVIEW_WORDS
+    return hashlib.sha256(texto_sanitizado.encode("utf-8")).hexdigest()
 
 
 def hash_username_pii(username: str, salt: str) -> str:

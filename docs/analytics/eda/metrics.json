@@ -1,0 +1,1585 @@
+{
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "rows": 2649047,
+  "duplicates": {
+    "unique_texts": 1383138,
+    "unique_share": 0.5221,
+    "unique_normalized": 1316799,
+    "rows_top_100_texts": 822894,
+    "rows_top_1000_texts": 1022045,
+    "texts_in_several_banks": 44696,
+    "rows_with_text_in_several_banks": 1297135,
+    "unique_by_bank": [
+      {
+        "bank_id": "AZTECA",
+        "filas": 590981,
+        "unicos": 278116
+      },
+      {
+        "bank_id": "BANORTE",
+        "filas": 518393,
+        "unicos": 280337
+      },
+      {
+        "bank_id": "BBVA",
+        "filas": 787875,
+        "unicos": 475065
+      },
+      {
+        "bank_id": "NUBANK",
+        "filas": 128204,
+        "unicos": 87722
+      },
+      {
+        "bank_id": "SANTANDER",
+        "filas": 623594,
+        "unicos": 339892
+      }
+    ]
+  },
+  "frequent_generic_texts": [
+    {
+      "texto": "muy bien 👌",
+      "filas": 505
+    },
+    {
+      "texto": "muy bien",
+      "filas": 28382
+    },
+    {
+      "texto": "falla mucho",
+      "filas": 975
+    },
+    {
+      "texto": "muy útil",
+      "filas": 4372
+    },
+    {
+      "texto": "muy mala",
+      "filas": 1317
+    },
+    {
+      "texto": "genial",
+      "filas": 13548
+    },
+    {
+      "texto": "pésima aplicación",
+      "filas": 822
+    },
+    {
+      "texto": "lenta",
+      "filas": 650
+    },
+    {
+      "texto": "muy fácil de utilizar",
+      "filas": 568
+    },
+    {
+      "texto": "es muy buena",
+      "filas": 2946
+    },
+    {
+      "texto": "muy completa",
+      "filas": 509
+    },
+    {
+      "texto": "la mejor app bancaria",
+      "filas": 535
+    },
+    {
+      "texto": "super bien",
+      "filas": 1154
+    },
+    {
+      "texto": "fácil de usar",
+      "filas": 3891
+    },
+    {
+      "texto": "buena.",
+      "filas": 634
+    },
+    {
+      "texto": "muy buena y rapida",
+      "filas": 633
+    },
+    {
+      "texto": "muy efectiva",
+      "filas": 775
+    },
+    {
+      "texto": "excelente aplicación 👍",
+      "filas": 527
+    },
+    {
+      "texto": "muy buena apps",
+      "filas": 590
+    },
+    {
+      "texto": "muy buena experiencia",
+      "filas": 1056
+    },
+    {
+      "texto": "excelente aplicación",
+      "filas": 26865
+    },
+    {
+      "texto": "no sirve",
+      "filas": 1565
+    },
+    {
+      "texto": "esta muy bien",
+      "filas": 501
+    },
+    {
+      "texto": "muy bien servicio",
+      "filas": 666
+    },
+    {
+      "texto": "muy buena aplicación.",
+      "filas": 769
+    },
+    {
+      "texto": "excelente 👌",
+      "filas": 5354
+    },
+    {
+      "texto": "buena experiencia",
+      "filas": 977
+    },
+    {
+      "texto": "la mejor",
+      "filas": 2235
+    },
+    {
+      "texto": "nice",
+      "filas": 688
+    },
+    {
+      "texto": "👍🏻",
+      "filas": 560
+    },
+    {
+      "texto": "muy buena la app",
+      "filas": 1800
+    },
+    {
+      "texto": "facil de usar",
+      "filas": 1019
+    },
+    {
+      "texto": "excelente",
+      "filas": 171013
+    },
+    {
+      "texto": "muy buena aplicación 👌",
+      "filas": 535
+    },
+    {
+      "texto": "excelente atención",
+      "filas": 1279
+    },
+    {
+      "texto": "muy rápido",
+      "filas": 1013
+    },
+    {
+      "texto": "muy práctica",
+      "filas": 4383
+    },
+    {
+      "texto": "buena",
+      "filas": 79975
+    },
+    {
+      "texto": "excelente!",
+      "filas": 2609
+    },
+    {
+      "texto": "excelente aplicación.",
+      "filas": 1544
+    }
+  ],
+  "length_buckets": [
+    {
+      "bucket": "1",
+      "filas": 484829,
+      "estrellas_prom": 4.75
+    },
+    {
+      "bucket": "2",
+      "filas": 470891,
+      "estrellas_prom": 4.71
+    },
+    {
+      "bucket": "6-10",
+      "filas": 422618,
+      "estrellas_prom": 4.08
+    },
+    {
+      "bucket": "11-20",
+      "filas": 365676,
+      "estrellas_prom": 3.37
+    },
+    {
+      "bucket": "4-5",
+      "filas": 319165,
+      "estrellas_prom": 4.42
+    },
+    {
+      "bucket": "21-40",
+      "filas": 249893,
+      "estrellas_prom": 2.53
+    },
+    {
+      "bucket": "3",
+      "filas": 227008,
+      "estrellas_prom": 4.6
+    },
+    {
+      "bucket": "41-60",
+      "filas": 70163,
+      "estrellas_prom": 2.08
+    },
+    {
+      "bucket": "61-100",
+      "filas": 37994,
+      "estrellas_prom": 1.9
+    },
+    {
+      "bucket": ">100",
+      "filas": 802,
+      "estrellas_prom": 1.94
+    },
+    {
+      "bucket": "0",
+      "filas": 8,
+      "estrellas_prom": 4.12
+    }
+  ],
+  "content": {
+    "empty": 8,
+    "no_alnum_after_tokens_and_emoji": 19586,
+    "only_digits_or_symbols": 138,
+    "with_sanitization_token": 15,
+    "with_ref_code": 13,
+    "with_emoji": 119487,
+    "titulo_not_null": 0,
+    "with_reply": 0,
+    "version_unknown": 232814,
+    "pii_findings_rows": 15
+  },
+  "language_rows": [
+    {
+      "idioma": "ES",
+      "filas": 1605514
+    },
+    {
+      "idioma": "SHORT",
+      "filas": 955728
+    },
+    {
+      "idioma": "PT",
+      "filas": 39760
+    },
+    {
+      "idioma": "UNSURE",
+      "filas": 39629
+    },
+    {
+      "idioma": "EN",
+      "filas": 8416
+    }
+  ],
+  "language_by_bank": [
+    {
+      "bank_id": "AZTECA",
+      "idioma": "EN",
+      "len": 1839
+    },
+    {
+      "bank_id": "AZTECA",
+      "idioma": "PT",
+      "len": 8501
+    },
+    {
+      "bank_id": "BANORTE",
+      "idioma": "EN",
+      "len": 1571
+    },
+    {
+      "bank_id": "BANORTE",
+      "idioma": "PT",
+      "len": 8500
+    },
+    {
+      "bank_id": "BBVA",
+      "idioma": "EN",
+      "len": 2445
+    },
+    {
+      "bank_id": "BBVA",
+      "idioma": "PT",
+      "len": 9898
+    },
+    {
+      "bank_id": "NUBANK",
+      "idioma": "EN",
+      "len": 379
+    },
+    {
+      "bank_id": "NUBANK",
+      "idioma": "PT",
+      "len": 3569
+    },
+    {
+      "bank_id": "SANTANDER",
+      "idioma": "EN",
+      "len": 2182
+    },
+    {
+      "bank_id": "SANTANDER",
+      "idioma": "PT",
+      "len": 9292
+    }
+  ],
+  "stars_by_bank": [
+    {
+      "bank_id": "AZTECA",
+      "estrellas": 1,
+      "len": 56041
+    },
+    {
+      "bank_id": "AZTECA",
+      "estrellas": 2,
+      "len": 11656
+    },
+    {
+      "bank_id": "AZTECA",
+      "estrellas": 3,
+      "len": 19996
+    },
+    {
+      "bank_id": "AZTECA",
+      "estrellas": 4,
+      "len": 57278
+    },
+    {
+      "bank_id": "AZTECA",
+      "estrellas": 5,
+      "len": 446010
+    },
+    {
+      "bank_id": "BANORTE",
+      "estrellas": 1,
+      "len": 59556
+    },
+    {
+      "bank_id": "BANORTE",
+      "estrellas": 2,
+      "len": 13522
+    },
+    {
+      "bank_id": "BANORTE",
+      "estrellas": 3,
+      "len": 23874
+    },
+    {
+      "bank_id": "BANORTE",
+      "estrellas": 4,
+      "len": 62233
+    },
+    {
+      "bank_id": "BANORTE",
+      "estrellas": 5,
+      "len": 359208
+    },
+    {
+      "bank_id": "BBVA",
+      "estrellas": 1,
+      "len": 190512
+    },
+    {
+      "bank_id": "BBVA",
+      "estrellas": 2,
+      "len": 36375
+    },
+    {
+      "bank_id": "BBVA",
+      "estrellas": 3,
+      "len": 38223
+    },
+    {
+      "bank_id": "BBVA",
+      "estrellas": 4,
+      "len": 63735
+    },
+    {
+      "bank_id": "BBVA",
+      "estrellas": 5,
+      "len": 459030
+    },
+    {
+      "bank_id": "NUBANK",
+      "estrellas": 1,
+      "len": 18400
+    },
+    {
+      "bank_id": "NUBANK",
+      "estrellas": 2,
+      "len": 3846
+    },
+    {
+      "bank_id": "NUBANK",
+      "estrellas": 3,
+      "len": 4629
+    },
+    {
+      "bank_id": "NUBANK",
+      "estrellas": 4,
+      "len": 7497
+    },
+    {
+      "bank_id": "NUBANK",
+      "estrellas": 5,
+      "len": 93832
+    },
+    {
+      "bank_id": "SANTANDER",
+      "estrellas": 1,
+      "len": 99274
+    },
+    {
+      "bank_id": "SANTANDER",
+      "estrellas": 2,
+      "len": 22159
+    },
+    {
+      "bank_id": "SANTANDER",
+      "estrellas": 3,
+      "len": 32567
+    },
+    {
+      "bank_id": "SANTANDER",
+      "estrellas": 4,
+      "len": 74696
+    },
+    {
+      "bank_id": "SANTANDER",
+      "estrellas": 5,
+      "len": 394898
+    }
+  ],
+  "votes_by_bank": [
+    {
+      "bank_id": "AZTECA",
+      "con_votos": 0.0278,
+      "p99": 2.0,
+      "max": 3420
+    },
+    {
+      "bank_id": "BANORTE",
+      "con_votos": 0.0216,
+      "p99": 1.0,
+      "max": 2547
+    },
+    {
+      "bank_id": "BBVA",
+      "con_votos": 0.0462,
+      "p99": 3.0,
+      "max": 6321
+    },
+    {
+      "bank_id": "NUBANK",
+      "con_votos": 0.1212,
+      "p99": 11.0,
+      "max": 4771
+    },
+    {
+      "bank_id": "SANTANDER",
+      "con_votos": 0.0265,
+      "p99": 1.0,
+      "max": 2370
+    }
+  ],
+  "yearly": [
+    {
+      "bank_id": "AZTECA",
+      "anio": 2017,
+      "filas": 1010,
+      "estrellas_prom": 2.721,
+      "una_palabra": 0.1079,
+      "corta_5_estrellas": 0.1762,
+      "estrellas_prom_sin_una_palabra": 2.512,
+      "version_desconocida": 0.302
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2018,
+      "filas": 6671,
+      "estrellas_prom": 2.945,
+      "una_palabra": 0.1138,
+      "corta_5_estrellas": 0.2141,
+      "estrellas_prom_sin_una_palabra": 2.721,
+      "version_desconocida": 0.3049
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2019,
+      "filas": 75172,
+      "estrellas_prom": 4.501,
+      "una_palabra": 0.2344,
+      "corta_5_estrellas": 0.456,
+      "estrellas_prom_sin_una_palabra": 4.431,
+      "version_desconocida": 0.0831
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2020,
+      "filas": 103825,
+      "estrellas_prom": 4.463,
+      "una_palabra": 0.228,
+      "corta_5_estrellas": 0.4434,
+      "estrellas_prom_sin_una_palabra": 4.38,
+      "version_desconocida": 0.0878
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2021,
+      "filas": 116219,
+      "estrellas_prom": 4.275,
+      "una_palabra": 0.2062,
+      "corta_5_estrellas": 0.4205,
+      "estrellas_prom_sin_una_palabra": 4.15,
+      "version_desconocida": 0.0858
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2022,
+      "filas": 79712,
+      "estrellas_prom": 4.469,
+      "una_palabra": 0.2148,
+      "corta_5_estrellas": 0.4542,
+      "estrellas_prom_sin_una_palabra": 4.382,
+      "version_desconocida": 0.082
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2023,
+      "filas": 54791,
+      "estrellas_prom": 4.371,
+      "una_palabra": 0.1987,
+      "corta_5_estrellas": 0.428,
+      "estrellas_prom_sin_una_palabra": 4.27,
+      "version_desconocida": 0.0957
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2024,
+      "filas": 46530,
+      "estrellas_prom": 4.458,
+      "una_palabra": 0.2073,
+      "corta_5_estrellas": 0.4574,
+      "estrellas_prom_sin_una_palabra": 4.371,
+      "version_desconocida": 0.0794
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2025,
+      "filas": 62793,
+      "estrellas_prom": 4.461,
+      "una_palabra": 0.2399,
+      "corta_5_estrellas": 0.4985,
+      "estrellas_prom_sin_una_palabra": 4.355,
+      "version_desconocida": 0.0972
+    },
+    {
+      "bank_id": "AZTECA",
+      "anio": 2026,
+      "filas": 44258,
+      "estrellas_prom": 4.389,
+      "una_palabra": 0.2436,
+      "corta_5_estrellas": 0.4975,
+      "estrellas_prom_sin_una_palabra": 4.262,
+      "version_desconocida": 0.0987
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2012,
+      "filas": 195,
+      "estrellas_prom": 2.841,
+      "una_palabra": 0.0154,
+      "corta_5_estrellas": 0.0359,
+      "estrellas_prom_sin_una_palabra": 2.807,
+      "version_desconocida": 0.1795
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2013,
+      "filas": 292,
+      "estrellas_prom": 3.599,
+      "una_palabra": 0.0685,
+      "corta_5_estrellas": 0.1438,
+      "estrellas_prom_sin_una_palabra": 3.511,
+      "version_desconocida": 0.1507
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2014,
+      "filas": 620,
+      "estrellas_prom": 3.555,
+      "una_palabra": 0.1016,
+      "corta_5_estrellas": 0.1484,
+      "estrellas_prom_sin_una_palabra": 3.463,
+      "version_desconocida": 0.1113
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2015,
+      "filas": 2094,
+      "estrellas_prom": 2.877,
+      "una_palabra": 0.043,
+      "corta_5_estrellas": 0.0697,
+      "estrellas_prom_sin_una_palabra": 2.805,
+      "version_desconocida": 0.1232
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2016,
+      "filas": 4618,
+      "estrellas_prom": 1.903,
+      "una_palabra": 0.0476,
+      "corta_5_estrellas": 0.0613,
+      "estrellas_prom_sin_una_palabra": 1.81,
+      "version_desconocida": 0.1966
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2017,
+      "filas": 5649,
+      "estrellas_prom": 2.801,
+      "una_palabra": 0.0809,
+      "corta_5_estrellas": 0.1547,
+      "estrellas_prom_sin_una_palabra": 2.677,
+      "version_desconocida": 0.1898
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2018,
+      "filas": 47919,
+      "estrellas_prom": 4.365,
+      "una_palabra": 0.1408,
+      "corta_5_estrellas": 0.3376,
+      "estrellas_prom_sin_una_palabra": 4.299,
+      "version_desconocida": 0.0597
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2019,
+      "filas": 71089,
+      "estrellas_prom": 4.406,
+      "una_palabra": 0.2418,
+      "corta_5_estrellas": 0.4577,
+      "estrellas_prom_sin_una_palabra": 4.286,
+      "version_desconocida": 0.0654
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2020,
+      "filas": 43098,
+      "estrellas_prom": 3.456,
+      "una_palabra": 0.1613,
+      "corta_5_estrellas": 0.2888,
+      "estrellas_prom_sin_una_palabra": 3.236,
+      "version_desconocida": 0.1097
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2021,
+      "filas": 57587,
+      "estrellas_prom": 4.008,
+      "una_palabra": 0.1645,
+      "corta_5_estrellas": 0.3368,
+      "estrellas_prom_sin_una_palabra": 3.869,
+      "version_desconocida": 0.1282
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2022,
+      "filas": 76753,
+      "estrellas_prom": 4.33,
+      "una_palabra": 0.1696,
+      "corta_5_estrellas": 0.3763,
+      "estrellas_prom_sin_una_palabra": 4.245,
+      "version_desconocida": 0.0743
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2023,
+      "filas": 51002,
+      "estrellas_prom": 4.482,
+      "una_palabra": 0.1568,
+      "corta_5_estrellas": 0.3901,
+      "estrellas_prom_sin_una_palabra": 4.419,
+      "version_desconocida": 0.0823
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2024,
+      "filas": 53924,
+      "estrellas_prom": 4.519,
+      "una_palabra": 0.1666,
+      "corta_5_estrellas": 0.414,
+      "estrellas_prom_sin_una_palabra": 4.454,
+      "version_desconocida": 0.0698
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2025,
+      "filas": 59304,
+      "estrellas_prom": 4.482,
+      "una_palabra": 0.1883,
+      "corta_5_estrellas": 0.4385,
+      "estrellas_prom_sin_una_palabra": 4.396,
+      "version_desconocida": 0.1158
+    },
+    {
+      "bank_id": "BANORTE",
+      "anio": 2026,
+      "filas": 44249,
+      "estrellas_prom": 4.435,
+      "una_palabra": 0.1903,
+      "corta_5_estrellas": 0.445,
+      "estrellas_prom_sin_una_palabra": 4.338,
+      "version_desconocida": 0.0918
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2011,
+      "filas": 49,
+      "estrellas_prom": 3.878,
+      "una_palabra": 0.1224,
+      "corta_5_estrellas": 0.1633,
+      "estrellas_prom_sin_una_palabra": 3.767,
+      "version_desconocida": 0.0
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2012,
+      "filas": 351,
+      "estrellas_prom": 3.792,
+      "una_palabra": 0.1054,
+      "corta_5_estrellas": 0.1994,
+      "estrellas_prom_sin_una_palabra": 3.685,
+      "version_desconocida": 0.1994
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2013,
+      "filas": 1042,
+      "estrellas_prom": 3.441,
+      "una_palabra": 0.0662,
+      "corta_5_estrellas": 0.143,
+      "estrellas_prom_sin_una_palabra": 3.354,
+      "version_desconocida": 0.1286
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2014,
+      "filas": 2969,
+      "estrellas_prom": 3.686,
+      "una_palabra": 0.1037,
+      "corta_5_estrellas": 0.193,
+      "estrellas_prom_sin_una_palabra": 3.584,
+      "version_desconocida": 0.1138
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2015,
+      "filas": 5529,
+      "estrellas_prom": 3.418,
+      "una_palabra": 0.0823,
+      "corta_5_estrellas": 0.1621,
+      "estrellas_prom_sin_una_palabra": 3.317,
+      "version_desconocida": 0.1921
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2016,
+      "filas": 14899,
+      "estrellas_prom": 3.139,
+      "una_palabra": 0.0848,
+      "corta_5_estrellas": 0.1679,
+      "estrellas_prom_sin_una_palabra": 3.024,
+      "version_desconocida": 0.1515
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2017,
+      "filas": 37581,
+      "estrellas_prom": 3.821,
+      "una_palabra": 0.1027,
+      "corta_5_estrellas": 0.2649,
+      "estrellas_prom_sin_una_palabra": 3.71,
+      "version_desconocida": 0.1337
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2018,
+      "filas": 72098,
+      "estrellas_prom": 4.258,
+      "una_palabra": 0.1416,
+      "corta_5_estrellas": 0.3581,
+      "estrellas_prom_sin_una_palabra": 4.16,
+      "version_desconocida": 0.077
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2019,
+      "filas": 145290,
+      "estrellas_prom": 4.074,
+      "una_palabra": 0.2221,
+      "corta_5_estrellas": 0.432,
+      "estrellas_prom_sin_una_palabra": 3.863,
+      "version_desconocida": 0.0721
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2020,
+      "filas": 69832,
+      "estrellas_prom": 3.268,
+      "una_palabra": 0.1392,
+      "corta_5_estrellas": 0.268,
+      "estrellas_prom_sin_una_palabra": 3.036,
+      "version_desconocida": 0.1181
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2021,
+      "filas": 93223,
+      "estrellas_prom": 3.703,
+      "una_palabra": 0.1519,
+      "corta_5_estrellas": 0.3177,
+      "estrellas_prom_sin_una_palabra": 3.512,
+      "version_desconocida": 0.108
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2022,
+      "filas": 49849,
+      "estrellas_prom": 3.95,
+      "una_palabra": 0.1778,
+      "corta_5_estrellas": 0.3612,
+      "estrellas_prom_sin_una_palabra": 3.776,
+      "version_desconocida": 0.1416
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2023,
+      "filas": 47876,
+      "estrellas_prom": 3.887,
+      "una_palabra": 0.1861,
+      "corta_5_estrellas": 0.363,
+      "estrellas_prom_sin_una_palabra": 3.69,
+      "version_desconocida": 0.0861
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2024,
+      "filas": 95306,
+      "estrellas_prom": 3.612,
+      "una_palabra": 0.18,
+      "corta_5_estrellas": 0.3552,
+      "estrellas_prom_sin_una_palabra": 3.356,
+      "version_desconocida": 0.0708
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2025,
+      "filas": 96171,
+      "estrellas_prom": 3.238,
+      "una_palabra": 0.1542,
+      "corta_5_estrellas": 0.3041,
+      "estrellas_prom_sin_una_palabra": 2.962,
+      "version_desconocida": 0.0776
+    },
+    {
+      "bank_id": "BBVA",
+      "anio": 2026,
+      "filas": 55810,
+      "estrellas_prom": 3.437,
+      "una_palabra": 0.1786,
+      "corta_5_estrellas": 0.3442,
+      "estrellas_prom_sin_una_palabra": 3.148,
+      "version_desconocida": 0.0743
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2015,
+      "filas": 5,
+      "estrellas_prom": 5.0,
+      "una_palabra": 0.0,
+      "corta_5_estrellas": 0.2,
+      "estrellas_prom_sin_una_palabra": 5.0,
+      "version_desconocida": 0.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2016,
+      "filas": 20,
+      "estrellas_prom": 4.65,
+      "una_palabra": 0.2,
+      "corta_5_estrellas": 0.15,
+      "estrellas_prom_sin_una_palabra": 4.625,
+      "version_desconocida": 0.15
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2017,
+      "filas": 12,
+      "estrellas_prom": 5.0,
+      "una_palabra": 0.1667,
+      "corta_5_estrellas": 0.5833,
+      "estrellas_prom_sin_una_palabra": 5.0,
+      "version_desconocida": 0.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2018,
+      "filas": 23,
+      "estrellas_prom": 4.261,
+      "una_palabra": 0.1739,
+      "corta_5_estrellas": 0.3478,
+      "estrellas_prom_sin_una_palabra": 4.105,
+      "version_desconocida": 0.1304
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2019,
+      "filas": 115,
+      "estrellas_prom": 4.052,
+      "una_palabra": 0.2174,
+      "corta_5_estrellas": 0.3391,
+      "estrellas_prom_sin_una_palabra": 3.856,
+      "version_desconocida": 0.2348
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2020,
+      "filas": 1286,
+      "estrellas_prom": 3.982,
+      "una_palabra": 0.1058,
+      "corta_5_estrellas": 0.224,
+      "estrellas_prom_sin_una_palabra": 3.878,
+      "version_desconocida": 0.1563
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2021,
+      "filas": 7126,
+      "estrellas_prom": 4.258,
+      "una_palabra": 0.1172,
+      "corta_5_estrellas": 0.2578,
+      "estrellas_prom_sin_una_palabra": 4.18,
+      "version_desconocida": 0.1382
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2022,
+      "filas": 11969,
+      "estrellas_prom": 4.169,
+      "una_palabra": 0.1387,
+      "corta_5_estrellas": 0.2908,
+      "estrellas_prom_sin_una_palabra": 4.061,
+      "version_desconocida": 0.145
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2023,
+      "filas": 7713,
+      "estrellas_prom": 3.494,
+      "una_palabra": 0.1167,
+      "corta_5_estrellas": 0.2321,
+      "estrellas_prom_sin_una_palabra": 3.328,
+      "version_desconocida": 0.1714
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2024,
+      "filas": 22024,
+      "estrellas_prom": 3.982,
+      "una_palabra": 0.1475,
+      "corta_5_estrellas": 0.3088,
+      "estrellas_prom_sin_una_palabra": 3.833,
+      "version_desconocida": 0.126
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2025,
+      "filas": 39675,
+      "estrellas_prom": 4.288,
+      "una_palabra": 0.1611,
+      "corta_5_estrellas": 0.3746,
+      "estrellas_prom_sin_una_palabra": 4.174,
+      "version_desconocida": 0.1261
+    },
+    {
+      "bank_id": "NUBANK",
+      "anio": 2026,
+      "filas": 38236,
+      "estrellas_prom": 4.4,
+      "una_palabra": 0.1463,
+      "corta_5_estrellas": 0.346,
+      "estrellas_prom_sin_una_palabra": 4.318,
+      "version_desconocida": 0.0761
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2012,
+      "filas": 189,
+      "estrellas_prom": 4.169,
+      "una_palabra": 0.0582,
+      "corta_5_estrellas": 0.1111,
+      "estrellas_prom_sin_una_palabra": 4.129,
+      "version_desconocida": 0.2487
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2013,
+      "filas": 264,
+      "estrellas_prom": 3.886,
+      "una_palabra": 0.0985,
+      "corta_5_estrellas": 0.2159,
+      "estrellas_prom_sin_una_palabra": 3.815,
+      "version_desconocida": 0.2197
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2014,
+      "filas": 518,
+      "estrellas_prom": 3.521,
+      "una_palabra": 0.11,
+      "corta_5_estrellas": 0.1911,
+      "estrellas_prom_sin_una_palabra": 3.43,
+      "version_desconocida": 0.1255
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2015,
+      "filas": 613,
+      "estrellas_prom": 3.22,
+      "una_palabra": 0.0783,
+      "corta_5_estrellas": 0.1436,
+      "estrellas_prom_sin_una_palabra": 3.127,
+      "version_desconocida": 0.1843
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2016,
+      "filas": 2038,
+      "estrellas_prom": 2.413,
+      "una_palabra": 0.0667,
+      "corta_5_estrellas": 0.0967,
+      "estrellas_prom_sin_una_palabra": 2.293,
+      "version_desconocida": 0.1433
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2017,
+      "filas": 1740,
+      "estrellas_prom": 2.639,
+      "una_palabra": 0.0839,
+      "corta_5_estrellas": 0.1276,
+      "estrellas_prom_sin_una_palabra": 2.499,
+      "version_desconocida": 0.2477
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2018,
+      "filas": 24801,
+      "estrellas_prom": 4.067,
+      "una_palabra": 0.1108,
+      "corta_5_estrellas": 0.2735,
+      "estrellas_prom_sin_una_palabra": 3.994,
+      "version_desconocida": 0.0617
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2019,
+      "filas": 132052,
+      "estrellas_prom": 4.172,
+      "una_palabra": 0.1983,
+      "corta_5_estrellas": 0.371,
+      "estrellas_prom_sin_una_palabra": 4.055,
+      "version_desconocida": 0.0524
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2020,
+      "filas": 81745,
+      "estrellas_prom": 3.899,
+      "una_palabra": 0.1977,
+      "corta_5_estrellas": 0.355,
+      "estrellas_prom_sin_una_palabra": 3.73,
+      "version_desconocida": 0.0663
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2021,
+      "filas": 80104,
+      "estrellas_prom": 3.953,
+      "una_palabra": 0.1908,
+      "corta_5_estrellas": 0.3629,
+      "estrellas_prom_sin_una_palabra": 3.8,
+      "version_desconocida": 0.0651
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2022,
+      "filas": 68553,
+      "estrellas_prom": 3.916,
+      "una_palabra": 0.1791,
+      "corta_5_estrellas": 0.3603,
+      "estrellas_prom_sin_una_palabra": 3.764,
+      "version_desconocida": 0.0678
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2023,
+      "filas": 58682,
+      "estrellas_prom": 4.082,
+      "una_palabra": 0.1723,
+      "corta_5_estrellas": 0.3678,
+      "estrellas_prom_sin_una_palabra": 3.961,
+      "version_desconocida": 0.0739
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2024,
+      "filas": 57972,
+      "estrellas_prom": 4.275,
+      "una_palabra": 0.1816,
+      "corta_5_estrellas": 0.4014,
+      "estrellas_prom_sin_una_palabra": 4.178,
+      "version_desconocida": 0.0716
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2025,
+      "filas": 58678,
+      "estrellas_prom": 3.973,
+      "una_palabra": 0.1816,
+      "corta_5_estrellas": 0.3917,
+      "estrellas_prom_sin_una_palabra": 3.807,
+      "version_desconocida": 0.0964
+    },
+    {
+      "bank_id": "SANTANDER",
+      "anio": 2026,
+      "filas": 55645,
+      "estrellas_prom": 4.014,
+      "una_palabra": 0.1646,
+      "corta_5_estrellas": 0.3697,
+      "estrellas_prom_sin_una_palabra": 3.864,
+      "version_desconocida": 0.1074
+    }
+  ],
+  "single_word_star_bias": [
+    {
+      "bank_id": "AZTECA",
+      "todas": 4.397,
+      "sin_una_palabra": 4.293,
+      "solo_una_palabra": 4.766
+    },
+    {
+      "bank_id": "BANORTE",
+      "todas": 4.25,
+      "sin_una_palabra": 4.139,
+      "solo_una_palabra": 4.773
+    },
+    {
+      "bank_id": "BBVA",
+      "todas": 3.716,
+      "sin_una_palabra": 3.504,
+      "solo_una_palabra": 4.773
+    },
+    {
+      "bank_id": "NUBANK",
+      "todas": 4.205,
+      "sin_una_palabra": 4.093,
+      "solo_una_palabra": 4.861
+    },
+    {
+      "bank_id": "SANTANDER",
+      "todas": 4.032,
+      "sin_una_palabra": 3.895,
+      "solo_una_palabra": 4.651
+    }
+  ],
+  "nubank_monthly_until_2021": [
+    {
+      "bank_id": "NUBANK",
+      "mes": "2015-08",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2015-10",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2015-11",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2015-12",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-02",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-03",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-05",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-06",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-07",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-08",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-09",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-10",
+      "filas": 4
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-11",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2016-12",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-01",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-03",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-04",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-07",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-08",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-10",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2017-12",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-01",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-02",
+      "filas": 4
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-04",
+      "filas": 4
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-05",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-06",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-09",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-10",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-11",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2018-12",
+      "filas": 3
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-01",
+      "filas": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-02",
+      "filas": 5
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-03",
+      "filas": 5
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-04",
+      "filas": 6
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-05",
+      "filas": 5
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-06",
+      "filas": 9
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-07",
+      "filas": 18
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-08",
+      "filas": 10
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-09",
+      "filas": 15
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-10",
+      "filas": 16
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-11",
+      "filas": 14
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2019-12",
+      "filas": 10
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-01",
+      "filas": 12
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-02",
+      "filas": 22
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-03",
+      "filas": 52
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-04",
+      "filas": 59
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-05",
+      "filas": 48
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-06",
+      "filas": 47
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-07",
+      "filas": 70
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-08",
+      "filas": 57
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-09",
+      "filas": 132
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-10",
+      "filas": 403
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-11",
+      "filas": 216
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-12",
+      "filas": 168
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-01",
+      "filas": 283
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-02",
+      "filas": 374
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-03",
+      "filas": 364
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-04",
+      "filas": 302
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-05",
+      "filas": 385
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-06",
+      "filas": 379
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-07",
+      "filas": 586
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-08",
+      "filas": 673
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-09",
+      "filas": 801
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-10",
+      "filas": 935
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-11",
+      "filas": 984
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2021-12",
+      "filas": 1060
+    }
+  ],
+  "first_month_over_100": [
+    {
+      "bank_id": "AZTECA",
+      "mes": "2017-07"
+    },
+    {
+      "bank_id": "BANORTE",
+      "mes": "2013-11"
+    },
+    {
+      "bank_id": "BBVA",
+      "mes": "2013-10"
+    },
+    {
+      "bank_id": "NUBANK",
+      "mes": "2020-09"
+    },
+    {
+      "bank_id": "SANTANDER",
+      "mes": "2016-06"
+    }
+  ],
+  "rule_candidates": {
+    "TNSS_EMPTY": 8,
+    "TNSS_NO_TEXT_CONTENT": 19586,
+    "TNSS_SINGLE_WORD": 484829,
+    "TNSS_NOT_SPANISH_lingua_EN_PT": 48176,
+    "TOPIC_TOO_SHORT_by_max_words": {
+      "1": 484837,
+      "2": 955728,
+      "3": 1182736,
+      "4": 1365543,
+      "5": 1501901
+    }
+  }
+}

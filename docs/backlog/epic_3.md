@@ -12,7 +12,7 @@ recuperación verificable. El endpoint `batchexecute` es interno: no tiene contr
 público de estabilidad, filtros temporales documentados ni garantía de enumerar
 el histórico completo. El tamaño 199 fue una política conservadora inicial,
 **no un máximo demostrado**; el 2026-10-15 la política pasó a 500 tras validar una
-cadena de 10 páginas (ver `docs/full_backfill.md`). Las cifras de la ficha de la app no constituyen
+cadena de 10 páginas (ver `docs/operations/full_backfill.md`). Las cifras de la ficha de la app no constituyen
 un denominador fiable para calcular el porcentaje de reseñas recuperadas.
 
 La garantía implementable es conservar/reprocesar páginas ya aceptadas mientras
@@ -310,7 +310,7 @@ presión: aún no hay consumidor desplegado). Reducers puros nuevos en
 Configuración conservadora nueva en `IngestionExecutionConfig` (páginas,
 recuperación, anclas, backoff, circuit breaker, ventana de revisita 72 h,
 bootstrap 7 días y rotación opcional de User-Agent por ejecución).
-Evidencia usada (`evidence/`, no versionada): una corrida BBVA de 16
+Evidencia usada (`experiments/playstore/evidence/`, no versionada): una corrida BBVA de 16
 solicitudes; el replay del cursor fue idéntico a +10 s, +10 min y +30 min
 aunque la cabeza cambió; el cursor devuelto cambia en cada respuesta; la
 cabeza mostró ±2 reseñas entre solicitudes; tamaños 200 y 500 aceptados.

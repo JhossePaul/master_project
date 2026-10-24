@@ -37,6 +37,8 @@ class WorkloadImages(BaseModel):
     sanitization_job: DigestImage
     api_backend: DigestImage | None = None
     historical_job: DigestImage | None = None
+    # Sin ella no se crean los Jobs de inferencia y monitoreo (EPIC-6).
+    ml_inference: DigestImage | None = None
 
 
 class HistoricalExecutionConfig(IngestionExecutionConfig):
@@ -73,6 +75,25 @@ class CloudRunResources:
     historical_job: gcp.cloudrunv2.Job
     historical_invoker: gcp.cloudrunv2.JobIamMember
     historical_job_name: pulumi.Output[str]
+    ml_delta_job: gcp.cloudrunv2.Job | None = None
+    ml_monitor_job: gcp.cloudrunv2.Job | None = None
+    ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+
+
+@dataclass(frozen=True)
+class MlJobSpec:
+    """Job de ``ml-inference``: el subcomando va como argumento."""
+
+    name: str
+    command: str
+    memory: str = "2Gi"
+    timeout_sec: int = 1800
+    max_retries: int = 1
+
+
+# D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
+ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta")
+ML_MONITOR_JOB = MlJobSpec("voc-ml-monitor", "monitor")
 
 
 def _validate_hash_salt(value: str, environment: str) -> str:
@@ -129,7 +150,6 @@ def create_cloud_run_resources(
     user_hash_salt: pulumi.Output[str],
     environment: str = "dev",
     free_tier_mode: bool = True,
-    enable_vertex: bool = False,
     scraper_proxy_pool_urls: pulumi.Output[str] | None = None,
     ingestion_execution: IngestionExecutionConfig | None = None,
     historical_config: HistoricalJobConfig | None = None,
@@ -155,24 +175,17 @@ def create_cloud_run_resources(
         },
         "BQ_DATASET_ID": storage_bq.dataset.dataset_id,
         "BQ_SANITIZED_TDS_TABLE": storage_bq.sanitized_reviews_tds.table_id,
-        "BQ_PREDICTIONS_TABLE": storage_bq.delora_predictions.table_id,
         "BQ_INGESTION_RUNS_LOG_TABLE": storage_bq.ingestion_runs_log.table_id,
-        "BQ_HITL_AUDIT_TABLE": storage_bq.hitl_triage_audit_log.table_id,
         "PUBSUB_RAW_REVIEWS_TOPIC": pubsub.raw_topic.name,
         "PUBSUB_RAW_SUBSCRIPTION": pubsub.raw_subscription.name,
         "PUBSUB_ALERTS_TOPIC": pubsub.alerts_topic.name,
-        "ENABLE_DEDICATED_VERTEX_ENDPOINTS": str(enable_vertex).lower(),
     }
     deps = [
         repository,
         *api_deps,
         *security.iam_members,
-        *[
-            storage_bq.sanitized_reviews_tds,
-            storage_bq.delora_predictions,
-            storage_bq.ingestion_runs_log,
-            storage_bq.hitl_triage_audit_log,
-        ],
+        storage_bq.sanitized_reviews_tds,
+        storage_bq.ingestion_runs_log,
     ]
     opts = pulumi.ResourceOptions(depends_on=deps)
 
@@ -255,6 +268,9 @@ def create_cloud_run_resources(
             name=name,
             project=project_id,
             location=region,
+            # La API devuelve este valor por defecto a nivel de servicio;
+            # declararlo evita un diff permanente en `pulumi preview`.
+            scaling={"min_instance_count": 0},
             template={
                 "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
                 "service_account": account,
@@ -361,6 +377,56 @@ def create_cloud_run_resources(
         member=invoker,
         opts=opts,
     )
+    ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
+    ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
+    if images.ml_inference is not None:
+        for spec in (ML_DELTA_JOB, ML_MONITOR_JOB):
+            job = gcp.cloudrunv2.Job(
+                spec.name,
+                name=spec.name,
+                project=project_id,
+                location=region,
+                template={
+                    "task_count": 1,
+                    "parallelism": 1,
+                    "template": {
+                        "service_account": security.sa_ml_and_backend.email,
+                        "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
+                        "timeout": f"{spec.timeout_sec}s",
+                        "max_retries": spec.max_retries,
+                        "containers": [
+                            {
+                                "image": images.ml_inference,
+                                # ENTRYPOINT: python -m ml_inference.
+                                "args": [spec.command],
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "1",
+                                        "memory": spec.memory,
+                                    }
+                                },
+                                "envs": [
+                                    {"name": k, "value": v}
+                                    for k, v in common.items()
+                                ],
+                            }
+                        ],
+                    },
+                },
+                opts=opts,
+            )
+            ml_jobs[spec.command] = job
+            ml_invokers.append(
+                gcp.cloudrunv2.JobIamMember(
+                    f"{spec.name}-scheduler-invoker",
+                    project=project_id,
+                    location=region,
+                    name=job.name,
+                    role="roles/run.invoker",
+                    member=invoker,
+                    opts=opts,
+                )
+            )
     return CloudRunResources(
         ingestion,
         sanitization,
@@ -370,4 +436,7 @@ def create_cloud_run_resources(
         historical,
         history_access,
         history_name,
+        ml_delta_job=ml_jobs.get(ML_DELTA_JOB.command),
+        ml_monitor_job=ml_jobs.get(ML_MONITOR_JOB.command),
+        ml_invokers=tuple(ml_invokers),
     )

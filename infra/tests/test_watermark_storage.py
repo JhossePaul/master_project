@@ -96,6 +96,7 @@ def test_watermark_storage_lifecycle_iam_and_consumers(
                 "matchesPrefixes": [
                     expected.gcs_raw_staging_prefix + "/",
                     "temp_beam/",
+                    "backfill/",
                 ],
             },
         }
@@ -118,10 +119,11 @@ def test_watermark_storage_lifecycle_iam_and_consumers(
     assert set(grants) == {
         "voc-datalake-ingestion-objects",
         "voc-datalake-sanitization-objects",
+        "voc-datalake-ml-backend-objects",
     }
     assert {r.state["member"] for r in grants.values()} == {
         f"serviceAccount:voc-sa-{actor}@test-voc-project.iam.gserviceaccount.com"
-        for actor in ("ingestion", "sanitization")
+        for actor in ("ingestion", "sanitization", "ml-backend")
     }
     for name, grant in grants.items():
         assert grant.state["bucket"] == bucket.state["name"]

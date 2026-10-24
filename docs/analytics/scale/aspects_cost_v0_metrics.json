@@ -1,0 +1,18 @@
+{
+  "generado": "2026-10-22T18:24:52+00:00",
+  "prompt": "aspects_v2_1",
+  "textos_muestra": 69534,
+  "textos_neg": 39635,
+  "proporcion_neg_textos_unicos": 0.57,
+  "textos_etiquetados": 39635,
+  "lotes_fallidos": 2,
+  "costo_usd": 3.5958,
+  "costo_por_1000_textos_usd": 0.0907,
+  "tokens_entrada_por_texto": 62.5,
+  "tokens_salida_por_texto": 11.3,
+  "proyeccion_corpus": {
+    "textos_unicos_neg": 788401,
+    "costo_usd": 71.53,
+    "nota": "textos únicos del corpus × proporción NEG de la muestra; el precio es el introductorio vigente hasta 2026-12-31"
+  }
+}

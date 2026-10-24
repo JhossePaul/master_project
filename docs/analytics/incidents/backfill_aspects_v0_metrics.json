@@ -1,0 +1,68 @@
+{
+  "generado": "2026-10-23T03:10:43+00:00",
+  "prompt": "aspects_v2_1",
+  "backfill": "20261022",
+  "textos": 659416,
+  "etiquetados": 659316,
+  "faltantes": 100,
+  "lotes": 6641,
+  "lotes_fallidos": 47,
+  "costo_usd": 60.61,
+  "prevalencia_por_texto": {
+    "u": 0.1774,
+    "s": 0.0266,
+    "sin_familia": 0.0642,
+    "multi_familia": 0.2731,
+    "familias": {
+      "AC": 0.2804,
+      "TR": 0.1441,
+      "DI": 0.0288,
+      "PR": 0.1299,
+      "AT": 0.09,
+      "FA": 0.2739,
+      "LE": 0.0968,
+      "CO": 0.0904,
+      "DV": 0.0149,
+      "UX": 0.0921,
+      "OT": 0.0109
+    }
+  },
+  "reproducibilidad": {
+    "plata": {
+      "textos_comunes": 39913,
+      "acuerdo_exacto_familias": 0.6841,
+      "acuerdo_u": 0.9655,
+      "por_familia": {
+        "AC": 0.9159,
+        "TR": 0.9573,
+        "DI": 0.9857,
+        "PR": 0.9357,
+        "AT": 0.9656,
+        "FA": 0.9022,
+        "LE": 0.9765,
+        "CO": 0.9574,
+        "DV": 0.9948,
+        "UX": 0.9576,
+        "OT": 0.982
+      }
+    },
+    "ppi_v0": {
+      "textos_comunes": 39485,
+      "acuerdo_exacto_familias": 0.6872,
+      "acuerdo_u": 0.9638,
+      "por_familia": {
+        "AC": 0.9175,
+        "TR": 0.9568,
+        "DI": 0.9869,
+        "PR": 0.9373,
+        "AT": 0.966,
+        "FA": 0.9009,
+        "LE": 0.9761,
+        "CO": 0.9605,
+        "DV": 0.9954,
+        "UX": 0.9547,
+        "OT": 0.9823
+      }
+    }
+  }
+}

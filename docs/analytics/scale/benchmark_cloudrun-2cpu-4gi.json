@@ -1,0 +1,89 @@
+{
+  "generado": "2026-10-22T17:37:35+00:00",
+  "entorno": "cloudrun-2cpu-4gi",
+  "cpus_visibles": 5,
+  "plataforma": "Linux-6.9.12-x86_64-with-glibc2.41",
+  "torch": "2.14.1+cpu",
+  "corridas": [
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 308.49,
+      "textos_por_segundo": 6.5,
+      "carga_modelo_s": 1.94,
+      "rss_pico_mb": 1280.8
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 74.19,
+      "textos_por_segundo": 27.0,
+      "carga_modelo_s": 0.77,
+      "rss_pico_mb": 1204.1
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 155.3,
+      "textos_por_segundo": 12.9,
+      "carga_modelo_s": 1.83,
+      "rss_pico_mb": 1372.0
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 36.36,
+      "textos_por_segundo": 55.0,
+      "carga_modelo_s": 1.81,
+      "rss_pico_mb": 1369.2
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 178.21,
+      "textos_por_segundo": 11.2,
+      "carga_modelo_s": 0.86,
+      "rss_pico_mb": 1254.9
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 43.48,
+      "textos_por_segundo": 46.0,
+      "carga_modelo_s": 0.85,
+      "rss_pico_mb": 1236.8
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 95.81,
+      "textos_por_segundo": 20.9,
+      "carga_modelo_s": 1.67,
+      "rss_pico_mb": 1388.5
+    },
+    {
+      "hilos": 2,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 22.62,
+      "textos_por_segundo": 88.4,
+      "carga_modelo_s": 1.75,
+      "rss_pico_mb": 1372.1
+    }
+  ]
+}

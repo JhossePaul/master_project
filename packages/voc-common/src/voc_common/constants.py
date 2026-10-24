@@ -4,8 +4,8 @@ Incluye:
     * Bancos monitoreados y sus ``app_id`` en Google Play.
     * Modos de ingesta (incremental, backfill de 1 año y backfill total).
     * Parámetros del protocolo interno de Google Play (``batchexecute`` RPC).
-    * Etiquetas de sentimiento y tópicos ABSA.
-    * Umbrales derivados del EDA (filtrado de colas pesadas).
+    * Etiquetas de sentimiento (los códigos analíticos v3 viven en
+      ``analytics_codes``).
 """
 
 from enum import Enum, StrEnum
@@ -69,23 +69,6 @@ SENTIMENT_DISPLAY_MAP: dict[SentimentLabel, str] = {
 }
 
 
-class ABSATopic(StrEnum):
-    """Tópicos del análisis de sentimiento basado en aspectos (ABSA)."""
-
-    BIOMETRIA_RECONOCIMIENTO = "BIOMETRIA_RECONOCIMIENTO"
-    BLOQUEO_SEGURIDAD_3702 = "BLOQUEO_SEGURIDAD_3702"
-    TRANSFERENCIAS_SPEI = "TRANSFERENCIAS_SPEI"
-    RENDIMIENTO_CRASH_POST_RELEASE = "RENDIMIENTO_CRASH_POST_RELEASE"
-    SALDOS_Y_APARTADOS = "SALDOS_Y_APARTADOS"
-    # Etiqueta de tópico, no una credencial (falso positivo de B105/S105).
-    TOKEN_Y_NOTIFICACIONES = "TOKEN_Y_NOTIFICACIONES"  # noqa: S105  # nosec B105
-    UX_INTERFAZ_Y_PUBLICIDAD = "UX_INTERFAZ_Y_PUBLICIDAD"
-    OTROS_SERVICIOS_GENERALES = "OTROS_SERVICIOS_GENERALES"
-
-
-# Constantes del EDA (Filtrado de Colas Pesadas)
-MIN_REVIEW_WORDS: int = 2
-MAX_REVIEW_WORDS: int = 60
 BACKFILL_LOOKBACK_DAYS: int = 365
 
 # Normalización de reseñas
