@@ -4,9 +4,9 @@ import runpy
 from pathlib import Path
 
 import pulumi
-import pytest
+from pulumi.runtime import rpc
 
-from infra.tests.conftest import InfrastructureMonitor
+from infra.tests.conftest import InfrastructureMonitor, unwrap_outputs
 
 _PROJECT = "test-voc-project"
 _CHANNEL = f"projects/{_PROJECT}/notificationChannels/voc-alerts-email"
@@ -18,7 +18,9 @@ def _deploy(email: str | None) -> None:
         config = {"gcp:project": _PROJECT, "gcp:region": "us-central1"}
         if email is not None:
             config["bbva-voc-infra:alert_email"] = email
-        pulumi.runtime.set_all_config(config)
+        pulumi.runtime.set_all_config(
+            config, secret_keys=["bbva-voc-infra:alert_email"]
+        )
         runpy.run_path(str(Path(__file__).resolve().parents[1] / "__main__.py"))
 
     deploy()
@@ -42,7 +44,11 @@ def test_email_channel_watches_both_alert_topics(
     assert list(channels) == ["voc-alerts-email"]
     channel = channels["voc-alerts-email"]
     assert channel["type"] == "email"
-    assert channel["labels"] == {"email_address": "avisos@example.com"}
+    # El correo viaja como secreto: no queda en texto plano en el estado.
+    assert rpc.is_rpc_secret(channel["labels"])
+    assert unwrap_outputs(channel["labels"]) == {
+        "email_address": "avisos@example.com"
+    }
 
     policies = _states(pulumi_mocks, "gcp:monitoring/alertPolicy:AlertPolicy")
     assert set(policies) == {
@@ -79,11 +85,10 @@ def test_email_channel_watches_both_alert_topics(
         assert api in pulumi_mocks.dependencies[name]
 
 
-@pytest.mark.parametrize("email", [None, ""])
 def test_without_email_there_is_no_channel(
-    pulumi_mocks: InfrastructureMonitor, email: str | None
+    pulumi_mocks: InfrastructureMonitor,
 ) -> None:
-    _deploy(email)
+    _deploy(None)
     assert not [
         r for r in pulumi_mocks.resources.values() if "gcp:monitoring/" in r.urn
     ]

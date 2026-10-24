@@ -66,7 +66,7 @@ def _documentation(alert: AlertTopic) -> str:
 
 def create_alerting_resources(
     project_id: str,
-    email: str,
+    email: pulumi.Input[str],
     api_deps: list[pulumi.Resource],
 ) -> AlertingResources:
     """Crea el canal de correo y una política por tópico de avisos."""

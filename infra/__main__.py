@@ -48,7 +48,8 @@ if user_hash_salt is None:
         user_hash_salt = pulumi.Output.secret(DEV_USER_HASH_SALT)
 proxies = config.get_secret_object("scraper_proxy_pool_urls")
 # Destino de los avisos de deriva y de calidad; sin él no hay correo.
-alert_email = config.get("alert_email")
+# Secreto (cifrado con la llave del stack): el repositorio es público.
+alert_email = config.get_secret("alert_email")
 # Fase 1 (false): base sin Cloud Run ni Scheduler hasta publicar imágenes.
 deploy_workloads = config.get_bool("deploy_workloads") or False
 # Leer solo Pulumi: los prefijos no dependen de .env ni variables del host.
@@ -88,7 +89,7 @@ alerting = (
     create_alerting_resources(
         project_id, alert_email, list(project_apis.values())
     )
-    if alert_email
+    if alert_email is not None
     else None
 )
 storage_bq = create_storage_and_bq_resources(

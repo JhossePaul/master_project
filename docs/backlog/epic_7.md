@@ -534,7 +534,7 @@ Escribir pruebas deterministas que validen:
 
 1. **`test_hitl_validation_hashes_reviewer_email_and_creates_audit_record`**:
 
-* Enviar una decisión humana a `POST /api/v1/hitl/validate` con `reviewer_email="claudia.martinez@bbva.com"`. Comprobar que el `HitlTriageAuditRecord` insertado en `hitl_triage_audit_log` contenga un `reviewer_email_hash` SHA-256 de 64 caracteres, nunca el email en texto plano, y que refleje el cambio de tópico/TNSS validado.
+* Enviar una decisión humana a `POST /api/v1/hitl/validate` con `reviewer_email="revisor@example.com"`. Comprobar que el `HitlTriageAuditRecord` insertado en `hitl_triage_audit_log` contenga un `reviewer_email_hash` SHA-256 de 64 caracteres, nunca el email en texto plano, y que refleje el cambio de tópico/TNSS validado.
 
 
 ### B.7: Frontales de Curaduría HITL (agregado del autor, 2026-10-22)

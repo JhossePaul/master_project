@@ -649,9 +649,9 @@ Observaciones que no bloquean:
   estados intermedios de cada microbatch (p. ej. `PENDING: 16, RESOLVED: 9`)
   aunque todas las páginas cierren `RESOLVED`. Es un defecto de presentación del
   informe; mejora menor: reportar solo el estado final por página.
-- **Propietarios del proyecto.** Hay tres cuentas con `roles/owner`
-  (`0287289@up.edu.mx`, `traslasnovenas@gmail.com`, `jpaul.marquez.ruiz@gmail.com`);
-  no se tocaron. Confirmar que ese nivel es intencional.
+- **Propietarios del proyecto.** Hay tres cuentas personales con `roles/owner`
+  (ver el IAM del proyecto); no se tocaron. Confirmar que ese nivel es
+  intencional.
 
 ## Orden de activación (resumen y verificaciones)
 
