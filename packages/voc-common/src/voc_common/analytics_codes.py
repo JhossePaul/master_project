@@ -185,7 +185,7 @@ class BoostEndReason(StrEnum):
 class QualitySignal(StrEnum):
     KAPPA_MONITOR = "kappa_monitor"
     CORRECTION_RATE = "correction_rate"
-    AGREEMENT_M4_GEMINI = "agreement_m4_gemini"
+    GEMINI_AGREEMENT = "gemini_agreement"
     FAMILIES_VALIDATION = "families_validation"
 
 

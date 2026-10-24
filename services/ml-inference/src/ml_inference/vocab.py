@@ -1,15 +1,15 @@
-"""Vocabulario de entrenamiento del monitor de deriva (6.4).
+"""Vocabulario de entrenamiento del monitor de deriva.
 
-Es el conjunto de ``drift_baseline.training_vocab`` (5.7): las palabras de
+Es el mismo conjunto del análisis histórico de deriva: las palabras de
 ``texto_sanitizado`` en minúsculas, separadas por espacio, de la partición
 de entrenamiento de la plata. Se guarda junto a los pesos, en
 ``ml_artifacts/sentiment/<model_version>/training_vocab.txt``, una palabra por
 línea.
 
-``build-vocab`` lo arma una vez desde el archivo de EPIC-5 en el mismo bucket
-(``archive/epic5/labels/silver_v0/``, F-11): lee los parquet en memoria y
+``build-vocab`` lo arma una vez desde la copia archivada de la plata en el
+mismo bucket (``archive/epic5/labels/silver_v0/``): lee los parquet en memoria y
 sube el resultado, sin escribir a disco. Son palabras de reseñas y la regex
-no detecta nombres (F-01), así que el archivo no sale de GCP.
+no detecta nombres de personas, así que el archivo no sale de GCP.
 """
 
 import hashlib

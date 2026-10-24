@@ -103,7 +103,7 @@ _RULES_DOC = (
             [
                 "kappa_monitor",
                 "correction_rate",
-                "agreement_m4_gemini",
+                "gemini_agreement",
                 "families_validation",
             ],
         ),

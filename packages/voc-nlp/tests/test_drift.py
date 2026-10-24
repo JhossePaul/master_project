@@ -1,4 +1,4 @@
-"""Las series de deriva reproducen ``drift_baseline`` (5.7) en sintéticos."""
+"""Las series de deriva reproducen el análisis histórico en sintéticos."""
 
 import numpy as np
 import pytest
@@ -13,7 +13,7 @@ from voc_nlp.drift import (
 
 
 def _reference_z(values: list) -> list:
-    """``drift_baseline.robust_z`` de EPIC-5, copiado tal cual."""
+    """``robust_z`` del análisis histórico, copiado tal cual."""
     out = []
     for i, v in enumerate(values):
         hist = [x for x in values[max(0, i - 12) : i] if x is not None]

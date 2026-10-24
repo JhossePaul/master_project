@@ -1,4 +1,4 @@
-"""*Prediction-powered inference* de los KPI (EPIC-5, 5.6; P8-9, P8-10).
+"""*Prediction-powered inference* de los KPI.
 
 Port de ``voc_analytics.calibration.ppi`` sin Polars: la media ponderada
 (Hájek) del oro se corrige con las predicciones sobre el corpus sin
@@ -140,11 +140,11 @@ def gap_stars(
     w: Array | None = None,
     w_unlabeled: Array | None = None,
 ) -> Estimate:
-    """*Gap* en estrellas (P8-9): puntaje de las estrellas menos el del texto.
+    """*Gap* en estrellas: puntaje de las estrellas menos el del texto.
 
     Las estrellas y el texto van como clase (``NEG``, ``NEU``, ``POS``,
     puntajes −1, 0 y 1). Positivo: las estrellas son mejores que el texto.
-    Es ``−brecha_neta`` de EPIC-5.
+    Es la brecha neta con el signo cambiado.
     """
     stars_g = _scores(stars_gold)
     return ppi_mean(

@@ -1,11 +1,12 @@
-"""Muestras humanas del monitor (P7-7; D12 de EPIC-6).
+"""Muestras humanas del monitor.
 
 * **Muestra de concepto** (``monitor_sample``): ``monitor_sample_size``
   reseñas al azar entre las que predijo el modelo promovido en el último
   trimestre cerrado. Mide el κ de RoBERTuito (``quality.kappa_monitor``).
 * **Doble revisión** (``agreement_sample``): ``human_agreement_sample_size``
   reseñas por periodo (``human_agreement_frequency``), revisadas por dos
-  personas (EPIC-7, 7.7). Sin esos dos valores en la ``risk_policy`` no se
+  personas en la pantalla de revisión. Sin esos dos valores en la
+  ``risk_policy`` no se
   crean casos.
 
 Los dos casos son ``blind`` (la API no envía la predicción, que se guarda
@@ -152,7 +153,7 @@ def items_for(
 def create_monitor_sample(
     candidates: Sequence[Candidate], quarter: str, size: int, now: datetime
 ) -> list[HitlItem]:
-    """Muestra de concepto del trimestre (P7-7), siempre ``blind``."""
+    """Muestra de concepto del trimestre, siempre ``blind``."""
     reason = HitlReason.MONITOR_SAMPLE
     return items_for(
         draw(candidates, size, reason, quarter), reason, quarter, now

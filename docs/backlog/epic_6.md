@@ -457,7 +457,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * `quality.py` (P7-10, P7-11) → `model_quality`:
   * `kappa_monitor(quarter: str) -> ModelQuality`: κ de RoBERTuito contra las revisiones de `monitor_sample`; `retrain` si queda debajo de `retrain_kappa_floor` (0.89);
   * `correction_rate(weeks: int = 4) -> ModelQuality`: `warning` si pasa de 28 % en la cola HITL;
-  * `agreement_m4_gemini(week: str) -> ModelQuality`: 500 textos por semana etiquetados por Gemini (~$0.02); `warning` si el acuerdo de 4 semanas baja de 94 %;
+  * `gemini_agreement(week: str) -> ModelQuality`: 500 textos por semana etiquetados por Gemini (~$0.02); `warning` si el acuerdo de 4 semanas baja de 94 %;
   * `families_validation(llm_model: str, prompt_version: str) -> ModelQuality`: corre al cambiar el modelo o el prompt de Gemini, sobre las 300 reseñas de `aspects_gold_v2_1` en `gold_labels` (~$0.03); `rejected` si el acuerdo exacto es < 53 % o una familia con prevalencia ≥ 5 % queda bajo el límite inferior de su IC.
   * Los avisos no disparan nada solos: los ve MLOps (EPIC-7, 7.9).
 * `kpis.py`: `compute_kpis(period: str) -> list[KpiEstimate]`. `neg`, `gap_estrellas` (P8-9), `texto_peor`, `texto_mejor` y las celdas de la matriz 3 × 3 por banco y periodo, con PPI sobre el oro *dev* aleatorio de `gold_labels` (más las versiones `gold_hitl` cuando existan, D7) y su versión cruda (P8-10). Recalcula el mes en curso y el anterior.
@@ -518,10 +518,11 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * `correction_rate`: revisiones de `low_confidence` y `drift_boost` de las últimas 4 semanas que no confirman al modelo, una fila por semana ISO; `warning` arriba de `warn_correction_rate`;
   * `families_validation`: corre una vez por par `llm_model` × `prompt_version` (~$0.03). Etiqueta con Gemini las 300 reseñas de `aspects_gold_v2_1` (texto del TDS por `text_key`, dentro de GCP, F-10) y rechaza si el acuerdo exacto queda bajo `families_exact_floor` o si una familia con prevalencia ≥ `families_min_prevalence` queda con κ bajo el límite inferior de su IC de 5.7 (`FAMILY_BASELINE`, de `model_monitor_v0_metrics.json`). Si Gemini deja textos sin etiqueta, no escribe y se repite la semana siguiente;
   * los avisos (`warning`, `retrain`, `rejected`) se publican como `ModelQualityMessage` (nuevo en `voc-common`, sin texto ni IC) en `voc-model-quality-topic`;
-  * falta `agreement_m4_gemini`: necesita portar a `voc-nlp` el etiquetado de sentimiento con Gemini (`label_gemini`, `prompt_v3`) y guardar las etiquetas semanales.
+  * `gemini_agreement` (antes `agreement_m4_gemini`; decisión del autor, 2026-10-24: nombres en lenguaje común): cada semana sortea en BigQuery `agreement_sample_weekly` textos que predijo el modelo en la semana ISO cerrada (semilla `gemini_agreement:<semana>`, solo salen los textos elegidos), los etiqueta con `voc_nlp.sentiment_gemini` (el prompt de la plata, `sentiment_v3.md`, idéntico a `prompt_v3`) y guarda el acuerdo de la semana sin los `NA`. El aviso se decide con el acuerdo combinado de esa semana y las 3 anteriores (ponderado por `n`) contra `warn_agreement_floor`. Las etiquetas de Gemini no se guardan: basta la fila semanal.
+* Lenguaje común (decisión del autor, 2026-10-24): los módulos de 6.4 y sus pruebas ya no citan códigos del backlog (M4, P7-x, D-x, F-x, números de feature); cuando importa la evidencia, citan el reporte de `docs/analytics/`. Quedan por limpiar los módulos de 6.3 en `voc-nlp` y `ml-inference`, `voc-common` y el contrato.
 * **Pendiente de infraestructura:** el tópico `voc-model-quality-topic` y `roles/pubsub.publisher` para `voc-sa-ml-backend` en él y en `voc-incident-alerts-topic`, con la suscripción de correo de D15. Sin ellos, el Job falla al publicar el primer aviso.
 
-Sigue, en orden: `agreement_m4_gemini`, la infraestructura de avisos (D15), `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring` y secreto `voc-kaggle-token`). `topics_refit.py` va con el re-ajuste trimestral.
+Sigue, en orden: la infraestructura de avisos (D15), `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring` y secreto `voc-kaggle-token`). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 

@@ -10,8 +10,10 @@ from ml_inference.monitor.quality import (
     QualityJob,
     correction_rate,
     families_validation,
+    gemini_agreement,
     iso_week,
     kappa_monitor,
+    last_closed_week,
 )
 from voc_common.policies import RiskPolicy
 
@@ -170,11 +172,20 @@ def sample_rows(n_wrong: int, missing: int = 0) -> list[dict[str, Any]]:
     ]
 
 
-def job(fake_bq: Any, answers: dict, labeler: Any = None):
+def job(
+    fake_bq: Any, answers: dict, labeler: Any = None, sentiment: Any = None
+):
     sent: list[Any] = []
     writer = StagingMergeWriter(fake_bq, "p.ds")
     q = QualityJob(
-        _Client(answers), writer, "p.ds", "p.ds.tds", sent.append, "t", labeler
+        _Client(answers),
+        writer,
+        "p.ds",
+        "p.ds.tds",
+        sent.append,
+        "t",
+        family_labeler=labeler,
+        sentiment_labeler=sentiment,
     )
     return q, sent
 
@@ -252,4 +263,73 @@ def test_job_retries_families_when_gemini_misses_texts(fake_bq: Any) -> None:
     q, _ = job(fake_bq, {"gold_labels": gold}, labeler=lambda items: {})
     assert q.run(policy(), "m1", NOW) == []
     q, _ = job(fake_bq, {}, labeler=lambda items: {})
+    assert q.run(policy(), "m1", NOW) == []
+
+
+def test_gemini_agreement_skips_not_evaluable_and_warns_on_four_weeks() -> None:
+    model = ["NEG"] * 95 + ["POS"] * 5 + ["NEU"] * 3
+    gemini = ["NEG"] * 95 + ["NEG"] * 5 + ["NA"] * 3
+    row = gemini_agreement(model, gemini, [], "2026-W27", "m1", policy(), NOW)
+    assert row is not None and row.n == 100
+    assert row.value == pytest.approx(0.95) and row.status == "ok"
+    assert row.signal == "gemini_agreement" and row.threshold == 0.94
+    # Semana buena, pero las 3 anteriores bajan el combinado de 4 semanas.
+    low = [(0.90, 100)] * 3
+    warned = gemini_agreement(
+        model, gemini, low, "2026-W27", "m1", policy(), NOW
+    )
+    assert warned.value == pytest.approx(0.95) and warned.status == "warning"
+    # Solo cuentan 3 semanas anteriores.
+    many = [(0.95, 100)] * 3 + [(0.0, 1000)]
+    assert (
+        gemini_agreement(model, gemini, many, "w", "m1", policy(), NOW).status
+        == "ok"
+    )
+    assert (
+        gemini_agreement(["NEG"], ["NA"], [], "w", "m1", policy(), NOW) is None
+    )
+
+
+def test_last_closed_week() -> None:
+    week, start, end = last_closed_week(NOW)
+    assert week == "2026-W27"
+    assert start == datetime(2026, 6, 29, tzinfo=UTC)
+    assert end == datetime(2026, 7, 6, tzinfo=UTC)
+
+
+def test_job_measures_the_weekly_agreement(fake_bq: Any) -> None:
+    sampled = [
+        {"text_key": f"k{i}", "sentiment": "NEG", "texto_sanitizado": "x"}
+        for i in range(10)
+    ]
+
+    def sentiment(items: Any) -> dict[str, str]:
+        # Gemini deja un texto sin etiqueta y discrepa en otro.
+        labels = {k: "NEG" for k, _ in items[:-1]}
+        labels["k0"] = "POS"
+        return labels
+
+    q, sent = job(
+        fake_bq,
+        {
+            "signal = 'gemini_agreement'": [{"value": 0.8, "n": 100}],
+            "FARM_FINGERPRINT": sampled,
+        },
+        sentiment=sentiment,
+    )
+    [row] = q.run(policy(), "m1", NOW)
+    assert row.signal == "gemini_agreement" and row.period == "2026-W27"
+    assert row.n == 9 and row.value == pytest.approx(8 / 9)
+    assert row.status == "warning" and [m.signal for m in sent] == [
+        "gemini_agreement"
+    ]
+    params = next(p for p in q.client.params if "seed" in p)
+    assert params["seed"] == "gemini_agreement:2026-W27"
+    assert params["size"] == 500
+    previous = next(p for p in q.client.params if "weeks" in p)
+    assert previous == {"model_version": "m1", "week": "2026-W27", "weeks": 3}
+
+
+def test_job_skips_agreement_without_texts(fake_bq: Any) -> None:
+    q, _ = job(fake_bq, {}, sentiment=lambda items: pytest.fail("no texts"))
     assert q.run(policy(), "m1", NOW) == []

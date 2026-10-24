@@ -1,22 +1,31 @@
-"""Calidad del modelo y de las familias (P7-10, P7-11; D15) → ``model_quality``.
+"""Calidad del modelo de sentimiento y de las familias → ``model_quality``.
 
-* ``kappa_monitor``: κ de RoBERTuito contra la primera revisión de la
-  muestra de concepto del trimestre (``samples``); ``retrain`` debajo de
-  ``retrain_kappa_floor``. Se mide cuando toda la muestra está revisada.
-* ``correction_rate``: proporción de revisiones de la cola (``low_confidence``
-  y ``drift_boost``) que corrigen al modelo en las últimas 4 semanas;
-  ``warning`` arriba de ``warn_correction_rate``.
-* ``families_validation``: al cambiar el modelo o el prompt de Gemini, se
-  etiquetan las 300 reseñas de ``aspects_gold_v2_1``; ``rejected`` si el
-  acuerdo exacto queda debajo de ``families_exact_floor`` o una familia con
-  prevalencia ≥ ``families_min_prevalence`` queda con κ debajo del límite
-  inferior de su IC de referencia (5.7, ``FAMILY_BASELINE``).
-* ``agreement_m4_gemini`` espera el etiquetador de sentimiento con Gemini
-  en ``voc-nlp`` (siguiente paso de 6.4).
+Cada medición es una fila (sujeto × señal × periodo) que no se repite. Los
+avisos se publican sin texto en ``voc-model-quality-topic``; no disparan nada
+solos: los revisa quien opera el modelo.
 
-Cada medición es una fila (clave: sujeto × señal × periodo) y no se repite.
-Los avisos se publican sin texto en ``voc-model-quality-topic``; no disparan
-nada solos (EPIC-7, 7.9).
+* ``kappa_monitor``: κ del modelo contra la primera revisión humana de la
+  muestra de concepto del último trimestre cerrado (``samples``), cuando
+  toda la muestra está revisada. Pide reentrenar (``retrain``) si queda
+  debajo de ``retrain_kappa_floor``.
+* ``correction_rate``: proporción de revisiones de la cola (baja confianza y
+  subidas por deriva) de las últimas 4 semanas que corrigen al modelo.
+  ``warning`` si pasa de ``warn_correction_rate``.
+* ``gemini_agreement``: cada semana, ``agreement_sample_weekly`` textos al
+  azar que predijo el modelo en la semana cerrada se etiquetan con Gemini y
+  el mismo prompt de la plata con que se entrenó el modelo. La fila guarda
+  el acuerdo de esa semana (sin los textos que Gemini marca como no
+  evaluables); el aviso se decide con el acuerdo combinado de las últimas 4
+  semanas, contra ``warn_agreement_floor``.
+* ``families_validation``: una vez por cada modelo y prompt de Gemini para
+  familias, se etiquetan las 300 reseñas del oro de aspectos. Se rechaza si
+  el acuerdo exacto queda debajo de ``families_exact_floor`` o si una
+  familia con prevalencia ≥ ``families_min_prevalence`` queda con κ debajo
+  del límite inferior de su intervalo de referencia (``FAMILY_BASELINE``,
+  medido al elegir el prompt; ver ``docs/analytics/scale/scale_report.md``).
+
+El texto que va a Gemini es ``texto_sanitizado`` y no sale de Vertex AI en el
+proyecto.
 """
 
 import logging
@@ -35,6 +44,7 @@ from voc_nlp.agreement import (
     exact_agreement_ci,
     family_kappa,
 )
+from voc_nlp.sentiment_gemini import NOT_EVALUABLE
 
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.monitor.samples import last_closed_period
@@ -45,10 +55,12 @@ BOOT: Final = 2000
 SEED: Final = 20261022
 Z: Final = 1.959964
 CORRECTION_WEEKS: Final = 4
+AGREEMENT_WEEKS: Final = 4
 GOLD_VERSION: Final = "gold_epic5_v1"
 FAMILIES_SPLIT: Final = "aspects_gold_v2_1"
-# Límite inferior del IC 95 % del κ por familia de gemini-3.6-flash con
-# aspects_v2_1 en muestra_v21 (5.7, model_monitor_v0_metrics.json).
+# Límite inferior del IC 95 % del κ por familia de gemini-3.6-flash con el
+# prompt de familias vigente, contra la anotación humana de las mismas 300
+# reseñas (docs/analytics/scale/model_monitor_v0_metrics.json).
 FAMILY_BASELINE: Final[Mapping[str, float]] = {
     "AC": 0.5982,
     "TR": 0.5439,
@@ -141,6 +153,49 @@ def correction_rate(
     )
 
 
+def gemini_agreement(
+    model_labels: Sequence[str],
+    gemini_labels: Sequence[str],
+    previous: Sequence[tuple[float, int]],
+    week: str,
+    model_version: str,
+    policy: RiskPolicy,
+    now: datetime,
+) -> ModelQuality | None:
+    """Acuerdo de la semana con Gemini; el aviso mira 4 semanas.
+
+    ``previous`` son ``(acuerdo, n)`` de hasta 3 semanas anteriores. Los
+    textos que Gemini marca como no evaluables no cuentan; sin textos
+    evaluables no hay fila.
+    """
+    pairs = [
+        (m, g)
+        for m, g in zip(model_labels, gemini_labels, strict=True)
+        if g != NOT_EVALUABLE
+    ]
+    if not pairs:
+        return None
+    n = len(pairs)
+    value = sum(m == g for m, g in pairs) / n
+    half = Z * (value * (1 - value) / n) ** 0.5
+    weeks = [(value, n), *previous[: AGREEMENT_WEEKS - 1]]
+    combined = sum(v * k for v, k in weeks) / sum(k for _, k in weeks)
+    floor = policy.warn_agreement_floor
+    return ModelQuality(
+        model_version=model_version,
+        signal=QualitySignal.GEMINI_AGREEMENT,
+        period=week,
+        value=value,
+        n=n,
+        ci_low=max(value - half, 0.0),
+        ci_high=min(value + half, 1.0),
+        threshold=floor,
+        status=QualityStatus.WARNING if combined < floor else QualityStatus.OK,
+        risk_policy_version=policy.policy_version,
+        computed_at=now,
+    )
+
+
 def families_validation(
     gold: Sequence[frozenset[str]],
     gemini: Sequence[frozenset[str]],
@@ -185,6 +240,16 @@ def iso_week(now: datetime) -> str:
     return f"{year}-W{week:02d}"
 
 
+def last_closed_week(now: datetime) -> tuple[str, datetime, datetime]:
+    """Semana ISO anterior a la de ``now``: nombre, inicio y fin (UTC)."""
+    day = now.astimezone(UTC)
+    monday = datetime(day.year, day.month, day.day, tzinfo=UTC) - timedelta(
+        days=day.weekday()
+    )
+    start = monday - timedelta(weeks=1)
+    return iso_week(start), start, monday
+
+
 # -- Lectura y escritura -----------------------------------------------------
 
 MEASURED_SQL: Final = """
@@ -225,6 +290,34 @@ WHERE g.gold_version = @gold_version AND g.split = @split
   AND g.task = 'aspects'
 """
 
+# Sorteo reproducible en BigQuery: solo salen los textos elegidos.
+AGREEMENT_SQL: Final = """
+SELECT p.text_key, ANY_VALUE(p.sentiment) AS sentiment,
+  ANY_VALUE(t.texto_sanitizado) AS texto_sanitizado
+FROM `${ds}.review_predictions_current` AS p
+JOIN `${tds}` AS t
+  ON t.id_resena = p.id_resena
+  AND TO_HEX(SHA256(t.texto_sanitizado)) = p.text_key
+WHERE p.label_source = 'MODEL'
+  AND p.model_version = @model_version
+  AND p.fecha >= @start AND p.fecha < @end
+GROUP BY p.text_key
+ORDER BY FARM_FINGERPRINT(CONCAT(@seed, p.text_key))
+LIMIT @size
+"""
+
+PREVIOUS_AGREEMENT_SQL: Final = """
+SELECT value, n
+FROM `${ds}.model_quality`
+WHERE signal = 'gemini_agreement' AND model_version = @model_version
+  AND period < @week
+ORDER BY period DESC
+LIMIT @weeks
+"""
+
+# ``(key, texto)`` → ``{key: etiqueta}``; los textos sin etiqueta faltan.
+SentimentLabeler = Callable[[Sequence[tuple[str, str]]], Mapping[str, str]]
+
 # ``(key, texto)`` → ``{key: familias}``; los textos sin etiqueta faltan.
 FamilyLabeler = Callable[
     [Sequence[tuple[str, str]]], Mapping[str, frozenset[str]]
@@ -239,7 +332,8 @@ class QualityJob:
     tds: str
     publish: Callable[[ModelQualityMessage], None]
     run_id: str
-    labeler: FamilyLabeler | None = None
+    family_labeler: FamilyLabeler | None = None
+    sentiment_labeler: SentimentLabeler | None = None
     llm_model: str = "gemini-3.6-flash"
     prompt_version: str = "aspects_v2_1"
     _measured: set[tuple[Any, ...]] = field(default_factory=set)
@@ -267,6 +361,7 @@ class QualityJob:
             for row in (
                 self._kappa(policy, model_version, now),
                 self._corrections(policy, model_version, now),
+                self._agreement(policy, model_version, now),
                 self._families(policy, now),
             )
             if row is not None
@@ -335,11 +430,53 @@ class QualityJob:
             now,
         )
 
+    def _agreement(
+        self, policy: RiskPolicy, model_version: str, now: datetime
+    ) -> ModelQuality | None:
+        week, start, end = last_closed_week(now)
+        signal = QualitySignal.GEMINI_AGREEMENT
+        if self.sentiment_labeler is None or self._done(
+            model_version=model_version, signal=signal, period=week
+        ):
+            return None
+        rows = self._rows(
+            AGREEMENT_SQL,
+            model_version=model_version,
+            start=start,
+            end=end,
+            seed=f"{signal.value}:{week}",
+            size=policy.agreement_sample_weekly,
+        )
+        if not rows:
+            return None
+        labels = self.sentiment_labeler(
+            [(r["text_key"], r["texto_sanitizado"]) for r in rows]
+        )
+        kept = [r for r in rows if r["text_key"] in labels]
+        previous = [
+            (float(r["value"]), int(r["n"]))
+            for r in self._rows(
+                PREVIOUS_AGREEMENT_SQL,
+                model_version=model_version,
+                week=week,
+                weeks=AGREEMENT_WEEKS - 1,
+            )
+        ]
+        return gemini_agreement(
+            [r["sentiment"] for r in kept],
+            [labels[r["text_key"]] for r in kept],
+            previous,
+            week,
+            model_version,
+            policy,
+            now,
+        )
+
     def _families(
         self, policy: RiskPolicy, now: datetime
     ) -> ModelQuality | None:
         signal = QualitySignal.FAMILIES_VALIDATION
-        if self.labeler is None or any(
+        if self.family_labeler is None or any(
             m[1:4] == (self.llm_model, self.prompt_version, signal.value)
             for m in self._measured
         ):
@@ -350,7 +487,7 @@ class QualityJob:
         if not gold:
             log.warning("quality: sin oro de aspectos en gold_labels")
             return None
-        labels = self.labeler(
+        labels = self.family_labeler(
             [(g["text_key"], g["texto_sanitizado"]) for g in gold]
         )
         if len(labels) < len(gold):

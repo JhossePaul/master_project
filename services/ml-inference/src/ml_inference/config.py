@@ -18,7 +18,7 @@ class InferenceSettings(BaseSettings):
     bq_dataset_id: str = "bbva_voc_tds"
     bq_sanitized_tds_table: str = "sanitized_reviews_tds"
     gcs_raw_datalake_bucket: str = Field(min_length=1)
-    # Pesos de RoBERTuito, modelo de tópicos y MiniLM (D11).
+    # Pesos de RoBERTuito, modelo de tópicos y MiniLM.
     ml_artifacts_prefix: str = "ml_artifacts"
     artifacts_dir: Path = Path("/tmp/ml_artifacts")  # noqa: S108  # nosec B108
     # Tope de reseñas por corrida del delta; lo que sobra entra al siguiente.
@@ -28,9 +28,9 @@ class InferenceSettings(BaseSettings):
     gemini_model: str = "gemini-3.6-flash"
     gemini_location: str = "global"
     torch_threads: int = Field(default=1, ge=1)
-    # Tópico de las alertas de deriva (nombre heredado de EPIC-2).
+    # Tópico de las alertas de deriva (conserva su nombre original).
     drift_topic: str = "voc-incident-alerts-topic"
-    # Avisos de model_quality (D15).
+    # Avisos de model_quality, que llegan por correo.
     quality_topic: str = "voc-model-quality-topic"
 
     @property

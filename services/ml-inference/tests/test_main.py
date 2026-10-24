@@ -38,7 +38,8 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.monitor.quality as quality
     import ml_inference.monitor.samples as samples
 
-    monkeypatch.setattr(cli, "_family_labeler", lambda s: "labeler")
+    monkeypatch.setattr(cli, "_family_labeler", lambda s: "families")
+    monkeypatch.setattr(cli, "_sentiment_labeler", lambda s: "sentiment")
     monkeypatch.setattr(
         quality.QualityJob,
         "run",
@@ -68,7 +69,8 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     assert env["drift"].source.vocab == frozenset({"a"})
     assert env["samples"] == ("policy", "m1")
     assert env["quality"].publish == "publish:voc-model-quality-topic"
-    assert env["quality"].labeler == "labeler"
+    assert env["quality"].family_labeler == "families"
+    assert env["quality"].sentiment_labeler == "sentiment"
 
 
 def test_monitor_without_promoted_model_skips_samples(

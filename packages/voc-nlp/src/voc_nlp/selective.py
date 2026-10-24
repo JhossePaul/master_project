@@ -1,10 +1,11 @@
-"""Curva de cobertura y riesgo del umbral HITL (EPIC-5, 5.6).
+"""Curva de cobertura y riesgo del umbral de revisión humana.
 
 Port de ``voc_analytics.calibration.selective``: se aceptan sin revisión las
 predicciones más seguras y el resto va a revisión humana. La **cobertura** es
 la proporción aceptada y el **riesgo**, el error entre lo aceptado; todo se
-pondera por 1 / π, así que son cifras poblacionales. A diferencia de EPIC-5,
-los valores no se redondean: el redondeo es de presentación.
+pondera por 1 / π, así que son cifras poblacionales. Es el cálculo de
+``docs/analytics/calibration/`` sin redondeo (el redondeo es de
+presentación).
 """
 
 from dataclasses import dataclass

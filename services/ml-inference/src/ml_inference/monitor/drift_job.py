@@ -1,14 +1,15 @@
-"""Monitor de deriva por banco (5.7 §2, P7-6, P7-9; D8 y D12 de EPIC-6).
+"""Monitor de deriva por banco.
 
 Cada semana, por banco y con su ``drift_policy`` vigente, calcula los meses
 cerrados que faltan en ``drift_metrics`` desde su mes de entrada (excluido,
-como en 5.7). Cada serie que nombra la política se mide con z robusto contra
+como en el análisis histórico). Cada serie que nombra la política se mide
+con z robusto contra
 sus ``baseline_months`` previos o con PSI contra su suma; una serie con
-umbral nulo se guarda como contexto y nunca alerta (familias y ``u``, D8).
+umbral nulo se guarda como contexto y nunca alerta (familias y ``u``).
 
 Una alerta (``|z|`` o PSI ≥ umbral) se escribe en ``drift_alerts`` con su
 evento ``open``, se publica sin texto en ``voc-incident-alerts-topic`` y, si
-la ``risk_policy`` vigente configura la subida (D12), abre una en
+la ``risk_policy`` vigente configura la subida, abre una en
 ``hitl_boosts`` solo para ese banco; si el banco ya tiene una activa, la
 alerta la cita y no se abre otra. Los identificadores son deterministas y
 las métricas se escriben al final: si la corrida falla, la siguiente repite
@@ -213,7 +214,7 @@ def _alert(metric: DriftMetric, now: datetime) -> DriftAlert:
 def boost_for(
     alert: DriftAlert, policy: RiskPolicy | None, now: datetime
 ) -> HitlBoost | None:
-    """Subida HITL de la alerta, o ``None`` sin subida configurada (D12)."""
+    """Subida HITL de la alerta, o ``None`` si la política no la configura."""
     if (
         policy is None
         or policy.drift_boost_coverage is None
@@ -347,7 +348,8 @@ ASPECTS_SQL: Final = _ASPECTS_TEMPLATE.replace("@@families@@", _families_sql())
 
 
 # Fracción de tokens (``texto_sanitizado`` en minúsculas, separado por espacio,
-# como en 5.7) que no están en el vocabulario de entrenamiento del modelo.
+# como en el análisis histórico) que no están en el vocabulario de
+# entrenamiento del modelo.
 OOV_SQL: Final = """
 SELECT
   p.bank_id,

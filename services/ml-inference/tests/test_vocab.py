@@ -1,4 +1,4 @@
-"""Vocabulario de entrenamiento: misma regla que 5.7, subida y lectura."""
+"""Vocabulario de entrenamiento: regla del análisis histórico y subida."""
 
 import io
 from datetime import UTC, datetime

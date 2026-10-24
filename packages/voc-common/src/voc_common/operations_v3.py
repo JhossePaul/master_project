@@ -262,10 +262,10 @@ class ModelQuality(_AnalyticsRecord):
 
 
 class ModelQualityMessage(_AnalyticsRecord):
-    """Payload de ``voc-model-quality-topic`` (D15); sin texto ni PII.
+    """Payload de ``voc-model-quality-topic``; sin texto ni PII.
 
     Solo se publican los avisos (``warning``, ``retrain``, ``rejected``); no
-    disparan nada solos: los ve MLOps (EPIC-7, 7.9).
+    disparan nada solos: los revisa quien opera el modelo.
     """
 
     signal: QualitySignal

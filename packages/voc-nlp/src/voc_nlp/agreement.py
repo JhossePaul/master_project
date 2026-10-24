@@ -1,9 +1,10 @@
-"""Acuerdo entre etiquetadores del monitor de calidad (EPIC-5, 5.7 §5).
+"""Acuerdo entre etiquetadores del monitor de calidad.
 
 Port de ``voc_analytics.scale.model_monitor`` sin scikit-learn: κ de Cohen
 (con pesos opcionales, como ``cohen_kappa_score``), acuerdo exacto de
 conjuntos de familias y κ por familia con su IC *bootstrap*. Las familias
-con prevalencia < 5 % no se juzgan (sus IC son demasiado anchos, 5.7).
+con prevalencia < 5 % no se juzgan: sus intervalos son demasiado anchos
+(``docs/analytics/scale/scale_report.md``).
 """
 
 from collections.abc import Sequence
@@ -26,7 +27,7 @@ class FamilyAgreement:
     kappa: float
     ci: tuple[float, float]
     prevalence: float
-    """Prevalencia según el primer etiquetador (el autor, en 5.7)."""
+    """Prevalencia según el primer etiquetador (la referencia humana)."""
 
     @property
     def judged(self) -> bool:
@@ -87,7 +88,7 @@ def family_kappa(
 ) -> FamilyAgreement:
     """κ de presencia de ``family`` con IC 95 % *bootstrap*.
 
-    Como en 5.7, se omiten las réplicas donde nadie marcó la familia.
+    Se omiten las réplicas donde nadie marcó la familia.
     """
     x = np.array([family in s for s in a])
     y = np.array([family in s for s in b])

@@ -4,9 +4,9 @@
 * ``seed``: versiones iniciales desde las métricas de EPIC-5 (autor).
 * ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
-* ``monitor``: el Job semanal de 6.4 (por ahora, deriva, cierre de subidas,
+* ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
   muestras humanas y calidad).
-* ``build-vocab``: sube una vez el vocabulario de entrenamiento (6.4).
+* ``build-vocab``: sube una vez el vocabulario de entrenamiento.
 """
 
 import argparse
@@ -35,7 +35,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ml_inference")
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser("delta", help="delta diario")
-    sub.add_parser("monitor", help="monitor semanal (6.4)")
+    sub.add_parser("monitor", help="monitor semanal")
     seed = sub.add_parser("seed", help="versiones iniciales")
     seed.add_argument("--actor-hash", type=_actor, required=True)
     seed.add_argument("--reason", required=True)
@@ -61,7 +61,7 @@ def parser() -> argparse.ArgumentParser:
     reg.add_argument("--ece-dev", type=float)
     reg.add_argument("--aurc-dev", type=float)
     voc = sub.add_parser(
-        "build-vocab", help="sube el vocabulario de entrenamiento (6.4)"
+        "build-vocab", help="sube el vocabulario de entrenamiento"
     )
     voc.add_argument("--model-version", default=None)
     pro = sub.add_parser("promote", help="promueve una versión (o rollback)")
@@ -108,6 +108,26 @@ def _family_labeler(settings: InferenceSettings):  # pragma: no cover - red
         return {
             got.key: frozenset(f.value for f in got.families)
             for got in aspects.label_batch(
+                client, items, prompt, settings.gemini_model
+            )
+        }
+
+    return label
+
+
+def _sentiment_labeler(settings: InferenceSettings):  # pragma: no cover
+    """Sentimiento con Gemini y el prompt de la plata (``gemini_agreement``)."""
+    from voc_nlp import aspects, sentiment_gemini
+
+    client = aspects.make_client(
+        settings.gcp_project_id, settings.gemini_location
+    )
+    prompt = sentiment_gemini.load_prompt()
+
+    def label(items):
+        return {
+            got.key: got.label
+            for got in sentiment_gemini.label_texts(
                 client, items, prompt, settings.gemini_model
             )
         }
@@ -179,8 +199,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 settings.tds_table,
                 _publisher(settings, settings.quality_topic),
                 run_id,
-                _family_labeler(settings),
-                settings.gemini_model,
+                family_labeler=_family_labeler(settings),
+                sentiment_labeler=_sentiment_labeler(settings),
+                llm_model=settings.gemini_model,
             ).run(state.policy, state.model.model_version, now)
         return 0
     if args.command == "build-vocab":

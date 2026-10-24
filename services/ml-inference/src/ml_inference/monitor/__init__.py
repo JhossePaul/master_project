@@ -1,1 +1,1 @@
-"""Monitor semanal de 6.4: deriva, muestras, calidad, KPI y ciclo de vida."""
+"""Monitor semanal: deriva, muestras humanas, calidad, KPI y ciclo de vida."""

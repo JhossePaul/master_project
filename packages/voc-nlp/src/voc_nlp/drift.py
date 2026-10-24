@@ -1,8 +1,8 @@
-"""Series de deriva del monitor (EPIC-5, 5.7 §2).
+"""Series de deriva del monitor.
 
 Port de ``voc_analytics.scale.drift_baseline`` sin Polars ni rutas: el z
 robusto de una serie mensual contra sus meses previos, el PSI de la
-distribución de longitud y el mes de entrada de cada banco (P7-9). Los
+distribución de longitud y el mes desde el que se vigila cada banco. Los
 umbrales no viven aquí: los pone la ``drift_policy`` de cada banco.
 """
 
@@ -59,7 +59,7 @@ def psi(
     """PSI entre dos histogramas de conteos con los mismos intervalos.
 
     Las proporciones se recortan en ``floor`` (sin renormalizar), como en
-    5.7. La referencia es la suma de los meses previos.
+    el análisis histórico. La referencia es la suma de los meses previos.
     """
     cur = np.asarray(current, dtype=np.float64)
     ref = np.asarray(reference, dtype=np.float64)
