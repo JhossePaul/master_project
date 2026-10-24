@@ -17,31 +17,39 @@ from voc_common._analytics_base import (
     Probability,
     UtcDatetime,
     _AnalyticsRecord,
+    require_together,
 )
 from voc_common.analytics_codes import BoostEndReason
 
 
 class RiskPolicy(_AnalyticsRecord):
-    """Fila de ``risk_policy`` (global)."""
+    """Fila de ``risk_policy`` (global): el apetito de riesgo.
+
+    Todos los valores son parámetros que fijan el revisor y el dueño de
+    negocio (pantalla de administración de EPIC-7, 7.10). El tope semanal, la
+    subida por deriva y la doble revisión no tienen evidencia en EPIC-5: son
+    nulos hasta que se configuran (sin tope, sin subida automática y sin doble
+    revisión).
+    """
 
     policy_version: NonEmpty
     valid_from: UtcDatetime
-    # 5.6: probabilidad máxima de M4 calibrado.
+    # 5.6: probabilidad máxima de RoBERTuito calibrado.
     hitl_signal: Literal["prob_max"]
     hitl_target_coverage: Probability
     hitl_threshold: Probability
     # Modelo para el que ``hitl_threshold`` equivale a la cobertura.
     model_version: NonEmpty
-    hitl_weekly_cap: PositiveInt
-    drift_boost_coverage: Probability
-    drift_boost_days: PositiveInt
-    drift_boost_weekly_cap: PositiveInt
+    hitl_weekly_cap: PositiveInt | None = None
+    drift_boost_coverage: Probability | None = None
+    drift_boost_days: PositiveInt | None = None
+    drift_boost_weekly_cap: PositiveInt | None = None
     monitor_sample_size: PositiveInt
     monitor_frequency: NonEmpty
     topic_refit_frequency: NonEmpty
     retrain_kappa_floor: Probability
-    human_agreement_sample_size: Counter
-    human_agreement_frequency: NonEmpty
+    human_agreement_sample_size: Counter | None = None
+    human_agreement_frequency: NonEmpty | None = None
     warn_correction_rate: Probability
     warn_agreement_floor: Probability
     agreement_sample_weekly: Counter
@@ -49,6 +57,19 @@ class RiskPolicy(_AnalyticsRecord):
     families_min_prevalence: Probability
     set_by_hash: Digest
     reason: NonEmpty
+
+    @model_validator(mode="after")
+    def _configured_together(self) -> Self:
+        require_together(
+            drift_boost_coverage=self.drift_boost_coverage,
+            drift_boost_days=self.drift_boost_days,
+            drift_boost_weekly_cap=self.drift_boost_weekly_cap,
+        )
+        require_together(
+            human_agreement_sample_size=self.human_agreement_sample_size,
+            human_agreement_frequency=self.human_agreement_frequency,
+        )
+        return self
 
 
 class HitlBoost(_AnalyticsRecord):
@@ -135,8 +156,9 @@ class CoveragePoint(_AnalyticsRecord):
 
     coverage: Probability
     risk: Probability
-    risk_ci_low: Probability
-    risk_ci_high: Probability
+    # Nulos donde 5.6 no midió el intervalo (cobertura 1.0).
+    risk_ci_low: Probability | None = None
+    risk_ci_high: Probability | None = None
     threshold: Probability
     # Fracción de los errores del modelo que caen en la revisión.
     errors_caught: Probability
@@ -145,7 +167,15 @@ class CoveragePoint(_AnalyticsRecord):
 
     @model_validator(mode="after")
     def _interval(self) -> Self:
-        if not self.risk_ci_low <= self.risk <= self.risk_ci_high:
+        require_together(
+            risk_ci_low=self.risk_ci_low, risk_ci_high=self.risk_ci_high
+        )
+        low, high = self.risk_ci_low, self.risk_ci_high
+        if (
+            low is not None
+            and high is not None
+            and not low <= self.risk <= high
+        ):
             raise ValueError("risk must lie inside its interval")
         return self
 
