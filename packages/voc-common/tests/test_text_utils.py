@@ -1,4 +1,4 @@
-"""Pruebas de utilidades de limpieza y hash de voc-common (Feature 1.2)."""
+"""Pruebas de utilidades de limpieza y hash de voc-common."""
 
 import re
 

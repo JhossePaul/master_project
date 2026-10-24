@@ -26,15 +26,15 @@ class RiskPolicy(_AnalyticsRecord):
     """Fila de ``risk_policy`` (global): el apetito de riesgo.
 
     Todos los valores son parámetros que fijan el revisor y el dueño de
-    negocio (pantalla de administración de EPIC-7, 7.10). El tope semanal, la
-    subida por deriva y la doble revisión no tienen evidencia en EPIC-5: son
+    negocio en la pantalla de administración. El tope semanal, la subida por
+    deriva y la doble revisión no tienen evidencia en los experimentos: son
     nulos hasta que se configuran (sin tope, sin subida automática y sin doble
     revisión).
     """
 
     policy_version: NonEmpty
     valid_from: UtcDatetime
-    # 5.6: probabilidad máxima de RoBERTuito calibrado.
+    # Probabilidad máxima de RoBERTuito calibrado.
     hitl_signal: Literal["prob_max"]
     hitl_target_coverage: Probability
     hitl_threshold: Probability
@@ -99,8 +99,8 @@ class HitlBoost(_AnalyticsRecord):
 class DriftThresholds(_AnalyticsRecord):
     """JSON ``thresholds`` de la política: umbral por serie.
 
-    Un umbral nulo es una serie que se mide y nunca alerta (familias y ``u``,
-    D8). Una serie usa z o PSI, no los dos.
+    Un umbral nulo es una serie que se mide y nunca alerta (familias y
+    ``u``). Una serie usa z o PSI, no los dos.
     """
 
     z: dict[NonEmpty, float | None] = Field(default_factory=dict)
@@ -156,7 +156,7 @@ class CoveragePoint(_AnalyticsRecord):
 
     coverage: Probability
     risk: Probability
-    # Nulos donde 5.6 no midió el intervalo (cobertura 1.0).
+    # Nulos donde no se midió el intervalo (cobertura 1.0).
     risk_ci_low: Probability | None = None
     risk_ci_high: Probability | None = None
     threshold: Probability

@@ -1,6 +1,7 @@
-"""Carga única del backfill de EPIC-5 desde la máquina del autor (6.3).
+"""Carga única del backfill histórico desde la máquina del autor.
 
-Corre en el Mac del autor (decisión del autor, 2026-10-24; FMEA F-11): lee
+Corre en el Mac del autor (decisión del autor, 2026-10-24), donde están las
+copias locales de los experimentos: lee
 ``id_resena``, ``bank_id``, ``fecha`` y ``texto_limpio`` del TDS en memoria
 para la elegibilidad, sin guardarlos. Lo demás viaja sin texto: parquet con
 ``text_key`` en tablas temporales de BigQuery, y las tablas finales se arman
@@ -9,7 +10,7 @@ con ``MERGE`` dentro de BigQuery.
 Pasos (``load_backfill``):
 
 1. Sube a ``ml_artifacts/`` los pesos de RoBERTuito (semilla 1), el modelo de
-   tópicos (``topics_v1``, el ``model_v0`` de EPIC-5) y MiniLM.
+   tópicos (``topics_v1``, el ``model_v0`` de los experimentos) y MiniLM.
 2. ``review_predictions``: elegibilidad v1 por fila, predicciones sin
    calibrar de la semilla 1 (``preds_s1.parquet``) y la T del modelo. Las
    filas ``MODEL`` sin predicción (textos editados o posteriores al
@@ -19,9 +20,9 @@ Pasos (``load_backfill``):
    se descartan.
 4. ``text_embeddings``: ``emb_minilm.npy`` replicado por banco × mes.
 5. ``topic_assignments``, ``topic_model_versions``, ``topic_catalog`` y
-   ``curation_topics`` (curaduría de 5.5, fase 4).
+   ``curation_topics`` (la curaduría de tópicos del autor).
 6. ``gold_labels``: el parquet sin texto de
-   ``voc_analytics.labeling.export_gold_v3`` (D10).
+   ``voc_analytics.labeling.export_gold_v3``.
 7. Una fila de ``inference_runs`` por carga.
 """
 
@@ -61,7 +62,7 @@ from ml_inference.bq_io import (
     run_dml,
 )
 from ml_inference.config import InferenceSettings
-from ml_inference.seed import EPIC5_MODEL, MODEL_VERSION
+from ml_inference.seed import MODEL_VERSION, REPORTS_MODEL
 
 log = logging.getLogger(__name__)
 
@@ -70,14 +71,15 @@ GOLD_VERSION: Final = "gold_epic5_v1"
 PROMPT_VERSION: Final = "aspects_v2_1"
 LLM_MODEL: Final = "gemini-3.6-flash"
 FAMILIES: Final = tuple(f.value for f in AspectFamily)
-# Curaduría de 5.5: ingeniería si no sirve a producto y su coherencia es ≥ 3.
+# Curaduría de tópicos: ingeniería si no sirve a producto y su coherencia
+# es ≥ 3.
 MIN_COHERENCE: Final = 3
 PAGE_SIZE: Final = 50_000
 
 
 @dataclass(frozen=True)
 class LocalBackfill:
-    """Rutas de los archivos de EPIC-5 en la máquina del autor."""
+    """Rutas de los archivos de los experimentos en la máquina del autor."""
 
     run_dir: Path  # data/backfill/20261022
     weights_dir: Path  # data/models/weights/M4_robertuito_s1_ppi
@@ -89,7 +91,7 @@ class LocalBackfill:
     def from_data_dir(cls, data: Path, minilm_dir: Path) -> "LocalBackfill":
         return cls(
             run_dir=data / "backfill" / "20261022",
-            weights_dir=data / "models" / "weights" / EPIC5_MODEL,
+            weights_dir=data / "models" / "weights" / REPORTS_MODEL,
             curation_csv=data / "topics" / "phase4_v0" / "revision_topicos.csv",
             gold_parquet=data / "handoff" / "gold_labels_v1.parquet",
             minilm_dir=minilm_dir,
@@ -340,7 +342,7 @@ class Loader:
                     "topicos",
                 )
             },
-            fit_sample=f"{meta['segmentos_ajuste']} segmentos (5.5, 5.9)",
+            fit_sample=f"{meta['segmentos_ajuste']} segmentos de cláusulas",
         )
         terms = (self.topic_terms or bertopic_terms)(self.files.topic_model_dir)
         catalog = [
@@ -453,7 +455,7 @@ def bertopic_terms(path: Path, top: int = 10) -> dict[int, list[str]]:
 def curation_rows(
     path: Path, curator_hash: str, now: datetime
 ) -> list[TopicCuration]:
-    """Curaduría de 5.5 (fase 4) con la regla de audiencia de 5.9."""
+    """Curaduría de tópicos del autor, con la regla de audiencia."""
     rows = []
     with path.open(encoding="utf-8") as handle:
         for r in csv.DictReader(handle):

@@ -1,9 +1,10 @@
-"""Registro y promoción de modelos de sentimiento (P7-3; 6.3 y 6.4).
+"""Registro y promoción de modelos de sentimiento.
 
 Vertex Model Registry guarda cada versión con su ``artifact_uri`` en
 ``ml_artifacts/`` y el alias ``produccion`` apunta a la vigente. El
 contenedor de *serving* que exige el registro es la imagen de
-``ml-inference``, que nunca se despliega como endpoint (5.7, §6).
+``ml-inference``, que nunca se despliega como endpoint: predecir en lote
+sale más barato (``docs/analytics/scale/scale_report.md``).
 ``model_versions`` en BigQuery es la fuente que lee el delta: cada cambio
 de estado es una fila nueva.
 """

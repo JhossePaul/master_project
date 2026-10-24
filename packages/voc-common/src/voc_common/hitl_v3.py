@@ -1,4 +1,4 @@
-"""HITL del esquema v3: casos, transiciones, revisiones, guías y oro (P8-11).
+"""HITL del esquema v3: casos, transiciones, revisiones, guías y oro.
 
 El estado de un caso es su última transición en ``hitl_events``; nada se
 edita. Una segunda revisión del mismo caso es otra fila de ``hitl_reviews``.
@@ -26,7 +26,8 @@ from voc_common.analytics_codes import (
 )
 from voc_common.constants import SentimentLabel
 
-# Casos que pueden entrar al oro: siempre sin la predicción (anclaje de 5.3).
+# Casos que pueden entrar al oro: siempre sin la predicción, para que el
+# revisor no se ancle en ella.
 BLIND_REASONS = frozenset(
     {HitlReason.MONITOR_SAMPLE, HitlReason.AGREEMENT_SAMPLE}
 )
@@ -106,7 +107,7 @@ class HitlReview(_AnalyticsRecord):
     opened_at: UtcDatetime
     submitted_at: UtcDatetime
     seconds_spent: Counter
-    # Sanitizado antes de guardarse (FMEA F-21).
+    # Sanitizado antes de guardarse: puede traer datos personales.
     comment: str | None = None
     ticket: str | None = None
 

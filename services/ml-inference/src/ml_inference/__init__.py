@@ -1,1 +1,1 @@
-"""ml-inference: delta diario, cargas, siembra y registro de modelos (6.3)."""
+"""ml-inference: delta diario, monitor, cargas, siembra y registro."""

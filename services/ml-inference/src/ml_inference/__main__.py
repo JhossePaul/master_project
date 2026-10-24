@@ -1,8 +1,8 @@
 """CLI de ``ml-inference`` (``python -m ml_inference <comando>``).
 
 * ``delta``: el delta diario (Job ``voc-ml-inference-delta``).
-* ``seed``: versiones iniciales desde las métricas de EPIC-5 (autor).
-* ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
+* ``seed``: versiones iniciales desde las métricas de los experimentos (autor).
+* ``load-local``: carga única del backfill histórico desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
   muestras humanas y calidad).

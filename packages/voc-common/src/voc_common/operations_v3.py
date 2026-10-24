@@ -2,7 +2,7 @@
 
 Una clase por tabla de ``bbva_voc_tds`` más el mensaje de Pub/Sub de las
 alertas de deriva (``DriftAlertMessage``), que reemplaza a la alerta de
-incidentes de EPIC-1 y no lleva texto ni PII.
+incidentes del primer diseño y no lleva texto ni PII.
 """
 
 from typing import Literal, Self
@@ -39,7 +39,7 @@ class ModelVersion(_AnalyticsRecord):
     """Fila de ``model_versions``; cada cambio de estado es una fila nueva."""
 
     model_version: NonEmpty
-    # Vertex Model Registry o GCS (P7-3).
+    # Vertex Model Registry o GCS.
     registry_uri: NonEmpty
     base_checkpoint: NonEmpty
     training_data: NonEmpty
@@ -104,7 +104,7 @@ class DriftMetric(_AnalyticsRecord):
     baseline: float | None = None
     z: float | None = None
     psi: float | None = None
-    # Nulo = serie de contexto que nunca alerta (familias y ``u``, D8).
+    # Nulo = serie de contexto que nunca alerta (familias y ``u``).
     threshold: float | None = None
     alert: bool
     drift_policy_version: NonEmpty
@@ -142,7 +142,7 @@ class DriftAlertEvent(_AnalyticsRecord):
     # Nulo = el monitor (``open``); las personas se guardan como hash.
     actor_hash: Digest | None = None
     at: UtcDatetime
-    # Sanitizada antes de guardarse (FMEA F-21).
+    # Sanitizada antes de guardarse: puede traer datos personales.
     note: str | None = None
     ticket: str | None = None
 
@@ -221,7 +221,7 @@ class TokenAttribution(_AnalyticsRecord):
 
 
 class ReviewExplanation(_AnalyticsRecord):
-    """Fila de ``review_explanations``: texto × versión de modelo (P8-8)."""
+    """Fila de ``review_explanations``: texto × versión de modelo."""
 
     text_key: Digest
     model_version: NonEmpty
@@ -232,7 +232,7 @@ class ReviewExplanation(_AnalyticsRecord):
 
 
 class ModelQuality(_AnalyticsRecord):
-    """Fila de ``model_quality``: modelo × periodo × señal (P7-10, P7-11)."""
+    """Fila de ``model_quality``: modelo × periodo × señal."""
 
     model_version: NonEmpty | None = None
     llm_model: NonEmpty | None = None
@@ -292,7 +292,7 @@ class ModelQualityMessage(_AnalyticsRecord):
 
 
 class GoldLabel(_AnalyticsRecord):
-    """Fila de ``gold_labels`` (D10): oro *dev* y ``aspects_gold_v2_1``.
+    """Fila de ``gold_labels``: oro *dev* y ``aspects_gold_v2_1``.
 
     El oro *dev* aleatorio es una muestra estratificada: ``weight`` (1/π) da
     cifras poblacionales en la curva HITL y en PPI. El oro de aspectos es por

@@ -1,4 +1,6 @@
-"""Modelos detrás de interfaces chicas, para cargarlos de a uno (D9).
+"""Modelos detrás de interfaces chicas, para cargarlos de a uno.
+
+Un solo modelo en memoria a la vez mantiene el Job dentro de su límite.
 
 Las pruebas los reemplazan por modelos falsos; en producción envuelven los
 módulos de ``voc-nlp``. Cada motor se carga solo si su paso tiene trabajo y

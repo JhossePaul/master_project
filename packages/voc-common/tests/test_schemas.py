@@ -1,4 +1,4 @@
-"""Pruebas de los contratos Pydantic de voc-common (Feature 1.3)."""
+"""Pruebas de los contratos Pydantic de voc-common."""
 
 import json
 import re
@@ -59,7 +59,7 @@ def test_ensure_utc_naive_and_aware() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.1
+# Solicitudes de ingesta y cursor RPC
 # ---------------------------------------------------------------------------
 
 
@@ -110,7 +110,7 @@ def test_sequential_batch_request_defaults() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.3
+# Eventos crudos de reseñas
 # ---------------------------------------------------------------------------
 
 
@@ -229,7 +229,7 @@ def test_raw_review_from_batchexecute_entry_sparse_row() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.4
+# Registro sanitizado
 # ---------------------------------------------------------------------------
 
 
@@ -294,8 +294,3 @@ def test_sanitized_review_record_rejects_pii_and_inconsistency() -> None:
         SanitizedReviewRecord(**{**base, "usuario_hash": "Z" * 64})
     with pytest.raises(ValidationError, match="conteo_palabras"):
         SanitizedReviewRecord(**{**base, "conteo_palabras": 3})
-
-
-# ---------------------------------------------------------------------------
-# Tarea 1.3.5
-# ---------------------------------------------------------------------------

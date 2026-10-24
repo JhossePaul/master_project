@@ -1,4 +1,4 @@
-"""Siembra: valores de EPIC-5, D12 (nulos) y D8 (familias sin umbral)."""
+"""Siembra: valores de los experimentos, nulos y familias sin umbral."""
 
 from pathlib import Path
 from typing import Any

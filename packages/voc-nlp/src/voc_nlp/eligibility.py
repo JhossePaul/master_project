@@ -1,4 +1,5 @@
-"""Reglas de elegibilidad ``eligibility_rules_v1`` (EPIC-5, 5.1 y 5.8).
+"""Reglas de elegibilidad ``eligibility_rules_v1``
+(``docs/analytics/eda/eligibility_rules.md``).
 
 Port por fila de ``voc_analytics.labeling.eligibility.with_tnss_rule_v1`` y de
 las reglas de tópicos de ``voc_analytics.eda.eligibility_counts``. Gana la
@@ -27,7 +28,7 @@ RULES_VERSION: Final = "eligibility_rules_v1"
 APP_VALID_FROM: Final[dict[str, datetime]] = {
     "NUBANK": datetime(2020, 1, 1, tzinfo=UTC),
 }
-# Tokens con que la sanitización de EPIC-4 reemplaza la PII.
+# Tokens con que la sanitización reemplaza la PII.
 PII_TOKENS: Final = (
     "PERSON_NAME",
     "EMAIL_ADDRESS",

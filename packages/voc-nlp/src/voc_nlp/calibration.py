@@ -1,4 +1,4 @@
-"""*Temperature scaling* de RoBERTuito (EPIC-5, 5.6).
+"""*Temperature scaling* de RoBERTuito.
 
 Port de ``voc_analytics.calibration.calibrate.apply`` con una T por semilla:
 los logits son ``log(p)`` recortado en ``EPS``, así que el resultado es
@@ -26,5 +26,5 @@ def apply_temperature(proba: Proba, t: float) -> NDArray[np.float64]:
 
 
 def confidence(proba: Proba) -> NDArray[np.float64]:
-    """Probabilidad máxima por fila: la señal HITL de 5.6 (``prob_max``)."""
+    """Probabilidad máxima por fila: la señal de revisión (``prob_max``)."""
     return np.asarray(proba, dtype=np.float64).max(axis=1)

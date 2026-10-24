@@ -1,11 +1,11 @@
-"""RoBERTuito ajustado para sentimiento (``[sentiment]``; M4 en EPIC-5, D11).
+"""RoBERTuito ajustado con la plata de Gemini (extra ``[sentiment]``).
 
-Port del kernel del backfill de 5.8 (``voc_analytics.scale.backfill``) y de
+Port del kernel del backfill (``voc_analytics.scale.backfill``) y de
 ``voc_analytics.sentiment.encoder``: ``preprocess_tweet`` de ``pysentimiento``
-(el modelo base se preentrenó con tweets y el ajuste de EPIC-5 lo aplicó),
+(el modelo base se preentrenó con tweets y el ajuste lo aplicó),
 tope de 128 tokens, orden estable por longitud y *softmax* de los logits. En
 producción corre en CPU y en fp32: los pesos fp16 del registro se suben a
-fp32 al cargarse (D4).
+fp32 al cargarse.
 """
 
 from collections.abc import Sequence

@@ -1,16 +1,17 @@
-"""Siembra de las versiones iniciales (6.3), desde las métricas de EPIC-5.
+"""Siembra de las versiones iniciales, desde las métricas de los experimentos.
 
 Inserta, de solo inserción e idempotente por clave:
 
 * ``model_versions``: RoBERTuito (``robertuito_sentiment_v1``, semilla 1 de
   ``M4_robertuito_s1_ppi``) promovido, con T 1.6811 y sus métricas en el oro
   *dev* (κ, ECE con temperatura y AURC de ``prob_max``);
-* ``hitl_coverage_curves``: la curva de la semilla 1 de 5.6, con revisiones y
-  minutos por semana (mediana de 7.1 s por reseña, validación de 5.9);
-* ``risk_policy`` v1: la evidencia de EPIC-5 y nulos en los parámetros que
-  fija el dueño de negocio en 7.10 (D12);
-* ``drift_policy_template`` v1 y una ``drift_policy`` por banco (P7-9), con
-  umbral nulo en las familias y la marca ``u`` (D8);
+* ``hitl_coverage_curves``: la curva de cobertura y riesgo de la semilla 1,
+  con revisiones y minutos por semana (mediana de 7.1 s por reseña, medida
+  al validar la cola de revisión);
+* ``risk_policy`` v1: la evidencia de los experimentos y nulos en los
+  parámetros que fija el dueño de negocio en la pantalla de administración;
+* ``drift_policy_template`` v1 y una ``drift_policy`` por banco, con
+  umbral nulo en las familias y la marca ``u`` (se miden, pero no alertan);
 * ``guidelines``: ``v2.2`` de sentimiento y ``v2.1`` de aspectos.
 
 El oro (``gold_labels``) lo carga ``load-local``.
@@ -40,15 +41,17 @@ from ml_inference.bq_io import StagingMergeWriter
 from ml_inference.config import InferenceSettings
 
 MODEL_VERSION: Final = "robertuito_sentiment_v1"
-# Nombre de la semilla elegida en los reportes de EPIC-5 (D11).
-EPIC5_MODEL: Final = "M4_robertuito_s1_ppi"
+# Nombre de la semilla elegida en los reportes de los experimentos (las
+# llaves de sus JSON); en producción se llama ``MODEL_VERSION``.
+REPORTS_MODEL: Final = "M4_robertuito_s1_ppi"
 CALIBRATION_VERSION: Final = "temperature_v0_s1"
 RISK_POLICY_VERSION: Final = "risk_policy_v1"
 DRIFT_TEMPLATE_VERSION: Final = "drift_policy_template_v1"
-# Mediana de segundos por reseña en la validación de la cola de 5.9.
+# Mediana de segundos por reseña al validar la cola de revisión.
 SECONDS_PER_REVIEW: Final = 7.1
 
-# Series del monitor de deriva (6.4) y su umbral (P7-9, D8).
+# Series del monitor de deriva y su umbral; las de contexto (familias y
+# ``u``) se miden con umbral nulo y nunca alertan.
 Z_SERIES: Final = (
     "mean_words",
     "single_word_share",
@@ -76,7 +79,7 @@ def model_version(
     calibration = _load(docs / "calibration/calibration_v0_metrics.json")
     selective = _load(docs / "calibration/selective_v0_metrics.json")
     monitor = _load(docs / "scale/model_monitor_v0_metrics.json")
-    temperature = calibration["modelos"][EPIC5_MODEL]["temperature"]
+    temperature = calibration["modelos"][REPORTS_MODEL]["temperature"]
     prefix = artifacts.artifact_prefix(
         settings.ml_artifacts_prefix, artifacts.SENTIMENT, MODEL_VERSION
     )
@@ -92,7 +95,7 @@ def model_version(
         calibration_t=temperature["temperatura"],
         kappa_dev=kappa,
         ece_dev=temperature["dev_fuera_de_particion"]["ece"],
-        aurc_dev=selective["modelos"][EPIC5_MODEL]["aurc"]["prob_max"],
+        aurc_dev=selective["modelos"][REPORTS_MODEL]["aurc"]["prob_max"],
         license="pysentimiento: uso no comercial e investigación",
         status=ModelStatus.PROMOTED,
         promoted_at=now,
@@ -105,7 +108,7 @@ def coverage_curve(docs: Path, now: datetime) -> HitlCoverageCurve:
     selective = _load(docs / "calibration/selective_v0_metrics.json")
     weekly = selective["volumen"]["textos_unicos_por_semana"]
     points = []
-    for p in selective["modelos"][EPIC5_MODEL]["por_cobertura"].values():
+    for p in selective["modelos"][REPORTS_MODEL]["por_cobertura"].values():
         reviews = (1 - p["cobertura"]) * weekly
         points.append(
             CoveragePoint(
@@ -124,7 +127,7 @@ def coverage_curve(docs: Path, now: datetime) -> HitlCoverageCurve:
         calibration_version=CALIBRATION_VERSION,
         points=sorted(points, key=lambda p: p.coverage),
         weekly_volume_total=round(weekly),
-        # El volumen por banco lo agrega el recálculo de 6.4.
+        # El volumen por banco lo agrega el recálculo de la curva.
         weekly_volume_by_bank={},
         computed_at=now,
     )

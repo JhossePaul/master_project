@@ -158,7 +158,7 @@ class ReviewAspects(_AnalyticsRecord):
 
 
 class TextEmbedding(_AnalyticsRecord):
-    """Fila de ``text_embeddings``: texto × banco × mes (P8-6)."""
+    """Fila de ``text_embeddings``: texto × banco × mes (búsqueda semántica)."""
 
     text_key: Digest
     bank_id: NonEmpty
@@ -171,7 +171,7 @@ class TextEmbedding(_AnalyticsRecord):
 
 
 # ---------------------------------------------------------------------------
-# Tópicos (borrador de datos de 5.5, con los cambios de EPIC-6)
+# Tópicos
 # ---------------------------------------------------------------------------
 
 

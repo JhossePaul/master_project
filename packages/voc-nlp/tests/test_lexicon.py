@@ -1,4 +1,4 @@
-"""Léxico ``lexicon_v1`` (D2): conteos, SHA-256 y forma normalizada."""
+"""Léxico ``lexicon_v1``: conteos, SHA-256 y forma normalizada."""
 
 import collections
 import json

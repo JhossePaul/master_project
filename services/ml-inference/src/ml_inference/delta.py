@@ -1,4 +1,4 @@
-"""Delta diario (6.3): un Job con pasos en serie (D9).
+"""Delta diario: un Job con pasos en serie y un modelo en memoria a la vez.
 
 1. **Pendientes:** filas del TDS sin fila en ``review_predictions`` para la
    versión promovida y su ``text_key``, hasta el tope por corrida.

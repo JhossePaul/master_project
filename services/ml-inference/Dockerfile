@@ -34,7 +34,7 @@ FROM ${PYTHON_IMAGE} AS runtime
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home app
 COPY --from=builder --chown=root:root /opt/venv /opt/venv
-# Sin descargas en producción: los modelos llegan de ml_artifacts/ (D4).
+# Sin descargas en producción: los modelos llegan de ml_artifacts/.
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

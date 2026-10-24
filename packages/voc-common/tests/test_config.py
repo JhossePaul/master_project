@@ -1,4 +1,4 @@
-"""Pruebas de la configuración centralizada de voc-common (Feature 1.4)."""
+"""Pruebas de la configuración centralizada de voc-common."""
 
 import importlib
 from collections.abc import Iterator

@@ -1,4 +1,4 @@
-"""Escritura idempotente en las tablas v3 (generaliza EPIC-4).
+"""Escritura idempotente en las tablas v3 (generaliza la de la ingesta).
 
 Tabla temporal con expiración de 1 h → ``load_table_from_json`` → ``MERGE …
 WHEN NOT MATCHED THEN INSERT ROW`` → borrado de la temporal en ``finally``.

@@ -1,4 +1,4 @@
-"""Umbral HITL por apetito de riesgo (EPIC-5, 5.6; P7-6).
+"""Umbral de revisión humana según el apetito de riesgo.
 
 La ``risk_policy`` vigente fija la cobertura y su umbral. Mientras un banco
 tiene una subida activa (``hitl_boosts``), su umbral sale de la curva de

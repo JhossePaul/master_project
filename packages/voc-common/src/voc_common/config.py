@@ -118,7 +118,7 @@ class IngestionExecutionConfig(BaseModel):
     ingestion_checkpoint_margin_sec: int = Field(default=60, gt=0)
     ingestion_lease_duration_sec: int = Field(default=120, gt=0)
     ingestion_heartbeat_interval_sec: int = Field(default=30, gt=0)
-    # Feature 3.4: valores conservadores; no derivan de límites del origen.
+    # Valores conservadores; no derivan de límites del origen.
     ingestion_max_pages: int = Field(default=100, gt=0)
     ingestion_max_recovery_requests: int = Field(default=10, ge=0)
     ingestion_recovery_max_anchors: int = Field(default=3, ge=0)

@@ -1,4 +1,4 @@
-"""Delta diario: los criterios de 6.3 con BigQuery, Gemini y modelos falsos."""
+"""Delta diario: sus criterios con BigQuery, Gemini y modelos falsos."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
