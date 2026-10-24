@@ -498,7 +498,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 * `voc_nlp.drift`: `BINS`, `length_bin`, `length_histogram`, `robust_z`, `psi` y `entry_month`. `robust_z` reproduce `drift_baseline.robust_z` en una serie sintética con nulos; los intervalos de longitud coinciden con `pl.cut(BINS[1:-1], left_closed=False)` de 0 a 199 palabras. Un mes ausente corta la racha de `entry_month`.
 * `voc_nlp.selective`: `curve`, `at_coverage` (devuelve `CoveragePoint`), `resample` (el *bootstrap* estratificado de `sentiment.metrics`) y `boot_risk`, sin redondeo (es de presentación).
-* `voc_nlp.ppi`: `ppi_mean` (PPI++ con λ en [0, 1], con pesos 1 / π del oro y del corpus por separado), `combine` (celdas pesadas por tamaño poblacional) y `gap_stars` (estrellas − texto, = −`brecha_neta` de 5.6). `Estimate` lleva también la versión solo-oro y la cruda del predictor (P8-10).
+* `voc_nlp.ppi`: `ppi_mean` (PPI++ con λ en [0, 1], con pesos 1 / π del oro y del corpus por separado), `combine` (celdas pesadas por tamaño poblacional) y `gap_stars`. `Estimate` lleva también la versión solo-oro y la cruda del predictor (P8-10). Corrección del 2026-10-24: `gap_stars` usaba la brecha ordinal de 5.6 (−2 a +2); ahora usa la escala del registro de decisión (estrellas de 1 a 5 menos el texto con `NEG` = 1, `NEU` = 3, `POS` = 5, el `gap_clase` de `tnss_score`). `targets` da el valor por reseña de los 13 KPI (`neg`, `gap_estrellas`, `texto_peor`, `texto_mejor` y `estrellas_<A>_texto_<B>`).
 * `voc_nlp.agreement`: `cohen_kappa` sin scikit-learn (igual a `cohen_kappa_score` con pesos), `exact_agreement` y su IC, y `family_kappa`. Cambio frente a la firma prevista: la regla de 5.7 juzga el κ de cada familia con prevalencia ≥ 5 % contra su IC, así que `prevalence_ci` se reemplazó por `family_kappa`.
 * Cobertura de `voc-nlp`: 100 % (108 pruebas).
 * `ml_inference.monitor.drift_job` y el comando `monitor` (cierra subidas y corre la deriva):
@@ -526,8 +526,13 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * `modules/alerting.py`: canal de correo de Cloud Monitoring y una política por tópico sobre `topic/send_request_count` (> 0 en 5 minutos, cierre automático a los 30). Cloud Monitoring no lee el mensaje: el correo dice qué pasó y de qué suscripción leerlo. Se crea solo con `bbva-voc-infra:alert_email` fijado (el correo no se versiona en el YAML). Suma `monitoring.googleapis.com`;
   * el `pulumi preview` de dev también trae una actualización de `gold_labels` que no viene de este cambio: `id_resena` pasa a `NULLABLE` (D17), más `BOOLEAN` → `BOOL` en tres columnas, que es el mismo tipo.
 * **Pendiente del autor:** `pulumi config set bbva-voc-infra:alert_email <correo>` y `pulumi up` en dev; Cloud Monitoring manda un correo de verificación al canal.
+* `ml_inference.monitor.kpis` (en el comando `monitor`, después de la calidad) → `kpi_estimates`:
+  * celdas banco × mes; los 13 KPI de `voc_nlp.ppi.targets`, en `raw` (media de la predicción vigente del mes) y en `ppi` (con IC del 95 %), una serie `ppi` por cada `gold_version` del oro *dev* (más las de `gold_hitl` cuando existan, D7);
+  * decisión del autor (2026-10-24): el oro tiene ~36 reseñas por banco en cada periodo del oro y casi ninguna por mes, así que la corrección (y − λ·f) se estima con todo el oro *dev* del banco (pesos 1 / π) y se aplica a las predicciones del mes. Supone que el sesgo del modelo en el banco es estable; lo vigilan el κ trimestral y la deriva. Descartadas: la corrección solo del periodo del oro que contiene el mes (IC mucho más anchos) y KPI con PPI solo por periodo del oro (sin serie mensual);
+  * el corpus se lee como conteos por banco × mes × estrellas × clase (sin filas por reseña) y excluye las reseñas del oro. En el oro, una predicción fuera de las tres clases cuenta como `NEU`, como en 5.6;
+  * cada corrida recalcula el mes en curso y el anterior, más los meses a los que les falta una serie (`raw` o la `ppi` de una versión del oro): el primer monitor llena la historia y un oro nuevo pide la suya. Las filas llevan el `computed_at` de la corrida; el cockpit lee la última.
 
-Sigue, en orden: `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring` y secreto `voc-kaggle-token`). `topics_refit.py` va con el re-ajuste trimestral.
+Sigue, en orden: `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring` y secreto `voc-kaggle-token`). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 

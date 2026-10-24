@@ -35,9 +35,15 @@ def test_seed_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.kpis as kpis
     import ml_inference.monitor.quality as quality
     import ml_inference.monitor.samples as samples
 
+    monkeypatch.setattr(
+        kpis.KpiJob,
+        "run",
+        lambda self, m, n: env.setdefault("kpis", (self.run_id, m)),
+    )
     monkeypatch.setattr(cli, "_family_labeler", lambda s: "families")
     monkeypatch.setattr(cli, "_sentiment_labeler", lambda s: "sentiment")
     monkeypatch.setattr(
@@ -71,16 +77,19 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     assert env["quality"].publish == "publish:voc-model-quality-topic"
     assert env["quality"].family_labeler == "families"
     assert env["quality"].sentiment_labeler == "sentiment"
+    assert env["kpis"] == (env["drift"].run_id, "m1")
 
 
 def test_monitor_without_promoted_model_skips_samples(
     env: dict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.kpis as kpis
     import ml_inference.monitor.samples as samples
 
     monkeypatch.setattr(cli, "_publisher", lambda s, t: f"publish:{t}")
     monkeypatch.setattr(cli, "_monitor_state", lambda s, b, g: (None, None))
+    monkeypatch.setattr(kpis.KpiJob, "run", lambda *a: pytest.fail("no kpis"))
     monkeypatch.setattr(drift, "close_boosts", lambda c, n: None)
     monkeypatch.setattr(drift, "run_drift", lambda s, c, n: None)
     monkeypatch.setattr(

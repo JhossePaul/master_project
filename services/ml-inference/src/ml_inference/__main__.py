@@ -5,7 +5,7 @@
 * ``load-local``: carga única del backfill histórico desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
-  muestras humanas y calidad).
+  muestras humanas, calidad y KPI).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento.
 """
 
@@ -173,6 +173,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             close_boosts,
             run_drift,
         )
+        from ml_inference.monitor.kpis import KpiJob
         from ml_inference.monitor.quality import QualityJob
         from ml_inference.monitor.samples import SampleJob
 
@@ -203,6 +204,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sentiment_labeler=_sentiment_labeler(settings),
                 llm_model=settings.gemini_model,
             ).run(state.policy, state.model.model_version, now)
+            KpiJob(bigquery, writer, settings.dataset, run_id).run(
+                state.model.model_version, now
+            )
         return 0
     if args.command == "build-vocab":
         from ml_inference.seed import MODEL_VERSION

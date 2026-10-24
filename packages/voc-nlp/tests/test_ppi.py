@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from voc_nlp.ppi import Z, combine, gap_stars, ppi_mean
+from voc_nlp.ppi import TEXT_SCORE, Z, combine, gap_stars, ppi_mean, targets
 
 
 def test_ppi_mean_matches_a_hand_solution() -> None:
@@ -56,11 +56,37 @@ def test_combine_weights_cells_by_size() -> None:
     assert (both.n_gold, both.n_unlabeled, both.lam) == (4, 4, None)
 
 
-def test_gap_stars_is_stars_minus_text() -> None:
-    stars = ["POS", "POS", "NEG", "NEU"]
+def test_gap_stars_uses_the_one_to_five_scale() -> None:
+    stars = [5, 4, 1, 3]
     text = ["NEG", "POS", "NEG", "NEU"]
     est = gap_stars(stars, text, text, stars, text)
-    # Diferencias 2, 0, 0, 0; con predicciones perfectas y n = N, λ = 1 / 2.
-    assert est.classic == pytest.approx(0.5)
-    assert est.value == pytest.approx(0.5)
+    # 5 − 1, 4 − 5, 1 − 1, 3 − 3 → media 3 / 4; con predicciones perfectas y
+    # n = N, λ = 1 / 2.
+    assert est.classic == pytest.approx(0.75)
+    assert est.value == pytest.approx(0.75)
     assert est.lam == pytest.approx(0.5)
+    assert TEXT_SCORE == {"NEG": 1, "NEU": 3, "POS": 5}
+
+
+def test_targets_classify_stars_against_text() -> None:
+    out = targets(
+        [1, 2, 3, 4, 5, 5], ["POS", "NEG", "NEG", "NEU", "POS", "NEG"]
+    )
+    assert out["neg"].tolist() == [0, 1, 1, 0, 0, 1]
+    assert out["gap_estrellas"].tolist() == [-4, 1, 2, 1, 0, 4]
+    assert out["texto_peor"].tolist() == [0, 0, 1, 1, 0, 1]
+    assert out["texto_mejor"].tolist() == [1, 0, 0, 0, 0, 0]
+    assert out["estrellas_NEG_texto_POS"].tolist() == [1, 0, 0, 0, 0, 0]
+    assert out["estrellas_POS_texto_NEG"].tolist() == [0, 0, 0, 0, 0, 1]
+    cells = [k for k in out if k.startswith("estrellas_")]
+    assert len(cells) == 9
+    # Cada reseña cae en una sola celda de la matriz.
+    assert sum(out[k] for k in cells).tolist() == [1] * 6
+
+
+@pytest.mark.parametrize(
+    ("stars", "text"), [([0], ["NEG"]), ([6], ["NEG"]), ([1, 2], ["NEG"])]
+)
+def test_targets_reject_bad_input(stars: list[int], text: list[str]) -> None:
+    with pytest.raises(ValueError):
+        targets(stars, text)

@@ -5,6 +5,8 @@ Port de ``voc_analytics.calibration.ppi`` sin Polars: la media ponderada
 etiquetar. λ es el PPI++ (Angelopoulos et al., 2023) recortado a [0, 1]:
 con λ = 0 queda la estimación solo-oro. Las celdas banco × periodo se
 combinan pesando por su tamaño poblacional (suma de 1 / π del corpus).
+``targets`` da el valor por reseña de cada KPI (las mismas definiciones que
+``voc_analytics.calibration.ppi`` y ``tnss_score``).
 """
 
 from collections.abc import Sequence
@@ -16,6 +18,9 @@ from numpy.typing import NDArray
 
 Z: Final = 1.959964
 SCORE: Final = {"NEG": -1, "NEU": 0, "POS": 1}
+"""Orden de las clases, para comparar el texto con las estrellas."""
+TEXT_SCORE: Final = {"NEG": 1, "NEU": 3, "POS": 5}
+"""Puntaje del texto en la escala de las estrellas (``3 + 2 · SCORE``)."""
 
 Array = NDArray[np.floating]
 
@@ -127,30 +132,60 @@ def combine(cells: Sequence[Estimate]) -> Estimate:
     )
 
 
-def _scores(labels: Sequence[str]) -> NDArray[np.float64]:
-    return np.array([SCORE[x] for x in labels], dtype=np.float64)
+def targets(
+    stars: Sequence[int], text: Sequence[str]
+) -> dict[str, NDArray[np.float64]]:
+    """Valor de cada KPI por reseña, de sus estrellas y la clase del texto.
+
+    * ``neg``: el texto es ``NEG``;
+    * ``gap_estrellas``: estrellas (1 a 5) menos el puntaje del texto
+      (``TEXT_SCORE``). Positivo: las estrellas son mejores que el texto;
+    * ``texto_peor`` y ``texto_mejor``: la clase del texto es más negativa o
+      más positiva que la de las estrellas (1–2 ``NEG``, 3 ``NEU``, 4–5
+      ``POS``);
+    * ``estrellas_<A>_texto_<B>``: las 9 celdas de la matriz estrellas ×
+      texto.
+    """
+    s = np.asarray(stars, dtype=np.float64)
+    if s.size and (s.min() < 1 or s.max() > 5):
+        raise ValueError("stars must be between 1 and 5")
+    if len(text) != s.size:
+        raise ValueError("stars and text must align")
+    t = np.array([SCORE[x] for x in text], dtype=np.float64)
+    s_class = np.where(s <= 2, -1.0, np.where(s == 3, 0.0, 1.0))
+    out = {
+        "neg": (t == -1).astype(np.float64),
+        "gap_estrellas": s - (3 + 2 * t),
+        "texto_peor": (t < s_class).astype(np.float64),
+        "texto_mejor": (t > s_class).astype(np.float64),
+    }
+    for a, va in SCORE.items():
+        for b, vb in SCORE.items():
+            out[f"estrellas_{a}_texto_{b}"] = (
+                (s_class == va) & (t == vb)
+            ).astype(np.float64)
+    return out
 
 
 def gap_stars(
-    stars_gold: Sequence[str],
+    stars_gold: Sequence[int],
     y_gold: Sequence[str],
     yhat_gold: Sequence[str],
-    stars_unlabeled: Sequence[str],
+    stars_unlabeled: Sequence[int],
     yhat_unlabeled: Sequence[str],
     w: Array | None = None,
     w_unlabeled: Array | None = None,
 ) -> Estimate:
-    """*Gap* en estrellas: puntaje de las estrellas menos el del texto.
+    """*Gap* en estrellas: estrellas (1 a 5) menos el puntaje del texto.
 
-    Las estrellas y el texto van como clase (``NEG``, ``NEU``, ``POS``,
-    puntajes −1, 0 y 1). Positivo: las estrellas son mejores que el texto.
-    Es la brecha neta con el signo cambiado.
+    El texto vale ``TEXT_SCORE`` (``NEG`` = 1, ``NEU`` = 3, ``POS`` = 5).
+    Positivo: las estrellas son mejores que el texto. Es el KPI elegido en el
+    registro de decisión (``docs/analytics/decision_record.md``, sección 5).
     """
-    stars_g = _scores(stars_gold)
     return ppi_mean(
-        stars_g - _scores(y_gold),
-        stars_g - _scores(yhat_gold),
-        _scores(stars_unlabeled) - _scores(yhat_unlabeled),
+        targets(stars_gold, y_gold)["gap_estrellas"],
+        targets(stars_gold, yhat_gold)["gap_estrellas"],
+        targets(stars_unlabeled, yhat_unlabeled)["gap_estrellas"],
         w,
         w_unlabeled,
     )
