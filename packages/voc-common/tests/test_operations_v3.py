@@ -259,8 +259,8 @@ def _gold(**overrides: Any) -> GoldLabel:
 
 def _gold_aspects(**overrides: Any) -> GoldLabel:
     data: dict[str, Any] = {
-        "gold_version": "muestra_v21",
-        "split": "muestra_v21",
+        "gold_version": "aspects_gold_v2_1",
+        "split": "aspects_gold_v2_1",
         "task": "aspects",
         "label": None,
         "families": ["AC"],

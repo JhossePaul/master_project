@@ -103,7 +103,7 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | `retrain_kappa_floor` | Reentrenamiento (P7-10): pedirlo si el κ de M4 en la muestra trimestral (`monitor_sample_size`: 300 revisiones por trimestre) queda debajo de 0.89 |
 | `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`, EPIC-7, 7.7); no confundir con `agreement_sample_weekly`, que es el acuerdo M4–Gemini. Sin valor todavía: lo fija el autor antes de sembrar la política |
 | `warn_correction_rate`, `warn_agreement_floor`, `agreement_sample_weekly` | Avisos (P7-10), sin disparar solos: tasa de corrección de 4 semanas > 28 %; acuerdo M4–Gemini de 4 semanas < 94 %, con 500 textos por semana |
-| `families_exact_floor`, `families_min_prevalence` | Revalidación de las familias al cambiar el modelo o el prompt de Gemini (P7-11): acuerdo exacto ≥ 53 % en `muestra_v21` y ninguna familia con prevalencia ≥ 5 % bajo el límite inferior de su IC |
+| `families_exact_floor`, `families_min_prevalence` | Revalidación de las familias al cambiar el modelo o el prompt de Gemini (P7-11): acuerdo exacto ≥ 53 % en `aspects_gold_v2_1` (`muestra_v21` en EPIC-5) y ninguna familia con prevalencia ≥ 5 % bajo el límite inferior de su IC |
 | `set_by_hash`, `reason` | Revisor y dueño de negocio que la fijaron, y por qué |
 
 ### `hitl_boosts` (subidas temporales de la revisión, por banco)
@@ -180,7 +180,7 @@ Los ítems de una versión se reproducen aplicando sus criterios a `hitl_reviews
 
 ### `gold_labels` (oro en producción, D10 de EPIC-6)
 
-`gold_version`, `split` (`dev` o `muestra_v21`), `task` (`sentiment` o `aspects`), `id_resena`, `text_key`, `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio de EPIC-5 (guía `v2.2`) y las 300 reseñas de `muestra_v21` (guía `v2.1`). El oro *test* no se carga: quedó consumido en 5.8. Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias (6.4). Son etiquetas individuales: viven solo en BigQuery, nunca en git (fila F-21 de la FMEA).
+`gold_version`, `split` (`dev` o `aspects_gold_v2_1`, la `muestra_v21` de EPIC-5), `task` (`sentiment` o `aspects`), `id_resena`, `text_key`, `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio de EPIC-5 (guía `v2.2`) y las 300 reseñas de `muestra_v21` (guía `v2.1`). El oro *test* no se carga: quedó consumido en 5.8. Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias (6.4). Son etiquetas individuales: viven solo en BigQuery, nunca en git (fila F-21 de la FMEA).
 
 La curaduría de tópicos (`curation_topics` del borrador de 5.5) se queda aparte, porque su grano es el tópico y no la reseña.
 

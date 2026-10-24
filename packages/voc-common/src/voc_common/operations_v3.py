@@ -262,7 +262,7 @@ class ModelQuality(_AnalyticsRecord):
 
 
 class GoldLabel(_AnalyticsRecord):
-    """Fila de ``gold_labels`` (D10): oro *dev* y ``muestra_v21``."""
+    """Fila de ``gold_labels`` (D10): oro *dev* y ``aspects_gold_v2_1``."""
 
     gold_version: NonEmpty
     split: GoldSplit
