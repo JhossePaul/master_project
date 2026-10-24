@@ -439,7 +439,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 | `drift.py` | `scale/drift_baseline.py` | `BINS = (0, 1, 2, 5, 10, 20, 40, 60, 10_000)`; `robust_z(values: Sequence[float], baseline: int = 12, min_baseline: int = 6) -> float \| None` (mediana y 1.4826·MAD de los meses previos); `psi(current: Sequence[int], reference: Sequence[int], floor: float = 1e-4) -> float`; `entry_month(rows_by_month: Mapping[str, int], min_rows: int = 200, months: int = 12) -> str \| None` |
 | `selective.py` | `calibration/selective.py` | `curve(conf, err, w) -> tuple[np.ndarray, np.ndarray, np.ndarray]`; `at_coverage(conf, err, w, target: float) -> CoveragePoint`; `boot_risk(conf, err, w, strata, target: float) -> tuple[float, float]` |
 | `ppi.py` | `calibration/ppi.py` | `ppi_mean(y_gold: np.ndarray, yhat_gold: np.ndarray, yhat_unlabeled: np.ndarray, w: np.ndarray \| None = None) -> Estimate` (estimación con IC 95 %); `gap_stars(...) -> Estimate` (P8-9) |
-| `agreement.py` | `scale/model_monitor.py` | `cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float`; `exact_agreement(a: Sequence[frozenset[str]], b: Sequence[frozenset[str]]) -> float`; `prevalence_ci(labels: Sequence[frozenset[str]], family: str) -> tuple[float, float]` |
+| `agreement.py` | `scale/model_monitor.py` | `cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float`; `exact_agreement(a: Sequence[frozenset[str]], b: Sequence[frozenset[str]]) -> float`; `family_kappa(a, b, family: str) -> FamilyAgreement` (κ con IC *bootstrap* y prevalencia; la regla de 5.7 compara κ, no prevalencias) |
 | `topics_refit.py` `[topics]` | `topics/pilot.py` y `topics/dynamics.py` | `refit(segments: Sequence[str], embeddings: np.ndarray, params: TopicParams) -> FrozenTopicModel`; `match(previous: Sequence[TopicCatalogEntry], new: Sequence[TopicCatalogEntry]) -> list[TopicMatch]` (par de mayor similitud de centroides; sin umbral automático) |
 
 **En `services/ml-inference/src/ml_inference/monitor/`** (comando `monitor`, Job semanal de 6.2):
@@ -491,6 +491,18 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * `model_quality` registra cada medición de P7-10 y P7-11, y `kpi_estimates` llena el cockpit;
 * promover recalcula y guarda la curva, y el *rollback* no re-predice;
 * el portal de EPIC-7 puede consultar todo lo anterior.
+
+#### Estado de 6.4 (2026-10-24)
+
+**En curso.** Hecho:
+
+* `voc_nlp.drift`: `BINS`, `length_bin`, `length_histogram`, `robust_z`, `psi` y `entry_month`. `robust_z` reproduce `drift_baseline.robust_z` en una serie sintética con nulos; los intervalos de longitud coinciden con `pl.cut(BINS[1:-1], left_closed=False)` de 0 a 199 palabras. Un mes ausente corta la racha de `entry_month`.
+* `voc_nlp.selective`: `curve`, `at_coverage` (devuelve `CoveragePoint`), `resample` (el *bootstrap* estratificado de `sentiment.metrics`) y `boot_risk`, sin redondeo (es de presentación).
+* `voc_nlp.ppi`: `ppi_mean` (PPI++ con λ en [0, 1], con pesos 1 / π del oro y del corpus por separado), `combine` (celdas pesadas por tamaño poblacional) y `gap_stars` (estrellas − texto, = −`brecha_neta` de 5.6). `Estimate` lleva también la versión solo-oro y la cruda del predictor (P8-10).
+* `voc_nlp.agreement`: `cohen_kappa` sin scikit-learn (igual a `cohen_kappa_score` con pesos), `exact_agreement` y su IC, y `family_kappa`. Cambio frente a la firma prevista: la regla de 5.7 juzga el κ de cada familia con prevalencia ≥ 5 % contra su IC, así que `prevalence_ci` se reemplazó por `family_kappa`.
+* Cobertura de `voc-nlp`: 100 % (108 pruebas).
+
+Sigue, en orden: `monitor/drift_job.py` (con `close_boosts`), `samples.py`, `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 
