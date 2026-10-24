@@ -301,3 +301,20 @@ def test_rescore_dispatch(
     assert cli.main(args) == code
     assert env["new"][3:] == ("kaggle", "v2", "r1", {"v2": "m"})
     assert env["run"][:2] == ("job", 9000)
+
+
+def test_topics_refit_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.topics_refit as refit
+
+    current = type("S", (), {"policy": "p", "topic_model_version": "topics_v1"})
+    monkeypatch.setattr(state, "load_state", lambda b, d: current())
+    monkeypatch.setattr(
+        refit.TopicsRefit,
+        "run",
+        lambda self, p, v, n, force: env.setdefault("refit", (p, v, force)),
+    )
+    assert cli.main(["topics-refit", "--force"]) == 0
+    assert env["refit"] == ("p", "topics_v1", True)

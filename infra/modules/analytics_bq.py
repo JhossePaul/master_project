@@ -71,6 +71,7 @@ VIEWS: Final[tuple[str, ...]] = (
     "hitl_queue",
     "drift_alerts_current",
     "eligibility_counts",
+    "topic_model_current",
     "daily_topic_labels",
 )
 

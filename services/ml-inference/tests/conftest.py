@@ -165,7 +165,7 @@ class FakeBigQuery:
             return [
                 b for b in self.rows("hitl_boosts") if not b["ended_reason"]
             ]
-        if "FROM `" + DATASET + ".topic_model_versions`" in sql:
+        if "FROM `" + DATASET + ".topic_model_current`" in sql:
             return list(self.rows("topic_model_versions"))[-1:]
         if "COUNT(*) AS n" in sql:
             week = _iso(params["week_start"])

@@ -144,7 +144,7 @@ def test_compute_and_scheduler_modes(
         assert states[name]["member"] == invoker
     assert all(s.get("member") != "allUsers" for s in states.values())
     schedules = {name: s for name, s in states.items() if "schedule" in s}
-    assert len(schedules) == (2 if free_tier else 6) + (2 if ml else 0)
+    assert len(schedules) == (2 if free_tier else 6) + (3 if ml else 0)
     _check_ml_jobs(pulumi_mocks, states, schedules, ml, free_tier, invoker)
     sanitizer_job = schedules.pop("voc-trigger-sanitization-daily")
     assert sanitizer_job["schedule"] == (
@@ -210,10 +210,16 @@ def _check_ml_jobs(
     invoker: str,
 ) -> None:
     """Jobs de ml-inference y sus triggers; se sacan de ``schedules``."""
-    names = ("voc-ml-inference-delta", "voc-ml-monitor", "voc-ml-rescoring")
+    names = (
+        "voc-ml-inference-delta",
+        "voc-ml-monitor",
+        "voc-ml-rescoring",
+        "voc-ml-topics-refit",
+    )
     triggers = {
         "voc-ml-inference-delta": "voc-trigger-ml-delta-daily",
         "voc-ml-monitor": "voc-trigger-ml-monitor-weekly",
+        "voc-ml-topics-refit": "voc-trigger-ml-topics-refit-quarterly",
     }
     if not ml:
         assert not set(names) & set(states)
@@ -256,6 +262,17 @@ def _check_ml_jobs(
             in monitor.dependencies[triggers[name]]
         )
     _check_rescoring(monitor, states, schedules)
+    refit = states["voc-ml-topics-refit"]["template"]["template"]
+    assert refit["timeout"] == "3600s" and refit["maxRetries"] == 0
+    container = refit["containers"][0]
+    assert container["args"] == ["topics-refit"]
+    assert container["resources"]["limits"] == {"cpu": "2", "memory": "4Gi"}
+    trigger = schedules.pop(triggers["voc-ml-topics-refit"])
+    assert trigger["schedule"] == f"30 {hour + 3} 2 1,4,7,10 *"
+    assert trigger["httpTarget"]["uri"].endswith(
+        "/jobs/voc-ml-topics-refit:run"
+    )
+    assert states["voc-ml-topics-refit-scheduler-invoker"]["member"] == invoker
 
 
 def _check_rescoring(

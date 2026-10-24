@@ -174,6 +174,11 @@ if deploy_workloads:
         ml_monitor_job_name=(
             cloud_run.ml_monitor_job.name if cloud_run.ml_monitor_job else None
         ),
+        ml_topics_refit_job_name=(
+            cloud_run.ml_topics_refit_job.name
+            if cloud_run.ml_topics_refit_job
+            else None
+        ),
     )
 
 pulumi.export("project_id", project_id)
@@ -238,6 +243,10 @@ if cloud_run is not None:
         pulumi.export("ml_delta_job_id", cloud_run.ml_delta_job.id)
     if cloud_run.ml_monitor_job is not None:
         pulumi.export("ml_monitor_job_id", cloud_run.ml_monitor_job.id)
+    if cloud_run.ml_topics_refit_job is not None:
+        pulumi.export(
+            "ml_topics_refit_job_id", cloud_run.ml_topics_refit_job.id
+        )
     if cloud_run.ml_rescoring_job is not None:
         pulumi.export("ml_rescoring_job_id", cloud_run.ml_rescoring_job.id)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])

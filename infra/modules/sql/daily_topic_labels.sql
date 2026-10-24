@@ -3,7 +3,8 @@
 -- * Base: reseñas NEG con dos palabras o más, por banco y día (UTC).
 -- * Familias de aspects_v2_1 (última etiqueta de cada reseña) con el nombre
 --   de la guía v2.1; tópicos útiles de la curaduría (producto o ingeniería)
---   de la última versión de tópicos, con su nombre curado.
+--   de la versión de tópicos vigente (topic_model_current), con su nombre
+--   curado.
 -- * participacion: reseñas del día con el tema entre las negativas del día.
 -- * habitual: lo mismo en los 28 días previos del banco, sin el día.
 -- * Desempate por código (numérico en los tópicos).
@@ -25,9 +26,7 @@ aspects AS (
 ),
 topic_version AS (
   SELECT topic_model_version
-  FROM `{project}.{dataset}.topic_model_versions`
-  WHERE TRUE
-  QUALIFY ROW_NUMBER() OVER (ORDER BY fitted_at DESC) = 1
+  FROM `{project}.{dataset}.topic_model_current`
 ),
 latest_curation AS (
   SELECT c.topic_id, c.curated_name, c.audience

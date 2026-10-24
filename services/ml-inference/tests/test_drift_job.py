@@ -233,6 +233,37 @@ def test_active_boost_is_reused(fake_bq: Any) -> None:
     assert bq.rows("hitl_boosts") == []
 
 
+def test_history_is_measured_but_only_the_last_month_alerts(
+    fake_bq: Any,
+) -> None:
+    data = series("bbva", {"mean_words": 30.0})
+    # Pico también en un mes viejo: queda marcado, sin alerta ni mensaje.
+    old = next(i for i, m in enumerate(data) if m.period == "2025-09")
+    data[old] = MonthlyInput(
+        "bbva",
+        "2025-09",
+        data[old].rows,
+        data[old].values | {"neg_share": 0.9},
+        HIST,
+    )
+    source = FakeSource([policy("bbva")], data, risk())
+    c, bq, sent = clients(source, fake_bq)
+    alerts = run_drift(None, c, NOW)  # type: ignore[arg-type]
+    assert [(a.period, a.series) for a in alerts] == [
+        (date(2026, 6, 1), "mean_words")
+    ]
+    assert len(sent) == 1 and len(bq.rows("hitl_boosts")) == 1
+    flagged = {
+        (m["period"], m["metric"])
+        for m in bq.rows("drift_metrics")
+        if m["alert"]
+    }
+    assert flagged == {
+        ("2025-09-01", "neg_share"),
+        ("2026-06-01", "mean_words"),
+    }
+
+
 def test_length_shift_alerts_by_psi() -> None:
     data = series("bbva")
     last = data[-1]

@@ -22,11 +22,13 @@ def create_scheduler_jobs(
     api_deps: list[pulumi.Resource] | None = None,
     ml_delta_job_name: pulumi.Output[str] | None = None,
     ml_monitor_job_name: pulumi.Output[str] | None = None,
+    ml_topics_refit_job_name: pulumi.Output[str] | None = None,
 ) -> list[gcp.cloudscheduler.Job]:
     """Crea dos jobs en Free Tier; fuera de él cinco bancos y sanitización.
 
     Con los Jobs de ``ml-inference`` (EPIC-6) suma el delta diario, una hora
-    después de la sanitización, y el monitor de los lunes.
+    después de la sanitización, el monitor de los lunes y el re-ajuste de
+    tópicos el día 2 de cada trimestre (el Job decide si toca).
 
     Solo se invoca en la fase 2 (``deploy_workloads``): sin Cloud Run no hay
     destino que invocar y los crons fallarían en cada disparo.
@@ -126,5 +128,11 @@ def create_scheduler_jobs(
             "voc-trigger-ml-monitor-weekly",
             f"30 {sanitization_hour + 2} * * 1",
             ml_monitor_job_name,
+        )
+    if ml_topics_refit_job_name is not None:
+        run_job(
+            "voc-trigger-ml-topics-refit-quarterly",
+            f"30 {sanitization_hour + 3} 2 1,4,7,10 *",
+            ml_topics_refit_job_name,
         )
     return jobs

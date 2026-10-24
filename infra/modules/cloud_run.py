@@ -79,6 +79,7 @@ class CloudRunResources:
     ml_delta_job: gcp.cloudrunv2.Job | None = None
     ml_monitor_job: gcp.cloudrunv2.Job | None = None
     ml_rescoring_job: gcp.cloudrunv2.Job | None = None
+    ml_topics_refit_job: gcp.cloudrunv2.Job | None = None
     ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
 
 
@@ -101,6 +102,17 @@ class MlJobSpec:
 # D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
 ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta")
 ML_MONITOR_JOB = MlJobSpec("voc-ml-monitor", "monitor")
+# Re-ajuste trimestral de tópicos: MiniLM, UMAP y HDBSCAN sobre ~63 000
+# cláusulas; 2 vCPU y 4 GiB, 1 h, sin reintentos (el siguiente trimestre o
+# --force).
+ML_TOPICS_REFIT_JOB = MlJobSpec(
+    "voc-ml-topics-refit",
+    "topics-refit",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=3600,
+    max_retries=0,
+)
 # Re-scoring de una candidata en Kaggle, a mano y antes de promoverla:
 #   gcloud run jobs execute voc-ml-rescoring \
 #     --args=rescore,--model-version=<versión>
@@ -409,7 +421,7 @@ def create_cloud_run_resources(
     ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
     ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
     if images.ml_inference is not None:
-        specs = [ML_DELTA_JOB, ML_MONITOR_JOB]
+        specs = [ML_DELTA_JOB, ML_MONITOR_JOB, ML_TOPICS_REFIT_JOB]
         if secrets is not None:
             specs.append(ML_RESCORING_JOB)
         for spec in specs:
@@ -495,5 +507,6 @@ def create_cloud_run_resources(
         ml_delta_job=ml_jobs.get(ML_DELTA_JOB.command),
         ml_monitor_job=ml_jobs.get(ML_MONITOR_JOB.command),
         ml_rescoring_job=ml_jobs.get(ML_RESCORING_JOB.command),
+        ml_topics_refit_job=ml_jobs.get(ML_TOPICS_REFIT_JOB.command),
         ml_invokers=tuple(ml_invokers),
     )

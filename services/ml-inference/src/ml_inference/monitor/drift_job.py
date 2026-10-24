@@ -7,6 +7,11 @@ con z robusto contra
 sus ``baseline_months`` previos o con PSI contra su suma; una serie con
 umbral nulo se guarda como contexto y nunca alerta (familias y ``u``).
 
+Solo el último mes cerrado alerta (decisión del autor, 2026-10-24): la
+primera corrida llena la historia, y sus meses anteriores quedan en
+``drift_metrics`` con su marca ``alert`` (con ella se miden las tasas
+históricas), sin abrir alertas, publicar ni crear subidas.
+
 Una alerta (``|z|`` o PSI ≥ umbral) se escribe en ``drift_alerts`` con su
 evento ``open``, se publica sin texto en ``voc-incident-alerts-topic`` y, si
 la ``risk_policy`` vigente configura la subida, abre una en
@@ -126,8 +131,9 @@ def evaluate_bank(
             )
             if metric:
                 metrics.append(metric)
+    live = _period_date(last_closed)
     for metric in metrics:
-        if metric.alert:
+        if metric.alert and metric.period == live:
             alerts.append(_alert(metric, now))
     return DriftOutcome(metrics, alerts)
 

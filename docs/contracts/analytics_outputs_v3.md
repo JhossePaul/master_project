@@ -268,7 +268,8 @@ Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `e
 | `hitl_boosts_active` | Subidas dentro de su ventana y sin fila de cierre |
 | `hitl_queue`, `drift_alerts_current` | Caso o alerta con su último evento |
 | `eligibility_counts` | Filas por banco, mes, `eligibility_code` y `label_source` |
-| `daily_topic_labels` | Port de `voc_analytics.incidents.daily_topics`: base `NEG` con dos palabras o más por día UTC, familias de la última etiqueta de cada reseña, tópicos útiles (`audience` producto o ingeniería) de la versión de tópicos más reciente por `fitted_at`; se valida contra `daily_topics_v0`, el cálculo de los experimentos |
+| `topic_model_current` | La versión de tópicos que asigna: la más reciente por `fitted_at` cuyos tópicos emparejados con la anterior tienen todos una decisión del curador en `curation_topics` (`mapping_confirmed` verdadero o falso). Hasta entonces sigue la anterior; la primera versión no tiene pares y vale desde que se carga |
+| `daily_topic_labels` | Port de `voc_analytics.incidents.daily_topics`: base `NEG` con dos palabras o más por día UTC, familias de la última etiqueta de cada reseña, tópicos útiles (`audience` producto o ingeniería) de la versión de `topic_model_current`; se valida contra `daily_topics_v0`, el cálculo de los experimentos |
 
 ## 8. Columnas fijadas al implementar (2026-10-23)
 

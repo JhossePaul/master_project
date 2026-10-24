@@ -494,7 +494,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 #### Estado de 6.4 (2026-10-24)
 
-**En curso.** Hecho:
+**Código terminado (2026-10-24); falta la verificación en dev** (al final de esta sección). Hecho:
 
 * `voc_nlp.drift`: `BINS`, `length_bin`, `length_histogram`, `robust_z`, `psi` y `entry_month`. `robust_z` reproduce `drift_baseline.robust_z` en una serie sintética con nulos; los intervalos de longitud coinciden con `pl.cut(BINS[1:-1], left_closed=False)` de 0 a 199 palabras. Un mes ausente corta la racha de `entry_month`.
 * `voc_nlp.selective`: `curve`, `at_coverage` (devuelve `CoveragePoint`), `resample` (el *bootstrap* estratificado de `sentiment.metrics`) y `boot_risk`, sin redondeo (es de presentación).
@@ -546,7 +546,24 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * **infraestructura:** Job `voc-ml-rescoring` (2 vCPU para preparar en paralelo, 4 GiB, 3 h, sin reintentos ni Scheduler; se corre con `gcloud run jobs execute voc-ml-rescoring --args=rescore,--model-version=<versión>`), secreto `voc-kaggle-token` sin versiones en Pulumi (el autor carga la clave con `gcloud secrets versions add`) con `roles/secretmanager.secretAccessor` solo para `voc-sa-ml-backend`, inyectado como `KAGGLE_API_TOKEN`, y la API `secretmanager.googleapis.com`. Dependencia nueva: `kaggle` (oficial, 16 paquetes de Python puro);
   * cobertura: `rescore.py` 100 %, `ml-inference` 99 %, `infra/` 99 %.
 
-Sigue: `topics_refit.py` con el re-ajuste trimestral y la verificación de "Terminado cuando" sobre el histórico. **Pendiente del autor:** `pulumi up` en dev (habilita Cloud Resource Manager y Secret Manager, quita el permiso de proyecto y crea el secreto) y cargar la clave de Kaggle en `voc-kaggle-token` antes de publicar una imagen con `rescore`.
+* **Deriva sin alertas históricas** (decisión del autor, 2026-10-24): solo el último mes cerrado abre alerta, publica y crea subida. La primera corrida guarda los meses anteriores en `drift_metrics` con su marca `alert`, que sirve para medir las tasas, sin mandar decenas de correos por meses viejos.
+* **Re-ajuste trimestral de tópicos** (`voc_nlp.topics_refit`, `ml_inference.topics_refit`, comando `topics-refit`, Job `voc-ml-topics-refit`):
+  * port del ajuste de `topics_v1` (`incidents.backfill_topics.fit` y `topics.pilot.fit`), con los mismos parámetros: UMAP 5/15/0.0 coseno con semilla 0, HDBSCAN 100/10, c-TF-IDF 1–2 sin acentos y con las 456 palabras vacías del modelo guardado (`data/topic_stop_words_es.json`, verificadas contra su vectorizador). No usa Gemini: los nombres los pone el curador;
+  * **muestra** (decisión del autor, 2026-10-24): textos únicos `NEG` de dos palabras o más de los 12 meses cerrados más recientes, hasta 40 000 con la misma cuota por banco, sorteados en BigQuery con `FARM_FINGERPRINT` y semilla fija (del TDS solo salen los elegidos);
+  * **emparejamiento:** centroides en el espacio de MiniLM; los de la versión vigente salen de asignar las mismas cláusulas con su modelo congelado. Cada tópico nuevo va con el anterior más parecido, sin umbral (`previous_topic_id` y `centroid_similarity` en `topic_catalog`). Cambio frente a la firma prevista: `match` recibe centroides, porque el catálogo no los guarda;
+  * escribe los artefactos en `ml_artifacts/topics/<versión>/`, luego el catálogo y al final la versión;
+  * **activación** (decisión del autor, 2026-10-24): vista nueva `topic_model_current` (la versión más reciente cuyos tópicos emparejados tienen todos una decisión en `curation_topics`). La usan el delta (`state.py`) y `daily_topic_labels`; hasta entonces sigue la anterior. Al activarse, el delta re-asigna el histórico de lo más reciente a lo más viejo (solución temporal; el backfill en Kaggle pasa a 6.5);
+  * **Job** `voc-ml-topics-refit` (2 vCPU, 4 GiB, 1 h, sin reintentos) con Scheduler el día 2 de cada trimestre (`30 11 2 1,4,7,10 *` en *free tier*); el comando decide si toca (`topic_refit_frequency = quarterly` y sin versión del trimestre) o se fuerza con `--force`. Es el quinto Scheduler (el *free tier* cubre tres; ~$0.10 al mes cada uno extra).
+* **`drift-rates`** (`monitor/drift_rates.py`): lee `drift_metrics` y compara los meses de alerta al año por serie y banco con la tabla del análisis de escala (z ≥ 4, PSI ≥ 0.25), con tolerancia de ±0.5; las series sin referencia se juzgan contra el techo de 1.4. Sale con código 1 si alguna queda fuera o si no hay métricas.
+* Cobertura: `voc-nlp` 99 % (`topics_refit` 100 %), `ml-inference` 99 %, `infra/` 99 %.
+
+**Verificación en dev** (la corre el autor cuando la imagen de `ml-inference` con estos cambios esté publicada en `ml_inference_image`):
+
+1. `gcloud run jobs execute voc-ml-monitor`: la primera corrida llena el histórico de `drift_metrics` sin alertas viejas, crea la muestra del trimestre, mide la calidad (Gemini: ~500 textos del acuerdo semanal y las 300 reseñas de las familias, ~$0.05 en total) y llena `kpi_estimates`.
+2. `gcloud run jobs execute voc-ml-monitor --args=drift-rates`: todas las series dentro de la tolerancia cierra el primer criterio.
+3. Comprobar en BigQuery que `model_quality` y `kpi_estimates` tienen filas, y que un aviso o alerta llega al correo (el primero real, o publicando un mensaje de prueba en `voc-model-quality-topic`).
+4. Promoción y *rollback* quedan probados con dobles; su primera corrida real llega con el primer candidato (6.5). El portal (EPIC-7) consume las tablas y vistas.
+
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 
@@ -558,6 +575,7 @@ Sigue: `topics_refit.py` con el re-ajuste trimestral y la verificación de "Term
 * entrenamiento en GPU: un kernel de Kaggle (el `finetune` de 5.4 sin constantes de proyecto) o Cloud Run con GPU si el proyecto tiene cuota;
 * evaluación en el oro *dev* de `gold_labels` con la regla de 5.4, nueva T y curva de cobertura y riesgo, y registro del candidato en Vertex Model Registry;
 * promoción con aprobación humana (pantalla de EPIC-7 o el autor), que dispara el *re-scoring* de D13.
+* **backfill de tópicos en Kaggle** (decisión del autor, 2026-10-24): al activarse una versión nueva de tópicos (cuando termina su curaduría), el histórico de negativas se re-asigna en la GPU de Kaggle con el mismo patrón del *re-scoring* (dataset privado por corrida, verificación de la carga y borrado): segmentar, embeber las cláusulas con MiniLM y asignar con el UMAP y el BERTopic congelados de la versión. Puede ser un segundo kernel del mismo Job de Kaggle. **Limitación temporal hasta entonces:** el delta re-asigna el histórico a 20 000 reseñas por corrida, de las más recientes a las más viejas (~33 días para ~660 000 negativas); la vista diaria de temas queda correcta primero en los días recientes.
 
 ---
 

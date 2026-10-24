@@ -8,6 +8,10 @@
   ``risk_policy`` del modelo nuevo; el candidato ya debe estar re-predicho.
 * ``curve``: recalcula la curva de cobertura y riesgo de una versión.
 * ``risk-policy``: nueva versión de la ``risk_policy`` con otra cobertura.
+* ``topics-refit``: re-ajuste trimestral del modelo de tópicos (Job
+  ``voc-ml-topics-refit``); la versión nueva asigna cuando se cura.
+* ``drift-rates``: meses de alerta al año por serie y banco contra la línea
+  base histórica (solo lee ``drift_metrics``).
 * ``rescore``: predice todo el corpus con una versión candidata en la GPU
   de Kaggle (Job ``voc-ml-rescoring``), antes de promoverla.
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
@@ -78,6 +82,11 @@ def parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="promueve aunque el candidato sea significativamente peor",
+    )
+    sub.add_parser("drift-rates", help="tasas de alerta contra la línea base")
+    top = sub.add_parser("topics-refit", help="re-ajuste de tópicos")
+    top.add_argument(
+        "--force", action="store_true", help="ajusta aunque no toque"
     )
     res = sub.add_parser("rescore", help="re-predice con una candidata")
     res.add_argument("--model-version", required=True)
@@ -300,6 +309,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             training_data=args.training_data,
             license_name=args.license,
             now=now,
+        )
+        return 0
+    if args.command == "drift-rates":
+        from ml_inference.monitor.drift_rates import report
+
+        found = report(bigquery, settings.dataset)
+        for rate in found:
+            log.info(
+                "%-24s %-10s %5.2f meses/año (referencia %s, %d meses) %s",
+                rate.series,
+                rate.bank_id,
+                rate.per_year,
+                "—" if rate.reference is None else f"{rate.reference:.1f}",
+                rate.months,
+                "ok" if rate.ok else "FUERA",
+            )
+        return 0 if found and all(rate.ok for rate in found) else 1
+    if args.command == "topics-refit":
+        from ml_inference.state import load_state
+        from ml_inference.topics_refit import TopicsRefit
+
+        state = load_state(bigquery, settings.dataset)
+        TopicsRefit(settings, bigquery, storage, writer).run(
+            state.policy, state.topic_model_version, now, force=args.force
         )
         return 0
     if args.command == "rescore":

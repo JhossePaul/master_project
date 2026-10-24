@@ -419,6 +419,10 @@ class _Steps:
               AND a.prompt_version = @prompt
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
+            -- Las más recientes primero: al activarse una versión nueva el
+            -- histórico se re-asigna por tandas (hasta el backfill en
+            -- Kaggle).
+            ORDER BY p.fecha DESC
             LIMIT @limit
             """,
             prompt=gemini.PROMPT_VERSION,
@@ -578,6 +582,10 @@ class _Steps:
               AND a.topic_model_version = @version
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
+            -- Las más recientes primero: al activarse una versión nueva el
+            -- histórico se re-asigna por tandas (hasta el backfill en
+            -- Kaggle).
+            ORDER BY p.fecha DESC
             LIMIT @limit
             """,
             version=version,
