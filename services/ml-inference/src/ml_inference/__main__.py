@@ -4,8 +4,8 @@
 * ``seed``: versiones iniciales desde las métricas de EPIC-5 (autor).
 * ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
-* ``monitor``: el Job semanal de 6.4 (por ahora, deriva, cierre de subidas
-  y muestras humanas).
+* ``monitor``: el Job semanal de 6.4 (por ahora, deriva, cierre de subidas,
+  muestras humanas y calidad).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento (6.4).
 """
 
@@ -80,17 +80,39 @@ def _clients(settings: InferenceSettings):  # pragma: no cover - red real
     )
 
 
-def _publisher(settings: InferenceSettings):  # pragma: no cover - red real
+def _publisher(
+    settings: InferenceSettings, topic_name: str
+):  # pragma: no cover - red real
     from google.cloud import pubsub_v1
 
     client = pubsub_v1.PublisherClient()
-    topic = client.topic_path(settings.gcp_project_id, settings.drift_topic)
+    topic = client.topic_path(settings.gcp_project_id, topic_name)
 
     def publish(message) -> None:
         data = message.model_dump_json().encode("utf-8")
         client.publish(topic, data).result(timeout=60)
 
     return publish
+
+
+def _family_labeler(settings: InferenceSettings):  # pragma: no cover - red
+    """Familias con Gemini (``aspects_v2_1``) para ``families_validation``."""
+    from voc_nlp import aspects
+
+    client = aspects.make_client(
+        settings.gcp_project_id, settings.gemini_location
+    )
+    prompt = aspects.load_prompt()
+
+    def label(items):
+        return {
+            got.key: frozenset(f.value for f in got.families)
+            for got in aspects.label_batch(
+                client, items, prompt, settings.gemini_model
+            )
+        }
+
+    return label
 
 
 def _monitor_state(settings: InferenceSettings, bigquery, storage):
@@ -131,6 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             close_boosts,
             run_drift,
         )
+        from ml_inference.monitor.quality import QualityJob
         from ml_inference.monitor.samples import SampleJob
 
         state, vocab = _monitor_state(settings, bigquery, storage)
@@ -140,7 +163,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 bigquery, settings.dataset, settings.tds_table, vocab
             ),
             writer,
-            _publisher(settings),
+            _publisher(settings, settings.drift_topic),
             run_id,
         )
         close_boosts(clients, now)
@@ -149,6 +172,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             SampleJob(bigquery, writer, settings.dataset, run_id).run(
                 state.policy, state.model.model_version, now
             )
+            QualityJob(
+                bigquery,
+                writer,
+                settings.dataset,
+                settings.tds_table,
+                _publisher(settings, settings.quality_topic),
+                run_id,
+                _family_labeler(settings),
+                settings.gemini_model,
+            ).run(state.policy, state.model.model_version, now)
         return 0
     if args.command == "build-vocab":
         from ml_inference.seed import MODEL_VERSION

@@ -257,6 +257,7 @@ Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `e
 | `gold_versions` | `GoldVersion` | `hitl_v3` | — | — |
 
 * **Mensaje de Pub/Sub:** `DriftAlertMessage` (`operations_v3`), en `voc-incident-alerts-topic`; sin campos de texto. Reemplaza a `IncidentAlertMessage`.
+* **Mensaje de Pub/Sub:** `ModelQualityMessage` (`operations_v3`), en `voc-model-quality-topic` (D15): los avisos de `model_quality` (`warning`, `retrain`, `rejected`), sin campos de texto ni intervalo.
 * **Códigos:** `voc_common.analytics_codes` (`EligibilityCode`, `LabelSource`, `SentimentValue`, `AspectFamily`, los de HITL y los de operación). `text_key` vive en `voc_common.text_utils`: SHA-256 hexadecimal de UTF-8, igual a `TO_HEX(SHA256(texto_sanitizado))`.
 * **Tipos de BigQuery:** `bq_schema` mapea `str` (y sus enums) → `STRING`, `int` → `INT64`, `float` → `FLOAT64`, `bool` → `BOOL`, `datetime` → `TIMESTAMP`, `date` → `DATE`, listas → `REPEATED`, submodelos y `dict` → `JSON`; `Optional` → `NULLABLE`.
 

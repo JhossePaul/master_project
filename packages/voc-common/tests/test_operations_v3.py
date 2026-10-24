@@ -15,6 +15,7 @@ from voc_common.operations_v3 import (
     InferenceRun,
     KpiEstimate,
     ModelQuality,
+    ModelQualityMessage,
     ModelVersion,
     ReviewExplanation,
     TokenAttribution,
@@ -296,3 +297,15 @@ def test_gold_labels() -> None:
     with pytest.raises(ValidationError, match="design weight"):
         _gold_aspects(weight=1.0)
     assert _gold_aspects().id_resena is None
+
+
+def test_model_quality_message_is_a_notice_without_text() -> None:
+    row = _quality(status="retrain", value=0.85, threshold=0.89)
+    message = ModelQualityMessage.from_quality(row)
+    assert message.status == "retrain" and message.value == 0.85
+    assert "ci_low" not in ModelQualityMessage.model_fields
+    assert not {"text", "texto", "comment", "note"} & set(
+        ModelQualityMessage.model_fields
+    )
+    with pytest.raises(ValidationError, match="only warnings"):
+        ModelQualityMessage.from_quality(_quality(status="ok"))

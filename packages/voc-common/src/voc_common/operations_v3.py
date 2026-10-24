@@ -261,6 +261,36 @@ class ModelQuality(_AnalyticsRecord):
         return self
 
 
+class ModelQualityMessage(_AnalyticsRecord):
+    """Payload de ``voc-model-quality-topic`` (D15); sin texto ni PII.
+
+    Solo se publican los avisos (``warning``, ``retrain``, ``rejected``); no
+    disparan nada solos: los ve MLOps (EPIC-7, 7.9).
+    """
+
+    signal: QualitySignal
+    status: QualityStatus
+    model_version: NonEmpty | None = None
+    llm_model: NonEmpty | None = None
+    prompt_version: NonEmpty | None = None
+    period: NonEmpty
+    value: float
+    threshold: float | None = None
+    n: Counter
+    risk_policy_version: NonEmpty | None = None
+    computed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _notice(self) -> Self:
+        if self.status is QualityStatus.OK:
+            raise ValueError("only warnings are published")
+        return self
+
+    @classmethod
+    def from_quality(cls, row: "ModelQuality") -> "ModelQualityMessage":
+        return cls.model_validate(row.model_dump(exclude={"ci_low", "ci_high"}))
+
+
 class GoldLabel(_AnalyticsRecord):
     """Fila de ``gold_labels`` (D10): oro *dev* y ``aspects_gold_v2_1``.
 

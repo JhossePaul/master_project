@@ -30,6 +30,8 @@ class InferenceSettings(BaseSettings):
     torch_threads: int = Field(default=1, ge=1)
     # Tópico de las alertas de deriva (nombre heredado de EPIC-2).
     drift_topic: str = "voc-incident-alerts-topic"
+    # Avisos de model_quality (D15).
+    quality_topic: str = "voc-model-quality-topic"
 
     @property
     def dataset(self) -> str:

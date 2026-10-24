@@ -513,9 +513,15 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * siempre `blind`; la predicción se guarda en `predicted` para medir κ, y la API no la envía. Prioridad 1.0: van antes que los de baja confianza (prioridad 1 − confianza);
   * la semilla son 64 bits del SHA-256 de `<motivo>:<periodo>` y los candidatos se ordenan por `id_resena` antes de sortear: la muestra se reproduce. Ids `<motivo>:<periodo>:<id_resena>:<text_key[:16]>:<modelo>` con su evento `queued`; un periodo que ya tiene casos no se vuelve a muestrear;
   * `monitor_frequency` distinta de `quarterly` se registra como aviso y no muestrea.
-* **Pendiente de infraestructura:** `voc-sa-ml-backend` necesita `roles/pubsub.publisher` en `voc-incident-alerts-topic`; va con la suscripción de correo de D15.
+* `ml_inference.monitor.quality` (en el comando `monitor`, después de las muestras), una fila de `model_quality` por sujeto × señal × periodo, sin repetirla:
+  * `kappa_monitor`: κ de la primera revisión de la muestra del último trimestre cerrado, con IC *bootstrap*; se mide cuando toda la muestra está revisada; `retrain` bajo `retrain_kappa_floor`;
+  * `correction_rate`: revisiones de `low_confidence` y `drift_boost` de las últimas 4 semanas que no confirman al modelo, una fila por semana ISO; `warning` arriba de `warn_correction_rate`;
+  * `families_validation`: corre una vez por par `llm_model` × `prompt_version` (~$0.03). Etiqueta con Gemini las 300 reseñas de `aspects_gold_v2_1` (texto del TDS por `text_key`, dentro de GCP, F-10) y rechaza si el acuerdo exacto queda bajo `families_exact_floor` o si una familia con prevalencia ≥ `families_min_prevalence` queda con κ bajo el límite inferior de su IC de 5.7 (`FAMILY_BASELINE`, de `model_monitor_v0_metrics.json`). Si Gemini deja textos sin etiqueta, no escribe y se repite la semana siguiente;
+  * los avisos (`warning`, `retrain`, `rejected`) se publican como `ModelQualityMessage` (nuevo en `voc-common`, sin texto ni IC) en `voc-model-quality-topic`;
+  * falta `agreement_m4_gemini`: necesita portar a `voc-nlp` el etiquetado de sentimiento con Gemini (`label_gemini`, `prompt_v3`) y guardar las etiquetas semanales.
+* **Pendiente de infraestructura:** el tópico `voc-model-quality-topic` y `roles/pubsub.publisher` para `voc-sa-ml-backend` en él y en `voc-incident-alerts-topic`, con la suscripción de correo de D15. Sin ellos, el Job falla al publicar el primer aviso.
 
-Sigue, en orden: `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
+Sigue, en orden: `agreement_m4_gemini`, la infraestructura de avisos (D15), `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring` y secreto `voc-kaggle-token`). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 

@@ -35,11 +35,18 @@ def test_seed_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.quality as quality
     import ml_inference.monitor.samples as samples
 
+    monkeypatch.setattr(cli, "_family_labeler", lambda s: "labeler")
+    monkeypatch.setattr(
+        quality.QualityJob,
+        "run",
+        lambda self, p, m, n: env.setdefault("quality", self),
+    )
     model = type("M", (), {"model_version": "m1"})()
     state = type("S", (), {"model": model, "policy": "policy"})()
-    monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
+    monkeypatch.setattr(cli, "_publisher", lambda s, t: f"publish:{t}")
     monkeypatch.setattr(
         cli, "_monitor_state", lambda s, b, g: (state, frozenset({"a"}))
     )
@@ -56,10 +63,12 @@ def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert cli.main(["monitor"]) == 0
     assert env["close"] is env["drift"]
-    assert env["drift"].publish == "publish"
+    assert env["drift"].publish == "publish:voc-incident-alerts-topic"
     assert env["drift"].run_id.startswith("monitor_")
     assert env["drift"].source.vocab == frozenset({"a"})
     assert env["samples"] == ("policy", "m1")
+    assert env["quality"].publish == "publish:voc-model-quality-topic"
+    assert env["quality"].labeler == "labeler"
 
 
 def test_monitor_without_promoted_model_skips_samples(
@@ -68,7 +77,7 @@ def test_monitor_without_promoted_model_skips_samples(
     import ml_inference.monitor.drift_job as drift
     import ml_inference.monitor.samples as samples
 
-    monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
+    monkeypatch.setattr(cli, "_publisher", lambda s, t: f"publish:{t}")
     monkeypatch.setattr(cli, "_monitor_state", lambda s, b, g: (None, None))
     monkeypatch.setattr(drift, "close_boosts", lambda c, n: None)
     monkeypatch.setattr(drift, "run_drift", lambda s, c, n: None)
