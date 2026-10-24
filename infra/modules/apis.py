@@ -4,6 +4,8 @@ import pulumi_gcp as gcp
 
 _BASE_APIS: tuple[str, ...] = (
     "iam.googleapis.com",
+    # Política IAM del proyecto: crear o borrar un projects.IAMMember.
+    "cloudresourcemanager.googleapis.com",
     "pubsub.googleapis.com",
     "storage.googleapis.com",
     "bigquery.googleapis.com",

@@ -12,6 +12,7 @@ from infra.modules.apis import enable_project_apis
 _PROJECT = "test-voc-project"
 _BASE_APIS = {
     "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
     "pubsub.googleapis.com",
     "storage.googleapis.com",
     "bigquery.googleapis.com",
