@@ -1,6 +1,6 @@
 # EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado (2026-10-23):** **6.1 y 6.2 implementadas** en la rama `feature/epic6-contracts` (PR a `develop`, las dos juntas para no romper `main`); falta el `pulumi preview` del stack dev, que corre el autor ([estado de 6.1](#estado-de-61-2026-10-23) y [de 6.2](#estado-de-62-2026-10-23)). 6.3 y 6.4 pendientes. **Features 6.1 a 6.4 detalladas** (archivos, tablas, firmas, pruebas y criterio de terminado) a partir del [registro de decisión de 5.8](../analytics/decision_record.md) y del [esquema v3](../contracts/analytics_outputs_v3.md), con las [decisiones de diseño del autor](#-decisiones-de-diseño-de-epic-6-autor-2026-10-23) del 2026-10-23. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
+* **Estado (2026-10-24):** **6.1 y 6.2 implementadas** en la rama `feature/epic6-contracts` (PR a `develop`, las dos juntas para no romper `main`); 6.2 desplegada en el stack dev por el autor ([estado de 6.1](#estado-de-61-2026-10-23) y [de 6.2](#estado-de-62-2026-10-23)). 6.3 y 6.4 pendientes. **Features 6.1 a 6.4 detalladas** (archivos, tablas, firmas, pruebas y criterio de terminado) a partir del [registro de decisión de 5.8](../analytics/decision_record.md) y del [esquema v3](../contracts/analytics_outputs_v3.md), con las [decisiones de diseño del autor](#-decisiones-de-diseño-de-epic-6-autor-2026-10-23) del 2026-10-23. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
@@ -272,7 +272,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 #### Estado de 6.2 (2026-10-23)
 
-**Implementada; falta el `pulumi preview` del stack dev, que corre el autor.**
+**Implementada y desplegada en el stack dev (`pulumi up` del autor, 2026-10-24).**
 
 * **Tablas y vistas:** `infra/modules/analytics_bq.py` crea las 26 tablas con `bq_schema`, partición mensual y la agrupación de la tabla de arriba, donde la columna existe: `drift_alert_events`, `hitl_events` y `model_quality` no tienen `bank_id`, y `hitl_reviews` se agrupa solo por `task`. Las 8 vistas están en `infra/modules/sql/`.
 * **`daily_topic_labels`:** toma la versión de tópicos más reciente por `fitted_at` y el día en UTC. 6.3 la valida contra `daily_topics_v0`.
@@ -287,11 +287,10 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * el `pyproject.toml` de la raíz (quitar `services/ml-delora` de `exclude` al borrar el stub);
   * el digest de `ml_inference_image` en `Pulumi.dev.yaml`.
 * **Pruebas:** `test_analytics_bq.py` nueva. Se actualizaron `test_integration.py` (acepta `INT64`, `FLOAT64`, `BOOL`, `DATE` y `JSON`), `test_infra.py`, `test_infra_v2.py`, `test_ingestion_audit.py`, `test_compute.py` (Jobs, triggers e invocadores; sin Vertex), `test_apis.py`, `test_watermark_storage.py` y `test_deployment_phases.py`. Cobertura de `infra/modules`: 100 % (piso 80 %).
-* **Qué debe mostrar el preview del autor:**
-  * altas: 26 tablas, 8 vistas y el permiso del bucket;
-  * bajas: `delora_predictions` e `hitl_triage_audit_log`, que están vacías;
-  * una revisión nueva de `voc-ingestion-worker`, `voc-sanitization-job` y `voc-ingestion-history-job`, porque salen tres variables de entorno.
-  * Riesgo de diff permanente: las columnas nuevas usan `INT64`, `FLOAT64` y `BOOL`, que BigQuery devuelve como `INTEGER`, `FLOAT` y `BOOLEAN`. Si el preview las marca como cambio en cada corrida, `bq_schema` pasa a los nombres heredados.
+* **Despliegue en dev (autor, 2026-10-24):**
+  * el preview mostró lo esperado: 35 altas (26 tablas, 8 vistas y el permiso del bucket), 4 actualizaciones (la regla de borrado del bucket y una revisión nueva de los tres workloads de ingesta y sanitización, porque salen tres variables de entorno) y 2 bajas (`delora_predictions` y `hitl_triage_audit_log`, vacías);
+  * el primer `pulumi up` falló en `hitl_queue` y `drift_alerts_current`: la columna `at` es palabra reservada de BigQuery y las vistas la leían sin comillas invertidas. Se corrigió y `test_analytics_bq.py` comprueba que ninguna vista lea sin comillas una columna con nombre reservado;
+  * el segundo `pulumi up` completó el resto (2 vistas, la revisión de `voc-ingestion-worker` y las 2 bajas), y un preview posterior da 0 cambios (88 sin cambios). `INT64`, `FLOAT64` y `BOOL` no dejan diff permanente, así que `bq_schema` los conserva.
 * **FMEA:** F-21 calificada (S 5, O 2, D 4, RPN 40; decisión del autor). EPIC-2 anota lo reemplazado.
 
 ### FEATURE 6.3: Servicio de inferencia batch
@@ -454,7 +453,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 ## ✅ Checklist de Aceptación de la Épica 6
 
 * [x] Contratos v3 en `voc-common`, con `bq_schema` y su documento en `docs/contracts/` (6.1).
-* [ ] Tablas y vistas v3, Jobs de inferencia y de monitoreo, Scheduler e IAM aprovisionados con Pulumi; `delora_predictions`, `hitl_triage_audit_log` y el índice de 768 retirados (6.2). *Código y pruebas listos; falta el `pulumi preview`/`up` del autor, y los Jobs esperan la imagen de 6.3.*
+* [ ] Tablas y vistas v3, Jobs de inferencia y de monitoreo, Scheduler e IAM aprovisionados con Pulumi; `delora_predictions`, `hitl_triage_audit_log` y el índice de 768 retirados (6.2). *Desplegado en dev el 2026-10-24; los Jobs de inferencia y monitoreo esperan la imagen de 6.3.*
 * [ ] Backfills de 5.8 y 5.9 cargados y delta diario en operación con M4 fp32, Gemini y `model_v0` (6.3).
 * [ ] Política HITL y curva de cobertura y riesgo versionadas en BigQuery; la inferencia marca con la política vigente (6.1 a 6.3), una vez fijados los huecos del autor.
 * [ ] Monitor de deriva por banco, subidas HITL, calidad de M4 y de las familias, KPI con PPI, promoción, *rollback* y re-ajuste de tópicos probados (6.4).

@@ -156,6 +156,37 @@ def test_view_sql_never_reads_review_text(name: str) -> None:
     assert "sanitized_reviews_tds" not in sql
 
 
+# Palabras reservadas de GoogleSQL (BigQuery); una columna con ese nombre
+# solo se puede leer entre comillas invertidas.
+_RESERVED = frozenset(
+    """all and any array as asc assert_rows_modified at between by case cast
+    collate contains create cross cube current default define desc distinct
+    else end enum escape except exclude exists extract false fetch following
+    for from full group grouping groups hash having if ignore in inner
+    intersect interval into is join lateral left like limit lookup merge
+    natural new no not null nulls of on or order outer over partition
+    preceding proto qualify range recursive respect right rollup rows select
+    set some struct tablesample then to treat true unbounded union unnest
+    using when where window with within""".split()
+)
+
+
+def test_reserved_column_names_are_quoted_in_views() -> None:
+    columns = {
+        name
+        for model in ANALYTICS_V3_TABLES.values()
+        for name, _, _ in bq_schema(model)
+    }
+    reserved = columns & _RESERVED
+    assert reserved == {"at"}
+    for view in VIEWS:
+        sql = re.sub(r"--[^\n]*", "", view_sql(view))
+        for name in reserved:
+            # En minúsculas es la columna; las palabras clave van en mayúsculas.
+            bare = re.search(rf"(?<![`\w]){name}(?![`\w])", sql)
+            assert bare is None, f"{view}: quote `{name}`"
+
+
 def test_current_predictions_view_uses_the_promoted_model() -> None:
     sql = view_sql("review_predictions_current")
     assert "status = 'promoted'" in sql

@@ -1,9 +1,9 @@
 -- Estado vigente de cada alerta de deriva: su último evento.
 WITH last_event AS (
-  SELECT alert_id, status, actor_hash, at AS status_at, note, ticket
+  SELECT alert_id, status, actor_hash, `at` AS status_at, note, ticket
   FROM `{project}.{dataset}.drift_alert_events`
   WHERE TRUE
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY alert_id ORDER BY at DESC) = 1
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY alert_id ORDER BY `at` DESC) = 1
 )
 SELECT
   a.*,
