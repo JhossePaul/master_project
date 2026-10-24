@@ -96,12 +96,12 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | :--- | :--- |
 | `policy_version`, `valid_from` | |
 | `hitl_signal`, `hitl_target_coverage`, `hitl_threshold` | 5.6: `prob_max`, 0.90 y el umbral equivalente para `model_version` |
-| `hitl_weekly_cap` | Tope de revisiones por semana |
-| `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | Reacción automática a una alerta de deriva (P7-6): cobertura durante la subida, duración y tope; se aplica solo al banco que alertó |
+| `hitl_weekly_cap` | Tope de revisiones por semana. Nulo = sin tope (D12 de EPIC-6) |
+| `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | Reacción automática a una alerta de deriva (P7-6): cobertura durante la subida, duración y tope; se aplica solo al banco que alertó. Los tres nulos = sin subida automática (D12 de EPIC-6); se configuran juntos |
 | `monitor_sample_size`, `monitor_frequency` | Muestra humana de concepto (P7-7) |
 | `topic_refit_frequency` | Re-ajuste de tópicos (P7-8); global porque los tópicos se ajustan con los cinco bancos juntos |
 | `retrain_kappa_floor` | Reentrenamiento (P7-10): pedirlo si el κ de M4 en la muestra trimestral (`monitor_sample_size`: 300 revisiones por trimestre) queda debajo de 0.89 |
-| `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`, EPIC-7, 7.7); no confundir con `agreement_sample_weekly`, que es el acuerdo M4–Gemini. Sin valor todavía: lo fija el autor antes de sembrar la política |
+| `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`, EPIC-7, 7.7); no confundir con `agreement_sample_weekly`, que es el acuerdo M4–Gemini. Nulos = sin doble revisión (D12 de EPIC-6); se configuran juntos |
 | `warn_correction_rate`, `warn_agreement_floor`, `agreement_sample_weekly` | Avisos (P7-10), sin disparar solos: tasa de corrección de 4 semanas > 28 %; acuerdo M4–Gemini de 4 semanas < 94 %, con 500 textos por semana |
 | `families_exact_floor`, `families_min_prevalence` | Revalidación de las familias al cambiar el modelo o el prompt de Gemini (P7-11): acuerdo exacto ≥ 53 % en `aspects_gold_v2_1` (`muestra_v21` en EPIC-5) y ninguna familia con prevalencia ≥ 5 % bajo el límite inferior de su IC |
 | `set_by_hash`, `reason` | Revisor y dueño de negocio que la fijaron, y por qué |
@@ -180,7 +180,7 @@ Los ítems de una versión se reproducen aplicando sus criterios a `hitl_reviews
 
 ### `gold_labels` (oro en producción, D10 de EPIC-6)
 
-`gold_version`, `split` (`dev` o `aspects_gold_v2_1`, la `muestra_v21` de EPIC-5), `task` (`sentiment` o `aspects`), `id_resena`, `text_key`, `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio de EPIC-5 (guía `v2.2`) y las 300 reseñas de `muestra_v21` (guía `v2.1`). El oro *test* no se carga: quedó consumido en 5.8. Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias (6.4). Son etiquetas individuales: viven solo en BigQuery, nunca en git (fila F-21 de la FMEA).
+`gold_version`, `split` (`dev` o `aspects_gold_v2_1`, la `muestra_v21` de EPIC-5), `task` (`sentiment` o `aspects`), `id_resena` (nulo en el oro de aspectos, que es por texto único), `text_key`, `weight` (1/π del oro *dev* aleatorio; nulo en aspectos; D17 de EPIC-6), `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio de EPIC-5 (guía `v2.2`) y las 300 reseñas de `muestra_v21` (guía `v2.1`). El oro *test* no se carga: quedó consumido en 5.8. Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias (6.4). Son etiquetas individuales: viven solo en BigQuery, nunca en git (fila F-21 de la FMEA).
 
 La curaduría de tópicos (`curation_topics` del borrador de 5.5) se queda aparte, porque su grano es el tópico y no la reseña.
 
@@ -282,9 +282,11 @@ Aprobadas por el autor al revisar los contratos de 6.1. Ninguna cambia una decis
 | `inference_runs` | Suma `peak_memory_mib` (la memoria pico que pide 6.3, D9). `status`: `succeeded` o `failed` |
 | `drift_metrics` | `period` es el `DATE` del día 1 del mes; suma `threshold` y `computed_at`. Una serie usa z o PSI, no los dos |
 | `drift_policy`, `drift_policy_template` | `entry_rule` pasa a `entry_months` (entero, 12): meses seguidos con `min_rows_per_month` para entrar. `thresholds` es `{"z": {serie: umbral}, "psi": {serie: umbral}}`, con nulo para las series sin alerta (D8) |
-| `risk_policy` | Suma `model_version`: el modelo para el que `hitl_threshold` equivale a la cobertura |
+| `risk_policy` | Suma `model_version`: el modelo para el que `hitl_threshold` equivale a la cobertura. El tope semanal, la subida por deriva y la doble revisión aceptan nulos hasta que los fije el dueño de negocio (D12 de EPIC-6, 2026-10-24) |
 | `review_explanations` | `attributions` guarda posiciones en `texto_sanitizado` (`start`, `end`, `weight`), no el texto del token: la tabla no copia texto |
 | `hitl_reviews` | Las marcas `u` y `s` van en `predicted_flag_update`, `validated_flag_update`, `predicted_flag_security` y `validated_flag_security`. `task = topic` no se acepta: la curaduría de tópicos va a `curation_topics` |
 | `topic_model_versions` | `segmenter` (`clauses_v0`), `params` (JSON) y `fit_sample` |
 | `model_quality` | `ic95` va en `ci_low` y `ci_high`; suma `computed_at` |
-| `hitl_coverage_curves` | Suma `computed_at`; el volumen por banco va en `weekly_volume_by_bank` (JSON) |
+| `hitl_coverage_curves` | Suma `computed_at`; el volumen por banco va en `weekly_volume_by_bank` (JSON). Cada punto acepta el intervalo de riesgo nulo donde 5.6 no lo midió (cobertura 1.0, D17 de EPIC-6) |
+| `gold_labels` | Suma `weight` (1/π) y su `id_resena` es nulo en el oro de aspectos (D17 de EPIC-6, 2026-10-24) |
+| `drift_policy.thresholds` | Series de la siembra (6.3), las que lee el monitor de 6.4. Con z ≥ 4: `mean_words`, `single_word_share`, `over_60_words_share`, `not_predicted_share`, `out_of_vocabulary_share` y `neg_share`. Con PSI ≥ 0.25: `length_distribution`. Con umbral nulo (D8): `family_<código>` de las 11 familias y `flag_update_share` |

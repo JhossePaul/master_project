@@ -14,10 +14,15 @@ Decisión del autor (2026-10-22). Reemplaza el esquema de un hilo por dominio or
    * commitea en su rama y, al terminar, deja su reporte en `docs/` (el de su feature) y su rama lista para merge. La principal revisa el diff y hace el merge con la aprobación del autor.
 3. **La comunicación va por el repo, no por mensajes.** El estado vive en `docs/backlog/epic_N.md`, los reportes de cada feature y este archivo. Si la paralela necesita algo de la principal, lo anota en su reporte y se detiene; no se coordinan con `SendMessage`. Entre features se comparten artefactos versionados (por ejemplo, `gold_v1`) con su reporte y el esquema de sus columnas; importar un módulo de otra área sin modificarlo está permitido.
 4. **Exploración amplia con subagentes.** Buscar o leer en muchos archivos se delega a un subagente que devuelve solo la conclusión, para no llenar el contexto de la sesión.
-5. **Sesión nueva por tema cuando el contexto crece.** Al cerrar una feature, o cuando la conversación ya es larga, se empieza una sesión nueva. Lo que hay que recordar se escribe antes en el repo (backlog, reporte o este archivo).
+5. **Cuándo se empieza una sesión nueva** (decisión del autor, 2026-10-24):
+   * en trabajo exploratorio o analítico (EPIC-5), una sesión por feature: cada feature deja mucho contexto que la siguiente no usa (modelos descartados, corridas, métricas);
+   * en implementación determinista (EPIC-6 y, salvo la parte abierta del frontal, EPIC-7), una sesión por épica: los contratos, la infraestructura y las convenciones que se fijan en una feature los usa la siguiente;
+   * en los dos casos se corta antes si el contexto se acerca al límite o si lo que sigue no comparte nada con lo anterior;
+   * lo que hay que recordar se escribe antes en el repo (backlog, reporte o este archivo).
 6. **Commits:**
    * se agrupan por tema; los cambios chicos o relacionados esperan a juntarse con otros en vez de commitearse uno por uno;
    * la sesión propone los commits con su mensaje y commitea solo cuando el autor aprueba; lo mismo para push y PR;
+   * no se abren PR a `develop`: la principal commitea ahí directamente y la rama de la paralela se mezcla en local con un push simple. El único PR es `develop` → `main` (decisión del autor, 2026-10-24);
    * los mensajes terminan con la línea `Co-Authored-By` indicada para la sesión.
 
 ## Mapa de áreas
@@ -38,7 +43,7 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 5.9 Temas por día y versiones (descriptivo) | Temas por día | `experiments/analytics/src/voc_analytics/incidents/`, `docs/analytics/incidents/` y la sección de la feature 5.9 en `docs/backlog/epic_5.md`. Consume (sin modificarlos) `labeling/eligibility.py`, `topics/versions.py`, `scale/backfill.py` y las predicciones del backfill de M4 (`data/backfill/20261022/`) |
 | 6.1 Contratos v3 | Contratos | `packages/voc-common/`, `docs/contracts/analytics_outputs_v3.md` (reemplaza al borrador `analytics_outputs_v3_draft.md`) |
 | 6.2 Infraestructura de salidas y curadurías | Infraestructura | `infra/`, `.github/workflows/`, `.dockerignore` y el `pyproject.toml` de la raíz |
-| 6.3 Inferencia batch y 6.4 Monitoreo y ciclo de vida | Inferencia | `packages/voc-nlp/` (nuevo), `services/ml-inference/` (nuevo; reemplaza al stub `services/ml-delora/`) |
+| 6.3 Inferencia batch, 6.4 Monitoreo y ciclo de vida y 6.5 Reentrenamiento | Inferencia | `packages/voc-nlp/` (nuevo), `services/ml-inference/` (nuevo; reemplaza al stub `services/ml-delora/`) |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
 Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6 (filas 6.1 a 6.4). EPIC-7 se agrega a esta tabla cuando arranque. Dentro de EPIC-6 el orden es 6.1 → 6.2 → 6.3 → 6.4 ([`epic_6.md`](docs/backlog/epic_6.md)); 6.1 y 6.2 comparten PR, así que no son independientes.
