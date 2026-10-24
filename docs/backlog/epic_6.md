@@ -574,7 +574,9 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * un Job que arma el conjunto de entrenamiento en BigQuery: la plata de Gemini más las revisiones del HITL, sin el oro *test* (consumido en 5.8);
 * entrenamiento en GPU: un kernel de Kaggle (el `finetune` de 5.4 sin constantes de proyecto) o Cloud Run con GPU si el proyecto tiene cuota;
 * evaluación en el oro *dev* de `gold_labels` con la regla de 5.4, nueva T y curva de cobertura y riesgo, y registro del candidato en Vertex Model Registry;
-* promoción con aprobación humana (pantalla de EPIC-7 o el autor), que dispara el *re-scoring* de D13.
+* *re-scoring* del candidato y después promoción con aprobación humana (pantalla de EPIC-7 o el autor). **Orden corregido en 6.4:** el *re-scoring* precede a la promoción, no la dispara.
+
+**Ya existe en 6.4** (6.5 lo reutiliza, sin rehacerlo): `register` (candidato en Vertex Model Registry con su curva), `rescore` (Job `voc-ml-rescoring`, kernel de Kaggle con GPU y el secreto `voc-kaggle-token`), `promote` con la regla de promoción, la curva y la `risk_policy` nueva (`--force` si el candidato es peor), el *rollback* y el aviso `retrain` de `model_quality`, que sería el disparador del reentrenamiento.
 * **backfill de tópicos en Kaggle** (decisión del autor, 2026-10-24): al activarse una versión nueva de tópicos (cuando termina su curaduría), el histórico de negativas se re-asigna en la GPU de Kaggle con el mismo patrón del *re-scoring* (dataset privado por corrida, verificación de la carga y borrado): segmentar, embeber las cláusulas con MiniLM y asignar con el UMAP y el BERTopic congelados de la versión. Puede ser un segundo kernel del mismo Job de Kaggle. **Limitación temporal hasta entonces:** el delta re-asigna el histórico a 20 000 reseñas por corrida, de las más recientes a las más viejas (~33 días para ~660 000 negativas); la vista diaria de temas queda correcta primero en los días recientes.
 
 ---
