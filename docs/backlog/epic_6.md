@@ -508,9 +508,14 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
   * una subida por banco: si ya tiene una activa, la alerta la cita y no abre otra. `close_boosts` cierra con `expired` las vencidas y con `alert_closed` las de alertas descartadas (`dismissed`);
   * `test_drift_job.py` cubre los criterios de la sección (cobertura de `ml-inference`: 98 %). Suma la dependencia `google-cloud-pubsub` y `drift_topic` en la configuración.
 * `out_of_vocabulary_share` (decisión del autor, 2026-10-24: artefacto junto a los pesos): `ml_inference build-vocab` arma el vocabulario de 5.7 (palabras en minúsculas de la partición de entrenamiento de la plata) leyendo `archive/epic5/labels/silver_v0/` en memoria y lo sube a `ml_artifacts/sentiment/<model_version>/training_vocab.txt`, sin pasar por disco ni salir de GCP (F-01, F-11). Con el archivo real da las mismas 44 997 palabras que `drift_baseline.training_vocab`. El monitor baja el vocabulario del modelo promovido, lo carga en una tabla temporal y calcula la fracción de tokens de `texto_sanitizado` fuera de él, por banco y mes; sin vocabulario, la serie se omite con un aviso.
+* `ml_inference.monitor.samples` (en el comando `monitor`, después de la deriva):
+  * `create_monitor_sample`: `monitor_sample_size` reseñas del último trimestre cerrado, entre las predichas por el modelo promovido (`label_source = MODEL`); `create_agreement_sample`: `human_agreement_sample_size` del último periodo cerrado de `human_agreement_frequency` (`monthly` o `quarterly`), sin casos si los dos son nulos (D12);
+  * siempre `blind`; la predicción se guarda en `predicted` para medir κ, y la API no la envía. Prioridad 1.0: van antes que los de baja confianza (prioridad 1 − confianza);
+  * la semilla son 64 bits del SHA-256 de `<motivo>:<periodo>` y los candidatos se ordenan por `id_resena` antes de sortear: la muestra se reproduce. Ids `<motivo>:<periodo>:<id_resena>:<text_key[:16]>:<modelo>` con su evento `queued`; un periodo que ya tiene casos no se vuelve a muestrear;
+  * `monitor_frequency` distinta de `quarterly` se registra como aviso y no muestrea.
 * **Pendiente de infraestructura:** `voc-sa-ml-backend` necesita `roles/pubsub.publisher` en `voc-incident-alerts-topic`; va con la suscripción de correo de D15.
 
-Sigue, en orden: `samples.py`, `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
+Sigue, en orden: `quality.py`, `kpis.py`, `lifecycle.py` (curva, promoción y *rollback*), `rescore.py` e infraestructura (Job `voc-ml-rescoring`, secreto `voc-kaggle-token`, tópico `voc-model-quality-topic` y correo, D15). `topics_refit.py` va con el re-ajuste trimestral.
 
 ### FEATURE 6.5: Reentrenamiento automatizado (D14)
 

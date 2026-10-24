@@ -35,23 +35,50 @@ def test_seed_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.samples as samples
 
+    model = type("M", (), {"model_version": "m1"})()
+    state = type("S", (), {"model": model, "policy": "policy"})()
     monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
-    monkeypatch.setattr(cli, "_monitor_vocab", lambda s, b, g: frozenset({"a"}))
+    monkeypatch.setattr(
+        cli, "_monitor_state", lambda s, b, g: (state, frozenset({"a"}))
+    )
     monkeypatch.setattr(
         drift, "close_boosts", lambda c, n: env.setdefault("close", c)
     )
     monkeypatch.setattr(
         drift, "run_drift", lambda s, c, n: env.setdefault("drift", c)
     )
+    monkeypatch.setattr(
+        samples.SampleJob,
+        "run",
+        lambda self, p, m, n: env.setdefault("samples", (p, m)),
+    )
     assert cli.main(["monitor"]) == 0
     assert env["close"] is env["drift"]
     assert env["drift"].publish == "publish"
     assert env["drift"].run_id.startswith("monitor_")
     assert env["drift"].source.vocab == frozenset({"a"})
+    assert env["samples"] == ("policy", "m1")
 
 
-def test_monitor_vocab_is_optional(
+def test_monitor_without_promoted_model_skips_samples(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.samples as samples
+
+    monkeypatch.setattr(cli, "_publisher", lambda s: "publish")
+    monkeypatch.setattr(cli, "_monitor_state", lambda s, b, g: (None, None))
+    monkeypatch.setattr(drift, "close_boosts", lambda c, n: None)
+    monkeypatch.setattr(drift, "run_drift", lambda s, c, n: None)
+    monkeypatch.setattr(
+        samples.SampleJob, "run", lambda *a: pytest.fail("no samples")
+    )
+    assert cli.main(["monitor"]) == 0
+
+
+def test_monitor_state_tolerates_missing_pieces(
     env: dict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import ml_inference.state as state
@@ -59,18 +86,25 @@ def test_monitor_vocab_is_optional(
     from ml_inference.config import InferenceSettings
 
     model = type("M", (), {"model_version": "m1"})()
-    monkeypatch.setattr(
-        state, "load_state", lambda b, d: type("S", (), {"model": model})()
-    )
+    loaded = type("S", (), {"model": model})()
+    monkeypatch.setattr(state, "load_state", lambda b, d: loaded)
     settings = InferenceSettings()  # type: ignore[call-arg]
 
     def missing(*a: Any) -> frozenset[str]:
         raise FileNotFoundError("no vocabulary for m1")
 
+    def no_model(*a: Any) -> Any:
+        raise state.NoPromotedModel("none")
+
     monkeypatch.setattr(vocab, "load_vocab", lambda s, g, m: frozenset({m}))
-    assert cli._monitor_vocab(settings, "bq", "gcs") == frozenset({"m1"})
+    assert cli._monitor_state(settings, "bq", "gcs") == (
+        loaded,
+        frozenset({"m1"}),
+    )
     monkeypatch.setattr(vocab, "load_vocab", missing)
-    assert cli._monitor_vocab(settings, "bq", "gcs") is None
+    assert cli._monitor_state(settings, "bq", "gcs") == (loaded, None)
+    monkeypatch.setattr(state, "load_state", no_model)
+    assert cli._monitor_state(settings, "bq", "gcs") == (None, None)
 
 
 def test_build_vocab_dispatch(

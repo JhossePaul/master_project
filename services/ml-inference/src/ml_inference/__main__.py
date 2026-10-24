@@ -4,7 +4,8 @@
 * ``seed``: versiones iniciales desde las métricas de EPIC-5 (autor).
 * ``load-local``: carga única del backfill de EPIC-5 desde el Mac (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
-* ``monitor``: el Job semanal de 6.4 (por ahora, deriva y cierre de subidas).
+* ``monitor``: el Job semanal de 6.4 (por ahora, deriva, cierre de subidas
+  y muestras humanas).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento (6.4).
 """
 
@@ -92,17 +93,26 @@ def _publisher(settings: InferenceSettings):  # pragma: no cover - red real
     return publish
 
 
-def _monitor_vocab(settings: InferenceSettings, bigquery, storage):
-    """Vocabulario del modelo promovido, o ``None`` si falta (sin OOV)."""
+def _monitor_state(settings: InferenceSettings, bigquery, storage):
+    """Estado de servicio y vocabulario del modelo promovido.
+
+    Sin modelo promovido no hay muestras ni vocabulario; sin vocabulario,
+    la deriva omite ``out_of_vocabulary_share``.
+    """
     from ml_inference.state import NoPromotedModel, load_state
     from ml_inference.vocab import load_vocab
 
     try:
-        model = load_state(bigquery, settings.dataset).model.model_version
-        return load_vocab(settings, storage, model)
-    except (NoPromotedModel, FileNotFoundError) as exc:
+        state = load_state(bigquery, settings.dataset)
+    except NoPromotedModel as exc:
         log.warning("monitor: %s", exc)
-        return None
+        return None, None
+    try:
+        vocab = load_vocab(settings, storage, state.model.model_version)
+    except FileNotFoundError as exc:
+        log.warning("monitor: %s", exc)
+        vocab = None
+    return state, vocab
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -121,20 +131,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             close_boosts,
             run_drift,
         )
+        from ml_inference.monitor.samples import SampleJob
 
+        state, vocab = _monitor_state(settings, bigquery, storage)
+        run_id = f"monitor_{now:%Y%m%dT%H%M%S}"
         clients = MonitorClients(
             BqDriftSource(
-                bigquery,
-                settings.dataset,
-                settings.tds_table,
-                _monitor_vocab(settings, bigquery, storage),
+                bigquery, settings.dataset, settings.tds_table, vocab
             ),
             writer,
             _publisher(settings),
-            f"monitor_{now:%Y%m%dT%H%M%S}",
+            run_id,
         )
         close_boosts(clients, now)
         run_drift(settings, clients, now)
+        if state is not None:
+            SampleJob(bigquery, writer, settings.dataset, run_id).run(
+                state.policy, state.model.model_version, now
+            )
         return 0
     if args.command == "build-vocab":
         from ml_inference.seed import MODEL_VERSION
