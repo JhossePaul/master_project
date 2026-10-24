@@ -17,7 +17,9 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # torch de CPU, transformers y BERTopic (voc-nlp, ml-inference) alargan la
+    # instalación del workspace.
+    timeout-minutes: 25
     env:
       ENVIRONMENT: test
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'bbva-voc-analyzer-test' }}
@@ -75,6 +77,16 @@ jobs:
           uv run --frozen pytest tools/tests
           --cov=tools --cov-fail-under=85
 
+      - name: NLP logic ported from EPIC-5
+        run: >-
+          uv run --frozen pytest packages/voc-nlp/tests
+          --cov=packages/voc-nlp/src --cov-fail-under=85
+
+      - name: Batch inference, loads and seed
+        run: >-
+          uv run --frozen pytest services/ml-inference/tests
+          --cov=ml_inference --cov-fail-under=85
+
   ingestion-image:
     # Valida que la imagen del worker construye; la publicación es del CD.
     runs-on: ubuntu-latest
@@ -119,4 +131,28 @@ jobs:
           # Sin INGESTION_V2_ENABLED el preflight debe fallar cerrado (64).
           test "$code" = "64"
           id=$(docker run --rm --entrypoint id sanitization-pipeline:ci -u)
+          test "$id" = "10001"
+
+  ml-inference-image:
+    # Valida que la imagen de los Jobs de inferencia construye (torch de CPU);
+    # la publicación es del CD.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build ml-inference image
+        run: >-
+          docker build --platform=linux/amd64
+          --file services/ml-inference/Dockerfile
+          --tag ml-inference:ci .
+
+      - name: Smoke test entrypoint
+        run: |
+          # `monitor` no hace nada hasta 6.4 y no necesita GCP.
+          docker run --rm ml-inference:ci monitor
+          docker run --rm --entrypoint python ml-inference:ci -c \
+            "import ml_inference.delta, voc_nlp.sentiment_model, voc_nlp.topics"
+          id=$(docker run --rm --entrypoint id ml-inference:ci -u)
           test "$id" = "10001"

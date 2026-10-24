@@ -21,9 +21,11 @@ El flujo de trabajo se divide en 4 capas principales desplegadas de forma
 2. **Capa de Sanitización y Almacenamiento:** Pipeline en Apache Beam / Cloud
   Dataflow que integra Cloud DLP para enmascarar datos personales (PII) en tiempo
   real antes de persistir en BigQuery.
-3. **Capa de Machine Learning:** Arquitectura Dual LoRA (Delora) desplegada en
-  Vertex AI para aislar el *Label Noise Bias* (sesgo de 5 estrellas por
-  obligación) y ejecutar análisis de sentimientos y extracción de tópicos (ABSA).
+3. **Capa de Machine Learning:** RoBERTuito ajustado para sentimiento, con
+  *temperature scaling* y revisión humana por apetito de riesgo; familias de
+  aspectos con Gemini en Vertex AI y tópicos con BERTopic congelado. Corre como
+  Cloud Run Jobs en CPU (delta diario) y escribe salidas versionadas en
+  BigQuery (EPIC-5 decide los modelos; EPIC-6 los despliega).
 4. **Capa de Consumo:** Backend en FastAPI que expone búsqueda vectorial y
   métricas clave hacia una Single Page Application (SPA) en React para el triaje
   humano.
@@ -39,11 +41,12 @@ bbva-voc-analyzer/
 ├── docs/governance/        # Artefactos normativos: Data Card, Model Card, Ethical FMEA
 ├── infra/                  # Infraestructura como Código (Pulumi - Python)
 ├── packages/
-│   └── voc-common/         # Contratos de datos (Esquemas Pydantic) compartidos
+│   ├── voc-common/         # Contratos de datos (Esquemas Pydantic) compartidos
+│   └── voc-nlp/            # Lógica de inferencia portada de EPIC-5 (elegibilidad, modelos)
 ├── services/
 │   ├── ingestion-worker/   # Servicio de extracción de reseñas (Google Play/App Store)
 │   ├── sanitization-pipeline/ # Job de Dataflow para limpieza y Cloud DLP
-│   ├── ml-delora/          # Entrenamiento, inferencia y monitoreo de modelos en Vertex AI
+│   ├── ml-inference/       # Jobs de inferencia batch, cargas y siembra (EPIC-6)
 │   └── api-backend/        # API RESTful (FastAPI) de consulta y ruteo
 └── web/
     └── hitl-portal/        # Frontend (React + Vite) para exploración de incidentes
