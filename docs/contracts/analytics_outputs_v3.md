@@ -1,6 +1,8 @@
-# Salidas analíticas v3: borrador de esquemas y migración
+# Salidas analíticas v3: contrato
 
-> **Estado (2026-10-22): aprobado por el autor con una condición** (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplazaría a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** `incident_alerts` e `incident_alert_events` pasan a `drift_alerts` y `drift_alert_events` (solo deriva), sale `incident_signal` de la `drift_policy` y se agrega la vista `daily_topic_labels`. **Actualizada el 2026-10-23 con el detalle de [EPIC-6](../backlog/epic_6.md#cambios-en-otros-documentos):** tabla `gold_labels` (D10), `palabras` en `review_predictions`, `text_key`, `bank_id` y `fecha` en `topic_assignments`, `local` en `inference_runs.environment`, tamaño y frecuencia de `agreement_sample` en `risk_policy` y umbral nulo para las familias y `u` en el monitor (D8).
+> **Estado (2026-10-23): contrato vigente, implementado en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2).** Reemplaza al borrador `analytics_outputs_v3_draft.md`, aprobado por el autor en 5.8 (P8-5 y P8-11) con la condición de cubrir el frontal de EPIC-7 ([sección 6](#6-cobertura-del-frontal-de-epic-7)). **La fuente de las columnas son los modelos de `voc-common`** ([sección 7](#7-implementación-tabla--modelo--módulo)): `infra/` deriva el esquema de BigQuery de cada uno con `bq_schema`. Los detalles que el borrador dejaba abiertos se fijaron al implementar, con la aprobación del autor ([sección 8](#8-columnas-fijadas-al-implementar-2026-10-23)).
+>
+> **Historia del borrador:** aprobado por el autor el 2026-10-22 con una condición (P8-5 y P8-11 del [registro](../backlog/epic_5.md#decisiones-pendientes)): que cubra todas las necesidades del frontal de EPIC-7. **Revisada el 2026-10-22** contra el frontal reescrito (P8-12; [sección 6](#6-cobertura-del-frontal-de-epic-7)): se agregaron el modo ciego del HITL, la doble revisión, las explicaciones fuera del HITL (`review_explanations`), las guías (`guidelines`), las estimaciones del cockpit (`kpi_estimates`) y la historia de las alertas (`incident_alert_events`). Incorpora sus cambios del 2026-10-22: valores explícitos en `eligibility_code` y `sentiment`, inferencia por texto único en el backfill, versiones del oro a partir del HITL y comentario del revisor. Reemplaza a `delora_predictions` y `hitl_triage_audit_log` de EPIC-2 y a sus contratos de EPIC-1. Se implementa en [EPIC-6](../backlog/epic_6.md) (6.1 y 6.2) cuando se apruebe el registro de decisión (5.8). Los nombres de columnas son provisionales. **Actualizada el 2026-10-22 al acotar 5.9 a lo descriptivo:** `incident_alerts` e `incident_alert_events` pasan a `drift_alerts` y `drift_alert_events` (solo deriva), sale `incident_signal` de la `drift_policy` y se agrega la vista `daily_topic_labels`. **Actualizada el 2026-10-23 con el detalle de [EPIC-6](../backlog/epic_6.md#cambios-en-otros-documentos):** tabla `gold_labels` (D10), `palabras` en `review_predictions`, `text_key`, `bank_id` y `fecha` en `topic_assignments`, `local` en `inference_runs.environment`, tamaño y frecuencia de `agreement_sample` en `risk_policy` y umbral nulo para las familias y `u` en el monitor (D8).
 
 ## Principios
 
@@ -220,3 +222,69 @@ Revisión pantalla por pantalla (condición de P8-5, 2026-10-22) contra el [fron
 3. **Sí se guarda un comentario del revisor** (`hitl_reviews.comment`), sanitizado antes de guardarse.
 
 **Condición de la aprobación:** el esquema debe cubrir todas las necesidades del frontal de EPIC-7, que todavía no se revisa. Se vuelve a revisar al definir el alcance de EPIC-7 (P8-12).
+
+## 7. Implementación: tabla → modelo → módulo
+
+Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `extra="forbid"`, inmutable, fechas en UTC) que valida las reglas de este documento. `ANALYTICS_V3_TABLES` (`voc_common.bq_schema`) es el registro de las 26 tablas; `infra/modules/analytics_bq.py` las crea en `bbva_voc_tds` con partición mensual y agrupación (`TABLE_LAYOUTS`).
+
+| Tabla | Modelo | Módulo | Partición (mes) | Agrupada por |
+| :--- | :--- | :--- | :--- | :--- |
+| `review_predictions` | `ReviewPrediction` | `predictions_v3` | `fecha` | `bank_id`, `model_version`, `sentiment` |
+| `review_aspects` | `ReviewAspects` | `predictions_v3` | `fecha` | `bank_id`, `prompt_version` |
+| `text_embeddings` | `TextEmbedding` | `predictions_v3` | `mes` | `bank_id` |
+| `topic_model_versions` | `TopicModelVersion` | `predictions_v3` | — | `topic_model_version` |
+| `topic_catalog` | `TopicCatalogEntry` | `predictions_v3` | — | `topic_model_version` |
+| `topic_assignments` | `TopicAssignment` | `predictions_v3` | `fecha` | `bank_id`, `topic_model_version` |
+| `curation_topics` | `TopicCuration` | `predictions_v3` | — | `topic_model_version` |
+| `model_versions` | `ModelVersion` | `operations_v3` | — | — |
+| `inference_runs` | `InferenceRun` | `operations_v3` | `started_at` | — |
+| `drift_metrics` | `DriftMetric` | `operations_v3` | `period` | `bank_id` |
+| `drift_alerts` | `DriftAlert` | `operations_v3` | `created_at` | `bank_id` |
+| `drift_alert_events` | `DriftAlertEvent` | `operations_v3` | `at` | — |
+| `kpi_estimates` | `KpiEstimate` | `operations_v3` | `computed_at` | `bank_id` |
+| `review_explanations` | `ReviewExplanation` | `operations_v3` | — | — |
+| `model_quality` | `ModelQuality` | `operations_v3` | — | — |
+| `gold_labels` | `GoldLabel` | `operations_v3` | — | — |
+| `risk_policy` | `RiskPolicy` | `policies` | — | — |
+| `hitl_boosts` | `HitlBoost` | `policies` | — | `bank_id` |
+| `drift_policy` | `DriftPolicy` | `policies` | — | `bank_id` |
+| `drift_policy_template` | `DriftPolicyTemplate` | `policies` | — | — |
+| `hitl_coverage_curves` | `HitlCoverageCurve` (puntos `CoveragePoint`) | `policies` | — | — |
+| `hitl_items` | `HitlItem` | `hitl_v3` | `created_at` | `bank_id`, `task` |
+| `hitl_events` | `HitlEvent` | `hitl_v3` | `at` | — |
+| `hitl_reviews` | `HitlReview` | `hitl_v3` | `submitted_at` | `task` |
+| `guidelines` | `Guideline` | `hitl_v3` | — | — |
+| `gold_versions` | `GoldVersion` | `hitl_v3` | — | — |
+
+* **Mensaje de Pub/Sub:** `DriftAlertMessage` (`operations_v3`), en `voc-incident-alerts-topic`; sin campos de texto. Reemplaza a `IncidentAlertMessage`.
+* **Códigos:** `voc_common.analytics_codes` (`EligibilityCode`, `LabelSource`, `SentimentValue`, `AspectFamily`, los de HITL y los de operación). `text_key` vive en `voc_common.text_utils`: SHA-256 hexadecimal de UTF-8, igual a `TO_HEX(SHA256(texto_sanitizado))`.
+* **Tipos de BigQuery:** `bq_schema` mapea `str` (y sus enums) → `STRING`, `int` → `INT64`, `float` → `FLOAT64`, `bool` → `BOOL`, `datetime` → `TIMESTAMP`, `date` → `DATE`, listas → `REPEATED`, submodelos y `dict` → `JSON`; `Optional` → `NULLABLE`.
+
+**Vistas** (`infra/modules/sql/`, una consulta por vista):
+
+| Vista | Qué devuelve |
+| :--- | :--- |
+| `review_predictions_current` | Filas de la versión promovida (último estado de `model_versions`) y, por `id_resena`, la última por `fecha` y `predicted_at`; suma `estrellas_clase` (1–2 `NEG`, 3 `NEU`, 4–5 `POS`), `estrellas_difiere`, `incongruencia_extremos` (1–2 estrellas con texto `POS` o 4–5 con `NEG`), `texto_peor` y `texto_mejor` |
+| `risk_policy_current`, `drift_policy_current` | Última versión con `valid_from` ≤ ahora (global; por banco) |
+| `hitl_boosts_active` | Subidas dentro de su ventana y sin fila de cierre |
+| `hitl_queue`, `drift_alerts_current` | Caso o alerta con su último evento |
+| `eligibility_counts` | Filas por banco, mes, `eligibility_code` y `label_source` |
+| `daily_topic_labels` | Port de `voc_analytics.incidents.daily_topics` (5.9): base `NEG` con dos palabras o más por día UTC, familias de la última etiqueta de cada reseña, tópicos útiles (`audience` producto o ingeniería) de la versión de tópicos más reciente por `fitted_at`; la valida 6.3 contra `daily_topics_v0` |
+
+## 8. Columnas fijadas al implementar (2026-10-23)
+
+Aprobadas por el autor al revisar los contratos de 6.1. Ninguna cambia una decisión de EPIC-5.
+
+| Tabla | Decisión |
+| :--- | :--- |
+| `review_predictions` | Con `eligibility_code` nulo (reglas sin evaluar) la fila queda `NO_PREDICTED` con `sentiment` nulo. Una fila `MODEL` exige `model_version` y `calibration_version`; `TNSS_EMPTY` exige `palabras = 0`, y `TNSS_SINGLE_WORD` y `RULE_BASED` exigen `palabras = 1` |
+| `model_versions` | Suma `calibration_version` (la que cita `review_predictions`), `training_data_hash` y `recorded_at` (cada cambio de estado es una fila; la vigente es la última). Las métricas del oro *dev* van en `kappa_dev`, `ece_dev` y `aurc_dev` |
+| `inference_runs` | Suma `peak_memory_mib` (la memoria pico que pide 6.3, D9). `status`: `succeeded` o `failed` |
+| `drift_metrics` | `period` es el `DATE` del día 1 del mes; suma `threshold` y `computed_at`. Una serie usa z o PSI, no los dos |
+| `drift_policy`, `drift_policy_template` | `entry_rule` pasa a `entry_months` (entero, 12): meses seguidos con `min_rows_per_month` para entrar. `thresholds` es `{"z": {serie: umbral}, "psi": {serie: umbral}}`, con nulo para las series sin alerta (D8) |
+| `risk_policy` | Suma `model_version`: el modelo para el que `hitl_threshold` equivale a la cobertura |
+| `review_explanations` | `attributions` guarda posiciones en `texto_sanitizado` (`start`, `end`, `weight`), no el texto del token: la tabla no copia texto |
+| `hitl_reviews` | Las marcas `u` y `s` van en `predicted_flag_update`, `validated_flag_update`, `predicted_flag_security` y `validated_flag_security`. `task = topic` no se acepta: la curaduría de tópicos va a `curation_topics` |
+| `topic_model_versions` | `segmenter` (`clauses_v0`), `params` (JSON) y `fit_sample` |
+| `model_quality` | `ic95` va en `ci_low` y `ci_high`; suma `computed_at` |
+| `hitl_coverage_curves` | Suma `computed_at`; el volumen por banco va en `weekly_volume_by_bank` (JSON) |

@@ -5,9 +5,8 @@ config:
   bbva-voc-infra:free_tier_mode: "true"
   bbva-voc-infra:enable_cmek: "false"
   bbva-voc-infra:enable_vpc_sc: "false"
-  bbva-voc-infra:enable_dedicated_vertex_endpoints: "false"
-  # Solo la API de Vertex AI (Gemini Flash para el etiquetado de EPIC-5),
-  # sin endpoints dedicados ni Dataflow.
+  # Solo la API de Vertex AI (Gemini Flash y Model Registry), sin endpoints
+  # dedicados: el índice de 768 dimensiones se retiró en EPIC-6 (P8-6).
   bbva-voc-infra:enable_vertex_ai_api: "true"
   # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
   # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
@@ -16,6 +15,9 @@ config:
   #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
   # Opcional (sin ella no se crea voc-api-backend):
   #   bbva-voc-infra:api_backend_image: "<registry>/api-backend:<sha>@sha256:<digest>"
+  # Opcional hasta publicar la imagen de 6.3 (sin ella no se crean los Jobs
+  # voc-ml-inference-delta y voc-ml-monitor ni sus triggers):
+  #   bbva-voc-infra:ml_inference_image: "<registry>/ml-inference:<sha>@sha256:<digest>"
   bbva-voc-infra:deploy_workloads: "true"
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"

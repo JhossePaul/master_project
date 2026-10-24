@@ -198,7 +198,7 @@ Código: [`incidents/daily_topics.py`](../../../experiments/analytics/src/voc_an
   * 19 343 días × banco con negativas; mediana de negativas por día de 10 (NUBANK) a 43 (BBVA);
   * el 41.2 % de las negativas tiene al menos un tópico útil, así que en muchos días el top de tópicos tiene menos de 5;
   * la familia en primer lugar es acceso (`AC`) en el 46.9 % de los días, falla general (`FA`) en el 22.4 % y lentitud (`LE`) en el 9.0 %; en BANORTE la más frecuente en primer lugar es `LE`.
-* **Salida:** `data/incidents/daily_topics_v0.parquet` (fuera de git; los nombres de tópicos son del autor). En producción es la vista `daily_topic_labels` del [esquema v3](../../contracts/analytics_outputs_v3_draft.md), que calcula 6.3.
+* **Salida:** `data/incidents/daily_topics_v0.parquet` (fuera de git; los nombres de tópicos son del autor). En producción es la vista `daily_topic_labels` del [esquema v3](../../contracts/analytics_outputs_v3.md), que calcula 6.3.
 
 ## 5. Vista por versión de la app (P9-2)
 

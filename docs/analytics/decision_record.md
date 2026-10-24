@@ -78,7 +78,7 @@
 ## 6. Esquema de salida, HITL y migración (P8-5, P8-11)
 
 * **Decidido (P8-11):** tablas nuevas para el HITL y se elimina `hitl_triage_audit_log`.
-* **Decidido (P8-5, 2026-10-22), con una condición, ya cumplida:** se aprueba el [esquema v3](../contracts/analytics_outputs_v3_draft.md) con los cambios del autor: `eligibility_code` explícito (`ELEGIBLE` o el código; nulo solo si no se evaluó), `sentiment` con `NO_PREDICTED`, probabilidades nulas solo cuando no hay modelo, y `review_predictions` por reseña con inferencia por texto único en el backfill. La muestra de monitoreo (`hitl_items.reason`) puede entrar al oro por versiones (`gold_versions`) y el revisor puede dejar un comentario sanitizado. **Condición:** que cubra todas las necesidades del frontal de EPIC-7, que se revisa con P8-12.
+* **Decidido (P8-5, 2026-10-22), con una condición, ya cumplida:** se aprueba el [esquema v3](../contracts/analytics_outputs_v3.md) con los cambios del autor: `eligibility_code` explícito (`ELEGIBLE` o el código; nulo solo si no se evaluó), `sentiment` con `NO_PREDICTED`, probabilidades nulas solo cuando no hay modelo, y `review_predictions` por reseña con inferencia por texto único en el backfill. La muestra de monitoreo (`hitl_items.reason`) puede entrar al oro por versiones (`gold_versions`) y el revisor puede dejar un comentario sanitizado. **Condición:** que cubra todas las necesidades del frontal de EPIC-7, que se revisa con P8-12.
 * La migración no mueve datos: `delora_predictions` y `hitl_triage_audit_log` están vacías.
 
 ## 7. Búsqueda semántica y explicabilidad (P8-6, P8-8)
@@ -114,7 +114,7 @@
   * **Imprescindible:** API y seguridad con tres roles (IAP), landing, reporte de hallazgos versionado, cockpit diario, HITL de sentimiento con modo ciego, administración de `risk_policy` y `drift_policy`, documentos de gobernanza y pruebas.
   * **Importante:** Explorador de reseñas (tabla con *crossfilter*, búsqueda semántica y ficha con XAI), alertas de deriva (antes "alertas e incidentes"; acotadas al acotar 5.9, 2026-10-22), MLOps y AIOps, y la pestaña por versión de la app (subida desde deseable por el autor el 2026-10-22, con la vista descriptiva de 5.9).
   * **Deseable:** HITL de aspectos y tópicos y página de gobernanza.
-* **Esquema:** revisado pantalla por pantalla ([sección 6](../contracts/analytics_outputs_v3_draft.md#6-cobertura-del-frontal-de-epic-7)); con los agregados de esa revisión, la condición de P8-5 queda cumplida.
+* **Esquema:** revisado pantalla por pantalla ([sección 6](../contracts/analytics_outputs_v3.md#6-cobertura-del-frontal-de-epic-7)); con los agregados de esa revisión, la condición de P8-5 queda cumplida.
 
 ## 11. Límites y riesgos para la Model Card y la FMEA
 

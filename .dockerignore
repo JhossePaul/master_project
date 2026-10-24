@@ -11,5 +11,9 @@
 !services/ingestion-worker/src/
 !services/sanitization-pipeline/pyproject.toml
 !services/sanitization-pipeline/src/
+!packages/voc-nlp/pyproject.toml
+!packages/voc-nlp/src/
+!services/ml-inference/pyproject.toml
+!services/ml-inference/src/
 **/__pycache__
 **/*.pyc

@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           # Servicios desplegables por infra/ (ver docs/operations/deployment.md).
-          known="ingestion-worker sanitization-pipeline api-backend"
+          known="ingestion-worker sanitization-pipeline api-backend ml-inference"
           requested="${REQUESTED:-$known}"
           selected=()
           for svc in $requested; do
@@ -118,6 +118,7 @@ jobs:
             ingestion-worker) key=ingestion_worker_image ;;
             sanitization-pipeline) key=sanitization_job_image ;;
             api-backend) key=api_backend_image ;;
+            ml-inference) key=ml_inference_image ;;
           esac
           {
             echo "### $SERVICE"

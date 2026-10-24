@@ -36,8 +36,6 @@ def test_defaults() -> None:
     assert settings.user_hash_salt == DEV_USER_HASH_SALT
     assert settings.scraper_proxy_pool_urls == []
     assert settings.scraper_page_size == 500
-    assert settings.hitl_entropy_threshold == 0.65
-    assert settings.enable_dedicated_vertex_endpoints is False
     assert settings.is_production is False
 
 
@@ -115,7 +113,6 @@ def test_blank_dlp_template_ids_become_none(
         ("SCRAPER_BASE_DELAY_SEC", "inf"),
         ("SCRAPER_MAX_JITTER_SEC", "nan"),
         ("SCRAPER_TIMEOUT_SEC", "inf"),
-        ("HITL_ENTROPY_THRESHOLD", "1.5"),
         ("USER_HASH_SALT", "short"),
         ("USER_HASH_SALT", " " * 16),
         ("USER_HASH_SALT", "short" + " " * 16),

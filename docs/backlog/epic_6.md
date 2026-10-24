@@ -1,6 +1,6 @@
 # EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado (2026-10-23):** Pendiente de implementar. **Features 6.1 a 6.4 detalladas** (archivos, tablas, firmas, pruebas y criterio de terminado) a partir del [registro de decisión de 5.8](../analytics/decision_record.md) y del [esquema v3](../contracts/analytics_outputs_v3_draft.md), con las [decisiones de diseño del autor](#-decisiones-de-diseño-de-epic-6-autor-2026-10-23) del 2026-10-23. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
+* **Estado (2026-10-24):** **6.1 y 6.2 implementadas** en la rama `feature/epic6-contracts` (PR a `develop`, las dos juntas para no romper `main`); 6.2 desplegada en el stack dev por el autor ([estado de 6.1](#estado-de-61-2026-10-23) y [de 6.2](#estado-de-62-2026-10-23)). 6.3 y 6.4 pendientes. **Features 6.1 a 6.4 detalladas** (archivos, tablas, firmas, pruebas y criterio de terminado) a partir del [registro de decisión de 5.8](../analytics/decision_record.md) y del [esquema v3](../contracts/analytics_outputs_v3.md), con las [decisiones de diseño del autor](#-decisiones-de-diseño-de-epic-6-autor-2026-10-23) del 2026-10-23. Esta épica se creó al reorganizar el backlog y junta lo que antes estaba disperso:
   * la fase 3 de EPIC-5 (antes `epic_5_deployment.md`, que se conserva como [anexo no vigente](#anexo-especificación-anterior-de-la-fase-3-no-vigente));
   * los cambios que la experimentación exige en los contratos de EPIC-1 y en la infraestructura de EPIC-2, que esas épicas marcaban como "condicionados a 5.8";
   * la base de datos de curadurías (antes tarea 6.7.2 del portal) y el monitor de *drift* (antes tarea 6.5.1).
@@ -14,7 +14,7 @@
   * `packages/voc-nlp/` (nuevo): lógica pura compartida (elegibilidad, léxico, calibración, curva HITL, deriva, PPI, carga de M4, oclusión, familias y tópicos). La usan `ml-inference` y, en EPIC-7, el servicio de explicaciones bajo pedido;
   * `services/ml-inference/` (nuevo): una imagen con los comandos `delta`, `backfill`, `load-local`, `seed`, `register`, `promote` y `monitor`. Reemplaza al stub vacío `services/ml-delora/`, que se borra;
   * `infra/`: tablas y vistas de BigQuery, Cloud Run Jobs, Scheduler e IAM;
-  * `docs/contracts/analytics_outputs_v3.md`: contrato definitivo (hoy `analytics_outputs_v3_draft.md`), como `ingestion_v2.md` para la ingesta.
+  * `docs/contracts/analytics_outputs_v3.md`: contrato definitivo (antes el borrador `analytics_outputs_v3_draft.md`), como `ingestion_v2.md` para la ingesta.
 
 ---
 
@@ -70,7 +70,7 @@ Tomadas al detallar las features. Ninguna cambia una decisión de EPIC-5.
 | D7 | Piezas del esquema sin dueño | 6.3 crea los casos `low_confidence` de `hitl_items` y precalcula su oclusión (`review_explanations`). 6.4 crea `monitor_sample` y `agreement_sample` y calcula `kpi_estimates` con PPI sobre el oro *dev* aleatorio de EPIC-5, más las versiones `gold_hitl` cuando existan |
 | D8 | Familias y marca `u` en el monitor | Se calculan y se guardan en `drift_metrics` con su z, con umbral nulo: nunca crean una alerta ni una subida HITL. MLOps las muestra como contexto |
 | D9 | Organización del delta | Un solo Job con pasos en serie (M4, Gemini, MiniLM y tópicos), liberando cada modelo antes del siguiente. Se mide la memoria; si 2 GiB no alcanza, se sube a 4 GiB |
-| D10 | Oro en producción | Tabla `gold_labels` en BigQuery, cargada una vez desde local: oro *dev* aleatorio de EPIC-5 y las 300 etiquetas de familias de `muestra_v21`. Agregada al [esquema v3](../contracts/analytics_outputs_v3_draft.md#gold_labels-oro-en-producción-d10-de-epic-6) el 2026-10-23 |
+| D10 | Oro en producción | Tabla `gold_labels` en BigQuery, cargada una vez desde local: oro *dev* aleatorio de EPIC-5 y las 300 etiquetas de familias de `muestra_v21`. Agregada al [esquema v3](../contracts/analytics_outputs_v3.md#gold_labels-oro-en-producción-d10-de-epic-6) el 2026-10-23 |
 
 ### Huecos que decide el autor
 
@@ -179,6 +179,17 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * `docs/contracts/analytics_outputs_v3.md` reemplaza al borrador;
 * EPIC-1 anota qué contratos quedaron reemplazados.
 
+#### Estado de 6.1 (2026-10-23)
+
+**Implementada; cumple los cuatro criterios.**
+
+* **Código:** `analytics_codes.py`, `predictions_v3.py`, `operations_v3.py`, `policies.py`, `hitl_v3.py` y `bq_schema.py` (con `ANALYTICS_V3_TABLES`, el registro de las 26 tablas), más `text_key` en `text_utils.py`. Base común en `_analytics_base.py`. Fixtures sintéticas en `tests/fixtures/analytics_v3/`.
+* **Pruebas:** `test_analytics_codes.py`, `test_text_key.py`, `test_predictions_v3.py`, `test_operations_v3.py`, `test_policies.py`, `test_hitl_v3.py` y `test_bq_schema.py`. Cobertura de `voc-common`: 99.9 % (piso 85 %).
+* **Retiro:** los nombres de EPIC-1 ya no aparecen fuera de `docs/`. `enable_dedicated_vertex_endpoints` también salió de `Settings`, junto con su flag de infraestructura (6.2).
+* **Enums que el detalle no nombraba** (aprobados por el autor): `TopicAudience`, `GoldSplit`, `RunStatus` y `ReviewFlag`.
+* **Columnas que el borrador dejaba abiertas:** fijadas con el autor y anotadas en la [sección 8 del contrato](../contracts/analytics_outputs_v3.md#8-columnas-fijadas-al-implementar-2026-10-23).
+* **Contrato:** `analytics_outputs_v3.md` reemplaza al borrador, con la tabla "tabla → modelo → módulo" (sección 7). EPIC-1 anota lo reemplazado.
+
 ### FEATURE 6.2: Infraestructura de salidas y curadurías (Pulumi)
 
 **Objetivo:** aprovisionar en `infra/` las tablas, vistas, Jobs y permisos del esquema v3, y retirar lo de EPIC-2 que quedó obsoleto.
@@ -258,6 +269,29 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 * el `pulumi preview` del stack dev (lo corre el autor) solo muestra las altas y bajas esperadas, y `delora_predictions` y `hitl_triage_audit_log` se borran (están vacías, así que no se mueven datos);
 * EPIC-2 anota qué recursos quedaron reemplazados;
 * la FMEA tiene su fila para el texto nuevo que guarda el esquema (`hitl_reviews.comment`, `drift_alert_events.note`) y para `gold_labels`.
+
+#### Estado de 6.2 (2026-10-23)
+
+**Implementada y desplegada en el stack dev (`pulumi up` del autor, 2026-10-24).**
+
+* **Tablas y vistas:** `infra/modules/analytics_bq.py` crea las 26 tablas con `bq_schema`, partición mensual y la agrupación de la tabla de arriba, donde la columna existe: `drift_alert_events`, `hitl_events` y `model_quality` no tienen `bank_id`, y `hitl_reviews` se agrupa solo por `task`. Las 8 vistas están en `infra/modules/sql/`.
+* **`daily_topic_labels`:** toma la versión de tópicos más reciente por `fitted_at` y el día en UTC. 6.3 la valida contra `daily_topics_v0`.
+* **`storage_bq.py`:** sin `delora_predictions` ni `hitl_triage_audit_log`. El helper pasó a `bq_table()` (partición mensual o ninguna). `backfill/` se borra a los 7 días; `ml_artifacts/` no caduca.
+* **Vertex:** se borró `vertex_ai.py` (índice de 768 y endpoint) y el flag `enable_dedicated_vertex_endpoints`. `enable_vertex_ai_api` sigue (Gemini y Model Registry).
+* **Jobs y Scheduler:** `voc-ml-inference-delta` y `voc-ml-monitor` (1 vCPU, 2 GiB, 1 800 s, un reintento, `voc-sa-ml-backend`, subcomando como argumento), con `roles/run.invoker` para el Scheduler. Los triggers son `voc-trigger-ml-delta-daily`, una hora después de la sanitización (09:30 en free tier, 10:30 fuera de él), y `voc-trigger-ml-monitor-weekly`, los lunes una hora después del delta.
+  * **Se crean solo si el stack tiene `ml_inference_image`**, porque la imagen se publica en 6.3; hasta entonces el preview no muestra Jobs nuevos.
+* **IAM:** `voc-sa-ml-backend` recibe `roles/storage.objectUser` en el bucket.
+* **CD:** `cd-cloud-build.yaml` conoce `ml-inference` (clave `ml_inference_image`) y lo omite mientras no tenga `Dockerfile`. `.dockerignore` permite `voc-nlp` y `ml-inference`.
+* **Pasan a 6.3**, porque el servicio todavía no existe:
+  * el job de imagen de `ci.yaml`;
+  * el `pyproject.toml` de la raíz (quitar `services/ml-delora` de `exclude` al borrar el stub);
+  * el digest de `ml_inference_image` en `Pulumi.dev.yaml`.
+* **Pruebas:** `test_analytics_bq.py` nueva. Se actualizaron `test_integration.py` (acepta `INT64`, `FLOAT64`, `BOOL`, `DATE` y `JSON`), `test_infra.py`, `test_infra_v2.py`, `test_ingestion_audit.py`, `test_compute.py` (Jobs, triggers e invocadores; sin Vertex), `test_apis.py`, `test_watermark_storage.py` y `test_deployment_phases.py`. Cobertura de `infra/modules`: 100 % (piso 80 %).
+* **Despliegue en dev (autor, 2026-10-24):**
+  * el preview mostró lo esperado: 35 altas (26 tablas, 8 vistas y el permiso del bucket), 4 actualizaciones (la regla de borrado del bucket y una revisión nueva de los tres workloads de ingesta y sanitización, porque salen tres variables de entorno) y 2 bajas (`delora_predictions` y `hitl_triage_audit_log`, vacías);
+  * el primer `pulumi up` falló en `hitl_queue` y `drift_alerts_current`: la columna `at` es palabra reservada de BigQuery y las vistas la leían sin comillas invertidas. Se corrigió y `test_analytics_bq.py` comprueba que ninguna vista lea sin comillas una columna con nombre reservado;
+  * el segundo `pulumi up` completó el resto (2 vistas, la revisión de `voc-ingestion-worker` y las 2 bajas), y un preview posterior da 0 cambios (88 sin cambios). `INT64`, `FLOAT64` y `BOOL` no dejan diff permanente, así que `bq_schema` los conserva.
+* **FMEA:** F-21 calificada (S 5, O 2, D 4, RPN 40; decisión del autor). EPIC-2 anota lo reemplazado.
 
 ### FEATURE 6.3: Servicio de inferencia batch
 
@@ -418,8 +452,8 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 ## ✅ Checklist de Aceptación de la Épica 6
 
-* [ ] Contratos v3 en `voc-common`, con `bq_schema` y su documento en `docs/contracts/` (6.1).
-* [ ] Tablas y vistas v3, Jobs de inferencia y de monitoreo, Scheduler e IAM aprovisionados con Pulumi; `delora_predictions`, `hitl_triage_audit_log` y el índice de 768 retirados (6.2).
+* [x] Contratos v3 en `voc-common`, con `bq_schema` y su documento en `docs/contracts/` (6.1).
+* [ ] Tablas y vistas v3, Jobs de inferencia y de monitoreo, Scheduler e IAM aprovisionados con Pulumi; `delora_predictions`, `hitl_triage_audit_log` y el índice de 768 retirados (6.2). *Desplegado en dev el 2026-10-24; los Jobs de inferencia y monitoreo esperan la imagen de 6.3.*
 * [ ] Backfills de 5.8 y 5.9 cargados y delta diario en operación con M4 fp32, Gemini y `model_v0` (6.3).
 * [ ] Política HITL y curva de cobertura y riesgo versionadas en BigQuery; la inferencia marca con la política vigente (6.1 a 6.3), una vez fijados los huecos del autor.
 * [ ] Monitor de deriva por banco, subidas HITL, calidad de M4 y de las familias, KPI con PPI, promoción, *rollback* y re-ajuste de tópicos probados (6.4).
@@ -431,7 +465,7 @@ def bq_schema(model: type[BaseModel]) -> tuple[BqField, ...]: ...
 
 Salen de este detalle y se aplicaron el 2026-10-23, al mezclarlo en `feature/analytics`:
 
-1. **[Esquema v3](../contracts/analytics_outputs_v3_draft.md):** tabla `gold_labels` (D10); `text_key`, `bank_id` y `fecha` en `topic_assignments`; `palabras` en `review_predictions`; `local` en `inference_runs.environment`; `monitor_sample_size` sin repetir y `human_agreement_sample_size` y `human_agreement_frequency` en `risk_policy`; familias y `u` con umbral nulo en `drift_metrics` y `drift_policy.thresholds` (D8).
+1. **[Esquema v3](../contracts/analytics_outputs_v3.md):** tabla `gold_labels` (D10); `text_key`, `bank_id` y `fecha` en `topic_assignments`; `palabras` en `review_predictions`; `local` en `inference_runs.environment`; `monitor_sample_size` sin repetir y `human_agreement_sample_size` y `human_agreement_frequency` en `risk_policy`; familias y `u` con umbral nulo en `drift_metrics` y `drift_policy.thresholds` (D8).
 2. **[FMEA](../governance/ethical_fmea_matrix.md):** fila F-21, por el texto nuevo del esquema (`hitl_reviews.comment`, `drift_alert_events.note`) y las etiquetas de `gold_labels` en BigQuery. Se califica en 6.2.
 3. **[`CLAUDE.md`](../../CLAUDE.md):** filas de EPIC-6 en el mapa de áreas, `voc-nlp` en los módulos compartidos y la excepción del léxico (D2).
 4. **[`epic_5.md`](epic_5.md):** P7-2 decidida en fp32 (D4).

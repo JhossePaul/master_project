@@ -11,6 +11,7 @@ import pytest
 from voc_common import IngestionRunAudit, Settings
 
 from infra.tests.conftest import (
+    BQ_TABLES,
     WORKLOAD_CONFIG,
     InfrastructureMonitor,
     unwrap_outputs,
@@ -52,14 +53,9 @@ def test_ingestion_audit_schema_storage_and_consumer_wiring(
     deploy()
     registrations = list(pulumi_mocks.resources.values())
     tables = {
-        r.state["tableId"]: r for r in registrations if "tableId" in r.state
+        r.state["tableId"]: r for r in registrations if "schema" in r.state
     }
-    assert set(tables) == {
-        "ingestion_runs_log_v2",
-        "sanitized_reviews_tds",
-        "delora_predictions",
-        "hitl_triage_audit_log",
-    }
+    assert set(tables) == BQ_TABLES
     audit = tables["ingestion_runs_log_v2"]
     state = audit.state
     assert (

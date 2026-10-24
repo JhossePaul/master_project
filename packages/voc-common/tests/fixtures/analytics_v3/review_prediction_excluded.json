@@ -1,0 +1,16 @@
+{
+  "id_resena": "synthetic-0002",
+  "bank_id": "NUBANK",
+  "text_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "fecha": "2019-06-01T00:00:00Z",
+  "version_app": null,
+  "estrellas": 5,
+  "palabras": 4,
+  "eligibility_rules_version": "eligibility_rules_v1",
+  "eligibility_code": "TNSS_TIME_OUTLIER",
+  "label_source": "NO_PREDICTED",
+  "sentiment": "NO_PREDICTED",
+  "requires_hitl": false,
+  "run_id": "backfill-20261022",
+  "predicted_at": "2026-10-22T00:00:00Z"
+}
