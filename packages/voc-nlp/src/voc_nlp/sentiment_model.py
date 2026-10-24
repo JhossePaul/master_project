@@ -38,9 +38,7 @@ class SentimentModel:
 def load_sentiment_model(weights_dir: Path) -> SentimentModel:
     """Carga tokenizador y modelo locales en fp32 y CPU, sin red."""
     # Carpeta local de ml_artifacts/ (sin descarga de Hugging Face, B615).
-    tokenizer = AutoTokenizer.from_pretrained(  # nosec B615
-        weights_dir, local_files_only=True
-    )
+    tokenizer = load_tokenizer(weights_dir)
     model = AutoModelForSequenceClassification.from_pretrained(  # nosec B615
         weights_dir, dtype=torch.float32, local_files_only=True
     ).eval()
@@ -50,11 +48,29 @@ def load_sentiment_model(weights_dir: Path) -> SentimentModel:
     return SentimentModel(tokenizer, model)
 
 
+def load_tokenizer(weights_dir: Path) -> PreTrainedTokenizerBase:
+    """Solo el tokenizador local (el *re-scoring* tokeniza sin el modelo)."""
+    return AutoTokenizer.from_pretrained(  # nosec B615
+        weights_dir, local_files_only=True
+    )
+
+
+def prepare(texts: Sequence[str]) -> list[str]:
+    """``preprocess_tweet`` de cada texto (la parte lenta de ``encode``)."""
+    return [preprocess_tweet(text) for text in texts]
+
+
+def token_ids(
+    tokenizer: PreTrainedTokenizerBase, prepared: Sequence[str]
+) -> list[list[int]]:
+    """Ids de textos ya preparados, con el tope de 128 tokens."""
+    encoded = tokenizer(list(prepared), truncation=True, max_length=MAX_LENGTH)
+    return [list(ids) for ids in encoded["input_ids"]]
+
+
 def encode(model: SentimentModel, texts: Sequence[str]) -> list[list[int]]:
     """Ids de cada texto tras ``preprocess_tweet`` y el tope de 128 tokens."""
-    prepared = [preprocess_tweet(text) for text in texts]
-    encoded = model.tokenizer(prepared, truncation=True, max_length=MAX_LENGTH)
-    return [list(ids) for ids in encoded["input_ids"]]
+    return token_ids(model.tokenizer, prepare(texts))
 
 
 def predict_ids(

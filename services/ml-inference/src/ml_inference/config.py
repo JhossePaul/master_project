@@ -32,6 +32,8 @@ class InferenceSettings(BaseSettings):
     drift_topic: str = "voc-incident-alerts-topic"
     # Avisos de model_quality, que llegan por correo.
     quality_topic: str = "voc-model-quality-topic"
+    # Tiempo máximo del kernel de Kaggle del re-scoring (el Job tiene 3 h).
+    rescore_kernel_timeout_sec: int = Field(default=9000, ge=60)
 
     @property
     def dataset(self) -> str:

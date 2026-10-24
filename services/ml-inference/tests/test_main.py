@@ -273,3 +273,31 @@ def test_curve_and_risk_policy_dispatch(
     args = ["risk-policy", "--coverage", "0.85", "--actor-hash", ACTOR]
     assert cli.main([*args, "--reason", "menos carga"]) == 0
     assert env["policy"] == ("model-v1", 0.85, "menos carga")
+
+
+@pytest.mark.parametrize(("status", "code"), [("succeeded", 0), ("failed", 1)])
+def test_rescore_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, status: str, code: int
+) -> None:
+    import ml_inference.registry as registry
+    import ml_inference.rescore as rescore
+
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: {"v2": "m"})
+    monkeypatch.setattr(rescore, "KaggleApiClient", lambda: "kaggle")
+    monkeypatch.setattr(
+        rescore,
+        "new_rescoring",
+        lambda *a: env.setdefault("new", a) and "job",
+    )
+    row = type("R", (), {"status": type("S", (), {"value": status})()})()
+    monkeypatch.setattr(
+        rescore,
+        "run_rescore",
+        lambda job, writer, timeout, now: (
+            env.setdefault("run", (job, timeout, now())) and row
+        ),
+    )
+    args = ["rescore", "--model-version", "v2", "--run", "r1"]
+    assert cli.main(args) == code
+    assert env["new"][3:] == ("kaggle", "v2", "r1", {"v2": "m"})
+    assert env["run"][:2] == ("job", 9000)

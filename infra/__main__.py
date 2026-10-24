@@ -27,6 +27,7 @@ from infra.modules.kms_iam import (
     create_security_resources,
 )
 from infra.modules.pubsub import create_pubsub_resources
+from infra.modules.secrets import create_secrets
 from infra.modules.storage_bq import create_storage_and_bq_resources
 
 gcp_config = pulumi.Config("gcp")
@@ -78,6 +79,10 @@ pubsub = create_pubsub_resources(
     list(project_apis.values()),
     project_id=project_id,
     alert_publisher_email=security.sa_ml_and_backend.email,
+)
+# Fase 1: el autor carga el valor antes de desplegar voc-ml-rescoring.
+secrets = create_secrets(
+    project_id, security.sa_ml_and_backend, list(project_apis.values())
 )
 alerting = (
     create_alerting_resources(
@@ -141,6 +146,7 @@ if deploy_workloads:
         ingestion_execution=ingestion_execution,
         historical_config=historical_config,
         ingestion_v2_enabled=config.get_bool("ingestion_v2_enabled") or False,
+        secrets=secrets,
         user_hash_salt=user_hash_salt,
         environment=environment,
         free_tier_mode=free_tier,
@@ -178,6 +184,7 @@ pulumi.export(
 )
 pulumi.export("sa_ml_and_backend_email", security.sa_ml_and_backend.email)
 pulumi.export("kms_crypto_key_id", security.kms_crypto_key_id)
+pulumi.export("kaggle_secret_id", secrets.kaggle_token.secret_id)
 pulumi.export("dlp_inspect_template_id", dlp_templates.inspect_template.id)
 pulumi.export(
     "dlp_deidentify_template_id", dlp_templates.deidentify_template.id
@@ -230,4 +237,6 @@ if cloud_run is not None:
         pulumi.export("ml_delta_job_id", cloud_run.ml_delta_job.id)
     if cloud_run.ml_monitor_job is not None:
         pulumi.export("ml_monitor_job_id", cloud_run.ml_monitor_job.id)
+    if cloud_run.ml_rescoring_job is not None:
+        pulumi.export("ml_rescoring_job_id", cloud_run.ml_rescoring_job.id)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])

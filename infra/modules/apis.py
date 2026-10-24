@@ -16,6 +16,8 @@ _BASE_APIS: tuple[str, ...] = (
     "cloudbuild.googleapis.com",
     # Canal de correo y políticas de los avisos.
     "monitoring.googleapis.com",
+    # Clave de Kaggle del re-scoring.
+    "secretmanager.googleapis.com",
 )
 
 

@@ -8,6 +8,8 @@
   ``risk_policy`` del modelo nuevo; el candidato ya debe estar re-predicho.
 * ``curve``: recalcula la curva de cobertura y riesgo de una versión.
 * ``risk-policy``: nueva versión de la ``risk_policy`` con otra cobertura.
+* ``rescore``: predice todo el corpus con una versión candidata en la GPU
+  de Kaggle (Job ``voc-ml-rescoring``), antes de promoverla.
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
   muestras humanas, calidad y KPI).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento.
@@ -77,6 +79,9 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="promueve aunque el candidato sea significativamente peor",
     )
+    res = sub.add_parser("rescore", help="re-predice con una candidata")
+    res.add_argument("--model-version", required=True)
+    res.add_argument("--run", default=None, help="por defecto, la fecha y hora")
     cur = sub.add_parser("curve", help="recalcula la curva de una versión")
     cur.add_argument("--model-version", default=None)
     pol = sub.add_parser("risk-policy", help="cambia la cobertura objetivo")
@@ -297,6 +302,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             now=now,
         )
         return 0
+    if args.command == "rescore":
+        from ml_inference.registry import latest_versions
+        from ml_inference.rescore import (
+            KaggleApiClient,
+            new_rescoring,
+            run_rescore,
+        )
+
+        job = new_rescoring(
+            settings,
+            bigquery,
+            storage,
+            KaggleApiClient(),
+            args.model_version,
+            args.run or f"{now:%Y%m%d%H%M}",
+            latest_versions(bigquery, settings.dataset),
+        )
+        row = run_rescore(
+            job,
+            writer,
+            settings.rescore_kernel_timeout_sec,
+            lambda: datetime.now(UTC),
+        )
+        return 0 if row.status.value == "succeeded" else 1
     from ml_inference.lifecycle import Lifecycle, promote_version
     from ml_inference.registry import latest_versions, resolve
 

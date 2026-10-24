@@ -210,7 +210,7 @@ def _check_ml_jobs(
     invoker: str,
 ) -> None:
     """Jobs de ml-inference y sus triggers; se sacan de ``schedules``."""
-    names = ("voc-ml-inference-delta", "voc-ml-monitor")
+    names = ("voc-ml-inference-delta", "voc-ml-monitor", "voc-ml-rescoring")
     triggers = {
         "voc-ml-inference-delta": "voc-trigger-ml-delta-daily",
         "voc-ml-monitor": "voc-trigger-ml-monitor-weekly",
@@ -239,6 +239,7 @@ def _check_ml_jobs(
             "memory": "2Gi",
         }
         env = {e["name"]: e["value"] for e in container["envs"]}
+        assert "KAGGLE_API_TOKEN" not in env
         assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
         assert env["DRIFT_TOPIC"] == "voc-incident-alerts-topic"
         assert env["QUALITY_TOPIC"] == "voc-model-quality-topic"
@@ -254,6 +255,37 @@ def _check_ml_jobs(
             by_name[f"{name}-scheduler-invoker"].urn
             in monitor.dependencies[triggers[name]]
         )
+    _check_rescoring(monitor, states, schedules)
+
+
+def _check_rescoring(
+    monitor: InfrastructureMonitor,
+    states: dict[str, Any],
+    schedules: dict[str, Any],
+) -> None:
+    """Re-scoring: a mano, sin Scheduler, con la clave de Kaggle."""
+    task = states["voc-ml-rescoring"]["template"]["template"]
+    assert task["timeout"] == "10800s" and task["maxRetries"] == 0
+    container = task["containers"][0]
+    assert container["args"] == ["rescore"]
+    assert container["resources"]["limits"] == {"cpu": "2", "memory": "4Gi"}
+    secret = next(
+        e for e in container["envs"] if e["name"] == "KAGGLE_API_TOKEN"
+    )
+    assert secret["valueSource"] == {
+        "secretKeyRef": {"secret": "voc-kaggle-token", "version": "latest"}
+    }
+    assert "value" not in secret
+    plain = {e["name"] for e in container["envs"] if "value" in e}
+    assert {"BQ_DATASET_ID", "GCS_RAW_DATALAKE_BUCKET"} <= plain
+    assert "voc-ml-rescoring-scheduler-invoker" not in states
+    assert not any("rescor" in name for name in schedules)
+    accessor = next(
+        r.urn
+        for r in monitor.resources.values()
+        if r.urn.endswith("::voc-kaggle-token-ml-backend-accessor")
+    )
+    assert accessor in monitor.dependencies["voc-ml-rescoring"]
 
 
 def test_production_requires_hash_salt() -> None:

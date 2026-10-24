@@ -14,6 +14,7 @@ from infra.modules.kms_iam import (
     create_historical_job_access,
 )
 from infra.modules.pubsub import PubSubResources
+from infra.modules.secrets import KAGGLE_SECRET_ID, SecretResources
 from infra.modules.storage_bq import StorageAndBqResources
 
 ARTIFACT_REPOSITORY_ID: Final = "voc-containers-repo"
@@ -77,6 +78,7 @@ class CloudRunResources:
     historical_job_name: pulumi.Output[str]
     ml_delta_job: gcp.cloudrunv2.Job | None = None
     ml_monitor_job: gcp.cloudrunv2.Job | None = None
+    ml_rescoring_job: gcp.cloudrunv2.Job | None = None
     ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
 
 
@@ -87,13 +89,33 @@ class MlJobSpec:
     name: str
     command: str
     memory: str = "2Gi"
+    cpu: str = "1"
     timeout_sec: int = 1800
     max_retries: int = 1
+    # Con Scheduler (invocador) o solo a mano con ``gcloud run jobs execute``.
+    scheduled: bool = True
+    # Variable de entorno → secreto de Secret Manager (última versión).
+    secrets: tuple[tuple[str, str], ...] = ()
 
 
 # D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
 ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta")
 ML_MONITOR_JOB = MlJobSpec("voc-ml-monitor", "monitor")
+# Re-scoring de una candidata en Kaggle, a mano y antes de promoverla:
+#   gcloud run jobs execute voc-ml-rescoring \
+#     --args=rescore,--model-version=<versión>
+# 2 vCPU para preparar los textos en paralelo; 4 GiB por el dataset que
+# arma en memoria; 3 h y sin reintentos (cada corrida sube su dataset).
+ML_RESCORING_JOB = MlJobSpec(
+    "voc-ml-rescoring",
+    "rescore",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=10800,
+    max_retries=0,
+    scheduled=False,
+    secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
+)
 
 
 def _validate_hash_salt(value: str, environment: str) -> str:
@@ -154,6 +176,7 @@ def create_cloud_run_resources(
     ingestion_execution: IngestionExecutionConfig | None = None,
     historical_config: HistoricalJobConfig | None = None,
     ingestion_v2_enabled: bool = False,
+    secrets: SecretResources | None = None,
 ) -> CloudRunResources:
     """Fase 2: define contenedores y permisos; no ejecuta jobs ni builds."""
     execution = ingestion_execution or IngestionExecutionConfig()
@@ -386,7 +409,29 @@ def create_cloud_run_resources(
     ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
     ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
     if images.ml_inference is not None:
-        for spec in (ML_DELTA_JOB, ML_MONITOR_JOB):
+        specs = [ML_DELTA_JOB, ML_MONITOR_JOB]
+        if secrets is not None:
+            specs.append(ML_RESCORING_JOB)
+        for spec in specs:
+            secret_envs = [
+                {
+                    "name": env,
+                    "value_source": {
+                        "secret_key_ref": {
+                            "secret": secret_id,
+                            "version": "latest",
+                        }
+                    },
+                }
+                for env, secret_id in spec.secrets
+            ]
+            job_opts = (
+                pulumi.ResourceOptions(
+                    depends_on=[*deps, secrets.kaggle_accessor]
+                )
+                if spec.secrets and secrets is not None
+                else opts
+            )
             job = gcp.cloudrunv2.Job(
                 spec.name,
                 name=spec.name,
@@ -407,21 +452,26 @@ def create_cloud_run_resources(
                                 "args": [spec.command],
                                 "resources": {
                                     "limits": {
-                                        "cpu": "1",
+                                        "cpu": spec.cpu,
                                         "memory": spec.memory,
                                     }
                                 },
                                 "envs": [
-                                    {"name": k, "value": v}
-                                    for k, v in ml_env.items()
+                                    *(
+                                        {"name": k, "value": v}
+                                        for k, v in ml_env.items()
+                                    ),
+                                    *secret_envs,
                                 ],
                             }
                         ],
                     },
                 },
-                opts=opts,
+                opts=job_opts,
             )
             ml_jobs[spec.command] = job
+            if not spec.scheduled:
+                continue
             ml_invokers.append(
                 gcp.cloudrunv2.JobIamMember(
                     f"{spec.name}-scheduler-invoker",
@@ -444,5 +494,6 @@ def create_cloud_run_resources(
         history_name,
         ml_delta_job=ml_jobs.get(ML_DELTA_JOB.command),
         ml_monitor_job=ml_jobs.get(ML_MONITOR_JOB.command),
+        ml_rescoring_job=ml_jobs.get(ML_RESCORING_JOB.command),
         ml_invokers=tuple(ml_invokers),
     )

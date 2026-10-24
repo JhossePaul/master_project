@@ -22,6 +22,7 @@ _BASE_APIS = {
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
     "monitoring.googleapis.com",
+    "secretmanager.googleapis.com",
 }
 
 
