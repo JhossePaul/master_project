@@ -15,6 +15,22 @@
 
 ---
 
+## 📥 Insumos de EPIC-6
+
+Revisado el 2026-10-25 contra el código. **Lo que EPIC-6 deja listo:** las 28 tablas y 10 vistas del [contrato v3](../contracts/analytics_outputs_v3.md) (con `inference_runs_current` para MLOps y `promotion_checks` para la pantalla de promoción); los Jobs `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote`, `voc-ml-topics-refit` y los backfills, lanzables con argumentos (`train` y `rescore` aceptan `--actor-hash` y `--reason`; `promote` guarda el motivo en `model_versions`); `ml_inference.jobs.CloudRunJobs.execute` para lanzarlos; la `risk_policy` vigente que leen el delta y el monitor en la corrida siguiente; MiniLM en `ml_artifacts/embeddings/` para la búsqueda semántica; los switches `retrain_trigger` y `topic_refit_trigger`.
+
+**Lo que construye EPIC-7** (no bloquea el cierre de EPIC-6):
+
+* la cuenta de servicio de la API (hoy `voc-api-backend` corre como `voc-sa-ml-backend`) y sus permisos: `roles/run.developer` (o `run.jobsExecutorWithOverrides`) sobre `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote` **y `voc-ml-topics-refit`** (el botón de re-ajuste de 7.9), BigQuery y GCS;
+* el quién y el porqué del re-ajuste de tópicos: `topics-refit` no los recibe ni escribe `inference_runs`;
+* la cola HITL de aspectos (7.7): EPIC-6 solo crea casos de sentimiento;
+* la explicación con dirección (`NEG` frente a `POS`) que pide 7.6: `occlusion_v1` mide la caída de la clase predicha;
+* dónde vive la lógica que comparte la API (`point_for`, `propose_risk_policy`, `drift_rates`, `jobs`, el sanitizador de comentarios de `sanitization-pipeline`): hoy en paquetes de servicio con dependencias pesadas;
+* el costo y la duración de la ingesta para AIOps (7.9): `ingestion_runs_log_v2` no los tiene;
+* el uso de `gold_versions` (ningún Job lo lee todavía) y su relación con el oro de PPI y el reentrenamiento, que excluye `monitor_sample`.
+
+---
+
 ## 🎯 Objetivo
 
 Un portal privado que deje a los equipos de CX, producto y gestión de modelos:

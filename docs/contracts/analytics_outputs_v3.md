@@ -210,7 +210,7 @@ Revisión pantalla por pantalla (2026-10-22): cada pantalla del portal lee y esc
 | :--- | :--- | :--- |
 | Landing | `ingestion_runs_log_v2` (ingesta), `inference_runs`, `drift_alerts` + `drift_alert_events`, `kpi_estimates` | — |
 | Reporte | Ninguna tabla: se publica desde `docs/analytics/` por versión | — |
-| Cockpit | `kpi_estimates` (PPI), vistas diarias sobre `review_predictions_current` y `review_aspects`, `topic_assignments`, `daily_topic_labels` (*hover* del día); la pestaña por versión usa `version_app` de `review_predictions` | — |
+| Cockpit | `kpi_estimates` (PPI), agregados diarios que la API calcula sobre `review_predictions_current` y `review_aspects`, `topic_assignments`, `daily_topic_labels` (*hover* del día); la pestaña por versión usa `version_app` de `review_predictions` | — |
 | Explorador | `review_predictions_current`, `review_aspects`, `topic_assignments`, texto del TDS por `id_resena`, `text_embeddings`, `review_explanations` | `review_explanations` (bajo pedido) |
 | HITL | `hitl_queue`, `hitl_items` (sin `predicted` si es `blind`), `guidelines`, texto del TDS | `hitl_events`, `hitl_reviews`, curadurías de tópicos |
 | Alertas de deriva | `drift_alerts`, `drift_alert_events`, `hitl_boosts`, `drift_metrics` | `drift_alert_events` |

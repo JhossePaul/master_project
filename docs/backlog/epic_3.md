@@ -1,6 +1,7 @@
 # EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** Implementada (features 3.1–3.5). Validada localmente con dobles deterministas; sin despliegue ni solicitudes reales. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
+* **Estado (2026-10-25):** **Cerrada y desplegada** en el stack `dev` (cierre verificado el 2026-10-18, ver [epics.md](epics.md#cierre-de-las-épicas-1-a-4)). La nota siguiente es de cuando se implementó, antes del despliegue.
+* **Estado al implementar:** Implementada (features 3.1–3.5). Validada localmente con dobles deterministas; sin despliegue ni solicitudes reales. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
 * **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La activación (`INGESTION_V2_ENABLED=true`) espera la imagen publicada, el despliegue por fases de EPIC-2 y el consumidor de EPIC-4.
 * **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
