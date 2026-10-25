@@ -14,6 +14,7 @@ from infra.modules.kms_iam import (
     create_historical_job_access,
 )
 from infra.modules.pubsub import PubSubResources
+from infra.modules.secrets import KAGGLE_SECRET_ID, SecretResources
 from infra.modules.storage_bq import StorageAndBqResources
 
 ARTIFACT_REPOSITORY_ID: Final = "voc-containers-repo"
@@ -37,6 +38,8 @@ class WorkloadImages(BaseModel):
     sanitization_job: DigestImage
     api_backend: DigestImage | None = None
     historical_job: DigestImage | None = None
+    # Sin ella no se crean los Jobs de inferencia y monitoreo (EPIC-6).
+    ml_inference: DigestImage | None = None
 
 
 class HistoricalExecutionConfig(IngestionExecutionConfig):
@@ -73,6 +76,119 @@ class CloudRunResources:
     historical_job: gcp.cloudrunv2.Job
     historical_invoker: gcp.cloudrunv2.JobIamMember
     historical_job_name: pulumi.Output[str]
+    ml_delta_job: gcp.cloudrunv2.Job | None = None
+    ml_monitor_job: gcp.cloudrunv2.Job | None = None
+    ml_rescoring_job: gcp.cloudrunv2.Job | None = None
+    ml_topics_refit_job: gcp.cloudrunv2.Job | None = None
+    ml_training_job: gcp.cloudrunv2.Job | None = None
+    ml_topics_backfill_job: gcp.cloudrunv2.Job | None = None
+    ml_aspects_backfill_job: gcp.cloudrunv2.Job | None = None
+    ml_promote_job: gcp.cloudrunv2.Job | None = None
+    ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+    ml_executors: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+
+
+@dataclass(frozen=True)
+class MlJobSpec:
+    """Job de ``ml-inference``: el subcomando va como argumento."""
+
+    name: str
+    command: str
+    memory: str = "2Gi"
+    cpu: str = "1"
+    timeout_sec: int = 1800
+    max_retries: int = 1
+    # Con Scheduler (invocador) o solo a mano con ``gcloud run jobs execute``.
+    scheduled: bool = True
+    # Variable de entorno → secreto de Secret Manager (última versión).
+    secrets: tuple[tuple[str, str], ...] = ()
+    # Lo lanzan otros Jobs de ml-inference con argumentos propios: la cuenta
+    # de ML recibe roles/run.developer solo sobre él (run.invoker no deja
+    # cambiar los argumentos).
+    executed_by_ml: bool = False
+
+
+# D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
+ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta")
+ML_MONITOR_JOB = MlJobSpec("voc-ml-monitor", "monitor")
+# Re-ajuste trimestral de tópicos: MiniLM, UMAP y HDBSCAN sobre ~63 000
+# cláusulas; 2 vCPU y 4 GiB, 1 h, sin reintentos (el siguiente trimestre o
+# --force).
+ML_TOPICS_REFIT_JOB = MlJobSpec(
+    "voc-ml-topics-refit",
+    "topics-refit",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=3600,
+    max_retries=0,
+)
+# Re-scoring de una candidata en Kaggle, a mano y antes de promoverla:
+#   gcloud run jobs execute voc-ml-rescoring \
+#     --args=rescore,--model-version=<versión>
+# 2 vCPU para preparar los textos en paralelo; 4 GiB por el dataset que
+# arma en memoria; 3 h y sin reintentos (cada corrida sube su dataset).
+ML_RESCORING_JOB = MlJobSpec(
+    "voc-ml-rescoring",
+    "rescore",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=10800,
+    max_retries=0,
+    scheduled=False,
+    secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
+    executed_by_ml=True,
+)
+# Reentrenamiento en Kaggle desde el modelo base, a mano o desde el monitor
+# con retrain_trigger = auto:
+#   gcloud run jobs execute voc-ml-training
+# Arma el conjunto en memoria y espera al kernel (hasta 3 h); 4 h y sin
+# reintentos, como el re-scoring.
+ML_TRAINING_JOB = MlJobSpec(
+    "voc-ml-training",
+    "train",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=14400,
+    max_retries=0,
+    scheduled=False,
+    secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
+    executed_by_ml=True,
+)
+# Re-asignación del histórico de tópicos sobre segment_embeddings, en Cloud
+# Run y sin Kaggle (el texto no sale de GCP); la lanza el delta cuando la
+# versión activa no tiene su backfill. Lotes de 50 000 cláusulas: si UMAP no
+# cabe en 4 GiB se sube a 8 GiB.
+ML_TOPICS_BACKFILL_JOB = MlJobSpec(
+    "voc-ml-topics-backfill",
+    "topics-backfill",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=7200,
+    max_retries=0,
+    scheduled=False,
+    executed_by_ml=True,
+)
+# Familias con Gemini de un prompt nuevo, solo si el autor paga el costo:
+#   gcloud run jobs execute voc-ml-aspects-backfill \
+#     --args=aspects-backfill,--approve,--max-usd=<tope>
+# Sin --approve solo estima. 6 h; sin reintentos (una corrida se retoma).
+ML_ASPECTS_BACKFILL_JOB = MlJobSpec(
+    "voc-ml-aspects-backfill",
+    "aspects-backfill",
+    timeout_sec=21600,
+    max_retries=0,
+    scheduled=False,
+)
+# Promoción (o rollback) de una versión, para el botón de MLOps:
+#   gcloud run jobs execute voc-ml-promote \
+#     --args=promote,--model-version=<versión>,--actor-hash=<hash>,\
+#     --reason=<motivo>
+ML_PROMOTE_JOB = MlJobSpec(
+    "voc-ml-promote",
+    "promote",
+    max_retries=0,
+    scheduled=False,
+)
 
 
 def _validate_hash_salt(value: str, environment: str) -> str:
@@ -129,11 +245,11 @@ def create_cloud_run_resources(
     user_hash_salt: pulumi.Output[str],
     environment: str = "dev",
     free_tier_mode: bool = True,
-    enable_vertex: bool = False,
     scraper_proxy_pool_urls: pulumi.Output[str] | None = None,
     ingestion_execution: IngestionExecutionConfig | None = None,
     historical_config: HistoricalJobConfig | None = None,
     ingestion_v2_enabled: bool = False,
+    secrets: SecretResources | None = None,
 ) -> CloudRunResources:
     """Fase 2: define contenedores y permisos; no ejecuta jobs ni builds."""
     execution = ingestion_execution or IngestionExecutionConfig()
@@ -155,24 +271,30 @@ def create_cloud_run_resources(
         },
         "BQ_DATASET_ID": storage_bq.dataset.dataset_id,
         "BQ_SANITIZED_TDS_TABLE": storage_bq.sanitized_reviews_tds.table_id,
-        "BQ_PREDICTIONS_TABLE": storage_bq.delora_predictions.table_id,
         "BQ_INGESTION_RUNS_LOG_TABLE": storage_bq.ingestion_runs_log.table_id,
-        "BQ_HITL_AUDIT_TABLE": storage_bq.hitl_triage_audit_log.table_id,
         "PUBSUB_RAW_REVIEWS_TOPIC": pubsub.raw_topic.name,
         "PUBSUB_RAW_SUBSCRIPTION": pubsub.raw_subscription.name,
         "PUBSUB_ALERTS_TOPIC": pubsub.alerts_topic.name,
-        "ENABLE_DEDICATED_VERTEX_ENDPOINTS": str(enable_vertex).lower(),
+    }
+    # Tópicos del monitor (InferenceSettings.drift_topic y quality_topic).
+    ml_env: dict[str, pulumi.Input[str]] = {
+        **common,
+        "DRIFT_TOPIC": pubsub.alerts_topic.name,
+        "QUALITY_TOPIC": pubsub.quality_topic.name,
+        # El registro de modelos de Vertex exige una imagen de serving: la
+        # propia (el entrenamiento registra sus candidatos).
+        **(
+            {"SERVING_IMAGE": images.ml_inference}
+            if images.ml_inference is not None
+            else {}
+        ),
     }
     deps = [
         repository,
         *api_deps,
         *security.iam_members,
-        *[
-            storage_bq.sanitized_reviews_tds,
-            storage_bq.delora_predictions,
-            storage_bq.ingestion_runs_log,
-            storage_bq.hitl_triage_audit_log,
-        ],
+        storage_bq.sanitized_reviews_tds,
+        storage_bq.ingestion_runs_log,
     ]
     opts = pulumi.ResourceOptions(depends_on=deps)
 
@@ -255,6 +377,9 @@ def create_cloud_run_resources(
             name=name,
             project=project_id,
             location=region,
+            # La API devuelve este valor por defecto a nivel de servicio;
+            # declararlo evita un diff permanente en `pulumi preview`.
+            scaling={"min_instance_count": 0},
             template={
                 "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
                 "service_account": account,
@@ -361,6 +486,106 @@ def create_cloud_run_resources(
         member=invoker,
         opts=opts,
     )
+    ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
+    ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
+    ml_executors: list[gcp.cloudrunv2.JobIamMember] = []
+    ml_member = security.sa_ml_and_backend.email.apply(
+        lambda email: f"serviceAccount:{email}"
+    )
+    if images.ml_inference is not None:
+        specs = [
+            ML_DELTA_JOB,
+            ML_MONITOR_JOB,
+            ML_TOPICS_REFIT_JOB,
+            ML_TOPICS_BACKFILL_JOB,
+            ML_ASPECTS_BACKFILL_JOB,
+            ML_PROMOTE_JOB,
+        ]
+        if secrets is not None:
+            specs += [ML_RESCORING_JOB, ML_TRAINING_JOB]
+        for spec in specs:
+            secret_envs = [
+                {
+                    "name": env,
+                    "value_source": {
+                        "secret_key_ref": {
+                            "secret": secret_id,
+                            "version": "latest",
+                        }
+                    },
+                }
+                for env, secret_id in spec.secrets
+            ]
+            job_opts = (
+                pulumi.ResourceOptions(
+                    depends_on=[*deps, secrets.kaggle_accessor]
+                )
+                if spec.secrets and secrets is not None
+                else opts
+            )
+            job = gcp.cloudrunv2.Job(
+                spec.name,
+                name=spec.name,
+                project=project_id,
+                location=region,
+                template={
+                    "task_count": 1,
+                    "parallelism": 1,
+                    "template": {
+                        "service_account": security.sa_ml_and_backend.email,
+                        "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
+                        "timeout": f"{spec.timeout_sec}s",
+                        "max_retries": spec.max_retries,
+                        "containers": [
+                            {
+                                "image": images.ml_inference,
+                                # ENTRYPOINT: python -m ml_inference.
+                                "args": [spec.command],
+                                "resources": {
+                                    "limits": {
+                                        "cpu": spec.cpu,
+                                        "memory": spec.memory,
+                                    }
+                                },
+                                "envs": [
+                                    *(
+                                        {"name": k, "value": v}
+                                        for k, v in ml_env.items()
+                                    ),
+                                    *secret_envs,
+                                ],
+                            }
+                        ],
+                    },
+                },
+                opts=job_opts,
+            )
+            ml_jobs[spec.command] = job
+            if spec.executed_by_ml:
+                ml_executors.append(
+                    gcp.cloudrunv2.JobIamMember(
+                        f"{spec.name}-ml-backend-developer",
+                        project=project_id,
+                        location=region,
+                        name=job.name,
+                        role="roles/run.developer",
+                        member=ml_member,
+                        opts=opts,
+                    )
+                )
+            if not spec.scheduled:
+                continue
+            ml_invokers.append(
+                gcp.cloudrunv2.JobIamMember(
+                    f"{spec.name}-scheduler-invoker",
+                    project=project_id,
+                    location=region,
+                    name=job.name,
+                    role="roles/run.invoker",
+                    member=invoker,
+                    opts=opts,
+                )
+            )
     return CloudRunResources(
         ingestion,
         sanitization,
@@ -370,4 +595,14 @@ def create_cloud_run_resources(
         historical,
         history_access,
         history_name,
+        ml_delta_job=ml_jobs.get(ML_DELTA_JOB.command),
+        ml_monitor_job=ml_jobs.get(ML_MONITOR_JOB.command),
+        ml_rescoring_job=ml_jobs.get(ML_RESCORING_JOB.command),
+        ml_topics_refit_job=ml_jobs.get(ML_TOPICS_REFIT_JOB.command),
+        ml_training_job=ml_jobs.get(ML_TRAINING_JOB.command),
+        ml_topics_backfill_job=ml_jobs.get(ML_TOPICS_BACKFILL_JOB.command),
+        ml_aspects_backfill_job=ml_jobs.get(ML_ASPECTS_BACKFILL_JOB.command),
+        ml_promote_job=ml_jobs.get(ML_PROMOTE_JOB.command),
+        ml_invokers=tuple(ml_invokers),
+        ml_executors=tuple(ml_executors),
     )

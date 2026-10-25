@@ -6,6 +6,9 @@ import pulumi
 import pytest
 from pulumi.runtime import rpc
 from pulumi.runtime.mocks import MockMonitor
+from voc_common.bq_schema import ANALYTICS_V3_TABLES
+
+from infra.modules.analytics_bq import VIEWS
 
 REGISTRY = "us-central1-docker.pkg.dev/test-voc-project/voc-containers-repo"
 
@@ -18,6 +21,12 @@ def digest_image(service: str, fill: str = "a") -> str:
 INGESTION_IMAGE = digest_image("ingestion-worker", "a")
 SANITIZATION_IMAGE = digest_image("sanitization-pipeline", "b")
 API_BACKEND_IMAGE = digest_image("api-backend", "c")
+ML_INFERENCE_IMAGE = digest_image("ml-inference", "d")
+# Tablas con esquema del dataset (EPIC-2 y EPIC-6) y vistas v3.
+BQ_TABLES = frozenset(
+    {"sanitized_reviews_tds", "ingestion_runs_log_v2", *ANALYTICS_V3_TABLES}
+)
+BQ_VIEWS = frozenset(VIEWS)
 # Fase 2: cargas Cloud Run/Scheduler con todas las imágenes publicadas.
 WORKLOAD_CONFIG = {
     "bbva-voc-infra:deploy_workloads": "true",
@@ -41,6 +50,10 @@ class InfrastructureMocks(pulumi.runtime.Mocks):
         if args.typ == "gcp:serviceaccount/account:Account":
             outputs["email"] = (
                 f"{outputs['accountId']}@{outputs['project']}.iam.gserviceaccount.com"
+            )
+        if args.typ == "gcp:monitoring/notificationChannel:NotificationChannel":
+            outputs["name"] = (
+                f"projects/{outputs['project']}/notificationChannels/{args.name}"
             )
         if args.typ == "gcp:projects/serviceIdentity:ServiceIdentity":
             outputs["email"] = (

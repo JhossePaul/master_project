@@ -11,8 +11,10 @@ import yaml
 from pydantic import ValidationError
 
 from infra.modules.cloud_run import WorkloadImages
+from infra.modules.secrets import KAGGLE_SECRET_ID
 from infra.tests.conftest import (
     INGESTION_IMAGE,
+    ML_INFERENCE_IMAGE,
     REGISTRY,
     SANITIZATION_IMAGE,
     WORKLOAD_CONFIG,
@@ -30,6 +32,7 @@ LATEST = {
         ("ingestion_worker_image", "ingestion-worker"),
         ("sanitization_job_image", "sanitization-pipeline"),
         ("api_backend_image", "api-backend"),
+        ("ml_inference_image", "ml-inference"),
     )
 }
 
@@ -125,11 +128,55 @@ def test_phase_two_without_backend_image(
         "https://voc-ingestion-worker.run.app"
     )
     assert "api_backend_uri" not in exports
+    assert "voc-ml-inference-delta" not in names
+    assert "ml_delta_job_id" not in exports
+
+
+def test_phase_two_with_ml_inference_image(
+    pulumi_mocks: InfrastructureMonitor,
+) -> None:
+    exports = _run(
+        {
+            **WORKLOAD_CONFIG,
+            "bbva-voc-infra:ml_inference_image": ML_INFERENCE_IMAGE,
+        }
+    )
+    names = _names(pulumi_mocks)
+    assert_acyclic(pulumi_mocks)
+    assert {"voc-ml-inference-delta", "voc-ml-monitor"} <= set(names)
+    assert len(exports["scheduler_job_ids"]) == 5
+    assert exports["ml_delta_job_id"] == "voc-ml-inference-delta-id"
+    assert exports["ml_monitor_job_id"] == "voc-ml-monitor-id"
+    assert exports["ml_rescoring_job_id"] == "voc-ml-rescoring-id"
+    assert exports["ml_topics_refit_job_id"] == "voc-ml-topics-refit-id"
+    for job in ("training", "topics_backfill", "aspects_backfill", "promote"):
+        job_name = "voc-ml-" + job.replace("_", "-")
+        assert exports[f"ml_{job}_job_id"] == f"{job_name}-id"
+    assert exports["kaggle_secret_id"] == KAGGLE_SECRET_ID
+    assert "bq_predictions_table" not in exports
+    assert "bq_hitl_audit_table" not in exports
+    assert set(exports["bq_analytics_tables"]) >= {
+        "review_predictions",
+        "hitl_reviews",
+        "gold_labels",
+    }
+    assert "daily_topic_labels" in exports["bq_analytics_views"]
+
+
+def test_cd_workflow_knows_the_ml_inference_image() -> None:
+    workflow = (REPO / ".github/workflows/cd-cloud-build.yaml").read_text()
+    assert "ml-inference) key=ml_inference_image ;;" in workflow
+    assert ' ml-inference"' in workflow
 
 
 @pytest.mark.parametrize(
     "key",
-    ["ingestion_worker_image", "sanitization_job_image", "api_backend_image"],
+    [
+        "ingestion_worker_image",
+        "sanitization_job_image",
+        "api_backend_image",
+        "ml_inference_image",
+    ],
 )
 def test_phase_two_rejects_mutable_tags(
     pulumi_mocks: InfrastructureMonitor, key: str

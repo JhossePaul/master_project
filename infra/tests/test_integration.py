@@ -8,12 +8,12 @@ from typing import Any
 import pulumi
 import pytest
 from voc_common import (
-    AnalyzedReviewPrediction,
-    HitlTriageAuditRecord,
+    ANALYTICS_V3_TABLES,
     IngestionRunAudit,
     SanitizedReviewRecord,
 )
 
+from infra.modules.analytics_bq import VIEWS
 from infra.tests.conftest import InfrastructureMonitor
 
 
@@ -53,15 +53,18 @@ def test_integration_contracts_and_cmek(
         "voc-raw-reviews-topic",
         "voc-raw-reviews-dlq",
         "voc-incident-alerts-topic",
+        "voc-model-quality-topic",
     }
     assert set(subs) == {
         "voc-raw-reviews-sub",
         "voc-raw-reviews-dlq-sub",
         "voc-incident-alerts-sub",
+        "voc-model-quality-sub",
     }
     raw = subs["voc-raw-reviews-sub"].state
     dlq = subs["voc-raw-reviews-dlq-sub"].state
     alerts = subs["voc-incident-alerts-sub"].state
+    quality = subs["voc-model-quality-sub"].state
     assert raw["ackDeadlineSeconds"] == 600
     assert alerts["ackDeadlineSeconds"] == 60
     assert (
@@ -72,6 +75,8 @@ def test_integration_contracts_and_cmek(
     assert raw["topic"] == topics["voc-raw-reviews-topic"].id
     assert dlq["topic"] == topics["voc-raw-reviews-dlq"].id
     assert alerts["topic"] == topics["voc-incident-alerts-topic"].id
+    assert quality["topic"] == topics["voc-model-quality-topic"].id
+    assert quality["ackDeadlineSeconds"] == 60
     assert raw["deadLetterPolicy"] == {
         "deadLetterTopic": topics["voc-raw-reviews-dlq"].id,
         "maxDeliveryAttempts": 5,
@@ -82,8 +87,21 @@ def test_integration_contracts_and_cmek(
     subscribers = _resources(
         resources, "gcp:pubsub/subscriptionIAMMember:SubscriptionIAMMember"
     )
-    assert len(publishers) == len(subscribers) == 1
-    publisher = next(iter(publishers.values())).state
+    assert len(subscribers) == 1
+    publisher = publishers.pop("voc-dlq-forward-publisher").state
+    # La cuenta del monitor publica solo en los dos tópicos de avisos.
+    assert {
+        (p.state["topic"], p.state["role"], p.state["member"])
+        for p in publishers.values()
+    } == {
+        (
+            topic,
+            "roles/pubsub.publisher",
+            "serviceAccount:voc-sa-ml-backend@test-voc-project"
+            ".iam.gserviceaccount.com",
+        )
+        for topic in ("voc-incident-alerts-topic", "voc-model-quality-topic")
+    }
     subscriber = next(iter(subscribers.values())).state
     assert publisher["role"] == "roles/pubsub.publisher"
     assert publisher["topic"] == "voc-raw-reviews-dlq"
@@ -114,24 +132,22 @@ def test_integration_contracts_and_cmek(
             "action": {"type": "Delete"},
             "condition": {
                 "age": 7,
-                "matchesPrefixes": ["raw_staging/", "temp_beam/"],
+                "matchesPrefixes": ["raw_staging/", "temp_beam/", "backfill/"],
             },
         }
     ]
     assert dataset.state["datasetId"] == "bbva_voc_tds"
-    tables = _resources(resources, "gcp:bigquery/table:Table")
-    assert set(tables) == {
-        "sanitized_reviews_tds",
-        "delora_predictions",
-        "ingestion_runs_log_v2",
-        "hitl_triage_audit_log",
-    }
+    all_tables = _resources(resources, "gcp:bigquery/table:Table")
+    views = {n: t for n, t in all_tables.items() if "view" in t.state}
+    tables = {n: t for n, t in all_tables.items() if n not in views}
+    assert set(views) == set(VIEWS)
     models = {
         "sanitized_reviews_tds": SanitizedReviewRecord,
-        "delora_predictions": AnalyzedReviewPrediction,
-        "hitl_triage_audit_log": HitlTriageAuditRecord,
         "ingestion_runs_log_v2": IngestionRunAudit,
+        **ANALYTICS_V3_TABLES,
     }
+    assert set(tables) == set(models)
+    assert not {"delora_predictions", "hitl_triage_audit_log"} & set(all_tables)
     for name, table in tables.items():
         state = table.state
         assert state["tableId"] == name
@@ -148,25 +164,34 @@ def test_integration_contracts_and_cmek(
             assert field["type"] in {
                 "STRING",
                 "INTEGER",
+                "INT64",
                 "TIMESTAMP",
+                "DATE",
                 "FLOAT",
+                "FLOAT64",
                 "BOOLEAN",
+                "BOOL",
+                "JSON",
             }
             assert field["mode"] in {"REQUIRED", "NULLABLE", "REPEATED"}
         assert dataset.urn in resources.dependencies[name]
     sanitized = tables["sanitized_reviews_tds"].state
-    predictions = tables["delora_predictions"].state
-    assert (
-        sanitized["timePartitioning"]
-        == predictions["timePartitioning"]
-        == {"type": "DAY", "field": "fecha"}
-    )
+    predictions = tables["review_predictions"].state
+    assert sanitized["timePartitioning"] == {"type": "DAY", "field": "fecha"}
+    assert predictions["timePartitioning"] == {
+        "type": "MONTH",
+        "field": "fecha",
+    }
     assert sanitized["clusterings"] == ["bank_id", "version_app"]
-    assert predictions["clusterings"] == ["bank_id", "topico", "tnss_score"]
-    predictions_schema = json.loads(predictions["schema"])
-    assert next(
-        f for f in predictions_schema if f["name"] == "embedding_vector"
-    ) == {"name": "embedding_vector", "type": "FLOAT", "mode": "REPEATED"}
+    embeddings_schema = json.loads(tables["text_embeddings"].state["schema"])
+    assert next(f for f in embeddings_schema if f["name"] == "embedding") == {
+        "name": "embedding",
+        "type": "FLOAT64",
+        "mode": "REPEATED",
+    }
+    for view in views.values():
+        assert view.state["deletionProtection"] is (environment != "dev")
+        assert "encryptionConfiguration" not in view.state
     grants = _resources(
         resources, "gcp:kms/cryptoKeyIAMMember:CryptoKeyIAMMember"
     )
@@ -215,7 +240,7 @@ def test_integration_contracts_and_cmek(
         assert all("kmsKeyName" not in topic.state for topic in topics.values())
         assert all(
             "encryptionConfiguration" not in table.state
-            for table in tables.values()
+            for table in all_tables.values()
         )
     apis = _resources(resources, "gcp:projects/service:Service")
     api_urns = {r.urn for r in apis.values()}

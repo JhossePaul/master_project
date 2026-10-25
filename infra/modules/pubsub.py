@@ -1,4 +1,4 @@
-"""Colas de ingesta, mensajes fallidos y alertas con CMEK opcional."""
+"""Colas de ingesta, mensajes fallidos y avisos con CMEK opcional."""
 
 from dataclasses import dataclass
 
@@ -14,6 +14,8 @@ class PubSubResources:
     dlq_subscription: gcp.pubsub.Subscription
     alerts_topic: gcp.pubsub.Topic
     alerts_subscription: gcp.pubsub.Subscription
+    quality_topic: gcp.pubsub.Topic
+    quality_subscription: gcp.pubsub.Subscription
 
 
 def create_pubsub_resources(
@@ -21,8 +23,14 @@ def create_pubsub_resources(
     api_deps: list[pulumi.Resource],
     *,
     project_id: str | None = None,
+    alert_publisher_email: pulumi.Input[str] | None = None,
 ) -> PubSubResources:
-    """Crea suscripciones Pull y permisos necesarios para entregar a la DLQ."""
+    """Crea suscripciones Pull y permisos necesarios para entregar a la DLQ.
+
+    ``alert_publisher_email`` (la cuenta del monitor) publica solo en los dos
+    tópicos de avisos: las alertas de deriva y los avisos de calidad del
+    modelo.
+    """
     project = project_id or pulumi.Config("gcp").require("project")
     opts = pulumi.ResourceOptions(depends_on=api_deps)
     agent = gcp.projects.ServiceIdentity(
@@ -100,6 +108,40 @@ def create_pubsub_resources(
         ack_deadline_seconds=60,
         opts=opts,
     )
+    # Avisos de calidad del modelo (warning, retrain, rejected), sin texto.
+    quality_topic = topic("voc-model-quality-topic")
+    quality_sub = gcp.pubsub.Subscription(
+        "voc-model-quality-sub",
+        name="voc-model-quality-sub",
+        project=project,
+        topic=quality_topic.id,
+        ack_deadline_seconds=60,
+        message_retention_duration="604800s",
+        opts=opts,
+    )
+    if alert_publisher_email is not None:
+        publisher = pulumi.Output.from_input(alert_publisher_email).apply(
+            lambda email: f"serviceAccount:{email}"
+        )
+        for name, alert_topic in (
+            ("voc-incident-alerts", alerts_topic),
+            ("voc-model-quality", quality_topic),
+        ):
+            gcp.pubsub.TopicIAMMember(
+                f"{name}-monitor-publisher",
+                project=project,
+                topic=alert_topic.name,
+                role="roles/pubsub.publisher",
+                member=publisher,
+                opts=opts,
+            )
     return PubSubResources(
-        raw_topic, raw_sub, dlq_topic, dlq_sub, alerts_topic, alerts_sub
+        raw_topic,
+        raw_sub,
+        dlq_topic,
+        dlq_sub,
+        alerts_topic,
+        alerts_sub,
+        quality_topic,
+        quality_sub,
     )
