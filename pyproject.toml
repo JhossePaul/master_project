@@ -21,8 +21,17 @@ members = ["packages/*", "services/*", "infra"]
 # entrada al implementar el paquete correspondiente.
 exclude = [
     "services/api-backend",
-    "services/ml-delora",
 ]
+
+# torch solo en CPU en Linux (CI e imagen de ml-inference, D4): las ruedas de
+# PyPI traen CUDA y pesan varios GB. En macOS la rueda de PyPI ya es de CPU.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 line-length = 80
@@ -62,5 +71,21 @@ addopts = "-ra -q --import-mode=importlib --cov-report=term-missing"
 testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
 
 [tool.bandit]
-exclude_dirs = ["tests", ".github", "docs", "web", ".venv", "infra/.pulumi"]
+# experiments/ no es código de producción: experiments/analytics es un proyecto
+# uv aparte y project_viability guarda el notebook de viabilidad.
+exclude_dirs = [
+    "tests",
+    ".github",
+    "docs",
+    "web",
+    ".venv",
+    "infra/.pulumi",
+    "experiments",
+]
 skips = ["B101"]
+
+[tool.pyrefly]
+# Mismo preset que la configuración automática previa; experiments/ no es
+# código de producción (experiments/analytics es un proyecto uv aparte).
+preset = "basic"
+project-excludes = ["experiments/**"]
