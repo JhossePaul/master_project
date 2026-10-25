@@ -108,8 +108,9 @@ class MlJobSpec:
     executed_by_ml: bool = False
 
 
-# D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
-ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta")
+# Un solo Job en serie. Con 2 GiB el primer delta se quedó sin memoria al
+# embeber y asignar tópicos a las cláusulas (2026-10-25), así que usa 4 GiB.
+ML_DELTA_JOB = MlJobSpec("voc-ml-inference-delta", "delta", memory="4Gi")
 ML_MONITOR_JOB = MlJobSpec("voc-ml-monitor", "monitor")
 # Re-ajuste trimestral de tópicos: MiniLM, UMAP y HDBSCAN sobre ~63 000
 # cláusulas; 2 vCPU y 4 GiB, 1 h, sin reintentos (el siguiente trimestre o

@@ -243,7 +243,7 @@ def _check_ml_jobs(
         assert container["args"] == [command]
         assert container["resources"]["limits"] == {
             "cpu": "1",
-            "memory": "2Gi",
+            "memory": "4Gi" if name == "voc-ml-inference-delta" else "2Gi",
         }
         env = {e["name"]: e["value"] for e in container["envs"]}
         assert "KAGGLE_API_TOKEN" not in env
