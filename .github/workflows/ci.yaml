@@ -154,6 +154,7 @@ jobs:
           # `--help` valida el entrypoint sin ninguno de los dos.
           docker run --rm ml-inference:ci --help
           docker run --rm --entrypoint python ml-inference:ci -c \
-            "import ml_inference.delta, voc_nlp.sentiment_model, voc_nlp.topics"
+            "import ml_inference.delta, voc_nlp.sentiment_model, voc_nlp.topics; \
+            from kaggle.api.kaggle_api_extended import KaggleApi"
           id=$(docker run --rm --entrypoint id ml-inference:ci -u)
           test "$id" = "10001"

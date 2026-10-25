@@ -41,7 +41,8 @@ ENV PATH=/opt/venv/bin:$PATH \
     HF_HUB_OFFLINE=1 \
     HF_HOME=/tmp/huggingface \
     NUMBA_CACHE_DIR=/tmp/numba \
-    MPLCONFIGDIR=/tmp/matplotlib
+    MPLCONFIGDIR=/tmp/matplotlib \
+    KAGGLE_CONFIG_DIR=/tmp/kaggle
 WORKDIR /app
 USER 10001:10001
 ENTRYPOINT ["python", "-m", "ml_inference"]
