@@ -353,3 +353,38 @@ def test_topics_refit_dispatch(
     )
     assert cli.main(["topics-refit", "--force"]) == 0
     assert env["refit"] == ("p", "topics_v1", True)
+
+
+def test_aspects_backfill_needs_a_cap_to_approve(env: dict) -> None:
+    with pytest.raises(SystemExit):
+        cli.main(["aspects-backfill", "--approve"])
+
+
+@pytest.mark.parametrize("approve", [False, True])
+def test_aspects_backfill_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, approve: bool
+) -> None:
+    import ml_inference.aspects_backfill as backfill
+    import voc_nlp.aspects as aspects
+
+    monkeypatch.setattr(
+        backfill, "estimate", lambda s, b: env.setdefault("e", b)
+    )
+    monkeypatch.setattr(
+        aspects, "make_client", lambda project, location: "genai"
+    )
+
+    class _Run:
+        status = type("S", (), {"value": "succeeded"})()
+
+    monkeypatch.setattr(
+        backfill,
+        "run_aspects_backfill",
+        lambda s, b, g, cap, n: env.setdefault("run", (g, cap)) and _Run(),
+    )
+    argv = ["aspects-backfill"] + (
+        ["--approve", "--max-usd", "2"] if approve else []
+    )
+    assert cli.main(argv) == 0
+    assert env["e"] == "bq"
+    assert env.get("run") == (("genai", 2.0) if approve else None)

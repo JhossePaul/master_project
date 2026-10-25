@@ -12,6 +12,8 @@
   ``voc-ml-topics-refit``); la versión nueva asigna cuando se cura.
 * ``topics-backfill``: re-asigna el histórico a la versión de tópicos
   vigente (Job ``voc-ml-topics-backfill``, lo lanza el delta).
+* ``aspects-backfill``: familias del histórico con el prompt vigente (Job
+  ``voc-ml-aspects-backfill``); sin ``--approve`` solo estima el costo.
 * ``drift-rates``: meses de alerta al año por serie y banco contra la línea
   base histórica (solo lee ``drift_metrics``).
 * ``rescore``: predice todo el corpus con una versión candidata en la GPU
@@ -91,6 +93,15 @@ def parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="ajusta aunque no toque"
     )
     sub.add_parser("topics-backfill", help="re-asigna el histórico de tópicos")
+    asp = sub.add_parser(
+        "aspects-backfill", help="familias del histórico con costo aprobado"
+    )
+    asp.add_argument(
+        "--approve", action="store_true", help="llama a Gemini (cuesta)"
+    )
+    asp.add_argument(
+        "--max-usd", type=float, default=None, help="tope de costo en USD"
+    )
     res = sub.add_parser("rescore", help="re-predice con una candidata")
     res.add_argument("--model-version", required=True)
     res.add_argument("--run", default=None, help="por defecto, la fecha y hora")
@@ -191,7 +202,11 @@ def _monitor_state(settings: InferenceSettings, bigquery, storage):
 
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    args = parser().parse_args(argv)
+    p = parser()
+    args = p.parse_args(argv)
+    if args.command == "aspects-backfill" and args.approve:
+        if args.max_usd is None or args.max_usd <= 0:
+            p.error("--approve needs --max-usd > 0")
     now = datetime.now(UTC)
     settings = InferenceSettings()  # type: ignore[call-arg]
     bigquery, storage = _clients(settings)
@@ -351,6 +366,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             log.warning("topics-backfill: no hay versión de tópicos vigente")
             return 0
         row = run_topics_backfill(settings, bigquery, storage, version, now)
+        return 0 if row.status.value == "succeeded" else 1
+    if args.command == "aspects-backfill":
+        from ml_inference.aspects_backfill import (
+            estimate,
+            run_aspects_backfill,
+        )
+
+        estimate(settings, bigquery)
+        if not args.approve:
+            return 0
+        from voc_nlp.aspects import make_client
+
+        genai = make_client(settings.gcp_project_id, settings.gemini_location)
+        row = run_aspects_backfill(settings, bigquery, genai, args.max_usd, now)
         return 0 if row.status.value == "succeeded" else 1
     if args.command == "rescore":
         from ml_inference.registry import latest_versions

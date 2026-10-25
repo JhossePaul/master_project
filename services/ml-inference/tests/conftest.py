@@ -159,6 +159,30 @@ class FakeBigQuery:
             and (p["id_resena"], p["text_key"]) not in done
         ]
 
+    def _aspects_backfill(self, sql: str, params: dict[str, Any]) -> list[dict]:
+        done = {
+            (a["id_resena"], a["text_key"])
+            for a in self.rows("review_aspects")
+            if a["prompt_version"] == params["prompt"]
+        }
+        pending = [
+            r
+            for r in self._topic_pending(
+                "review_aspects", "prompt_version", None
+            )
+            if (r["id_resena"], r["text_key"]) not in done
+        ]
+        if "-- Textos sin familias" in sql:
+            return [{"texts": len({r["text_key"] for r in pending})}]
+        keys = sorted(
+            {r["text_key"] for r in pending if r["text_key"] > params["after"]}
+        )
+        keys = set(keys[: params["limit"]])
+        return sorted(
+            (r for r in pending if r["text_key"] in keys),
+            key=lambda r: r["text_key"],
+        )
+
     def _topics_backfill(self, sql: str, params: dict[str, Any]) -> list[dict]:
         pending = self._topic_pending(
             "topic_assignments", "topic_model_version", params["version"]
@@ -189,6 +213,8 @@ class FakeBigQuery:
         raise AssertionError(f"unexpected query: {sql[:120]}")
 
     def _select(self, sql: str, params: dict[str, Any]) -> list[dict]:
+        if "-- " in sql and "sin familias del prompt vigente" in sql:
+            return self._aspects_backfill(sql, params)
         if "-- " in sql and "WITH pending AS" in sql:
             return self._topics_backfill(sql, params)
         if ".model_versions`" in sql:
@@ -382,15 +408,34 @@ class FakeGemini:
     def __init__(self) -> None:
         self.models = self
         self.calls = 0
+        self.sent: list[str] = []
+        # Tokens de entrada por llamada (sin ellos, el costo es 0).
+        self.prompt_tokens: int | None = None
 
     def generate_content(self, *, model: str, contents: str, config: Any):
         self.calls += 1
+        self.sent.extend(
+            line.split(chr(9), 1)[1] for line in contents.splitlines()
+        )
         lines = [
             f"{line.split(chr(9))[0]} AC 1 0 0"
             for line in contents.splitlines()
             if "omitir" not in line
         ]
-        return type("R", (), {"text": "\n".join(lines), "usage_metadata": None})
+        meta = (
+            None
+            if self.prompt_tokens is None
+            else type(
+                "U",
+                (),
+                {
+                    "prompt_token_count": self.prompt_tokens,
+                    "candidates_token_count": 0,
+                    "thoughts_token_count": 0,
+                },
+            )()
+        )
+        return type("R", (), {"text": "\n".join(lines), "usage_metadata": meta})
 
 
 @dataclass

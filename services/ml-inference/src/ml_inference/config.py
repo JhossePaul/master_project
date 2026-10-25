@@ -27,6 +27,9 @@ class InferenceSettings(BaseSettings):
     aspects_batch_size: int = Field(default=100, ge=1)
     gemini_model: str = "gemini-3.6-flash"
     gemini_location: str = "global"
+    # Costo medido de Gemini por 1 000 textos en el backfill de los
+    # experimentos ($60.61 por 659 316), para estimar aspects-backfill.
+    gemini_usd_per_1000: float = Field(default=0.092, gt=0)
     torch_threads: int = Field(default=1, ge=1)
     # Tópico de las alertas de deriva (conserva su nombre original).
     drift_topic: str = "voc-incident-alerts-topic"
