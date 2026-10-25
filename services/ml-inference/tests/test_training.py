@@ -337,9 +337,6 @@ class Jobs:
         self.executed.append((job, list(args)))
         return "operations/1"
 
-    def running(self, job: str) -> bool:
-        return False
-
 
 @pytest.fixture
 def setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
@@ -530,7 +527,11 @@ def test_auto_launches_the_rescoring_and_never_promotes(
     expected = [
         (
             "voc-ml-rescoring",
-            ["rescore", "--model-version=robertuito_sentiment_v3"],
+            [
+                "rescore",
+                "--model-version=robertuito_sentiment_v3",
+                f"--reason=re-scoring automático del entrenamiento {RUN}",
+            ],
         )
     ]
     assert jobs.executed == (expected if launched else [])

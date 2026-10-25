@@ -7,6 +7,7 @@ import ml_inference.__main__ as cli
 import pytest
 
 ACTOR = "b" * 64
+JOB = type("Job", (), {})()
 
 
 def test_actor_hash_must_be_sha256() -> None:
@@ -322,7 +323,7 @@ def test_rescore_dispatch(
     monkeypatch.setattr(
         rescore,
         "new_rescoring",
-        lambda *a: env.setdefault("new", a) and "job",
+        lambda *a: env.setdefault("new", a) and JOB,
     )
     row = type("R", (), {"status": type("S", (), {"value": status})()})()
     monkeypatch.setattr(
@@ -335,7 +336,7 @@ def test_rescore_dispatch(
     args = ["rescore", "--model-version", "v2", "--run", "r1"]
     assert cli.main(args) == code
     assert env["new"][3:] == ("kaggle", "v2", "r1", {"v2": "m"})
-    assert env["run"][:2] == ("job", 9000)
+    assert env["run"][:2] == (JOB, 9000)
 
 
 def test_topics_refit_dispatch(
@@ -409,9 +410,9 @@ def test_train_dispatch(
         state, "load_state", lambda b, d: type("S", (), {"policy": "pol"})()
     )
 
-    def new(*args: Any) -> str:
+    def new(*args: Any) -> Any:
         env["new"] = args
-        return "job"
+        return type("J", (), {})()
 
     class _Run:
         pass
@@ -423,9 +424,8 @@ def test_train_dispatch(
         "run_training",
         lambda job, w, t, n: env.setdefault("t", t) and _Run(),
     )
-    assert cli.main(["train", "--run", "r1"]) == (
-        0 if status == "succeeded" else 1
-    )
+    argv = ["train", "--run", "r1", "--actor-hash", ACTOR, "--reason", "κ bajo"]
+    assert cli.main(argv) == (0 if status == "succeeded" else 1)
     _, _, _, kaggle, genai, run, versions, policy, jobs = env["new"]
     assert (kaggle, genai, run, versions, policy) == (
         "kaggle",

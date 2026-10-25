@@ -76,6 +76,7 @@ VIEWS: Final[tuple[str, ...]] = (
     "eligibility_counts",
     "topic_model_current",
     "daily_topic_labels",
+    "inference_runs_current",
 )
 
 _REFERENCE = re.compile(r"`\{project\}\.\{dataset\}\.([a-z0-9_]+)`")

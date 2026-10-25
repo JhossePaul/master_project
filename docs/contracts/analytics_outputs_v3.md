@@ -278,6 +278,7 @@ Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `e
 | `hitl_queue`, `drift_alerts_current` | Caso o alerta con su último evento |
 | `eligibility_counts` | Filas por banco, mes, `eligibility_code` y `label_source` |
 | `topic_model_current` | La versión de tópicos que asigna: la más reciente por `fitted_at` cuyos tópicos emparejados con la anterior tienen todos una decisión del curador en `curation_topics` (`mapping_confirmed` verdadero o falso). Hasta entonces sigue la anterior; la primera versión no tiene pares y vale desde que se carga |
+| `inference_runs_current` | El estado vigente de cada corrida: la fila de cierre si existe; si no, la de inicio |
 | `daily_topic_labels` | Port de `voc_analytics.incidents.daily_topics`: base `NEG` con dos palabras o más por día UTC, familias de la última etiqueta de cada reseña, tópicos útiles (`audience` producto o ingeniería) de la versión de `topic_model_current`; se valida contra `daily_topics_v0`, el cálculo de los experimentos |
 
 ## 8. Columnas fijadas al implementar (2026-10-23)
@@ -288,7 +289,7 @@ Aprobadas por el autor al revisar los contratos. Ninguna cambia una decisión de
 | :--- | :--- |
 | `review_predictions` | Con `eligibility_code` nulo (reglas sin evaluar) la fila queda `NO_PREDICTED` con `sentiment` nulo. Una fila `MODEL` exige `model_version` y `calibration_version`; `TNSS_EMPTY` exige `palabras = 0`, y `TNSS_SINGLE_WORD` y `RULE_BASED` exigen `palabras = 1` |
 | `model_versions` | Suma `calibration_version` (la que cita `review_predictions`), `training_data_hash` y `recorded_at` (cada cambio de estado es una fila; la vigente es la última). Las métricas del oro *dev* van en `kappa_dev`, `ece_dev` y `aurc_dev` |
-| `inference_runs` | Suma `peak_memory_mib` (la memoria pico de la corrida: el Job carga un modelo a la vez). `status`: `succeeded` o `failed` |
+| `inference_runs` | Suma `peak_memory_mib` (la memoria pico de la corrida: el Job carga un modelo a la vez), `topic_model_version` (la versión de tópicos con que corrió el delta o el backfill de tópicos), `actor_hash` y `reason` (quién lanzó la corrida a mano y por qué; nulos en las programadas). `status`: `running`, `succeeded` o `failed`. Las corridas largas (backfill de tópicos y entrenamiento) escriben una fila `running` al empezar, con `ended_at` nulo, y otra de cierre con el mismo `run_id`; la clave es `run_id` y `status`. Una fila `running` sin cierre y más vieja que el tiempo máximo de su Job es de una corrida muerta. `model_versions` suma `reason`, el motivo de cada cambio de estado (marca la promoción forzada y el *rollback*) |
 | `drift_metrics` | `period` es el `DATE` del día 1 del mes; suma `threshold` y `computed_at`. Una serie usa z o PSI, no los dos |
 | `drift_policy`, `drift_policy_template` | `entry_rule` pasa a `entry_months` (entero, 12): meses seguidos con `min_rows_per_month` para entrar. `thresholds` es `{"z": {serie: umbral}, "psi": {serie: umbral}}`, con nulo para las series sin alerta |
 | `risk_policy` | Suma `model_version`: el modelo para el que `hitl_threshold` equivale a la cobertura. El tope semanal, la subida por deriva y la doble revisión aceptan nulos hasta que los fije el dueño de negocio (2026-10-24) |

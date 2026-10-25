@@ -304,6 +304,23 @@ class FakeBigQuery:
                         },
                     )
             return list(seen.values())
+        if "AS running" in sql:
+            runs = self.rows("inference_runs")
+            closed = {r["run_id"] for r in runs if r["status"] != "running"}
+            since = _iso(params["since"])
+            return [
+                {
+                    "running": sum(
+                        r["kind"] == params["kind"]
+                        and r["status"] == "running"
+                        and _iso(r["started_at"]) >= since
+                        and params["version"]
+                        in (None, r.get("topic_model_version"))
+                        and r["run_id"] not in closed
+                        for r in runs
+                    )
+                }
+            ]
         if "AS unassigned" in sql:
             pending = self._topic_pending(
                 "topic_assignments", "topic_model_version", params["version"]
@@ -387,19 +404,14 @@ class FakeTopics:
 
 
 class FakeJobs:
-    """Registra las ejecuciones; ``busy`` simula una ejecución en curso."""
+    """Registra las ejecuciones (no las corre)."""
 
     def __init__(self) -> None:
         self.executed: list[tuple[str, list[str]]] = []
-        self.busy: set[str] = set()
 
     def execute(self, job: str, args: Sequence[str]) -> str:
         self.executed.append((job, list(args)))
-        self.busy.add(job)
         return f"operations/{job}-{len(self.executed)}"
-
-    def running(self, job: str) -> bool:
-        return job in self.busy
 
 
 class FakeGemini:

@@ -43,6 +43,7 @@ from ml_inference.bq_io import StagingMergeWriter, iter_rows, query_rows, render
 from ml_inference.config import InferenceSettings
 from ml_inference.delta import peak_memory_mib
 from ml_inference.engines import EngineLoaders
+from ml_inference.runs import write_run
 
 log = logging.getLogger(__name__)
 
@@ -291,6 +292,19 @@ def run_topics_backfill(
         now,
         engines or EngineLoaders(),
     )
+    run = InferenceRun(
+        run_id=run_id,
+        kind=RunKind.TOPIC_BACKFILL,
+        environment=RunEnvironment.CLOUDRUN,
+        model_version=None,
+        topic_model_version=version,
+        started_at=now,
+        ended_at=None,
+        reviews=0,
+        texts=0,
+        status=RunStatus.RUNNING,
+    )
+    write_run(writer, run)
     status = RunStatus.FAILED
     try:
         job.embed_missing()
@@ -303,6 +317,7 @@ def run_topics_backfill(
             kind=RunKind.TOPIC_BACKFILL,
             environment=RunEnvironment.CLOUDRUN,
             model_version=None,
+            topic_model_version=version,
             started_at=now,
             ended_at=max(datetime.now(UTC), now),
             reviews=job.reviews,
@@ -310,7 +325,7 @@ def run_topics_backfill(
             status=status,
             peak_memory_mib=peak_memory_mib(),
         )
-        writer.write("inference_runs", [run], ["run_id"], run_id)
+        write_run(writer, run)
         log.info(
             "topics-backfill %s: %s, %d reseñas, %d textos",
             version,

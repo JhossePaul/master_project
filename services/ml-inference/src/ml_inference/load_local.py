@@ -66,6 +66,7 @@ from ml_inference.bq_io import (
     run_dml,
 )
 from ml_inference.config import InferenceSettings
+from ml_inference.runs import RUN_KEY
 from ml_inference.seed import MODEL_VERSION, REPORTS_MODEL
 
 log = logging.getLogger(__name__)
@@ -784,5 +785,5 @@ def load_backfill(
     counts["gold_labels"] = loader.gold(writer)
     log.info("filas nuevas: %s", counts)
     runs = loader.runs(counts, max(datetime.now(now.tzinfo), now))
-    writer.write("inference_runs", runs, ["run_id"], loader.run_id)
+    writer.write("inference_runs", runs, list(RUN_KEY), loader.run_id)
     return runs

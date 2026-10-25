@@ -68,6 +68,7 @@ from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
 from ml_inference.engines import EngineLoaders
 from ml_inference.jobs import JobRunner
+from ml_inference.runs import running, write_run
 from ml_inference.state import ServingState, load_state
 
 log = logging.getLogger(__name__)
@@ -123,6 +124,7 @@ def run_delta(
             kind=RunKind.DELTA,
             environment=RunEnvironment.CLOUDRUN,
             model_version=state.model.model_version,
+            topic_model_version=state.topic_model_version,
             started_at=now,
             ended_at=max(datetime.now(UTC), now),
             reviews=counts.reviews,
@@ -131,7 +133,7 @@ def run_delta(
             cost_usd=round(counts.cost_usd, 6),
             peak_memory_mib=peak_memory_mib(),
         )
-        writer.write("inference_runs", [run], ["run_id"], run_id)
+        write_run(writer, run)
         log.info("delta %s: %s", status.value, counts)
     return run
 
@@ -732,7 +734,15 @@ class _Steps:
                 version,
             )
             return
-        if jobs.running(job):
+        in_progress = running(
+            self.clients.bigquery,
+            self.ds,
+            RunKind.TOPIC_BACKFILL,
+            self.now,
+            timedelta(seconds=self.settings.topics_backfill_timeout_sec),
+            version,
+        )
+        if in_progress:
             log.info(
                 "%d negativas sin tópico de %s: %s en curso", left, version, job
             )

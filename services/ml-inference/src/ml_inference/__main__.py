@@ -108,6 +108,8 @@ def parser() -> argparse.ArgumentParser:
     )
     trn = sub.add_parser("train", help="reentrena y registra un candidato")
     trn.add_argument("--run", default=None, help="por defecto, la fecha y hora")
+    trn.add_argument("--actor-hash", type=_actor, default=None)
+    trn.add_argument("--reason", default=None)
     gold = sub.add_parser("upload-gold-ids", help="sube los ids del oro")
     gold.add_argument(
         "--labels",
@@ -117,6 +119,8 @@ def parser() -> argparse.ArgumentParser:
     res = sub.add_parser("rescore", help="re-predice con una candidata")
     res.add_argument("--model-version", required=True)
     res.add_argument("--run", default=None, help="por defecto, la fecha y hora")
+    res.add_argument("--actor-hash", type=_actor, default=None)
+    res.add_argument("--reason", default=None)
     cur = sub.add_parser("curve", help="recalcula la curva de una versión")
     cur.add_argument("--model-version", default=None)
     pol = sub.add_parser("risk-policy", help="cambia la cobertura objetivo")
@@ -416,6 +420,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             load_state(bigquery, settings.dataset).policy,
             CloudRunJobs(settings.gcp_project_id, settings.gcp_region),
         )
+        job.actor_hash, job.reason = args.actor_hash, args.reason
         row = run_training(
             job,
             writer,
@@ -448,6 +453,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.run or f"{now:%Y%m%d%H%M}",
             latest_versions(bigquery, settings.dataset),
         )
+        job.actor_hash, job.reason = args.actor_hash, args.reason
         row = run_rescore(
             job,
             writer,

@@ -1,4 +1,4 @@
-"""Lanzador de Jobs de Cloud Run: URL, argumentos y ejecuciones en curso."""
+"""Lanzador de Jobs de Cloud Run: URL y argumentos."""
 
 from typing import Any
 
@@ -48,24 +48,6 @@ def test_execute_overrides_the_args() -> None:
     assert kwargs["json"] == {
         "overrides": {"containerOverrides": [{"args": ["topics-backfill"]}]}
     }
-
-
-@pytest.mark.parametrize(
-    ("executions", "expected"),
-    [
-        ([], False),
-        ([{"completionTime": "2026-11-04T10:00:00Z"}], False),
-        ([{"completionTime": "x"}, {"name": "sin terminar"}], True),
-    ],
-)
-def test_running_looks_for_unfinished_executions(
-    executions: list[dict], expected: bool
-) -> None:
-    session = _Session({"executions": executions} if executions else {})
-    jobs = CloudRunJobs("test-project", "us-central1", session)
-    assert jobs.running("voc-ml-topics-backfill") is expected
-    method, url, _ = session.calls[0]
-    assert (method, url) == ("GET", f"{BASE}/executions")
 
 
 @pytest.mark.parametrize(

@@ -28,6 +28,11 @@ DISPLAY_NAME: Final = "robertuito-sentiment"
 PRODUCTION_ALIAS: Final = "produccion"
 
 
+def version_alias(model_version: str) -> str:
+    """Alias de Vertex de una versión: solo admite letras, dígitos y guiones."""
+    return model_version.replace("_", "-")
+
+
 def _aiplatform() -> Any:
     from google.cloud import aiplatform
 
@@ -68,7 +73,7 @@ def register(
         serving_container_image_uri=serving_image,
         parent_model=parent.resource_name if parent else None,
         is_default_version=parent is None,
-        version_aliases=[model_version],
+        version_aliases=[version_alias(model_version)],
         labels={"calibration": calibration_version.replace(".", "_")},
     )
     row = ModelVersion(
@@ -121,20 +126,16 @@ def promote(
     aiplatform.init(
         project=settings.gcp_project_id, location=settings.gcp_region
     )
+    candidates = latest_versions(bigquery, settings.dataset)
+    if model_version not in candidates:
+        raise LookupError(f"{model_version} is not in model_versions")
+    version = _registered(aiplatform, settings, candidates[model_version])
     parent = _parent(aiplatform)
-    if parent is None:
-        raise LookupError(f"{DISPLAY_NAME} is not in the model registry")
-    version = aiplatform.Model(
-        model_name=f"{parent.resource_name}@{model_version}"
-    )
     aiplatform.models.ModelRegistry(
         model=parent.resource_name
     ).add_version_aliases(
         new_aliases=[PRODUCTION_ALIAS], version=version.version_id
     )
-    candidates = latest_versions(bigquery, settings.dataset)
-    if model_version not in candidates:
-        raise LookupError(f"{model_version} is not in model_versions")
     rows = []
     for name, current in candidates.items():
         if name != model_version and current.status is ModelStatus.PROMOTED:
@@ -142,6 +143,7 @@ def promote(
                 current.model_copy(
                     update={
                         "status": ModelStatus.RETIRED,
+                        "reason": f"reemplazada por {model_version}",
                         "recorded_at": now,
                     }
                 )
@@ -151,6 +153,7 @@ def promote(
             "status": ModelStatus.PROMOTED,
             "promoted_at": now,
             "promoted_by_hash": actor_hash,
+            "reason": reason,
             "recorded_at": now,
         }
     )
@@ -163,6 +166,38 @@ def promote(
     )
     log.info("promovido %s: %s", model_version, reason)
     return promoted
+
+
+def _registered(
+    aiplatform: Any, settings: InferenceSettings, model: ModelVersion
+) -> Any:
+    """La versión en Vertex; la sube si falta (la v1 se sembró solo en
+    BigQuery y GCS, así que un *rollback* a ella la registra aquí)."""
+    from google.api_core.exceptions import NotFound
+
+    alias = version_alias(model.model_version)
+    parent = _parent(aiplatform)
+    if parent is not None:
+        try:
+            return aiplatform.Model(
+                model_name=f"{parent.resource_name}@{alias}"
+            )
+        except NotFound:
+            pass
+    if settings.serving_image is None:
+        raise LookupError(
+            f"{model.model_version} is not in Vertex and SERVING_IMAGE is unset"
+        )
+    log.info("registrando %s en Vertex", model.model_version)
+    return aiplatform.Model.upload(
+        display_name=DISPLAY_NAME,
+        artifact_uri=model.registry_uri,
+        serving_container_image_uri=settings.serving_image,
+        parent_model=parent.resource_name if parent else None,
+        is_default_version=parent is None,
+        version_aliases=[alias],
+        labels={"calibration": model.calibration_version.replace(".", "_")},
+    )
 
 
 def resolve(bigquery: Any, settings: InferenceSettings) -> ModelVersion:

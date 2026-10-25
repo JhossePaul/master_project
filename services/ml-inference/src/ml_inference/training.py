@@ -97,6 +97,7 @@ from ml_inference.rescore import (
     check_slug,
     wait_for,
 )
+from ml_inference.runs import write_run
 from ml_inference.vocab import ARCHIVE_PREFIX, VOCAB_FILE, encode
 
 log = logging.getLogger(__name__)
@@ -222,6 +223,9 @@ class Training:
     version: int
     policy: RiskPolicy | None = None
     jobs: JobRunner | None = None
+    # Quién la lanzó y por qué (MLOps, la CLI o el monitor en auto).
+    actor_hash: str | None = None
+    reason: str | None = None
     params: TrainParams = field(default_factory=TrainParams)
     workers: int = field(default_factory=lambda: os.cpu_count() or 1)
     sleep: Callable[[float], None] = time.sleep
@@ -704,7 +708,11 @@ class Training:
             return None
         return self.jobs.execute(
             self.settings.rescoring_job,
-            ["rescore", f"--model-version={self.model_version}"],
+            [
+                "rescore",
+                f"--model-version={self.model_version}",
+                f"--reason=re-scoring automático del entrenamiento {self.run}",
+            ],
         )
 
 
@@ -717,6 +725,22 @@ def run_training(
     """Corre los pasos y registra la corrida, con éxito o fallida."""
     started = now()
     status = RunStatus.FAILED
+    write_run(
+        writer,
+        InferenceRun(
+            run_id=job.run_id,
+            actor_hash=job.actor_hash,
+            reason=job.reason,
+            kind=RunKind.TRAINING,
+            environment=RunEnvironment.KAGGLE,
+            model_version=job.model_version,
+            started_at=started,
+            ended_at=None,
+            reviews=0,
+            texts=0,
+            status=RunStatus.RUNNING,
+        ),
+    )
     try:
         if job.settings.serving_image is None:
             raise TrainingError("SERVING_IMAGE is not set")
@@ -737,6 +761,8 @@ def run_training(
     finally:
         row = InferenceRun(
             run_id=job.run_id,
+            actor_hash=job.actor_hash,
+            reason=job.reason,
             kind=RunKind.TRAINING,
             environment=RunEnvironment.KAGGLE,
             model_version=job.model_version,
@@ -747,7 +773,7 @@ def run_training(
             status=status,
             cost_usd=round(job.data.recent_cost_usd, 6) if job.data else 0.0,
         )
-        writer.write("inference_runs", [row], ["run_id"], job.run_id)
+        write_run(writer, row)
         shutil.rmtree(job.work, ignore_errors=True)
     return row
 

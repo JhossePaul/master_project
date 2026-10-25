@@ -511,6 +511,9 @@ def promote_version(
             if not force:
                 raise PromotionRefused(check.describe())
             log.warning("promoción forzada por %s: %s", actor_hash, reason)
+            reason = f"{reason} [forzada: {check.describe()}]"
+    if rollback:
+        reason = f"{reason} [rollback]"
     curve = lifecycle.recompute_curve(target, now, gold)
     policy = lifecycle.current_policy()
     promoted = registry.promote(

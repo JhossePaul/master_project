@@ -32,6 +32,7 @@ from voc_common.predictions_v3 import ReviewAspects
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
 from ml_inference.delta import peak_memory_mib
+from ml_inference.runs import write_run
 
 log = logging.getLogger(__name__)
 
@@ -215,5 +216,5 @@ def run_aspects_backfill(
             cost_usd=round(usage.cost_usd, 6),
             peak_memory_mib=peak_memory_mib(),
         )
-        writer.write("inference_runs", [run], ["run_id"], run_id)
+        write_run(writer, run)
     return run

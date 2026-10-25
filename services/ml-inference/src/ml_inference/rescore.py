@@ -85,6 +85,7 @@ from ml_inference.bq_io import (
     run_dml,
 )
 from ml_inference.config import InferenceSettings
+from ml_inference.runs import write_run
 
 log = logging.getLogger(__name__)
 
@@ -357,6 +358,9 @@ class Rescoring:
     pad: int | None = None
     # La versión promovida, contra la que se mide la regla de promoción.
     current: ModelVersion | None = None
+    # Quién la lanzó y por qué (MLOps o la CLI); nulos en el modo auto.
+    actor_hash: str | None = None
+    reason: str | None = None
 
     def __post_init__(self) -> None:
         check_slug(self.dataset_slug)
@@ -710,6 +714,8 @@ def run_rescore(
     finally:
         row = InferenceRun(
             run_id=job.run_id,
+            actor_hash=job.actor_hash,
+            reason=job.reason,
             kind=RunKind.RESCORING,
             environment=RunEnvironment.KAGGLE,
             model_version=job.model.model_version,
@@ -719,7 +725,7 @@ def run_rescore(
             texts=job.texts,
             status=status,
         )
-        writer.write("inference_runs", [row], ["run_id"], job.run_id)
+        write_run(writer, row)
         shutil.rmtree(job.work, ignore_errors=True)
     return row
 

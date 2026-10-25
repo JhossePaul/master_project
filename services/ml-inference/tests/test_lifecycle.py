@@ -403,7 +403,7 @@ def test_promotion_of_a_better_candidate(bq: Any, aiplatform: Any) -> None:
     )
     promoted = promote(bq)
     assert promoted.status.value == "promoted"
-    assert aiplatform == [CANDIDATE]
+    assert aiplatform == [CANDIDATE.replace("_", "-")]
     assert latest(bq, "hitl_coverage_curves")["model_version"] == CANDIDATE
     policy = latest(bq, "risk_policy")
     assert policy["policy_version"] == "risk_policy_v2"

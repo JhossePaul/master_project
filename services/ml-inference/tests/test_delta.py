@@ -169,7 +169,9 @@ def test_failed_run_is_recorded(world: Any) -> None:
     with pytest.raises(RuntimeError, match="roto"):
         _run(world)
     run = world.bq.rows("inference_runs")[-1]
-    assert run["status"] == "failed"
+    assert (
+        run["status"] == "failed" and run["topic_model_version"] == "topics_v1"
+    )
 
 
 def test_text_omitted_by_gemini_stays_pending(world: Any) -> None:
@@ -399,7 +401,6 @@ def test_topics_only_cover_what_came_through_ingestion(world: Any) -> None:
     assigned = {t["id_resena"] for t in world.bq.rows("topic_assignments")}
     assert assigned == {"n"}
     # Una segunda corrida tampoco toca el histórico.
-    world.jobs.busy.clear()
     world.bq.rows("sanitized_reviews_tds").append(
         world.tds_row("m", "app malo otra vez")
     )
@@ -408,17 +409,33 @@ def test_topics_only_cover_what_came_through_ingestion(world: Any) -> None:
     assert assigned == {"n", "m"}
 
 
+def _backfill_row(world: Any, status: str, started: datetime) -> None:
+    world.bq.rows("inference_runs").append(
+        {
+            "run_id": "topics-backfill-1",
+            "kind": "topic_backfill",
+            "topic_model_version": "topics_v1",
+            "status": status,
+            "started_at": started,
+        }
+    )
+
+
 def test_topic_backfill_is_launched_once_per_version(world: Any) -> None:
     _historical_negative(world, "h", "el cajero no sirve")
     _run(world)
     assert world.jobs.executed == [
         ("voc-ml-topics-backfill", ["topics-backfill"])
     ]
-    # En curso: el siguiente delta no lanza otro.
+    # En curso (su fila running): el siguiente delta no lanza otro.
+    _backfill_row(world, "running", NOW + timedelta(minutes=5))
     _run(world, NOW + timedelta(hours=1))
     assert len(world.jobs.executed) == 1
+    # Una fila running vieja es de una corrida muerta: se relanza.
+    _run(world, NOW + timedelta(hours=3))
+    assert len(world.jobs.executed) == 2
     # Terminado y sin pendientes: tampoco.
-    world.jobs.busy.clear()
+    _backfill_row(world, "succeeded", NOW + timedelta(minutes=5))
     world.bq.rows("topic_assignments").append(
         {
             "id_resena": "h",
@@ -431,7 +448,7 @@ def test_topic_backfill_is_launched_once_per_version(world: Any) -> None:
         }
     )
     _run(world, NOW + timedelta(days=1))
-    assert len(world.jobs.executed) == 1
+    assert len(world.jobs.executed) == 2
 
 
 def test_without_job_runner_the_backfill_waits(world: Any) -> None:

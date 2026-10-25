@@ -40,6 +40,9 @@ class InferenceSettings(BaseSettings):
     rescore_kernel_timeout_sec: int = Field(default=9000, ge=60)
     # Job que re-asigna el histórico al activarse una versión de tópicos.
     topics_backfill_job: str = "voc-ml-topics-backfill"
+    # Tiempo máximo de ese Job (infra): una fila running más vieja es de
+    # una corrida muerta.
+    topics_backfill_timeout_sec: int = Field(default=7200, ge=60)
     # Job de reentrenamiento que lanza el monitor en modo auto.
     training_job: str = "voc-ml-training"
     # Job del re-scoring, que el entrenamiento lanza en modo auto.

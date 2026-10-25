@@ -55,6 +55,8 @@ class ModelVersion(_AnalyticsRecord):
     status: ModelStatus
     promoted_at: UtcDatetime | None = None
     promoted_by_hash: Digest | None = None
+    # Motivo del cambio de estado (promoción, rollback o promoción forzada).
+    reason: str | None = None
     # Orden de las filas de una misma versión (la vigente es la última).
     recorded_at: UtcDatetime
 
@@ -73,23 +75,33 @@ class ModelVersion(_AnalyticsRecord):
 
 
 class InferenceRun(_AnalyticsRecord):
-    """Fila de ``inference_runs``: una corrida terminada."""
+    """Fila de ``inference_runs``: el inicio (``running``) o el cierre de una
+    corrida. Clave: ``run_id`` y ``status``."""
 
     run_id: NonEmpty
     kind: RunKind
     environment: RunEnvironment
     model_version: NonEmpty | None
+    # Versión de tópicos con que corrió (delta y backfill de tópicos).
+    topic_model_version: NonEmpty | None = None
     started_at: UtcDatetime
-    ended_at: UtcDatetime
+    # Nulo solo en la fila de inicio.
+    ended_at: UtcDatetime | None
     reviews: Counter
     texts: Counter
     status: RunStatus
     cost_usd: float | None = None
     peak_memory_mib: Counter | None = None
+    # Quién la lanzó a mano y por qué (botones de MLOps o la CLI); nulos en
+    # las corridas programadas.
+    actor_hash: Digest | None = None
+    reason: str | None = None
 
     @model_validator(mode="after")
     def _times(self) -> Self:
-        if self.ended_at < self.started_at:
+        if (self.ended_at is None) != (self.status is RunStatus.RUNNING):
+            raise ValueError("only a running row has no ended_at")
+        if self.ended_at is not None and self.ended_at < self.started_at:
             raise ValueError("ended_at must not precede started_at")
         if self.cost_usd is not None and self.cost_usd < 0:
             raise ValueError("cost_usd must not be negative")

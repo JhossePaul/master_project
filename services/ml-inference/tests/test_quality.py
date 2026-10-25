@@ -174,16 +174,12 @@ def sample_rows(n_wrong: int, missing: int = 0) -> list[dict[str, Any]]:
 
 
 class _Jobs:
-    def __init__(self, busy: bool = False) -> None:
+    def __init__(self) -> None:
         self.executed: list[tuple[str, list[str]]] = []
-        self.busy = busy
 
     def execute(self, job: str, args: Any) -> str:
         self.executed.append((job, list(args)))
         return "operations/1"
-
-    def running(self, job: str) -> bool:
-        return self.busy
 
 
 def job(
@@ -354,11 +350,12 @@ def test_job_skips_agreement_without_texts(fake_bq: Any) -> None:
     assert q.run(policy(), "m1", NOW) == []
 
 
-def _retrain_answers(trainings: int = 0) -> dict:
+def _retrain_answers(trainings: int = 0, running: int = 0) -> dict:
     return {
         "FROM `p.ds.model_quality`": [],
         "monitor_sample": sample_rows(20),
         "AS trainings": [{"trainings": trainings}],
+        "AS running": [{"running": running}],
     }
 
 
@@ -381,17 +378,19 @@ def test_retrain_in_auto_mode_launches_training(fake_bq: Any) -> None:
         "m1",
         NOW,
     )
-    assert jobs.executed == [("voc-ml-training", ["train"])]
+    ((name, args),) = jobs.executed
+    assert name == "voc-ml-training" and args[0] == "train"
+    assert args[1].startswith("--reason=")
     since = next(p for p in q.client.params if set(p) == {"since"})["since"]
     assert since == datetime(2026, 7, 1, tzinfo=UTC)
 
 
-@pytest.mark.parametrize(("trainings", "busy"), [(1, False), (0, True)])
+@pytest.mark.parametrize(("trainings", "running"), [(1, 0), (0, 1)])
 def test_auto_retrain_at_most_once_per_quarter(
-    fake_bq: Any, trainings: int, busy: bool
+    fake_bq: Any, trainings: int, running: int
 ) -> None:
-    jobs = _Jobs(busy=busy)
-    q, _ = job(fake_bq, _retrain_answers(trainings), jobs=jobs)
+    jobs = _Jobs()
+    q, _ = job(fake_bq, _retrain_answers(trainings, running), jobs=jobs)
     q.run(
         policy().model_copy(update={"retrain_trigger": RetrainTrigger.AUTO}),
         "m1",

@@ -42,6 +42,7 @@ from voc_common.analytics_codes import (
     QualitySignal,
     QualityStatus,
     RetrainTrigger,
+    RunKind,
 )
 from voc_common.operations_v3 import ModelQuality, ModelQualityMessage
 from voc_common.policies import RiskPolicy
@@ -60,6 +61,7 @@ from ml_inference.monitor.samples import (
     period_bounds,
     period_of,
 )
+from ml_inference.runs import running
 
 log = logging.getLogger(__name__)
 
@@ -357,6 +359,9 @@ class QualityJob:
     # Sin él, un ``retrain`` en modo ``auto`` solo se avisa.
     jobs: JobRunner | None = None
     training_job: str = "voc-ml-training"
+    # Tiempo máximo del Job de entrenamiento: una fila ``running`` más
+    # vieja es de una corrida muerta.
+    training_timeout_sec: int = 14_400
     _measured: set[tuple[Any, ...]] = field(default_factory=set)
 
     def _rows(self, sql: str, **params: Any) -> list[dict[str, Any]]:
@@ -413,10 +418,20 @@ class QualityJob:
         if rows and int(rows[0]["trainings"]):
             log.info("quality: ya hubo un reentrenamiento este trimestre")
             return None
-        if self.jobs.running(self.training_job):
+        in_progress = running(
+            self.client,
+            self.dataset,
+            RunKind.TRAINING,
+            now,
+            timedelta(seconds=self.training_timeout_sec),
+        )
+        if in_progress:
             log.info("quality: %s ya está en curso", self.training_job)
             return None
-        operation = self.jobs.execute(self.training_job, ["train"])
+        operation = self.jobs.execute(
+            self.training_job,
+            ["train", "--reason=retrain automático: κ trimestral bajo el piso"],
+        )
         log.info("quality: lanzado %s (%s)", self.training_job, operation)
         return operation
 

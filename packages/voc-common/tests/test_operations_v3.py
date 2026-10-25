@@ -89,6 +89,12 @@ def test_inference_run() -> None:
         _run(ended_at="2026-10-21T06:00:00Z")
     with pytest.raises(ValidationError, match="cost_usd"):
         _run(cost_usd=-1)
+    start = _run(status="running", ended_at=None, topic_model_version="t1")
+    assert start.ended_at is None and start.topic_model_version == "t1"
+    with pytest.raises(ValidationError, match="running"):
+        _run(status="running")
+    with pytest.raises(ValidationError, match="running"):
+        _run(ended_at=None)
 
 
 def _metric(**overrides: Any) -> DriftMetric:

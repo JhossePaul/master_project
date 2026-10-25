@@ -21,7 +21,6 @@ _REGION = re.compile(r"[a-z]+-[a-z]+[0-9]")
 
 class JobRunner(Protocol):
     def execute(self, job: str, args: Sequence[str]) -> str: ...
-    def running(self, job: str) -> bool: ...
 
 
 def _session() -> Any:  # pragma: no cover - credenciales reales
@@ -68,14 +67,3 @@ class CloudRunJobs:
         )
         response.raise_for_status()
         return str(response.json()["name"])
-
-    def running(self, job: str) -> bool:
-        """Si el Job tiene una ejecución sin terminar (entre las 20 últimas)."""
-        response = self._http().get(
-            f"{self._url(job)}/executions",
-            params={"pageSize": 20},
-            timeout=TIMEOUT_SEC,
-        )
-        response.raise_for_status()
-        executions = response.json().get("executions", [])
-        return any("completionTime" not in e for e in executions)

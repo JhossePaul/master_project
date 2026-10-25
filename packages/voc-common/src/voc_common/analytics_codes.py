@@ -163,8 +163,14 @@ class RunEnvironment(StrEnum):
 
 
 class RunStatus(StrEnum):
-    """Estado final con que se registra una corrida (solo inserción)."""
+    """Estado de una corrida (solo inserción).
 
+    Las corridas largas escriben una fila ``running`` al empezar y otra con
+    su estado final al terminar, con el mismo ``run_id``; las demás, solo la
+    final. La vista ``inference_runs_current`` da el estado vigente.
+    """
+
+    RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
 
