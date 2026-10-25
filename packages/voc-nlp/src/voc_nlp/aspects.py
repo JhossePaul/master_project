@@ -32,7 +32,9 @@ LOCATION: Final = "global"
 BATCH_SIZE: Final = 100
 MAX_TEXT_CHARS: Final = 2000
 MAX_ATTEMPTS: Final = 3
-# USD por millón de tokens; los *thoughts* se cobran como salida.
+# USD por millón de tokens al medir los experimentos (precio introductorio,
+# vigente hasta el 2026-12-31); los *thoughts* se cobran como salida. En
+# producción el precio llega de la configuración (``Usage(price_in=...)``).
 PRICE_IN: Final = 0.75
 PRICE_OUT: Final = 3.75
 
@@ -62,11 +64,14 @@ class Usage:
     thoughts: int = 0
     calls: int = 0
     errors: list[str] = field(default_factory=list)
+    price_in: float = PRICE_IN
+    price_out: float = PRICE_OUT
 
     @property
     def cost_usd(self) -> float:
         return (
-            self.prompt * PRICE_IN + (self.output + self.thoughts) * PRICE_OUT
+            self.prompt * self.price_in
+            + (self.output + self.thoughts) * self.price_out
         ) / 1_000_000
 
 

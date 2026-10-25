@@ -57,7 +57,7 @@ from collections import Counter
 from collections.abc import Callable, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
@@ -75,7 +75,13 @@ from voc_common.operations_v3 import InferenceRun, ModelVersion
 from voc_common.policies import HitlCoverageCurve, RiskPolicy
 from voc_nlp import training as kernel
 from voc_nlp.agreement import cohen_kappa
-from voc_nlp.calibration import apply_temperature, fit_temperature
+from voc_nlp.calibration import (
+    apply_temperature,
+    ece,
+    fit_temperature,
+    reliability,
+)
+from voc_nlp.selective import aurc
 from voc_nlp.sentiment_model import load_tokenizer, prepare, token_ids
 from voc_nlp.training import TrainParams, kernel_source, val_split
 
@@ -89,7 +95,6 @@ from ml_inference.lifecycle import (
     Lifecycle,
     gold_period,
 )
-from ml_inference.monitor.quality import GOLD_VERSION
 from ml_inference.rescore import (
     DATASET_TIMEOUT_SEC,
     KaggleClient,
@@ -161,6 +166,14 @@ JOIN `${tds}` AS t
 WHERE g.gold_version = @gold_version AND g.split = 'dev'
   AND g.task = 'sentiment' AND g.label IN UNNEST(@classes)
 """
+
+
+@dataclass(frozen=True)
+class Calibration:
+    t: float
+    curve: HitlCoverageCurve
+    metrics: dict[str, float]  # kappa_dev, ece_dev y aurc_dev
+    reliability: dict[str, Any]
 
 
 class TrainingError(RuntimeError):
@@ -235,6 +248,7 @@ class Training:
     dev_proba: dict[str, np.ndarray] = field(default_factory=dict)
     history: dict[str, Any] = field(default_factory=dict)
     weights_uri: str | None = None
+    calibration: "Calibration | None" = None
 
     def __post_init__(self) -> None:
         check_slug(self.dataset_slug)
@@ -345,22 +359,24 @@ class Training:
         return out, excluded
 
     def _recent(
-        self, taken: set[str], keys: set[str]
+        self, taken: set[str], keys: set[str], now: datetime
     ) -> tuple[list[Example], float]:
-        from voc_nlp import aspects, sentiment_gemini
+        from voc_nlp import sentiment_gemini
 
         n = self.settings.recent_silver_texts
         cap = self.settings.recent_silver_max_usd
         if n == 0 or cap == 0 or self.genai is None:
             log.info("train: sin plata reciente")
             return [], 0.0
+        floor = datetime.combine(
+            self.settings.recent_silver_since, datetime.min.time(), UTC
+        )
+        window = now - timedelta(days=30 * self.settings.recent_silver_months)
         rows = query_rows(
             self.bigquery,
             self._sql(RECENT_SQL),
             {
-                "since": datetime.combine(
-                    self.settings.recent_silver_since, datetime.min.time()
-                ),
+                "since": max(floor, window),
                 "seed": self.run,
                 # Margen para los que ya están o se excluyen.
                 "limit": n + len(taken) // 10 + 1000,
@@ -371,7 +387,7 @@ class Training:
             for r in rows
             if r["text_key"] not in taken and r["text_key"] not in keys
         ][:n]
-        usage = aspects.Usage()
+        usage = self.settings.gemini_usage()
         prompt = sentiment_gemini.load_prompt()
         size = sentiment_gemini.BATCH_SIZE
         estimate = size / 1000 * self.settings.recent_silver_usd_per_1000
@@ -401,7 +417,7 @@ class Training:
                     )
         return out, usage.cost_usd
 
-    def build(self) -> TrainingSet:
+    def build(self, now: datetime) -> TrainingSet:
         ids, keys = self._excluded()
         examples, excluded = self._silver(ids, keys)
         replaced = 0
@@ -417,7 +433,7 @@ class Training:
             examples[key] = Example(
                 key, r["texto_sanitizado"], r["label"], "review"
             )
-        recent, cost = self._recent(set(examples), keys)
+        recent, cost = self._recent(set(examples), keys, now)
         for e in recent:
             examples.setdefault(e.text_key, e)
         self.data = TrainingSet(
@@ -481,7 +497,7 @@ class Training:
             self.bigquery,
             self._sql(DEV_SQL),
             {
-                "gold_version": GOLD_VERSION,
+                "gold_version": self.settings.gold_version,
                 "classes": list(CLASSES),
             },
         )
@@ -579,10 +595,9 @@ class Training:
 
     # 6. Calibración --------------------------------------------------------
 
-    def calibrate(
-        self, lifecycle: Lifecycle, now: datetime
-    ) -> tuple[float, HitlCoverageCurve, float]:
-        """Temperatura, curva y κ del oro *dev* con la confianza corregida."""
+    def calibrate(self, lifecycle: Lifecycle, now: datetime) -> "Calibration":
+        """Temperatura y, con la confianza corregida, la curva de cobertura y
+        riesgo, el κ, el ECE, el AURC y la confiabilidad del oro *dev*."""
         rows = [r for r in self.dev if r["text_key"] in self.dev_proba]
         if len(rows) < len(self.dev):
             raise TrainingError("the kernel missed dev gold predictions")
@@ -603,12 +618,29 @@ class Training:
             )
             for r, p, c in zip(rows, predicted, proba.max(axis=1), strict=True)
         ]
-        kappa = cohen_kappa([r["label"] for r in rows], predicted, w)
-        curve = lifecycle.curve_for(self._candidate(t, kappa, now), gold, now)
-        log.info("train: T = %.4f, κ del dev = %.4f", t, kappa)
-        return t, curve, kappa
+        err = (proba.argmax(axis=1) != y).astype(np.float64)
+        metrics = {
+            "kappa_dev": cohen_kappa([r["label"] for r in rows], predicted, w),
+            "ece_dev": ece(proba, y, w),
+            "aurc_dev": aurc(proba.max(axis=1), err, w),
+        }
+        curve = lifecycle.curve_for(self._candidate(t, metrics, now), gold, now)
+        self.calibration = Calibration(
+            t,
+            curve,
+            metrics,
+            {
+                "raw_ece_dev": ece(raw, y, w),
+                "raw": reliability(raw, y, w),
+                "calibrated": reliability(proba, y, w),
+            },
+        )
+        log.info("train: T = %.4f, %s", t, metrics)
+        return self.calibration
 
-    def _candidate(self, t: float, kappa: float, now: datetime) -> ModelVersion:
+    def _candidate(
+        self, t: float, metrics: dict[str, float], now: datetime
+    ) -> ModelVersion:
         return ModelVersion(
             model_version=self.model_version,
             registry_uri=self.weights_uri or "pending",
@@ -616,7 +648,7 @@ class Training:
             training_data=self.training_data,
             calibration_version=self.calibration_version,
             calibration_t=t,
-            kappa_dev=kappa,
+            **metrics,
             license=LICENSE,
             status="candidate",
             recorded_at=now,
@@ -651,6 +683,16 @@ class Training:
             "params": asdict(self.params),
             "best_epoch": self.history.get("best_epoch"),
             **self.data.manifest(),
+            # La curva de la temperatura: confiabilidad antes y después.
+            "calibration": (
+                None
+                if self.calibration is None
+                else {
+                    "temperature": self.calibration.t,
+                    **self.calibration.metrics,
+                    **self.calibration.reliability,
+                }
+            ),
         }
         (weights / MANIFEST_FILE).write_text(json.dumps(manifest, indent=2))
         artifacts.upload_dir(self.storage, self.bucket, weights, self.prefix)
@@ -665,15 +707,11 @@ class Training:
         return self.weights_uri
 
     def register(
-        self,
-        writer: StagingMergeWriter,
-        t: float,
-        curve: HitlCoverageCurve,
-        kappa: float,
-        now: datetime,
+        self, writer: StagingMergeWriter, now: datetime
     ) -> ModelVersion:
-        if self.data is None or self.weights_uri is None:
-            raise TrainingError("publish before registering")
+        cal = self.calibration
+        if self.data is None or self.weights_uri is None or cal is None:
+            raise TrainingError("calibrate and publish before registering")
         if self.settings.serving_image is None:
             raise TrainingError("SERVING_IMAGE is not set")
         return registry.register(
@@ -682,9 +720,9 @@ class Training:
             weights_uri=self.weights_uri,
             model_version=self.model_version,
             calibration_version=self.calibration_version,
-            calibration_t=t,
-            curve=curve,
-            metrics={"kappa_dev": kappa},
+            calibration_t=cal.t,
+            curve=cal.curve,
+            metrics=cal.metrics,
             serving_image=self.settings.serving_image,
             base_checkpoint=self.params.base,
             training_data=self.training_data,
@@ -744,15 +782,20 @@ def run_training(
     try:
         if job.settings.serving_image is None:
             raise TrainingError("SERVING_IMAGE is not set")
-        job.build()
+        job.build(started)
         job.push_dataset()
         job.run_kernel()
         job.wait_kernel(timeout_sec)
         job.pull()
-        lifecycle = Lifecycle(job.bigquery, writer, job.settings.dataset)
-        t, curve, kappa = job.calibrate(lifecycle, started)
+        lifecycle = Lifecycle(
+            job.bigquery,
+            writer,
+            job.settings.dataset,
+            job.settings.gold_version,
+        )
+        job.calibrate(lifecycle, started)
         job.publish()
-        job.register(writer, t, curve, kappa, now())
+        job.register(writer, now())
         job.cleanup()
         status = RunStatus.SUCCEEDED
         job.launch_rescoring()

@@ -652,7 +652,12 @@ class Rescoring:
                 "rescore %s: sin versión promovida, sin regla", self.run
             )
             return None
-        lifecycle = Lifecycle(self.bigquery, writer, self.settings.dataset)
+        lifecycle = Lifecycle(
+            self.bigquery,
+            writer,
+            self.settings.dataset,
+            self.settings.gold_version,
+        )
         try:
             check = check_promotion(
                 lifecycle.gold(self.current.model_version),

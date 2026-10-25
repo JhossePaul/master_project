@@ -112,14 +112,16 @@ class PromotionCheck:
 
 
 def gold_period(year: int) -> str:
-    """Periodo del diseño del oro (estrato banco × periodo)."""
+    """Periodo del diseño del oro (estrato banco × periodo); desde 2025, de
+    dos en dos años."""
     if year <= 2019:
         return "<=2019"
     if year <= 2022:
         return "2020-2022"
     if year <= 2024:
         return "2023-2024"
-    return "2025-2026"
+    start = 2025 + 2 * ((year - 2025) // 2)
+    return f"{start}-{start + 1}"
 
 
 # -- Curva -------------------------------------------------------------------

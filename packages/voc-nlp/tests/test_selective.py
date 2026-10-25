@@ -51,3 +51,13 @@ def test_boot_risk_brackets_the_point_and_is_reproducible() -> None:
     lo, hi = boot_risk(conf, err, w, strata, 0.9, n_boot=200)
     assert lo <= at_coverage(conf, err, w, 0.9).risk <= hi
     assert boot_risk(conf, err, w, strata, 0.9, n_boot=200) == (lo, hi)
+
+
+def test_aurc_is_zero_without_errors_and_mean_risk_otherwise() -> None:
+    from voc_nlp.selective import aurc
+
+    conf = np.array([0.9, 0.8, 0.7, 0.6])
+    w = np.ones(4)
+    assert aurc(conf, np.zeros(4), w) == 0.0
+    # Error en la menos segura: riesgo 0, 0, 0 y 1/4 en cada cuarto.
+    assert aurc(conf, np.array([0, 0, 0, 1.0]), w) == pytest.approx(1 / 16)

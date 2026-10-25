@@ -44,6 +44,12 @@ def curve(
     return cw / w.sum(), ce / cw, conf[order]
 
 
+def aurc(conf: Array, err: Array, w: Array) -> float:
+    """Área bajo la curva de riesgo y cobertura (menor es mejor)."""
+    cov, risk, _ = curve(conf, err, w)
+    return float(np.sum(risk * np.diff(np.concatenate([[0.0], cov]))))
+
+
 def at_coverage(
     conf: Array, err: Array, w: Array, target: float
 ) -> CoveragePoint:

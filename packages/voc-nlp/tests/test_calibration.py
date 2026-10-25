@@ -80,3 +80,18 @@ def test_fit_temperature_matches_the_original_fit() -> None:
 def test_fit_temperature_rejects_misaligned_inputs() -> None:
     with pytest.raises(ValueError, match="aligned"):
         fit_temperature(P, np.array([0, 1]), np.ones(3))
+
+
+def test_ece_and_reliability_of_a_perfectly_calibrated_case() -> None:
+    from voc_nlp.calibration import ece, reliability
+
+    proba = np.array([[0.95, 0.03, 0.02]] * 20)
+    y = np.array([0] * 19 + [1])  # 95 % de acierto con 0.95 de confianza
+    assert ece(proba, y, np.ones(20)) == pytest.approx(0.0, abs=1e-12)
+    (point,) = reliability(proba, y, np.ones(20))
+    assert point["accuracy"] == pytest.approx(0.95)
+    assert point["confidence"] == pytest.approx(0.95) and point["n"] == 20
+    overconfident = ece(
+        np.array([[0.99, 0.005, 0.005]] * 2), np.array([0, 1]), np.ones(2)
+    )
+    assert overconfident == pytest.approx(0.49)

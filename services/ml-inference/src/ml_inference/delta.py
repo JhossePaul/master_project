@@ -460,7 +460,7 @@ class _Steps:
         }
         texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
         unknown = [(k, texts[k]) for k in keys if k not in known]
-        usage = gemini.Usage()
+        usage = self.settings.gemini_usage()
         prompt = gemini.load_prompt()
         size = self.settings.aspects_batch_size
         for start in range(0, len(unknown), size):

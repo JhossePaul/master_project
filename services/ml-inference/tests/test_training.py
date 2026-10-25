@@ -401,7 +401,7 @@ def test_next_version() -> None:
 
 def test_training_set_rules(setup: dict) -> None:
     job = make(setup, Kaggle(["complete"]))
-    data = job.build()
+    data = job.build(NOW)
     labels = {e.text: (e.label, e.source) for e in data.examples}
     assert labels == {
         "la app no abre": ("NEG", "silver"),
@@ -421,6 +421,15 @@ def test_training_set_rules(setup: dict) -> None:
     assert manifest["by_source"] == {"silver": 2, "review": 2, "recent": 2}
     assert manifest["sha256"] == data.sha256
     assert job.bigquery.params["recent"]["seed"] == RUN
+    # Ventana de 12 meses, nunca antes del corte de la plata.
+    assert job.bigquery.params["recent"]["since"] == datetime(
+        2026, 4, 1, tzinfo=UTC
+    )
+    later = make(setup, Kaggle(["complete"]))
+    later.build(datetime(2028, 1, 15, tzinfo=UTC))
+    assert later.bigquery.params["recent"]["since"] > datetime(
+        2026, 12, 1, tzinfo=UTC
+    )
 
 
 def test_happy_path_trains_registers_and_cleans_up(setup: dict) -> None:
@@ -460,6 +469,8 @@ def test_happy_path_trains_registers_and_cleans_up(setup: dict) -> None:
     assert model.calibration_version == "temperature_v3"
     assert model.registry_uri == f"gs://{BUCKET}/{prefix}"
     assert model.calibration_t > 0 and model.kappa_dev is not None
+    assert model.ece_dev is not None and model.aurc_dev is not None
+    assert json.loads(manifest)["calibration"]["calibrated"]
     (curve,) = writer.tables["hitl_coverage_curves"]
     assert curve.model_version == "robertuito_sentiment_v3"
     assert curve.weekly_volume_total == 1000
@@ -497,12 +508,12 @@ def test_recent_silver_stops_at_its_cap(setup: dict) -> None:
     gemini = Gemini()
     gemini.prompt_tokens = 2_000_000  # $1.50 por llamada
     job = make(setup, Kaggle(["complete"]), gemini=gemini)
-    data = job.build()
+    data = job.build(NOW)
     # Una llamada de $1.50; la segunda pasaría el tope de $2.
     assert data.recent_cost_usd == pytest.approx(1.5)
     assert data.recent_cost_usd <= 2.0
     settings = setup["settings"].model_copy(update={"recent_silver_texts": 0})
-    off = make(setup, Kaggle(["complete"]), settings=settings).build()
+    off = make(setup, Kaggle(["complete"]), settings=settings).build(NOW)
     assert off.recent_cost_usd == 0.0
     assert {e.source for e in off.examples} == {"silver", "review"}
 
@@ -563,11 +574,11 @@ def test_candidate_curve_uses_the_calibrated_confidence(setup: dict) -> None:
     job.dev_proba = {r["text_key"]: np.array([0.7, 0.2, 0.1]) for r in DEV}
     from ml_inference.lifecycle import Lifecycle
 
-    t, curve, kappa = job.calibrate(
-        Lifecycle(BigQuery(), Writer(), "p.ds"), NOW
-    )
-    assert t > 0 and kappa == pytest.approx(0.0)
-    assert curve.calibration_version == "temperature_v3"
+    cal = job.calibrate(Lifecycle(BigQuery(), Writer(), "p.ds"), NOW)
+    assert cal.t > 0 and cal.metrics["kappa_dev"] == pytest.approx(0.0)
+    assert set(cal.metrics) == {"kappa_dev", "ece_dev", "aurc_dev"}
+    assert cal.curve.calibration_version == "temperature_v3"
+    assert cal.reliability["calibrated"] and cal.reliability["raw"]
     job.dev_proba.pop(DEV[0]["text_key"])
     with pytest.raises(TrainingError, match="missed"):
         job.calibrate(Lifecycle(BigQuery(), Writer(), "p.ds"), NOW)

@@ -99,7 +99,7 @@ class FakeSource:
     banks: list[DriftPolicy]
     data: list[MonthlyInput]
     risk_row: RiskPolicy | None = None
-    done_rows: dict[str, set[str]] = field(default_factory=dict)
+    done_rows: dict[str, set[tuple[str, str]]] = field(default_factory=dict)
     boosts: list[HitlBoost] = field(default_factory=list)
     dismissed: set[str] = field(default_factory=set)
 
@@ -113,7 +113,7 @@ class FakeSource:
         assert before == datetime(2026, 7, 1, tzinfo=UTC)
         return self.data
 
-    def done(self) -> dict[str, set[str]]:
+    def done(self) -> dict[str, set[tuple[str, str]]]:
         return self.done_rows
 
     def open_boosts(self) -> list[HitlBoost]:
@@ -186,8 +186,14 @@ def test_second_run_writes_nothing_new(fake_bq: Any) -> None:
     )
     c, bq, _ = clients(source, fake_bq)
     run_drift(None, c, NOW)  # type: ignore[arg-type]
-    source.done_rows = {"bbva": set(MONTHS)}
+    source.done_rows = {
+        "bbva": {
+            (str(m["period"])[:7], m["metric"])
+            for m in bq.rows("drift_metrics")
+        }
+    }
     assert run_drift(None, c, NOW) == []  # type: ignore[arg-type]
+    assert len(bq.rows("drift_metrics")) == len(source.done_rows["bbva"])
 
 
 def test_bank_before_its_entry_month_never_alerts() -> None:
@@ -399,7 +405,7 @@ def test_bq_source_reads_and_merges_monthly_inputs() -> None:
                 {"bank_id": "bbva", "period": "2026-06", "family_FA": 0.2}
             ],
             "FROM `p.ds.drift_metrics`": [
-                {"bank_id": "bbva", "period": "2026-05"}
+                {"bank_id": "bbva", "period": "2026-05", "metric": "neg_share"}
             ],
             "hitl_boosts": [boost],
             "drift_alerts_current": [{"alert_id": "drift_x"}],
@@ -417,7 +423,7 @@ def test_bq_source_reads_and_merges_monthly_inputs() -> None:
         "topic_noise_share": 0.36,
         "topic_unaligned_share": None,
     }
-    assert source.done() == {"bbva": {"2026-05"}}
+    assert source.done() == {"bbva": {("2026-05", "neg_share")}}
     assert [b.boost_id for b in source.open_boosts()] == ["b1"]
     assert source.dismissed_alerts() == {"drift_x"}
     assert BqDriftSource(_Client({}), "p.ds").risk_policy() is None
@@ -494,3 +500,24 @@ def test_topic_sql_measures_noise_and_alignment_of_the_current_version() -> (
     assert "COUNTIF(s.topic_id = -1) AS noise" in TOPICS_SQL
     assert "ARRAY_LENGTH(c.families) > 0 AS aligned" in TOPICS_SQL
     assert "sentiment = 'NEG' AND palabras >= 2" in TOPICS_SQL
+
+
+def test_a_series_measured_later_fills_its_months() -> None:
+    p = policy("bbva")
+    data = series("bbva", {"mean_words": 30.0})
+    first = evaluate_bank(p, data, set(), "2026-06", NOW)
+    done = {(m.period.strftime("%Y-%m"), m.metric) for m in first.metrics}
+    assert "out_of_vocabulary_share" not in {m for _, m in done}
+    # Llega el vocabulario: solo se mide la serie que faltaba.
+    later = [
+        MonthlyInput(
+            m.bank_id,
+            m.period,
+            m.rows,
+            {**m.values, "out_of_vocabulary_share": 0.05},
+            m.histogram,
+        )
+        for m in data
+    ]
+    second = evaluate_bank(p, later, done, "2026-06", NOW)
+    assert {m.metric for m in second.metrics} == {"out_of_vocabulary_share"}

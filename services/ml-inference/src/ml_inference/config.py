@@ -6,6 +6,7 @@ Usa los mismos nombres que el resto de las cargas de Cloud Run (``infra``):
 
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,6 +29,14 @@ class InferenceSettings(BaseSettings):
     aspects_batch_size: int = Field(default=100, ge=1)
     gemini_model: str = "gemini-3.6-flash"
     gemini_location: str = "global"
+    # Precio de Gemini en USD por millón de tokens (los *thoughts* como
+    # salida). Los de partida son los introductorios, vigentes hasta el
+    # 2026-12-31: al cambiar el precio se cambian aquí (variables
+    # GEMINI_PRICE_IN y GEMINI_PRICE_OUT) y los topes siguen valiendo.
+    gemini_price_in: float = Field(default=0.75, gt=0)
+    gemini_price_out: float = Field(default=3.75, gt=0)
+    # Oro con que se miden la regla de promoción, la curva y la calibración.
+    gold_version: str = "gold_epic5_v1"
     # Costo medido de Gemini por 1 000 textos en el backfill de los
     # experimentos ($60.61 por 659 316), para estimar aspects-backfill.
     gemini_usd_per_1000: float = Field(default=0.092, gt=0)
@@ -55,10 +64,21 @@ class InferenceSettings(BaseSettings):
     # de los experimentos (su partición de entrenamiento termina antes del
     # 2026-04-01), etiquetados con el prompt de la plata y con tope de costo.
     recent_silver_texts: int = Field(default=20_000, ge=0)
+    # Ventana: los últimos ``recent_silver_months`` meses, nunca antes del
+    # corte de la plata.
+    recent_silver_months: int = Field(default=12, ge=1)
     recent_silver_since: date = date(2026, 4, 1)
     recent_silver_max_usd: float = Field(default=2.0, ge=0)
     # Costo medido del prompt de la plata por 1 000 textos.
     recent_silver_usd_per_1000: float = Field(default=0.048, gt=0)
+
+    def gemini_usage(self) -> Any:
+        """Contador de tokens y costo de Gemini con el precio configurado."""
+        from voc_nlp.aspects import Usage
+
+        return Usage(
+            price_in=self.gemini_price_in, price_out=self.gemini_price_out
+        )
 
     @property
     def dataset(self) -> str:

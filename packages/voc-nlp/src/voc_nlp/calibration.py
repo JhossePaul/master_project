@@ -5,7 +5,9 @@ temperatura): los logits son ``log(p)`` recortado en ``EPS``, así que el
 resultado es ``p ** (1 / T)`` normalizado. La T no cambia la clase predicha.
 ``fit_temperature`` minimiza la pérdida logarítmica ponderada en log T, como
 el original, pero con sección áurea en lugar de Nelder-Mead de scipy: la
-pérdida es convexa en 1 / T, así que tiene un solo mínimo.
+pérdida es convexa en 1 / T, así que tiene un solo mínimo. ``ece`` y
+``reliability`` son los de ``voc_analytics.sentiment.metrics`` y
+``calibration.calibrate`` (10 cubetas de confianza, ponderados).
 """
 
 from typing import Final
@@ -74,3 +76,63 @@ def fit_temperature(
             b = lo + _GOLDEN * (hi - lo)
             fb = loss(b)
     return float(np.exp((lo + hi) / 2))
+
+
+def _bins(conf: NDArray[np.float64], bins: int) -> list[NDArray[np.bool_]]:
+    edges = np.linspace(0, 1, bins + 1)
+    return [
+        (conf > lo) & (conf <= hi)
+        for lo, hi in zip(edges[:-1], edges[1:], strict=True)
+    ]
+
+
+def ece(
+    proba: Proba,
+    y: NDArray[np.integer],
+    w: NDArray[np.floating],
+    bins: int = 10,
+) -> float:
+    """Error de calibración esperado de la probabilidad máxima, ponderado."""
+    proba = np.asarray(proba, dtype=np.float64)
+    w = np.asarray(w, dtype=np.float64)
+    conf = proba.max(axis=1)
+    hit = (proba.argmax(axis=1) == np.asarray(y)).astype(np.float64)
+    total = w.sum()
+    return float(
+        sum(
+            w[m].sum()
+            / total
+            * abs(
+                np.average(hit[m], weights=w[m])
+                - np.average(conf[m], weights=w[m])
+            )
+            for m in _bins(conf, bins)
+            if m.any()
+        )
+    )
+
+
+def reliability(
+    proba: Proba,
+    y: NDArray[np.integer],
+    w: NDArray[np.floating],
+    bins: int = 10,
+) -> list[dict[str, float]]:
+    """Diagrama de confiabilidad: por cubeta, peso, confianza y acierto."""
+    proba = np.asarray(proba, dtype=np.float64)
+    w = np.asarray(w, dtype=np.float64)
+    conf = proba.max(axis=1)
+    hit = (proba.argmax(axis=1) == np.asarray(y)).astype(np.float64)
+    edges = np.linspace(0, 1, bins + 1)
+    return [
+        {
+            "low": float(edges[i]),
+            "high": float(edges[i + 1]),
+            "n": int(m.sum()),
+            "weight": float(w[m].sum() / w.sum()),
+            "confidence": float(np.average(conf[m], weights=w[m])),
+            "accuracy": float(np.average(hit[m], weights=w[m])),
+        }
+        for i, m in enumerate(_bins(conf, bins))
+        if m.any()
+    ]

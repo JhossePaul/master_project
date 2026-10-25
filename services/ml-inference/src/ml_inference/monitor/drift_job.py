@@ -107,11 +107,16 @@ def _period_date(period: str) -> date:
 def evaluate_bank(
     policy: DriftPolicy,
     months: Sequence[MonthlyInput],
-    done: set[str],
+    done: set[tuple[str, str]],
     last_closed: str,
     now: datetime,
 ) -> DriftOutcome:
-    """Métricas y alertas de los meses que faltan de un banco."""
+    """Métricas y alertas que faltan de un banco.
+
+    ``done`` son los pares (mes, serie) ya guardados: una serie que no se
+    pudo medir (sin vocabulario, sin tópicos) se mide en cuanto tenga datos,
+    aunque el mes ya tenga otras series.
+    """
     if not months:
         return DriftOutcome([], [])
     by_period = {m.period: m for m in months}
@@ -123,18 +128,22 @@ def evaluate_bank(
     if entry is None:
         return DriftOutcome([], [])
     periods = month_range(min(by_period), last_closed)
-    todo = [p for p in periods if p > entry and p not in done]
+    todo = [p for p in periods if p > entry]
     metrics: list[DriftMetric] = []
     alerts: list[DriftAlert] = []
     for period in todo:
         i = periods.index(period)
         window = periods[max(0, i - policy.baseline_months) : i + 1]
         for series, threshold in policy.thresholds.z.items():
+            if (period, series) in done:
+                continue
             values = [_value(by_period.get(p), series) for p in window]
             metric = _z_metric(policy, series, threshold, values, period, now)
             if metric:
                 metrics.append(metric)
         for series, threshold in policy.thresholds.psi.items():
+            if (period, series) in done:
+                continue
             metric = _psi_metric(
                 policy, series, threshold, window, by_period, now
             )
@@ -290,7 +299,7 @@ class DriftSource(Protocol):
     def policies(self) -> list[DriftPolicy]: ...
     def risk_policy(self) -> RiskPolicy | None: ...
     def monthly(self, before: datetime) -> list[MonthlyInput]: ...
-    def done(self) -> dict[str, set[str]]: ...
+    def done(self) -> dict[str, set[tuple[str, str]]]: ...
     def open_boosts(self) -> list[HitlBoost]: ...
     def dismissed_alerts(self) -> set[str]: ...
 
@@ -520,13 +529,13 @@ class BqDriftSource:
             )
         return out
 
-    def done(self) -> dict[str, set[str]]:
-        out: dict[str, set[str]] = {}
+    def done(self) -> dict[str, set[tuple[str, str]]]:
+        out: dict[str, set[tuple[str, str]]] = {}
         for r in self._rows(
-            "SELECT DISTINCT bank_id, FORMAT_DATE('%Y-%m', period) AS period "
-            "FROM `${ds}.drift_metrics`"
+            "SELECT DISTINCT bank_id, FORMAT_DATE('%Y-%m', period) AS period, "
+            "metric FROM `${ds}.drift_metrics`"
         ):
-            out.setdefault(r["bank_id"], set()).add(r["period"])
+            out.setdefault(r["bank_id"], set()).add((r["period"], r["metric"]))
         return out
 
     def open_boosts(self) -> list[HitlBoost]:

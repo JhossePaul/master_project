@@ -362,6 +362,7 @@ class QualityJob:
     # Tiempo máximo del Job de entrenamiento: una fila ``running`` más
     # vieja es de una corrida muerta.
     training_timeout_sec: int = 14_400
+    gold_version: str = GOLD_VERSION
     _measured: set[tuple[Any, ...]] = field(default_factory=set)
 
     def _rows(self, sql: str, **params: Any) -> list[dict[str, Any]]:
@@ -542,7 +543,7 @@ class QualityJob:
         ):
             return None
         gold = self._rows(
-            FAMILIES_SQL, gold_version=GOLD_VERSION, split=FAMILIES_SPLIT
+            FAMILIES_SQL, gold_version=self.gold_version, split=FAMILIES_SPLIT
         )
         if not gold:
             log.warning("quality: sin oro de aspectos en gold_labels")

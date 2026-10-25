@@ -269,6 +269,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 llm_model=settings.gemini_model,
                 jobs=CloudRunJobs(settings.gcp_project_id, settings.gcp_region),
                 training_job=settings.training_job,
+                gold_version=settings.gold_version,
             ).run(state.policy, state.model.model_version, now)
             KpiJob(bigquery, writer, settings.dataset, run_id).run(
                 state.model.model_version, now
@@ -464,7 +465,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     from ml_inference.lifecycle import Lifecycle, promote_version
     from ml_inference.registry import latest_versions, resolve
 
-    lifecycle = Lifecycle(bigquery, writer, settings.dataset)
+    lifecycle = Lifecycle(
+        bigquery, writer, settings.dataset, settings.gold_version
+    )
     if args.command == "curve":
         model = (
             latest_versions(bigquery, settings.dataset)[args.model_version]

@@ -123,7 +123,7 @@ def run_aspects_backfill(
     run_id = run_id or f"aspects-backfill-{now:%Y%m%dT%H%M%S}"
     writer = StagingMergeWriter(bigquery, settings.dataset)
     sql = render(PAGE_SQL, ds=settings.dataset, tds=settings.tds_table)
-    usage = gemini.Usage()
+    usage = settings.gemini_usage()
     prompt = gemini.load_prompt()
     size = settings.aspects_batch_size
     batch_usd = size / 1000 * settings.gemini_usd_per_1000
