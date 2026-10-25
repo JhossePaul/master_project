@@ -53,15 +53,18 @@ def test_integration_contracts_and_cmek(
         "voc-raw-reviews-topic",
         "voc-raw-reviews-dlq",
         "voc-incident-alerts-topic",
+        "voc-model-quality-topic",
     }
     assert set(subs) == {
         "voc-raw-reviews-sub",
         "voc-raw-reviews-dlq-sub",
         "voc-incident-alerts-sub",
+        "voc-model-quality-sub",
     }
     raw = subs["voc-raw-reviews-sub"].state
     dlq = subs["voc-raw-reviews-dlq-sub"].state
     alerts = subs["voc-incident-alerts-sub"].state
+    quality = subs["voc-model-quality-sub"].state
     assert raw["ackDeadlineSeconds"] == 600
     assert alerts["ackDeadlineSeconds"] == 60
     assert (
@@ -72,6 +75,8 @@ def test_integration_contracts_and_cmek(
     assert raw["topic"] == topics["voc-raw-reviews-topic"].id
     assert dlq["topic"] == topics["voc-raw-reviews-dlq"].id
     assert alerts["topic"] == topics["voc-incident-alerts-topic"].id
+    assert quality["topic"] == topics["voc-model-quality-topic"].id
+    assert quality["ackDeadlineSeconds"] == 60
     assert raw["deadLetterPolicy"] == {
         "deadLetterTopic": topics["voc-raw-reviews-dlq"].id,
         "maxDeliveryAttempts": 5,
@@ -82,8 +87,21 @@ def test_integration_contracts_and_cmek(
     subscribers = _resources(
         resources, "gcp:pubsub/subscriptionIAMMember:SubscriptionIAMMember"
     )
-    assert len(publishers) == len(subscribers) == 1
-    publisher = next(iter(publishers.values())).state
+    assert len(subscribers) == 1
+    publisher = publishers.pop("voc-dlq-forward-publisher").state
+    # La cuenta del monitor publica solo en los dos tópicos de avisos.
+    assert {
+        (p.state["topic"], p.state["role"], p.state["member"])
+        for p in publishers.values()
+    } == {
+        (
+            topic,
+            "roles/pubsub.publisher",
+            "serviceAccount:voc-sa-ml-backend@test-voc-project"
+            ".iam.gserviceaccount.com",
+        )
+        for topic in ("voc-incident-alerts-topic", "voc-model-quality-topic")
+    }
     subscriber = next(iter(subscribers.values())).state
     assert publisher["role"] == "roles/pubsub.publisher"
     assert publisher["topic"] == "voc-raw-reviews-dlq"

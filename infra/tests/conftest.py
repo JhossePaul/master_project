@@ -51,6 +51,10 @@ class InfrastructureMocks(pulumi.runtime.Mocks):
             outputs["email"] = (
                 f"{outputs['accountId']}@{outputs['project']}.iam.gserviceaccount.com"
             )
+        if args.typ == "gcp:monitoring/notificationChannel:NotificationChannel":
+            outputs["name"] = (
+                f"projects/{outputs['project']}/notificationChannels/{args.name}"
+            )
         if args.typ == "gcp:projects/serviceIdentity:ServiceIdentity":
             outputs["email"] = (
                 "service-123@gcp-sa-pubsub.iam.gserviceaccount.com"

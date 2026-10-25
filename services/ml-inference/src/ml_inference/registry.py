@@ -1,9 +1,10 @@
-"""Registro y promoción de modelos de sentimiento (P7-3; 6.3 y 6.4).
+"""Registro y promoción de modelos de sentimiento.
 
 Vertex Model Registry guarda cada versión con su ``artifact_uri`` en
 ``ml_artifacts/`` y el alias ``produccion`` apunta a la vigente. El
 contenedor de *serving* que exige el registro es la imagen de
-``ml-inference``, que nunca se despliega como endpoint (5.7, §6).
+``ml-inference``, que nunca se despliega como endpoint: predecir en lote
+sale más barato (``docs/analytics/scale/scale_report.md``).
 ``model_versions`` en BigQuery es la fuente que lee el delta: cada cambio
 de estado es una fila nueva.
 """
@@ -25,6 +26,11 @@ log = logging.getLogger(__name__)
 
 DISPLAY_NAME: Final = "robertuito-sentiment"
 PRODUCTION_ALIAS: Final = "produccion"
+
+
+def version_alias(model_version: str) -> str:
+    """Alias de Vertex de una versión: solo admite letras, dígitos y guiones."""
+    return model_version.replace("_", "-")
 
 
 def _aiplatform() -> Any:
@@ -53,6 +59,7 @@ def register(
     training_data: str,
     license_name: str,
     now: datetime,
+    training_data_hash: str | None = None,
 ) -> ModelVersion:
     """Sube una versión candidata al registro y la anota en BigQuery."""
     aiplatform = _aiplatform()
@@ -66,7 +73,7 @@ def register(
         serving_container_image_uri=serving_image,
         parent_model=parent.resource_name if parent else None,
         is_default_version=parent is None,
-        version_aliases=[model_version],
+        version_aliases=[version_alias(model_version)],
         labels={"calibration": calibration_version.replace(".", "_")},
     )
     row = ModelVersion(
@@ -74,6 +81,7 @@ def register(
         registry_uri=weights_uri,
         base_checkpoint=base_checkpoint,
         training_data=training_data,
+        training_data_hash=training_data_hash,
         calibration_version=calibration_version,
         calibration_t=calibration_t,
         kappa_dev=metrics.get("kappa_dev"),
@@ -118,20 +126,16 @@ def promote(
     aiplatform.init(
         project=settings.gcp_project_id, location=settings.gcp_region
     )
+    candidates = latest_versions(bigquery, settings.dataset)
+    if model_version not in candidates:
+        raise LookupError(f"{model_version} is not in model_versions")
+    version = _registered(aiplatform, settings, candidates[model_version])
     parent = _parent(aiplatform)
-    if parent is None:
-        raise LookupError(f"{DISPLAY_NAME} is not in the model registry")
-    version = aiplatform.Model(
-        model_name=f"{parent.resource_name}@{model_version}"
-    )
     aiplatform.models.ModelRegistry(
         model=parent.resource_name
     ).add_version_aliases(
         new_aliases=[PRODUCTION_ALIAS], version=version.version_id
     )
-    candidates = _latest_rows(bigquery, settings.dataset)
-    if model_version not in candidates:
-        raise LookupError(f"{model_version} is not in model_versions")
     rows = []
     for name, current in candidates.items():
         if name != model_version and current.status is ModelStatus.PROMOTED:
@@ -139,6 +143,7 @@ def promote(
                 current.model_copy(
                     update={
                         "status": ModelStatus.RETIRED,
+                        "reason": f"reemplazada por {model_version}",
                         "recorded_at": now,
                     }
                 )
@@ -148,6 +153,7 @@ def promote(
             "status": ModelStatus.PROMOTED,
             "promoted_at": now,
             "promoted_by_hash": actor_hash,
+            "reason": reason,
             "recorded_at": now,
         }
     )
@@ -162,12 +168,45 @@ def promote(
     return promoted
 
 
+def _registered(
+    aiplatform: Any, settings: InferenceSettings, model: ModelVersion
+) -> Any:
+    """La versión en Vertex; la sube si falta (la v1 se sembró solo en
+    BigQuery y GCS, así que un *rollback* a ella la registra aquí)."""
+    from google.api_core.exceptions import NotFound
+
+    alias = version_alias(model.model_version)
+    parent = _parent(aiplatform)
+    if parent is not None:
+        try:
+            return aiplatform.Model(
+                model_name=f"{parent.resource_name}@{alias}"
+            )
+        except NotFound:
+            pass
+    if settings.serving_image is None:
+        raise LookupError(
+            f"{model.model_version} is not in Vertex and SERVING_IMAGE is unset"
+        )
+    log.info("registrando %s en Vertex", model.model_version)
+    return aiplatform.Model.upload(
+        display_name=DISPLAY_NAME,
+        artifact_uri=model.registry_uri,
+        serving_container_image_uri=settings.serving_image,
+        parent_model=parent.resource_name if parent else None,
+        is_default_version=parent is None,
+        version_aliases=[alias],
+        labels={"calibration": model.calibration_version.replace(".", "_")},
+    )
+
+
 def resolve(bigquery: Any, settings: InferenceSettings) -> ModelVersion:
     """La versión que lee el delta: la promovida en ``model_versions``."""
     return load_state(bigquery, settings.dataset).model
 
 
-def _latest_rows(bigquery: Any, dataset: str) -> dict[str, ModelVersion]:
+def latest_versions(bigquery: Any, dataset: str) -> dict[str, ModelVersion]:
+    """Última fila de cada versión en ``model_versions``."""
     from ml_inference.bq_io import query_rows, render
 
     rows = query_rows(

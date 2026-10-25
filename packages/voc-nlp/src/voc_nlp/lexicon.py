@@ -1,4 +1,4 @@
-"""Léxico de una palabra ``lexicon_v1`` (EPIC-5, 5.2; D2 de EPIC-6).
+"""Léxico de una palabra ``lexicon_v1``.
 
 151 formas con su etiqueta agregada (soporte ≥ 3 filas de plata y pureza
 ≥ 0.9). Es la excepción aprobada a la regla de datos: no son reseñas ni

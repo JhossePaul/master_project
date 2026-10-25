@@ -1,4 +1,4 @@
-"""Artefactos de modelos en ``gs://<bucket>/ml_artifacts/`` (D4, D11).
+"""Artefactos de modelos en ``gs://<bucket>/ml_artifacts/``.
 
 Disposición: ``sentiment/<model_version>/`` (pesos de RoBERTuito),
 ``topics/<topic_model_version>/`` (``umap.pkl`` y ``bertopic``) y

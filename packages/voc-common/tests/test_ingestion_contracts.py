@@ -1,4 +1,4 @@
-"""Aceptación feature 1.6: contratos, sin efectos GCS ni reducer."""
+"""Contratos de ingesta v2, sin efectos en GCS ni reducer."""
 
 import json
 from datetime import UTC, datetime, timedelta

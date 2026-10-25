@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 from pydantic import ValidationError
+from voc_common.analytics_codes import RetrainTrigger, TopicRefitTrigger
 from voc_common.policies import (
     CoveragePoint,
     DriftPolicy,
@@ -65,6 +66,27 @@ def test_business_parameters_are_null_until_configured() -> None:
     }
     policy = RiskPolicy(**data)
     assert all(getattr(policy, name) is None for name in _BUSINESS_FIELDS)
+
+
+def test_triggers_default_to_manual_retrain_and_scheduled_refit() -> None:
+    policy = RiskPolicy(**load("risk_policy"))
+    assert policy.retrain_trigger is None and policy.topic_refit_trigger is None
+    assert policy.retrain_mode is RetrainTrigger.MANUAL
+    assert policy.topic_refit_mode is TopicRefitTrigger.SCHEDULED
+    assert "retrain_mode" not in policy.model_dump()
+
+
+def test_triggers_are_configurable_per_model() -> None:
+    policy = RiskPolicy(
+        **load("risk_policy"),
+        retrain_trigger="auto",
+        topic_refit_trigger="manual",
+    )
+    assert policy.retrain_mode is RetrainTrigger.AUTO
+    assert policy.topic_refit_mode is TopicRefitTrigger.MANUAL
+    assert RiskPolicy.model_validate_json(policy.model_dump_json()) == policy
+    with pytest.raises(ValidationError):
+        RiskPolicy(**load("risk_policy"), retrain_trigger="scheduled")
 
 
 @pytest.mark.parametrize(

@@ -15,7 +15,9 @@ from voc_common.operations_v3 import (
     InferenceRun,
     KpiEstimate,
     ModelQuality,
+    ModelQualityMessage,
     ModelVersion,
+    PromotionCheckResult,
     ReviewExplanation,
     TokenAttribution,
 )
@@ -87,6 +89,12 @@ def test_inference_run() -> None:
         _run(ended_at="2026-10-21T06:00:00Z")
     with pytest.raises(ValidationError, match="cost_usd"):
         _run(cost_usd=-1)
+    start = _run(status="running", ended_at=None, topic_model_version="t1")
+    assert start.ended_at is None and start.topic_model_version == "t1"
+    with pytest.raises(ValidationError, match="running"):
+        _run(status="running")
+    with pytest.raises(ValidationError, match="running"):
+        _run(ended_at=None)
 
 
 def _metric(**overrides: Any) -> DriftMetric:
@@ -296,3 +304,87 @@ def test_gold_labels() -> None:
     with pytest.raises(ValidationError, match="design weight"):
         _gold_aspects(weight=1.0)
     assert _gold_aspects().id_resena is None
+
+
+def test_model_quality_message_is_a_notice_without_text() -> None:
+    row = _quality(status="retrain", value=0.85, threshold=0.89)
+    message = ModelQualityMessage.from_quality(row)
+    assert message.status == "retrain" and message.value == 0.85
+    assert "ci_low" not in ModelQualityMessage.model_fields
+    assert not {"text", "texto", "comment", "note"} & set(
+        ModelQualityMessage.model_fields
+    )
+    with pytest.raises(ValidationError, match="only warnings"):
+        ModelQualityMessage.from_quality(_quality(status="ok"))
+
+
+def _check(**overrides: Any) -> PromotionCheckResult:
+    data: dict[str, Any] = {
+        "candidate_version": "robertuito_sentiment_v2",
+        "current_version": "robertuito_sentiment_v1",
+        "gold_version": "gold_synthetic",
+        "n": 794,
+        "kappa_diff": 0.004,
+        "kappa_ci_low": -0.01,
+        "kappa_ci_high": 0.02,
+        "macro_f1_diff": 0.003,
+        "macro_f1_ci_low": -0.012,
+        "macro_f1_ci_high": 0.018,
+        "verdict": "tie",
+        "run_id": "rescore-robertuito_sentiment_v2-202610250900",
+        "computed_at": "2026-10-25T09:00:00Z",
+    }
+    data.update(overrides)
+    return PromotionCheckResult(**data)
+
+
+def test_promotion_check_round_trips() -> None:
+    check = _check()
+    assert (
+        PromotionCheckResult.model_validate_json(check.model_dump_json())
+        == check
+    )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "verdict"),
+    [
+        ({}, "tie"),
+        ({"kappa_ci_low": 0.001}, "better"),
+        (
+            {
+                "macro_f1_diff": -0.02,
+                "macro_f1_ci_low": -0.03,
+                "macro_f1_ci_high": -0.01,
+            },
+            "worse",
+        ),
+        # Peor gana a mejor: un IC entero bajo 0 basta para negarse.
+        (
+            {
+                "kappa_ci_low": 0.001,
+                "macro_f1_diff": -0.02,
+                "macro_f1_ci_low": -0.03,
+                "macro_f1_ci_high": -0.01,
+            },
+            "worse",
+        ),
+    ],
+)
+def test_promotion_verdict_follows_the_rule(
+    overrides: dict[str, Any], verdict: str
+) -> None:
+    assert _check(**overrides, verdict=verdict).verdict == verdict
+    others = {"better", "tie", "worse"} - {verdict}
+    for other in others:
+        with pytest.raises(ValidationError, match=f"verdict must be {verdict}"):
+            _check(**overrides, verdict=other)
+
+
+def test_promotion_check_consistency() -> None:
+    with pytest.raises(ValidationError, match="must differ"):
+        _check(candidate_version="robertuito_sentiment_v1")
+    with pytest.raises(ValidationError, match="inside its interval"):
+        _check(kappa_diff=0.05)
+    with pytest.raises(ValidationError):
+        _check(n=0)

@@ -15,6 +15,7 @@ from voc_common.analytics_codes import (
 from voc_common.predictions_v3 import (
     ReviewAspects,
     ReviewPrediction,
+    SegmentEmbedding,
     TextEmbedding,
     TopicAssignment,
     TopicCatalogEntry,
@@ -229,6 +230,26 @@ def test_text_embedding_has_384_dimensions_and_month_partition() -> None:
         _embedding(embedding=[0.0] * 768)
     with pytest.raises(ValidationError, match="first day"):
         _embedding(mes="2026-10-15")
+
+
+def test_segment_embedding_is_one_vector_per_clause() -> None:
+    row = SegmentEmbedding(
+        text_key=KEY,
+        segment_index=1,
+        segmenter="clause_segmenter_v1",
+        embedding_model="paraphrase-multilingual-MiniLM-L12-v2",
+        embedding=[0.0] * 384,
+        run_id="delta-20261025",
+        created_at="2026-10-25T00:00:00Z",
+    )
+    assert SegmentEmbedding.model_validate_json(row.model_dump_json()) == row
+    with pytest.raises(ValidationError):
+        row.model_validate({**row.model_dump(), "embedding": [0.0] * 383})
+    with pytest.raises(ValidationError):
+        row.model_validate({**row.model_dump(), "segment_index": -1})
+    assert not {"text", "texto", "texto_sanitizado", "segment"} & set(
+        SegmentEmbedding.model_fields
+    )
 
 
 def test_topic_tables() -> None:

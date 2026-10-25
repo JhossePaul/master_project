@@ -1,6 +1,7 @@
-"""Carga única del backfill de EPIC-5 desde la máquina del autor (6.3).
+"""Carga única del backfill histórico desde la máquina del autor.
 
-Corre en el Mac del autor (decisión del autor, 2026-10-24; FMEA F-11): lee
+Corre en el Mac del autor (decisión del autor, 2026-10-24), donde están las
+copias locales de los experimentos: lee
 ``id_resena``, ``bank_id``, ``fecha`` y ``texto_limpio`` del TDS en memoria
 para la elegibilidad, sin guardarlos. Lo demás viaja sin texto: parquet con
 ``text_key`` en tablas temporales de BigQuery, y las tablas finales se arman
@@ -9,7 +10,7 @@ con ``MERGE`` dentro de BigQuery.
 Pasos (``load_backfill``):
 
 1. Sube a ``ml_artifacts/`` los pesos de RoBERTuito (semilla 1), el modelo de
-   tópicos (``topics_v1``, el ``model_v0`` de EPIC-5) y MiniLM.
+   tópicos (``topics_v1``, el ``model_v0`` de los experimentos) y MiniLM.
 2. ``review_predictions``: elegibilidad v1 por fila, predicciones sin
    calibrar de la semilla 1 (``preds_s1.parquet``) y la T del modelo. Las
    filas ``MODEL`` sin predicción (textos editados o posteriores al
@@ -19,9 +20,13 @@ Pasos (``load_backfill``):
    se descartan.
 4. ``text_embeddings``: ``emb_minilm.npy`` replicado por banco × mes.
 5. ``topic_assignments``, ``topic_model_versions``, ``topic_catalog`` y
-   ``curation_topics`` (curaduría de 5.5, fase 4).
+   ``curation_topics`` (la curaduría de tópicos del autor).
+   ``segment_embeddings``: los vectores de las cláusulas que guardó el
+   backfill (``topics/emb_segments_minilm.npy``, en el orden de
+   ``segment_topics_v0.parquet``); sin ese archivo, el backfill de tópicos
+   los calcula la primera vez.
 6. ``gold_labels``: el parquet sin texto de
-   ``voc_analytics.labeling.export_gold_v3`` (D10).
+   ``voc_analytics.labeling.export_gold_v3``.
 7. Una fila de ``inference_runs`` por carga.
 """
 
@@ -61,7 +66,8 @@ from ml_inference.bq_io import (
     run_dml,
 )
 from ml_inference.config import InferenceSettings
-from ml_inference.seed import EPIC5_MODEL, MODEL_VERSION
+from ml_inference.runs import RUN_KEY
+from ml_inference.seed import MODEL_VERSION, REPORTS_MODEL
 
 log = logging.getLogger(__name__)
 
@@ -70,14 +76,15 @@ GOLD_VERSION: Final = "gold_epic5_v1"
 PROMPT_VERSION: Final = "aspects_v2_1"
 LLM_MODEL: Final = "gemini-3.6-flash"
 FAMILIES: Final = tuple(f.value for f in AspectFamily)
-# Curaduría de 5.5: ingeniería si no sirve a producto y su coherencia es ≥ 3.
+# Curaduría de tópicos: ingeniería si no sirve a producto y su coherencia
+# es ≥ 3.
 MIN_COHERENCE: Final = 3
 PAGE_SIZE: Final = 50_000
 
 
 @dataclass(frozen=True)
 class LocalBackfill:
-    """Rutas de los archivos de EPIC-5 en la máquina del autor."""
+    """Rutas de los archivos de los experimentos en la máquina del autor."""
 
     run_dir: Path  # data/backfill/20261022
     weights_dir: Path  # data/models/weights/M4_robertuito_s1_ppi
@@ -89,7 +96,7 @@ class LocalBackfill:
     def from_data_dir(cls, data: Path, minilm_dir: Path) -> "LocalBackfill":
         return cls(
             run_dir=data / "backfill" / "20261022",
-            weights_dir=data / "models" / "weights" / EPIC5_MODEL,
+            weights_dir=data / "models" / "weights" / REPORTS_MODEL,
             curation_csv=data / "topics" / "phase4_v0" / "revision_topicos.csv",
             gold_parquet=data / "handoff" / "gold_labels_v1.parquet",
             minilm_dir=minilm_dir,
@@ -153,7 +160,7 @@ class Loader:
     def _tds_pages(self) -> Iterator[list[dict[str, Any]]]:
         job = self.bigquery.query(
             render(
-                "SELECT id_resena, bank_id, fecha, texto_limpio FROM `$${tds}`",
+                "SELECT id_resena, bank_id, fecha, texto_limpio FROM `${tds}`",
                 tds=self.settings.tds_table,
             )
         )
@@ -260,33 +267,11 @@ class Loader:
 
     def embeddings_file(self) -> Path:
         folder = self.files.run_dir / "embeddings"
-        keys = pq.read_table(folder / "keys.parquet")["text_key"]
+        keys = pq.read_table(folder / "keys.parquet", columns=["text_key"])
         vectors = np.load(folder / "emb_minilm.npy", mmap_mode="r")
-        if len(keys) != vectors.shape[0]:
-            raise ValueError("embeddings and keys differ in length")
-        path = self.work_dir / "embeddings.parquet"
-        schema = pa.schema(
-            [("text_key", pa.string()), ("embedding", pa.list_(pa.float32()))]
+        return vectors_parquet(
+            self.work_dir / "embeddings.parquet", keys, vectors
         )
-        with pq.ParquetWriter(path, schema) as out:
-            for start in range(0, len(keys), PAGE_SIZE):
-                chunk = np.asarray(vectors[start : start + PAGE_SIZE])
-                flat = pa.array(chunk.reshape(-1), type=pa.float32())
-                offsets = pa.array(
-                    np.arange(0, chunk.size + 1, chunk.shape[1], dtype=np.int32)
-                )
-                out.write_table(
-                    pa.table(
-                        {
-                            "text_key": keys[start : start + PAGE_SIZE],
-                            "embedding": pa.ListArray.from_arrays(
-                                offsets, flat
-                            ),
-                        },
-                        schema=schema,
-                    )
-                )
-        return path
 
     def embeddings(self) -> int:
         from voc_nlp.topics import EMBEDDING_MODEL
@@ -320,6 +305,46 @@ class Loader:
         finally:
             self._drop(staging)
 
+    @property
+    def segment_vectors(self) -> Path:
+        return self.files.run_dir / "topics" / "emb_segments_minilm.npy"
+
+    def segment_embeddings_file(self) -> Path:
+        keys = pq.read_table(
+            self.files.run_dir / "topics" / "segment_topics_v0.parquet",
+            columns=["text_key", "orden"],
+        ).rename_columns(["text_key", "segment_index"])
+        vectors = np.load(self.segment_vectors, mmap_mode="r")
+        return vectors_parquet(
+            self.work_dir / "segment_embeddings.parquet", keys, vectors
+        )
+
+    def segment_embeddings(self) -> int:
+        from voc_nlp.topics import EMBEDDING_MODEL, SEGMENTER
+
+        if not self.segment_vectors.exists():
+            log.warning(
+                "sin %s: el backfill de tópicos calculará los vectores",
+                self.segment_vectors.name,
+            )
+            return 0
+        staging = self._staging(
+            "segment_embeddings", self.segment_embeddings_file()
+        )
+        try:
+            return run_dml(
+                self.bigquery,
+                segment_embeddings_sql(self.ds, staging),
+                {
+                    "segmenter": SEGMENTER,
+                    "model": EMBEDDING_MODEL,
+                    "run_id": self.run_id,
+                    "now": self.now,
+                },
+            )
+        finally:
+            self._drop(staging)
+
     def topic_tables(self, writer: StagingMergeWriter) -> dict[str, int]:
         meta = json.loads(
             (self.files.topic_model_dir / "model.json").read_text("utf-8")
@@ -340,7 +365,7 @@ class Loader:
                     "topicos",
                 )
             },
-            fit_sample=f"{meta['segmentos_ajuste']} segmentos (5.5, 5.9)",
+            fit_sample=f"{meta['segmentos_ajuste']} segmentos de cláusulas",
         )
         terms = (self.topic_terms or bertopic_terms)(self.files.topic_model_dir)
         catalog = [
@@ -431,6 +456,29 @@ class Loader:
         ]
 
 
+def vectors_parquet(path: Path, keys: pa.Table, vectors: np.ndarray) -> Path:
+    """Escribe ``keys`` con una columna ``embedding`` por fila, por páginas
+    (``vectors`` puede ser un ``np.load`` con ``mmap_mode``)."""
+    if keys.num_rows != vectors.shape[0]:
+        raise ValueError("embeddings and keys differ in length")
+    schema = keys.schema.append(pa.field("embedding", pa.list_(pa.float32())))
+    with pq.ParquetWriter(path, schema) as out:
+        for start in range(0, keys.num_rows, PAGE_SIZE):
+            chunk = np.asarray(vectors[start : start + PAGE_SIZE])
+            flat = pa.array(chunk.reshape(-1), type=pa.float32())
+            offsets = pa.array(
+                np.arange(0, chunk.size + 1, chunk.shape[1], dtype=np.int32)
+            )
+            page = keys.slice(start, PAGE_SIZE)
+            out.write_table(
+                page.append_column(
+                    schema.field("embedding"),
+                    pa.ListArray.from_arrays(offsets, flat),
+                )
+            )
+    return path
+
+
 def policy_value(policy: dict[str, Any] | None, field: str) -> Any:
     """Calibración, T y umbral vigentes, o nulos si aún no se siembra."""
     if policy is None:
@@ -453,7 +501,7 @@ def bertopic_terms(path: Path, top: int = 10) -> dict[int, list[str]]:
 def curation_rows(
     path: Path, curator_hash: str, now: datetime
 ) -> list[TopicCuration]:
-    """Curaduría de 5.5 (fase 4) con la regla de audiencia de 5.9."""
+    """Curaduría de tópicos del autor, con la regla de audiencia."""
     rows = []
     with path.open(encoding="utf-8") as handle:
         for r in csv.DictReader(handle):
@@ -614,6 +662,24 @@ def embeddings_sql(ds: str, tds: str, staging: str) -> str:
     )
 
 
+def segment_embeddings_sql(ds: str, staging: str) -> str:
+    return render(
+        """
+    MERGE `${ds}.segment_embeddings` T
+    USING (
+      SELECT text_key, segment_index, @segmenter AS segmenter,
+        @model AS embedding_model, embedding, @run_id AS run_id,
+        @now AS created_at
+      FROM `${staging}`
+    ) S
+    ON T.text_key = S.text_key AND T.segment_index = S.segment_index
+    WHEN NOT MATCHED THEN INSERT ROW
+    """,
+        ds=ds,
+        staging=staging,
+    )
+
+
 def topics_sql(ds: str, staging: str) -> str:
     return render(
         """
@@ -635,6 +701,45 @@ def topics_sql(ds: str, staging: str) -> str:
         ds=ds,
         staging=staging,
     )
+
+
+def gold_ids_table(labels_dir: Path) -> pa.Table:
+    """``id_resena`` y ``text_key`` de todas las colas del oro (``gold_*``),
+    *dev* y *test*: sin texto ni etiquetas."""
+    import hashlib
+
+    ids: dict[str, str] = {}
+    for queue in sorted(labels_dir.glob("gold_*/queue.parquet")):
+        table = pq.read_table(queue, columns=["id_resena", "texto_sanitizado"])
+        for rid, text in zip(
+            table["id_resena"].to_pylist(),
+            table["texto_sanitizado"].to_pylist(),
+            strict=True,
+        ):
+            ids[rid] = hashlib.sha256((text or "").encode()).hexdigest()
+    if not ids:
+        raise FileNotFoundError(f"no gold queues under {labels_dir}")
+    return pa.table({"id_resena": list(ids), "text_key": list(ids.values())})
+
+
+def upload_gold_ids(
+    settings: InferenceSettings, storage: Any, labels_dir: Path
+) -> int:
+    """Sube los ids del oro junto a la plata archivada; el entrenamiento los
+    excluye. Devuelve cuántas reseñas subió."""
+    from ml_inference.training import GOLD_IDS_FILE
+    from ml_inference.vocab import ARCHIVE_PREFIX
+
+    table = gold_ids_table(labels_dir)
+    buffer = pa.BufferOutputStream()
+    pq.write_table(table, buffer)
+    storage.bucket(settings.gcs_raw_datalake_bucket).blob(
+        f"{ARCHIVE_PREFIX}{GOLD_IDS_FILE}"
+    ).upload_from_string(
+        buffer.getvalue().to_pybytes(),
+        content_type="application/vnd.apache.parquet",
+    )
+    return table.num_rows
 
 
 def load_backfill(
@@ -675,9 +780,10 @@ def load_backfill(
     counts["review_aspects"] = loader.aspects()
     counts["text_embeddings"] = loader.embeddings()
     counts["topic_assignments"] = loader.topic_assignments()
+    counts["segment_embeddings"] = loader.segment_embeddings()
     counts.update(loader.topic_tables(writer))
     counts["gold_labels"] = loader.gold(writer)
     log.info("filas nuevas: %s", counts)
     runs = loader.runs(counts, max(datetime.now(now.tzinfo), now))
-    writer.write("inference_runs", runs, ["run_id"], loader.run_id)
+    writer.write("inference_runs", runs, list(RUN_KEY), loader.run_id)
     return runs

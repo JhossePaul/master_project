@@ -490,7 +490,7 @@ def test_incremental_recovery_resumes_without_moving_frozen_baseline() -> None:
         )
 
 
-# Feature 3.4: re-anclaje, nueva cadena y cierres por stream.
+# Re-anclaje, nueva cadena y cierres por stream.
 NEXT_CURSOR = "opaque-cursor-2"
 
 

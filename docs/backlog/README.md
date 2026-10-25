@@ -12,9 +12,9 @@ determinista, incremental y sin romper contratos entre componentes.
 
 * `README.md`: Este documento. Reglas de arquitectura, convenciones de código y
   flujo de ejecución para agentes.
-* `epics.md`: Mapa general del proyecto en 7 épicas secuenciales, con el cierre
+* `epics.md`: Mapa general del proyecto en 8 épicas, con el cierre
   de EPIC-1 a EPIC-4 (lo verificado en producción).
-* `epic_1.md` a `epic_7.md`: Desglose de las *Features* e Historias Técnicas de
+* `epic_1.md` a `epic_8.md`: Desglose de las *Features* e Historias Técnicas de
   cada épica, con rutas de archivos, firmas, esquemas de datos y criterios de
   aceptación verificables. EPIC-5 es experimentación: su evidencia vive en
   [`docs/analytics/`](../analytics/README.md) y EPIC-6 la despliega.
@@ -67,3 +67,4 @@ Las épicas tienen dependencias técnicas estrictas. **No inicies una épica sin
 5. `epic_5.md` (Planteamiento analítico y experimentación: EDA, etiquetado oro/plata, competencia de modelos, tópicos, calibración y registro de decisión).
 6. `epic_6.md` (Despliegue del core analítico: contratos de predicción, tablas de salida y curaduría, servicio de inferencia y monitoreo). Empieza al aprobarse el registro de decisión de EPIC-5 (5.8).
 7. `epic_7.md` (API Backend en FastAPI, Búsqueda Vectorial, Explicabilidad, Portal React HITL y Gobernanza).
+8. `epic_8.md` (Pendientes técnicos que no bloquean: respaldo en GCS de los insumos locales y otras deudas).

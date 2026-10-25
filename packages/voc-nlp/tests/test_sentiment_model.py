@@ -14,8 +14,11 @@ from voc_nlp.sentiment_model import (  # noqa: E402
     MAX_LENGTH,
     encode,
     load_sentiment_model,
+    load_tokenizer,
     predict_ids,
     predict_proba,
+    prepare,
+    token_ids,
 )
 
 TEXTS = [
@@ -61,6 +64,12 @@ def test_encode_applies_preprocess_tweet_and_truncates(
     # preprocess_tweet convierte el emoji en palabras del vocabulario.
     assert vocab["cara"] in ids[0] and vocab["cabreada"] in ids[0]
     assert len(ids[1]) == MAX_LENGTH
+
+
+def test_prepare_then_token_ids_equals_encode(tiny_weights: Path) -> None:
+    model = load_sentiment_model(tiny_weights)
+    tokenizer = load_tokenizer(tiny_weights)
+    assert token_ids(tokenizer, prepare(TEXTS)) == encode(model, TEXTS)
 
 
 def test_empty_input(tiny_weights: Path) -> None:

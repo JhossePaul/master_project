@@ -150,8 +150,9 @@ jobs:
 
       - name: Smoke test entrypoint
         run: |
-          # `monitor` no hace nada hasta 6.4 y no necesita GCP.
-          docker run --rm ml-inference:ci monitor
+          # Los comandos leen la configuración y abren clientes de GCP;
+          # `--help` valida el entrypoint sin ninguno de los dos.
+          docker run --rm ml-inference:ci --help
           docker run --rm --entrypoint python ml-inference:ci -c \
             "import ml_inference.delta, voc_nlp.sentiment_model, voc_nlp.topics"
           id=$(docker run --rm --entrypoint id ml-inference:ci -u)

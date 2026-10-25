@@ -39,7 +39,7 @@ class LabelSource(StrEnum):
     """Quién produjo la etiqueta de sentimiento."""
 
     MODEL = "MODEL"
-    # Léxico de una palabra (``lexicon_v1``, P8-3).
+    # Léxico de una palabra (``lexicon_v1``).
     RULE_BASED = "RULE_BASED"
     NO_PREDICTED = "NO_PREDICTED"
 
@@ -74,7 +74,7 @@ class AspectFamily(StrEnum):
 
 
 class TopicAudience(StrEnum):
-    """Audiencia de un tópico curado (borrador de datos de 5.5)."""
+    """Audiencia de un tópico curado."""
 
     PRODUCTO = "producto"
     INGENIERIA = "ingenieria"
@@ -96,7 +96,7 @@ class HitlReason(StrEnum):
     LOW_CONFIDENCE = "low_confidence"
     # Subida automática por una alerta de deriva; exige ``boost_id``.
     DRIFT_BOOST = "drift_boost"
-    # Muestra aleatoria de concepto (P7-7); siempre ``blind``.
+    # Muestra aleatoria de concepto; siempre ``blind``.
     MONITOR_SAMPLE = "monitor_sample"
     # Doble revisión para medir el acuerdo entre personas; siempre ``blind``.
     AGREEMENT_SAMPLE = "agreement_sample"
@@ -132,10 +132,10 @@ class ReviewFlag(StrEnum):
 
 
 class GoldSplit(StrEnum):
-    """Partición del oro cargado en ``gold_labels`` (D10)."""
+    """Partición del oro cargado en ``gold_labels``."""
 
     DEV = "dev"
-    # 300 reseñas con familias de la guía v2.1 (EPIC-5: muestra_v21).
+    # 300 reseñas con las familias de la guía v2.1, anotadas por el autor.
     ASPECTS_GOLD_V2_1 = "aspects_gold_v2_1"
 
 
@@ -148,18 +148,29 @@ class RunKind(StrEnum):
     BACKFILL = "backfill"
     DELTA = "delta"
     RESCORING = "rescoring"
+    TRAINING = "training"
+    # Re-asignación del histórico al activarse una versión de tópicos.
+    TOPIC_BACKFILL = "topic_backfill"
+    # Familias del histórico con Gemini, solo con aprobación y tope de costo.
+    ASPECT_BACKFILL = "aspect_backfill"
 
 
 class RunEnvironment(StrEnum):
     KAGGLE = "kaggle"
     CLOUDRUN = "cloudrun"
-    # Tópicos y embeddings de 5.9, calculados en la máquina del autor.
+    # Tópicos y embeddings históricos, calculados en la máquina del autor.
     LOCAL = "local"
 
 
 class RunStatus(StrEnum):
-    """Estado final con que se registra una corrida (solo inserción)."""
+    """Estado de una corrida (solo inserción).
 
+    Las corridas largas escriben una fila ``running`` al empezar y otra con
+    su estado final al terminar, con el mismo ``run_id``; las demás, solo la
+    final. La vista ``inference_runs_current`` da el estado vigente.
+    """
+
+    RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
 
@@ -185,7 +196,7 @@ class BoostEndReason(StrEnum):
 class QualitySignal(StrEnum):
     KAPPA_MONITOR = "kappa_monitor"
     CORRECTION_RATE = "correction_rate"
-    AGREEMENT_M4_GEMINI = "agreement_m4_gemini"
+    GEMINI_AGREEMENT = "gemini_agreement"
     FAMILIES_VALIDATION = "families_validation"
 
 
@@ -194,6 +205,30 @@ class QualityStatus(StrEnum):
     WARNING = "warning"
     RETRAIN = "retrain"
     REJECTED = "rejected"
+
+
+class PromotionVerdict(StrEnum):
+    """Regla de promoción: el candidato contra la versión vigente."""
+
+    BETTER = "better"
+    TIE = "tie"
+    WORSE = "worse"
+
+
+class RetrainTrigger(StrEnum):
+    """Quién lanza el reentrenamiento del modelo de sentimiento."""
+
+    # El monitor lo lanza al medir ``retrain``; promover sigue siendo humano.
+    AUTO = "auto"
+    MANUAL = "manual"
+
+
+class TopicRefitTrigger(StrEnum):
+    """Quién lanza el re-ajuste del modelo de tópicos."""
+
+    # Por calendario, según ``topic_refit_frequency``.
+    SCHEDULED = "scheduled"
+    MANUAL = "manual"
 
 
 class KpiMethod(StrEnum):

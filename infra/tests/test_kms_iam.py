@@ -27,7 +27,6 @@ _ROLES = {
     "voc-sa-ml-backend": {
         "roles/bigquery.dataEditor",
         "roles/bigquery.jobUser",
-        "roles/pubsub.publisher",
         "roles/aiplatform.user",
         "roles/dlp.user",
     },
@@ -67,7 +66,7 @@ def test_security_resources_and_dependencies(
     assert all(s["project"] == _PROJECT for s in accounts)
 
     memberships = [s for s in states if "member" in s]
-    assert len(memberships) == 12
+    assert len(memberships) == 11
     for account, roles in _ROLES.items():
         expected_member = (
             f"serviceAccount:{account}@{_PROJECT}.iam.gserviceaccount.com"

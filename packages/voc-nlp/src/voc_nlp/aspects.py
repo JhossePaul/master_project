@@ -1,16 +1,16 @@
-"""Familias ``aspects_v2_1`` con Gemini en Vertex AI (``[gemini]``; 5.5, 5.9).
+"""Familias ``aspects_v2_1`` con Gemini en Vertex AI (extra ``[gemini]``).
 
 Port de ``voc_analytics.labeling.label_gemini`` (lote, reintentos y costo),
 ``voc_analytics.topics.aspects_scale`` (cliente y configuración) y
 ``voc_analytics.eda.eda_aspects_v2.parse``. Cada línea de entrada es
 ``i<TAB>texto`` y cada línea de salida ``i CÓDIGOS u s m``.
 
-Diferencia con EPIC-5 (backlog de 6.3): si la respuesta omite algunos ids,
+Diferencia con los experimentos: si la respuesta omite algunos ids,
 se aceptan los presentes y los que faltan se reintentan en lotes más chicos;
 un texto que sigue sin etiqueta queda pendiente (no se guarda vacío). Una
 respuesta sin líneas válidas, con ids que no se pidieron, repetidos o con
 códigos desconocidos se descarta entera y se reintenta hasta tres veces,
-como en EPIC-5.
+como en los experimentos.
 """
 
 import re
@@ -32,7 +32,9 @@ LOCATION: Final = "global"
 BATCH_SIZE: Final = 100
 MAX_TEXT_CHARS: Final = 2000
 MAX_ATTEMPTS: Final = 3
-# USD por millón de tokens; los *thoughts* se cobran como salida.
+# USD por millón de tokens al medir los experimentos (precio introductorio,
+# vigente hasta el 2026-12-31); los *thoughts* se cobran como salida. En
+# producción el precio llega de la configuración (``Usage(price_in=...)``).
 PRICE_IN: Final = 0.75
 PRICE_OUT: Final = 3.75
 
@@ -62,11 +64,14 @@ class Usage:
     thoughts: int = 0
     calls: int = 0
     errors: list[str] = field(default_factory=list)
+    price_in: float = PRICE_IN
+    price_out: float = PRICE_OUT
 
     @property
     def cost_usd(self) -> float:
         return (
-            self.prompt * PRICE_IN + (self.output + self.thoughts) * PRICE_OUT
+            self.prompt * self.price_in
+            + (self.output + self.thoughts) * self.price_out
         ) / 1_000_000
 
 
@@ -83,7 +88,8 @@ def load_prompt() -> str:
 
 
 def make_client(project: str, location: str = LOCATION) -> genai.Client:
-    """Cliente de Gemini en Vertex AI dentro del proyecto (FMEA F-10)."""
+    """Cliente de Gemini en Vertex AI dentro del proyecto: el texto no sale de
+    GCP."""
     return genai.Client(vertexai=True, project=project, location=location)
 
 
@@ -100,7 +106,7 @@ def generation_config(prompt: str) -> types.GenerateContentConfig:
 def parse(text: str) -> dict[int, _Parsed] | None:
     """Líneas válidas por índice; ``None`` si la respuesta no es usable.
 
-    Las líneas que no tienen el formato se ignoran, como en EPIC-5. Un
+    Las líneas que no tienen el formato se ignoran, como en los experimentos. Un
     índice repetido o un código fuera de las 11 familias invalida la
     respuesta.
     """

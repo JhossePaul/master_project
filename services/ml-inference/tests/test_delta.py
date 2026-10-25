@@ -1,4 +1,4 @@
-"""Delta diario: los criterios de 6.3 con BigQuery, Gemini y modelos falsos."""
+"""Delta diario: sus criterios con BigQuery, Gemini y modelos falsos."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -169,7 +169,9 @@ def test_failed_run_is_recorded(world: Any) -> None:
     with pytest.raises(RuntimeError, match="roto"):
         _run(world)
     run = world.bq.rows("inference_runs")[-1]
-    assert run["status"] == "failed"
+    assert (
+        run["status"] == "failed" and run["topic_model_version"] == "topics_v1"
+    )
 
 
 def test_text_omitted_by_gemini_stays_pending(world: Any) -> None:
@@ -206,6 +208,88 @@ def test_known_labels_are_reused_without_calling_gemini(world: Any) -> None:
     _run(world, NOW + timedelta(hours=1))
     assert world.gemini.calls == calls
     assert set(_by_id(world, "review_aspects")) == {"a", "b"}
+
+
+def _old_label(world: Any, id_resena: str, text: str) -> None:
+    world.bq.rows("review_aspects").append(
+        {
+            "id_resena": id_resena,
+            "bank_id": "BBVA",
+            "text_key": world.text_key(text),
+            "fecha": NOW - timedelta(days=400),
+            "families": ["TR"],
+            "flag_update": False,
+            "flag_security": True,
+            "praise": False,
+            "prompt_version": "aspects_v1",
+            "llm_model": "gemini-viejo",
+            "guideline_version": "v1",
+            "sentiment_model_version": MODEL,
+            "run_id": "backfill",
+            "labeled_at": NOW - timedelta(days=400),
+        }
+    )
+
+
+def test_gemini_never_relabels_a_text_with_families_of_another_prompt(
+    world: Any,
+) -> None:
+    _old_label(world, "viejo", "la app no abre")
+    world.bq.rows("sanitized_reviews_tds").extend(
+        [
+            # La misma reseña, ya etiquetada con el prompt anterior.
+            world.tds_row("viejo", "la app no abre"),
+            # Otra reseña con el mismo texto: copia la etiqueta anterior.
+            world.tds_row("nuevo", "la app no abre"),
+        ]
+    )
+    _run(world)
+    assert world.gemini.calls == 0
+    aspects = [
+        a for a in world.bq.rows("review_aspects") if a["id_resena"] == "nuevo"
+    ]
+    assert len(aspects) == 1
+    copied = aspects[0]
+    assert copied["prompt_version"] == "aspects_v1"
+    assert copied["guideline_version"] == "v1"
+    assert copied["llm_model"] == "gemini-viejo"
+    assert copied["families"] == ["TR"] and copied["flag_security"] is True
+    assert copied["sentiment_model_version"] == MODEL
+    # La reseña ya etiquetada no gana una fila con el prompt vigente.
+    assert [
+        a["prompt_version"]
+        for a in world.bq.rows("review_aspects")
+        if a["id_resena"] == "viejo"
+    ] == ["aspects_v1"]
+
+
+def test_only_never_labeled_texts_go_to_gemini(world: Any) -> None:
+    _old_label(world, "viejo", "la app no abre")
+    world.bq.rows("sanitized_reviews_tds").extend(
+        [
+            world.tds_row("a", "la app no abre"),
+            world.tds_row("b", "app malo hoy"),
+        ]
+    )
+    sent: list[str] = []
+    generate = world.gemini.generate_content
+
+    def spy(*, model: str, contents: str, config: Any):
+        sent.extend(line.split("\t", 1)[1] for line in contents.splitlines())
+        return generate(model=model, contents=contents, config=config)
+
+    world.gemini.generate_content = spy
+    _run(world)
+    assert sent == ["app malo hoy"]
+    prompts = {
+        a["id_resena"]: a["prompt_version"]
+        for a in world.bq.rows("review_aspects")
+    }
+    assert prompts == {
+        "viejo": "aspects_v1",
+        "a": "aspects_v1",
+        "b": "aspects_v2_1",
+    }
 
 
 def test_without_gemini_client_aspects_wait(world: Any) -> None:
@@ -286,3 +370,110 @@ def test_artifacts_are_downloaded_once(world: Any) -> None:
 
 def test_peak_memory_is_positive() -> None:
     assert peak_memory_mib() > 0
+
+
+def _historical_negative(world: Any, id_resena: str, text: str) -> None:
+    """Negativa cargada por el backfill: no la predijo una corrida del delta."""
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row(id_resena, text, fecha=NOW - timedelta(days=300))
+    )
+    world.bq.rows("review_predictions").append(
+        {
+            "id_resena": id_resena,
+            "bank_id": "BBVA",
+            "text_key": world.text_key(text),
+            "fecha": NOW - timedelta(days=300),
+            "sentiment": "NEG",
+            "palabras": len(text.split()),
+            "model_version": MODEL,
+            "run_id": "backfill-20261022",
+            "predicted_at": NOW - timedelta(days=2),
+        }
+    )
+
+
+def test_topics_only_cover_what_came_through_ingestion(world: Any) -> None:
+    _historical_negative(world, "h", "el cajero no sirve")
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row("n", "la app no abre nunca")
+    )
+    _run(world)
+    assigned = {t["id_resena"] for t in world.bq.rows("topic_assignments")}
+    assert assigned == {"n"}
+    # Una segunda corrida tampoco toca el histórico.
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row("m", "app malo otra vez")
+    )
+    _run(world, NOW + timedelta(days=1))
+    assigned = {t["id_resena"] for t in world.bq.rows("topic_assignments")}
+    assert assigned == {"n", "m"}
+
+
+def _backfill_row(world: Any, status: str, started: datetime) -> None:
+    world.bq.rows("inference_runs").append(
+        {
+            "run_id": "topics-backfill-1",
+            "kind": "topic_backfill",
+            "topic_model_version": "topics_v1",
+            "status": status,
+            "started_at": started,
+        }
+    )
+
+
+def test_topic_backfill_is_launched_once_per_version(world: Any) -> None:
+    _historical_negative(world, "h", "el cajero no sirve")
+    _run(world)
+    assert world.jobs.executed == [
+        ("voc-ml-topics-backfill", ["topics-backfill"])
+    ]
+    # En curso (su fila running): el siguiente delta no lanza otro.
+    _backfill_row(world, "running", NOW + timedelta(minutes=5))
+    _run(world, NOW + timedelta(hours=1))
+    assert len(world.jobs.executed) == 1
+    # Una fila running vieja es de una corrida muerta: se relanza.
+    _run(world, NOW + timedelta(hours=3))
+    assert len(world.jobs.executed) == 2
+    # Terminado y sin pendientes: tampoco.
+    _backfill_row(world, "succeeded", NOW + timedelta(minutes=5))
+    world.bq.rows("topic_assignments").append(
+        {
+            "id_resena": "h",
+            "bank_id": "BBVA",
+            "text_key": world.text_key("el cajero no sirve"),
+            "fecha": NOW - timedelta(days=300),
+            "segment_index": 0,
+            "topic_model_version": "topics_v1",
+            "topic_id": 3,
+        }
+    )
+    _run(world, NOW + timedelta(days=1))
+    assert len(world.jobs.executed) == 2
+
+
+def test_without_job_runner_the_backfill_waits(world: Any) -> None:
+    world.clients.jobs = None
+    _historical_negative(world, "h", "el cajero no sirve")
+    run = _run(world)
+    assert run.status.value == "succeeded"
+    assert world.jobs.executed == []
+
+
+def test_segment_vectors_are_stored_once_and_reused(world: Any) -> None:
+    text = "la app no abre nunca pero el cajero sí funciona"
+    world.bq.rows("sanitized_reviews_tds").append(world.tds_row("a", text))
+    _run(world)
+    stored = world.bq.rows("segment_embeddings")
+    assert sorted(e["segment_index"] for e in stored) == [0, 1]
+    assert {e["segmenter"] for e in stored} == {"clause_segmenter_v1"}
+    assert all(len(e["embedding"]) == 384 for e in stored)
+    calls = len(world.embedder.calls)
+    world.bq.rows("sanitized_reviews_tds").append(world.tds_row("b", text))
+    _run(world, NOW + timedelta(hours=1))
+    # Mismo texto, banco y mes: ni embeddings de texto ni de cláusulas.
+    assert len(world.embedder.calls) == calls
+    assert len(world.bq.rows("segment_embeddings")) == 2
+    topics = [
+        t for t in world.bq.rows("topic_assignments") if t["id_resena"] == "b"
+    ]
+    assert sorted(t["topic_id"] for t in topics) == [-1, 3]

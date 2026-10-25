@@ -71,7 +71,7 @@ def create_security_resources(
         (
             "roles/bigquery.dataEditor",
             "roles/bigquery.jobUser",
-            "roles/pubsub.publisher",
+            # Publica solo en los tópicos de avisos (permiso por tópico).
             "roles/aiplatform.user",
             "roles/dlp.user",
         ),

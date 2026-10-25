@@ -1,14 +1,15 @@
-"""Escritura idempotente en las tablas v3 (generaliza EPIC-4).
+"""Escritura idempotente en las tablas v3 (generaliza la de la ingesta).
 
 Tabla temporal con expiración de 1 h → ``load_table_from_json`` → ``MERGE …
-WHEN NOT MATCHED THEN INSERT ROW`` → borrado de la temporal en ``finally``.
+WHEN NOT MATCHED THEN INSERT (columnas) VALUES (...)`` → borrado de la
+temporal en ``finally``.
 Las tablas son de solo inserción: la clave hace idempotente la escritura y
 una segunda corrida no inserta nada.
 """
 
 import re
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from string import Template
@@ -49,10 +50,18 @@ def schema_fields(model: type[BaseModel]) -> list[bigquery.SchemaField]:
     ]
 
 
-def merge_statement(target: str, staging: str, key: Sequence[str]) -> str:
-    """``MERGE`` de solo inserción por ``key`` (dos nulos son iguales)."""
+def merge_statement(
+    target: str, staging: str, key: Sequence[str], columns: Sequence[str]
+) -> str:
+    """``MERGE`` de solo inserción por ``key`` (dos nulos son iguales).
+
+    Las columnas van por nombre: ``INSERT ROW`` las empareja por posición y
+    las que se agregan a una tabla ya creada quedan al final.
+    """
     if not key or not all(_IDENT.fullmatch(k) for k in key):
         raise ValueError("invalid merge key")
+    if not columns or not all(_IDENT.fullmatch(c) for c in columns):
+        raise ValueError("invalid merge columns")
     on = " AND ".join(
         f"(T.{k} = S.{k} OR (T.{k} IS NULL AND S.{k} IS NULL))" for k in key
     )
@@ -60,7 +69,13 @@ def merge_statement(target: str, staging: str, key: Sequence[str]) -> str:
         "MERGE `${target}` T USING `${staging}` S ON ",
         target=target,
         staging=staging,
-    ) + Template("$on WHEN NOT MATCHED THEN INSERT ROW").substitute(on=on)
+    ) + Template(
+        "$on WHEN NOT MATCHED THEN INSERT ($cols) VALUES ($vals)"
+    ).substitute(
+        on=on,
+        cols=", ".join(columns),
+        vals=", ".join(f"S.{c}" for c in columns),
+    )
 
 
 @dataclass
@@ -111,7 +126,12 @@ class StagingMergeWriter:
             )
             load.result(timeout=self.timeout_sec)
             merge = self.client.query(
-                merge_statement(self.table_id(table), staging, key),
+                merge_statement(
+                    self.table_id(table),
+                    staging,
+                    key,
+                    [field.name for field in schema],
+                ),
                 job_id_prefix=f"voc_{table}_merge_",
                 timeout=self.timeout_sec,
             )
@@ -140,6 +160,23 @@ def query_rows(
     )
     job = client.query(sql, job_config=config, timeout=timeout_sec)
     return [dict(row.items()) for row in job.result(timeout=timeout_sec)]
+
+
+def iter_rows(
+    client: bigquery.Client,
+    sql: str,
+    params: Mapping[str, Any] | None = None,
+    page_size: int = 10_000,
+    timeout_sec: float = 3600.0,
+) -> Iterator[dict[str, Any]]:
+    """Como ``query_rows``, pero lee el resultado por páginas, sin cargarlo
+    entero en memoria."""
+    config = bigquery.QueryJobConfig(
+        query_parameters=[_param(k, v) for k, v in (params or {}).items()]
+    )
+    job = client.query(sql, job_config=config, timeout=timeout_sec)
+    for row in job.result(timeout=timeout_sec, page_size=page_size):
+        yield dict(row.items())
 
 
 def _param(name: str, value: Any) -> Any:

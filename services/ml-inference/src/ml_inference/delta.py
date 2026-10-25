@@ -1,4 +1,4 @@
-"""Delta diario (6.3): un Job con pasos en serie (D9).
+"""Delta diario: un Job con pasos en serie y un modelo en memoria a la vez.
 
 1. **Pendientes:** filas del TDS sin fila en ``review_predictions`` para la
    versión promovida y su ``text_key``, hasta el tope por corrida.
@@ -6,10 +6,19 @@
    ``MODEL``; T de la versión; umbral de la política o de la subida del banco.
 3. **HITL:** casos ``low_confidence`` (o ``drift_boost``) con su oclusión
    precalculada, hasta el tope semanal de la política.
-4. **Familias:** negativas de dos palabras o más sin etiqueta para su
-   ``text_key``; Gemini solo para los textos nuevos.
+4. **Familias:** negativas de dos palabras o más sin ninguna fila en
+   ``review_aspects``, con cualquier prompt. Un texto que ya tiene familias
+   (de cualquier prompt) se copia con su ``prompt_version``; Gemini solo
+   etiqueta los textos que nunca etiquetó, con el prompt vigente. Un cambio
+   de prompt no re-etiqueta el histórico: eso lo hace ``aspects-backfill``,
+   solo con el costo aprobado.
 5. **Embeddings y tópicos:** MiniLM por texto, una fila por banco × mes, y
-   cláusulas con el modelo de tópicos vigente.
+   cláusulas con el modelo de tópicos vigente, solo de las reseñas que
+   predijo una corrida del delta (lo que llegó por la ingesta diaria). Los
+   vectores de las cláusulas se guardan una vez en ``segment_embeddings`` y
+   se reutilizan. Si quedan negativas del histórico sin asignar a la
+   versión vigente y no hay un backfill en curso, lanza
+   ``voc-ml-topics-backfill``.
 6. **Registro:** fila en ``inference_runs``.
 
 Cada modelo se carga solo si su paso tiene trabajo y se libera antes del
@@ -45,6 +54,7 @@ from voc_common.operations_v3 import InferenceRun, ReviewExplanation
 from voc_common.predictions_v3 import (
     ReviewAspects,
     ReviewPrediction,
+    SegmentEmbedding,
     TextEmbedding,
     TopicAssignment,
 )
@@ -57,6 +67,8 @@ from ml_inference import artifacts
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
 from ml_inference.engines import EngineLoaders
+from ml_inference.jobs import JobRunner
+from ml_inference.runs import running, write_run
 from ml_inference.state import ServingState, load_state
 
 log = logging.getLogger(__name__)
@@ -70,6 +82,8 @@ class Clients:
     storage: Any
     genai: Any | None = None
     engines: EngineLoaders = field(default_factory=EngineLoaders)
+    # Sin él, el backfill de tópicos no se lanza (se avisa en el log).
+    jobs: JobRunner | None = None
 
 
 @dataclass
@@ -110,6 +124,7 @@ def run_delta(
             kind=RunKind.DELTA,
             environment=RunEnvironment.CLOUDRUN,
             model_version=state.model.model_version,
+            topic_model_version=state.topic_model_version,
             started_at=now,
             ended_at=max(datetime.now(UTC), now),
             reviews=counts.reviews,
@@ -118,7 +133,7 @@ def run_delta(
             cost_usd=round(counts.cost_usd, 6),
             peak_memory_mib=peak_memory_mib(),
         )
-        writer.write("inference_runs", [run], ["run_id"], run_id)
+        write_run(writer, run)
         log.info("delta %s: %s", status.value, counts)
     return run
 
@@ -414,37 +429,38 @@ class _Steps:
             JOIN `${tds}` AS t
               ON t.id_resena = p.id_resena
               AND TO_HEX(SHA256(t.texto_sanitizado)) = p.text_key
+            -- Sin ninguna fila, con cualquier prompt.
             LEFT JOIN `${ds}.review_aspects` AS a
               ON a.id_resena = p.id_resena AND a.text_key = p.text_key
-              AND a.prompt_version = @prompt
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
+            -- Las más recientes primero si hay más que el tope.
+            ORDER BY p.fecha DESC
             LIMIT @limit
             """,
-            prompt=gemini.PROMPT_VERSION,
             limit=self.settings.max_reviews_per_run,
         )
         if not pending:
             return
         keys = sorted({r["text_key"] for r in pending})
+        # La etiqueta más reciente de cada texto, con el prompt que tenga.
         known = {
             r["text_key"]: r
             for r in self._rows(
                 """
                 SELECT text_key, families, flag_update, flag_security,
-                  praise, llm_model
+                  praise, llm_model, prompt_version, guideline_version
                 FROM `${ds}.review_aspects`
-                WHERE prompt_version = @prompt AND text_key IN UNNEST(@keys)
+                WHERE text_key IN UNNEST(@keys)
                 QUALIFY ROW_NUMBER() OVER
                   (PARTITION BY text_key ORDER BY labeled_at DESC) = 1
                 """,
-                prompt=gemini.PROMPT_VERSION,
                 keys=keys,
             )
         }
         texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
         unknown = [(k, texts[k]) for k in keys if k not in known]
-        usage = gemini.Usage()
+        usage = self.settings.gemini_usage()
         prompt = gemini.load_prompt()
         size = self.settings.aspects_batch_size
         for start in range(0, len(unknown), size):
@@ -461,6 +477,8 @@ class _Steps:
                     "flag_security": label.flag_security,
                     "praise": label.praise,
                     "llm_model": self.settings.gemini_model,
+                    "prompt_version": gemini.PROMPT_VERSION,
+                    "guideline_version": gemini.GUIDELINE_VERSION,
                 }
         counts.cost_usd += usage.cost_usd
         rows = [
@@ -473,9 +491,9 @@ class _Steps:
                 flag_update=known[r["text_key"]]["flag_update"],
                 flag_security=known[r["text_key"]]["flag_security"],
                 praise=known[r["text_key"]]["praise"],
-                prompt_version=gemini.PROMPT_VERSION,
+                prompt_version=known[r["text_key"]]["prompt_version"],
                 llm_model=known[r["text_key"]]["llm_model"],
-                guideline_version=gemini.GUIDELINE_VERSION,
+                guideline_version=known[r["text_key"]]["guideline_version"],
                 sentiment_model_version=r["model_version"],
                 run_id=self.run_id,
                 labeled_at=self.now,
@@ -559,8 +577,6 @@ class _Steps:
         )
 
     def topics(self, counts: _Counts) -> None:
-        from voc_nlp.topics import segment
-
         version = self.state.topic_model_version
         if version is None:
             log.warning("sin modelo de tópicos: los tópicos quedan pendientes")
@@ -578,20 +594,90 @@ class _Steps:
               AND a.topic_model_version = @version
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
+              -- Solo lo que llegó por la ingesta: el histórico lo re-asigna
+              -- el backfill de tópicos.
+              AND (p.run_id = @run_id OR p.run_id IN (
+                SELECT run_id FROM `${ds}.inference_runs`
+                WHERE kind = 'delta'))
+            ORDER BY p.fecha DESC
             LIMIT @limit
             """,
             version=version,
+            run_id=self.run_id,
             limit=self.settings.max_reviews_per_run,
         )
-        if not pending:
-            return
-        texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
+        if pending:
+            self._assign_topics(version, pending, counts)
+        self._launch_topic_backfill(version)
+
+    def _segment_vectors(
+        self, texts: dict[str, str]
+    ) -> tuple[list[tuple[str, str]], np.ndarray]:
+        """Cláusulas de cada texto con su vector; calcula y guarda los que
+        faltan en ``segment_embeddings``."""
+        from voc_nlp.topics import EMBEDDING_MODEL, SEGMENTER, segment
+
         segments = {key: segment(text) for key, text in texts.items()}
+        stored: dict[str, dict[int, list[float]]] = {}
+        for r in self._rows(
+            """
+            SELECT text_key, segment_index, embedding
+            FROM `${ds}.segment_embeddings`
+            WHERE text_key IN UNNEST(@keys)
+            """,
+            keys=sorted(texts),
+        ):
+            stored.setdefault(r["text_key"], {})[r["segment_index"]] = r[
+                "embedding"
+            ]
+        # Un texto con otro número de cláusulas guardadas se vuelve a embeber.
+        missing = [
+            (k, i, s)
+            for k, parts in segments.items()
+            if len(stored.get(k, {})) != len(parts)
+            for i, s in enumerate(parts)
+        ]
+        if missing:
+            embedder = self._embedder()
+            vectors = embedder.embed([s for _, _, s in missing])
+            del embedder
+            gc.collect()
+            rows = []
+            for (key, i, _), vec in zip(missing, vectors, strict=True):
+                stored.setdefault(key, {})[i] = [float(x) for x in vec]
+                rows.append(
+                    SegmentEmbedding(
+                        text_key=key,
+                        segment_index=i,
+                        segmenter=SEGMENTER,
+                        embedding_model=EMBEDDING_MODEL,
+                        embedding=stored[key][i],
+                        run_id=self.run_id,
+                        created_at=self.now,
+                    )
+                )
+            self.writer.write(
+                "segment_embeddings",
+                rows,
+                ["text_key", "segment_index"],
+                self.run_id,
+            )
         flat = [(k, s) for k, parts in segments.items() for s in parts]
-        embedder = self._embedder()
-        emb = embedder.embed([s for _, s in flat])
-        del embedder
-        gc.collect()
+        emb = np.array(
+            [
+                stored[k][i]
+                for k, parts in segments.items()
+                for i in range(len(parts))
+            ],
+            dtype=np.float32,
+        )
+        return flat, emb
+
+    def _assign_topics(
+        self, version: str, pending: list[dict[str, Any]], counts: _Counts
+    ) -> None:
+        texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
+        flat, emb = self._segment_vectors(texts)
         assigner = self.clients.engines.topics(
             self._download(artifacts.TOPICS, version)
         )
@@ -619,4 +705,53 @@ class _Steps:
             rows,
             ["id_resena", "text_key", "topic_model_version", "segment_index"],
             self.run_id,
+        )
+
+    def _launch_topic_backfill(self, version: str) -> None:
+        """Lanza el backfill si quedan negativas sin asignar a ``version``."""
+        left = int(
+            self._rows(
+                """
+                SELECT COUNT(*) AS unassigned
+                FROM `${ds}.review_predictions_current` AS p
+                LEFT JOIN `${ds}.topic_assignments` AS a
+                  ON a.id_resena = p.id_resena AND a.text_key = p.text_key
+                  AND a.topic_model_version = @version
+                WHERE p.sentiment = 'NEG' AND p.palabras >= 2
+                  AND a.id_resena IS NULL
+                """,
+                version=version,
+            )[0]["unassigned"]
+        )
+        if not left:
+            return
+        job = self.settings.topics_backfill_job
+        jobs = self.clients.jobs
+        if jobs is None:
+            log.warning(
+                "%d negativas sin tópico de %s: sin lanzador de Jobs",
+                left,
+                version,
+            )
+            return
+        in_progress = running(
+            self.clients.bigquery,
+            self.ds,
+            RunKind.TOPIC_BACKFILL,
+            self.now,
+            timedelta(seconds=self.settings.topics_backfill_timeout_sec),
+            version,
+        )
+        if in_progress:
+            log.info(
+                "%d negativas sin tópico de %s: %s en curso", left, version, job
+            )
+            return
+        operation = jobs.execute(job, ["topics-backfill"])
+        log.info(
+            "%d negativas sin tópico de %s: lanzado %s (%s)",
+            left,
+            version,
+            job,
+            operation,
         )

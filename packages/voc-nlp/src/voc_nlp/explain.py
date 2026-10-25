@@ -1,4 +1,4 @@
-"""Explicación por oclusión ``occlusion_v1`` (``[sentiment]``; 5.7, §4).
+"""Explicación por oclusión ``occlusion_v1`` (extra ``[sentiment]``).
 
 Por cada palabra del texto (separada por espacios) se predice el texto sin
 ella. La atribución es ``p(clase predicha | texto) − p(clase | texto sin la

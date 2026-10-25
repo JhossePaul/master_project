@@ -29,6 +29,7 @@ from voc_common.operations_v3 import (
     KpiEstimate,
     ModelQuality,
     ModelVersion,
+    PromotionCheckResult,
     ReviewExplanation,
 )
 from voc_common.policies import (
@@ -41,6 +42,7 @@ from voc_common.policies import (
 from voc_common.predictions_v3 import (
     ReviewAspects,
     ReviewPrediction,
+    SegmentEmbedding,
     TextEmbedding,
     TopicAssignment,
     TopicCatalogEntry,
@@ -78,6 +80,8 @@ ANALYTICS_V3_TABLES: Mapping[str, type[BaseModel]] = {
     "guidelines": Guideline,
     "gold_versions": GoldVersion,
     "gold_labels": GoldLabel,
+    "promotion_checks": PromotionCheckResult,
+    "segment_embeddings": SegmentEmbedding,
 }
 
 # ``bool`` antes que ``int`` y ``datetime`` antes que ``date``: son subclases.

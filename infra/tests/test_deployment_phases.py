@@ -11,6 +11,7 @@ import yaml
 from pydantic import ValidationError
 
 from infra.modules.cloud_run import WorkloadImages
+from infra.modules.secrets import KAGGLE_SECRET_ID
 from infra.tests.conftest import (
     INGESTION_IMAGE,
     ML_INFERENCE_IMAGE,
@@ -143,9 +144,15 @@ def test_phase_two_with_ml_inference_image(
     names = _names(pulumi_mocks)
     assert_acyclic(pulumi_mocks)
     assert {"voc-ml-inference-delta", "voc-ml-monitor"} <= set(names)
-    assert len(exports["scheduler_job_ids"]) == 4
+    assert len(exports["scheduler_job_ids"]) == 5
     assert exports["ml_delta_job_id"] == "voc-ml-inference-delta-id"
     assert exports["ml_monitor_job_id"] == "voc-ml-monitor-id"
+    assert exports["ml_rescoring_job_id"] == "voc-ml-rescoring-id"
+    assert exports["ml_topics_refit_job_id"] == "voc-ml-topics-refit-id"
+    for job in ("training", "topics_backfill", "aspects_backfill", "promote"):
+        job_name = "voc-ml-" + job.replace("_", "-")
+        assert exports[f"ml_{job}_job_id"] == f"{job_name}-id"
+    assert exports["kaggle_secret_id"] == KAGGLE_SECRET_ID
     assert "bq_predictions_table" not in exports
     assert "bq_hitl_audit_table" not in exports
     assert set(exports["bq_analytics_tables"]) >= {

@@ -20,7 +20,7 @@ from voc_nlp.aspects import (  # noqa: E402
     parse,
 )
 
-EPIC5_PROMPT = (
+EXPERIMENT_PROMPT = (
     Path(__file__).resolve().parents[3]
     / "experiments/analytics/src/voc_analytics/eda/prompts/aspects_v2_1.md"
 )
@@ -65,10 +65,10 @@ def _all_lines(contents: str) -> str:
     return "\n".join(f"{i} AC 0 0 0" for i in range(n))
 
 
-@pytest.mark.skipif(not EPIC5_PROMPT.exists(), reason="sin experiments/")
-def test_prompt_copy_is_identical_to_epic5() -> None:
+@pytest.mark.skipif(not EXPERIMENT_PROMPT.exists(), reason="sin experiments/")
+def test_prompt_copy_is_identical_to_the_experiments() -> None:
     digest = hashlib.sha256(PROMPT_PATH.read_bytes()).hexdigest()
-    assert digest == hashlib.sha256(EPIC5_PROMPT.read_bytes()).hexdigest()
+    assert digest == hashlib.sha256(EXPERIMENT_PROMPT.read_bytes()).hexdigest()
     assert load_prompt().startswith(PROMPT_PATH.read_text()[:20])
 
 

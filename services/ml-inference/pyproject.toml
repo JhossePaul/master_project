@@ -8,7 +8,10 @@ dependencies = [
     "voc-nlp[sentiment,gemini,topics]",
     "google-cloud-bigquery>=3.27,<4",
     "google-cloud-storage>=2.19,<4",
+    "google-cloud-pubsub>=2.23,<3",
     "google-cloud-aiplatform>=1.70,<2",
+    # Re-scoring en la GPU de Kaggle (clave en Secret Manager).
+    "kaggle>=2.2,<3",
     "pydantic-settings>=2.7,<3",
     "pyarrow>=17",
 ]

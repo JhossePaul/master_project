@@ -1,10 +1,11 @@
-"""Cláusulas, embeddings y tópicos congelados (``[topics]``; 5.5 y 5.9).
+"""Cláusulas, embeddings y tópicos congelados (extra ``[topics]``).
 
 Port de ``voc_analytics.topics.units`` (segmentador ``clauses_v0``, aquí
-``clause_segmenter_v1`` por D11), ``voc_analytics.topics.working_set``
+``clause_segmenter_v1``), ``voc_analytics.topics.working_set``
 (MiniLM, 128 tokens, sin normalizar) y ``voc_analytics.incidents.
 backfill_topics.assign`` (UMAP congelado y ``BERTopic.transform``; ``-1`` es
-ruido). El modelo de tópicos ``topics_v1`` es el ``model_v0`` de EPIC-5.
+ruido). El modelo de tópicos ``topics_v1`` es el ``model_v0`` de los
+experimentos.
 """
 
 import pickle  # nosec B403 - solo artefactos propios de ml_artifacts/
@@ -65,7 +66,8 @@ def embed(
     texts: Sequence[str],
     batch_size: int = EMBED_BATCH_SIZE,
 ) -> NDArray[np.float32]:
-    """Embeddings ``(n, 384)`` en float32, sin normalizar (como EPIC-5)."""
+    """Embeddings ``(n, 384)`` en float32, sin normalizar (como en los
+    experimentos)."""
     out = model.encode(
         list(texts),
         batch_size=batch_size,
@@ -114,5 +116,5 @@ def assign(
 
 
 def topics_by_review(topics: Sequence[int]) -> list[int]:
-    """Tópicos distintos de una reseña, ordenados y sin ruido (como 5.9)."""
+    """Tópicos distintos de una reseña, ordenados y sin ruido."""
     return sorted({t for t in topics if t != NOISE_TOPIC})

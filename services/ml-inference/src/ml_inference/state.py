@@ -70,9 +70,9 @@ def load_state(client: Any, dataset: str) -> ServingState:
     ):
         boost = HitlBoost.model_validate(_clean(row, HitlBoost))
         boosts[boost.bank_id] = boost
+    # La versión nueva asigna cuando su curaduría está completa.
     topics = rows(
-        "SELECT topic_model_version FROM `${ds}.topic_model_versions` "
-        "ORDER BY fitted_at DESC LIMIT 1",
+        "SELECT topic_model_version FROM `${ds}.topic_model_current`",
     )
     return ServingState(
         model,

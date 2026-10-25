@@ -144,7 +144,7 @@ def test_compute_and_scheduler_modes(
         assert states[name]["member"] == invoker
     assert all(s.get("member") != "allUsers" for s in states.values())
     schedules = {name: s for name, s in states.items() if "schedule" in s}
-    assert len(schedules) == (2 if free_tier else 6) + (2 if ml else 0)
+    assert len(schedules) == (2 if free_tier else 6) + (3 if ml else 0)
     _check_ml_jobs(pulumi_mocks, states, schedules, ml, free_tier, invoker)
     sanitizer_job = schedules.pop("voc-trigger-sanitization-daily")
     assert sanitizer_job["schedule"] == (
@@ -210,10 +210,17 @@ def _check_ml_jobs(
     invoker: str,
 ) -> None:
     """Jobs de ml-inference y sus triggers; se sacan de ``schedules``."""
-    names = ("voc-ml-inference-delta", "voc-ml-monitor")
+    names = (
+        "voc-ml-inference-delta",
+        "voc-ml-monitor",
+        "voc-ml-rescoring",
+        "voc-ml-topics-refit",
+        *_MANUAL_JOBS,
+    )
     triggers = {
         "voc-ml-inference-delta": "voc-trigger-ml-delta-daily",
         "voc-ml-monitor": "voc-trigger-ml-monitor-weekly",
+        "voc-ml-topics-refit": "voc-trigger-ml-topics-refit-quarterly",
     }
     if not ml:
         assert not set(names) & set(states)
@@ -239,7 +246,11 @@ def _check_ml_jobs(
             "memory": "2Gi",
         }
         env = {e["name"]: e["value"] for e in container["envs"]}
+        assert "KAGGLE_API_TOKEN" not in env
         assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
+        assert env["DRIFT_TOPIC"] == "voc-incident-alerts-topic"
+        assert env["QUALITY_TOPIC"] == "voc-model-quality-topic"
+        assert env["SERVING_IMAGE"] == ML_INFERENCE_IMAGE
         grant = states[f"{name}-scheduler-invoker"]
         assert grant["role"] == "roles/run.invoker"
         assert grant["member"] == invoker
@@ -252,6 +263,111 @@ def _check_ml_jobs(
             by_name[f"{name}-scheduler-invoker"].urn
             in monitor.dependencies[triggers[name]]
         )
+    _check_rescoring(monitor, states, schedules)
+    _check_manual_jobs(monitor, states, schedules)
+    refit = states["voc-ml-topics-refit"]["template"]["template"]
+    assert refit["timeout"] == "3600s" and refit["maxRetries"] == 0
+    container = refit["containers"][0]
+    assert container["args"] == ["topics-refit"]
+    assert container["resources"]["limits"] == {"cpu": "2", "memory": "4Gi"}
+    trigger = schedules.pop(triggers["voc-ml-topics-refit"])
+    assert trigger["schedule"] == f"30 {hour + 3} 2 1,4,7,10 *"
+    assert trigger["httpTarget"]["uri"].endswith(
+        "/jobs/voc-ml-topics-refit:run"
+    )
+    assert states["voc-ml-topics-refit-scheduler-invoker"]["member"] == invoker
+
+
+# Job → (comando, cpu, memoria, timeout, con clave de Kaggle).
+_MANUAL_JOBS = {
+    "voc-ml-training": ("train", "2", "4Gi", "14400s", True),
+    "voc-ml-topics-backfill": ("topics-backfill", "2", "4Gi", "7200s", False),
+    "voc-ml-aspects-backfill": (
+        "aspects-backfill",
+        "1",
+        "2Gi",
+        "21600s",
+        False,
+    ),
+    "voc-ml-promote": ("promote", "1", "2Gi", "1800s", False),
+}
+# Jobs que otros Jobs de ml-inference lanzan con argumentos propios.
+_EXECUTED_BY_ML = {
+    "voc-ml-training",
+    "voc-ml-rescoring",
+    "voc-ml-topics-backfill",
+}
+
+
+def _check_manual_jobs(
+    monitor: InfrastructureMonitor,
+    states: dict[str, Any],
+    schedules: dict[str, Any],
+) -> None:
+    """Reentrenamiento, backfills y promoción: sin Scheduler ni reintentos."""
+    for name, (command, cpu, memory, timeout, kaggle) in _MANUAL_JOBS.items():
+        task = states[name]["template"]["template"]
+        assert task["timeout"] == timeout and task["maxRetries"] == 0, name
+        container = task["containers"][0]
+        assert container["image"] == ML_INFERENCE_IMAGE
+        assert container["args"] == [command]
+        assert container["resources"]["limits"] == {
+            "cpu": cpu,
+            "memory": memory,
+        }
+        envs = {e["name"] for e in container["envs"]}
+        assert ("KAGGLE_API_TOKEN" in envs) is kaggle, name
+        assert "BQ_DATASET_ID" in envs
+        assert f"{name}-scheduler-invoker" not in states
+        assert not any(name.removeprefix("voc-ml-") in s for s in schedules)
+    accessor = next(
+        r.urn
+        for r in monitor.resources.values()
+        if r.urn.endswith("::voc-kaggle-token-ml-backend-accessor")
+    )
+    assert accessor in monitor.dependencies["voc-ml-training"]
+    developers = {
+        name.removesuffix("-ml-backend-developer"): grant
+        for name, grant in states.items()
+        if grant.get("role") == "roles/run.developer"
+    }
+    assert set(developers) == _EXECUTED_BY_ML
+    for name, grant in developers.items():
+        assert grant["name"] == name
+        assert grant["member"] == (
+            "serviceAccount:voc-sa-ml-backend@"
+            "test-voc-project.iam.gserviceaccount.com"
+        )
+
+
+def _check_rescoring(
+    monitor: InfrastructureMonitor,
+    states: dict[str, Any],
+    schedules: dict[str, Any],
+) -> None:
+    """Re-scoring: a mano, sin Scheduler, con la clave de Kaggle."""
+    task = states["voc-ml-rescoring"]["template"]["template"]
+    assert task["timeout"] == "10800s" and task["maxRetries"] == 0
+    container = task["containers"][0]
+    assert container["args"] == ["rescore"]
+    assert container["resources"]["limits"] == {"cpu": "2", "memory": "4Gi"}
+    secret = next(
+        e for e in container["envs"] if e["name"] == "KAGGLE_API_TOKEN"
+    )
+    assert secret["valueSource"] == {
+        "secretKeyRef": {"secret": "voc-kaggle-token", "version": "latest"}
+    }
+    assert "value" not in secret
+    plain = {e["name"] for e in container["envs"] if "value" in e}
+    assert {"BQ_DATASET_ID", "GCS_RAW_DATALAKE_BUCKET"} <= plain
+    assert "voc-ml-rescoring-scheduler-invoker" not in states
+    assert not any("rescor" in name for name in schedules)
+    accessor = next(
+        r.urn
+        for r in monitor.resources.values()
+        if r.urn.endswith("::voc-kaggle-token-ml-backend-accessor")
+    )
+    assert accessor in monitor.dependencies["voc-ml-rescoring"]
 
 
 def test_production_requires_hash_salt() -> None:

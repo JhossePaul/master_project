@@ -8,7 +8,13 @@ import pytest
 from pydantic import BaseModel
 from voc_common.analytics_codes import AspectFamily, SentimentValue
 from voc_common.bq_schema import ANALYTICS_V3_TABLES, bq_schema
-from voc_common.predictions_v3 import ReviewPrediction, TextEmbedding
+from voc_common.operations_v3 import PromotionCheckResult
+from voc_common.policies import RiskPolicy
+from voc_common.predictions_v3 import (
+    ReviewPrediction,
+    SegmentEmbedding,
+    TextEmbedding,
+)
 
 _TYPES = {"STRING", "INT64", "FLOAT64", "BOOL", "TIMESTAMP", "DATE", "JSON"}
 _MODES = {"REQUIRED", "NULLABLE", "REPEATED"}
@@ -90,8 +96,18 @@ def test_every_v3_table_has_a_valid_schema(
     assert len({name for name, _, _ in schema}) == len(schema)
 
 
-def test_registry_covers_the_26_tables_of_schema_v3() -> None:
-    assert len(ANALYTICS_V3_TABLES) == 26
+def test_registry_covers_the_28_tables_of_schema_v3() -> None:
+    assert len(ANALYTICS_V3_TABLES) == 28
+
+
+def test_tables_of_retraining_are_registered() -> None:
+    assert ANALYTICS_V3_TABLES["promotion_checks"] is PromotionCheckResult
+    assert ANALYTICS_V3_TABLES["segment_embeddings"] is SegmentEmbedding
+    assert ("verdict", "STRING", "REQUIRED") in bq_schema(PromotionCheckResult)
+    assert ("embedding", "FLOAT64", "REPEATED") in bq_schema(SegmentEmbedding)
+    assert {"retrain_trigger", "topic_refit_trigger"} <= {
+        name for name, _, mode in bq_schema(RiskPolicy) if mode == "NULLABLE"
+    }
 
 
 class _Color(IntEnum):

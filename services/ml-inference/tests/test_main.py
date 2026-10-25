@@ -7,11 +7,7 @@ import ml_inference.__main__ as cli
 import pytest
 
 ACTOR = "b" * 64
-
-
-def test_monitor_is_a_no_op_until_6_4(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "_clients", lambda s: pytest.fail("no clients"))
-    assert cli.main(["monitor"]) == 0
+JOB = type("Job", (), {})()
 
 
 def test_actor_hash_must_be_sha256() -> None:
@@ -38,6 +34,114 @@ def test_seed_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     assert env["seed"][3:5] == (ACTOR, "inicio")
 
 
+def test_monitor_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
+    import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.kpis as kpis
+    import ml_inference.monitor.quality as quality
+    import ml_inference.monitor.samples as samples
+
+    monkeypatch.setattr(
+        kpis.KpiJob,
+        "run",
+        lambda self, m, n: env.setdefault("kpis", (self.run_id, m)),
+    )
+    monkeypatch.setattr(cli, "_family_labeler", lambda s: "families")
+    monkeypatch.setattr(cli, "_sentiment_labeler", lambda s: "sentiment")
+    monkeypatch.setattr(
+        quality.QualityJob,
+        "run",
+        lambda self, p, m, n: env.setdefault("quality", self),
+    )
+    model = type("M", (), {"model_version": "m1"})()
+    state = type("S", (), {"model": model, "policy": "policy"})()
+    monkeypatch.setattr(cli, "_publisher", lambda s, t: f"publish:{t}")
+    monkeypatch.setattr(
+        cli, "_monitor_state", lambda s, b, g: (state, frozenset({"a"}))
+    )
+    monkeypatch.setattr(
+        drift, "close_boosts", lambda c, n: env.setdefault("close", c)
+    )
+    monkeypatch.setattr(
+        drift, "run_drift", lambda s, c, n: env.setdefault("drift", c)
+    )
+    monkeypatch.setattr(
+        samples.SampleJob,
+        "run",
+        lambda self, p, m, n: env.setdefault("samples", (p, m)),
+    )
+    assert cli.main(["monitor"]) == 0
+    assert env["close"] is env["drift"]
+    assert env["drift"].publish == "publish:voc-incident-alerts-topic"
+    assert env["drift"].run_id.startswith("monitor_")
+    assert env["drift"].source.vocab == frozenset({"a"})
+    assert env["samples"] == ("policy", "m1")
+    assert env["quality"].publish == "publish:voc-model-quality-topic"
+    assert env["quality"].family_labeler == "families"
+    assert env["quality"].sentiment_labeler == "sentiment"
+    assert env["kpis"] == (env["drift"].run_id, "m1")
+
+
+def test_monitor_without_promoted_model_skips_samples(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.monitor.drift_job as drift
+    import ml_inference.monitor.kpis as kpis
+    import ml_inference.monitor.samples as samples
+
+    monkeypatch.setattr(cli, "_publisher", lambda s, t: f"publish:{t}")
+    monkeypatch.setattr(cli, "_monitor_state", lambda s, b, g: (None, None))
+    monkeypatch.setattr(kpis.KpiJob, "run", lambda *a: pytest.fail("no kpis"))
+    monkeypatch.setattr(drift, "close_boosts", lambda c, n: None)
+    monkeypatch.setattr(drift, "run_drift", lambda s, c, n: None)
+    monkeypatch.setattr(
+        samples.SampleJob, "run", lambda *a: pytest.fail("no samples")
+    )
+    assert cli.main(["monitor"]) == 0
+
+
+def test_monitor_state_tolerates_missing_pieces(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.vocab as vocab
+    from ml_inference.config import InferenceSettings
+
+    model = type("M", (), {"model_version": "m1"})()
+    loaded = type("S", (), {"model": model})()
+    monkeypatch.setattr(state, "load_state", lambda b, d: loaded)
+    settings = InferenceSettings()  # type: ignore[call-arg]
+
+    def missing(*a: Any) -> frozenset[str]:
+        raise FileNotFoundError("no vocabulary for m1")
+
+    def no_model(*a: Any) -> Any:
+        raise state.NoPromotedModel("none")
+
+    monkeypatch.setattr(vocab, "load_vocab", lambda s, g, m: frozenset({m}))
+    assert cli._monitor_state(settings, "bq", "gcs") == (
+        loaded,
+        frozenset({"m1"}),
+    )
+    monkeypatch.setattr(vocab, "load_vocab", missing)
+    assert cli._monitor_state(settings, "bq", "gcs") == (loaded, None)
+    monkeypatch.setattr(state, "load_state", no_model)
+    assert cli._monitor_state(settings, "bq", "gcs") == (None, None)
+
+
+def test_build_vocab_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.vocab as vocab
+
+    monkeypatch.setattr(
+        vocab,
+        "build_vocab",
+        lambda s, g, m: env.setdefault("m", m) and (3, "h"),
+    )
+    assert cli.main(["build-vocab"]) == 0
+    assert env["m"] == "robertuito_sentiment_v1"
+
+
 def test_delta_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     import ml_inference.delta as delta
     import voc_nlp.aspects as aspects
@@ -54,6 +158,41 @@ def test_delta_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert cli.main(["delta"]) == 1
     assert env["c"].genai == "genai"
+    assert env["c"].jobs.project == "p"
+    assert env["c"].jobs.region == "us-central1"
+
+
+@pytest.mark.parametrize(
+    ("version", "status", "code"),
+    [("topics_v2", "succeeded", 0), ("topics_v2", "failed", 1), (None, "", 0)],
+)
+def test_topics_backfill_dispatch(
+    env: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    version: str | None,
+    status: str,
+    code: int,
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.topics_backfill as backfill
+
+    monkeypatch.setattr(
+        state,
+        "load_state",
+        lambda b, d: type("S", (), {"topic_model_version": version})(),
+    )
+
+    class _Run:
+        pass
+
+    _Run.status = type("S", (), {"value": status})()
+    monkeypatch.setattr(
+        backfill,
+        "run_topics_backfill",
+        lambda s, b, g, v, n: env.setdefault("v", v) and _Run(),
+    )
+    assert cli.main(["topics-backfill"]) == code
+    assert env.get("v") == version
 
 
 def test_load_local_dispatch(
@@ -90,8 +229,10 @@ def test_register_and_promote_dispatch(
     monkeypatch.setattr(
         registry, "register", lambda *a, **k: env.setdefault("reg", k)
     )
+    import ml_inference.lifecycle as lifecycle
+
     monkeypatch.setattr(
-        registry, "promote", lambda *a, **k: env.setdefault("pro", k)
+        lifecycle, "promote_version", lambda *a, **k: env.setdefault("pro", k)
     )
     assert (
         cli.main(
@@ -132,8 +273,177 @@ def test_register_and_promote_dispatch(
                 ACTOR,
                 "--reason",
                 "r",
+                "--force",
             ]
         )
         == 0
     )
-    assert env["pro"]["model_version"] == "v2"
+    assert env["pro"]["model_version"] == "v2" and env["pro"]["force"]
+
+
+def test_curve_and_risk_policy_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.lifecycle as lifecycle
+    import ml_inference.registry as registry
+
+    versions = {"v1": "model-v1", "v2": "model-v2"}
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: versions)
+    monkeypatch.setattr(registry, "resolve", lambda b, s: "model-v1")
+    monkeypatch.setattr(
+        lifecycle.Lifecycle,
+        "recompute_curve",
+        lambda self, m, n: env.setdefault("curves", []).append(m),
+    )
+    policy = type("P", (), {"policy_version": "p2", "hitl_threshold": 0.7})
+    monkeypatch.setattr(
+        lifecycle.Lifecycle,
+        "set_coverage",
+        lambda self, m, c, a, r, n: (
+            env.setdefault("policy", (m, c, r)) and policy
+        ),
+    )
+    assert cli.main(["curve"]) == 0
+    assert cli.main(["curve", "--model-version", "v2"]) == 0
+    assert env["curves"] == ["model-v1", "model-v2"]
+    args = ["risk-policy", "--coverage", "0.85", "--actor-hash", ACTOR]
+    assert cli.main([*args, "--reason", "menos carga"]) == 0
+    assert env["policy"] == ("model-v1", 0.85, "menos carga")
+
+
+@pytest.mark.parametrize(("status", "code"), [("succeeded", 0), ("failed", 1)])
+def test_rescore_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, status: str, code: int
+) -> None:
+    import ml_inference.registry as registry
+    import ml_inference.rescore as rescore
+
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: {"v2": "m"})
+    monkeypatch.setattr(rescore, "KaggleApiClient", lambda: "kaggle")
+    monkeypatch.setattr(
+        rescore,
+        "new_rescoring",
+        lambda *a: env.setdefault("new", a) and JOB,
+    )
+    row = type("R", (), {"status": type("S", (), {"value": status})()})()
+    monkeypatch.setattr(
+        rescore,
+        "run_rescore",
+        lambda job, writer, timeout, now: (
+            env.setdefault("run", (job, timeout, now())) and row
+        ),
+    )
+    args = ["rescore", "--model-version", "v2", "--run", "r1"]
+    assert cli.main(args) == code
+    assert env["new"][3:] == ("kaggle", "v2", "r1", {"v2": "m"})
+    assert env["run"][:2] == (JOB, 9000)
+
+
+def test_topics_refit_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.topics_refit as refit
+
+    current = type("S", (), {"policy": "p", "topic_model_version": "topics_v1"})
+    monkeypatch.setattr(state, "load_state", lambda b, d: current())
+    monkeypatch.setattr(
+        refit.TopicsRefit,
+        "run",
+        lambda self, p, v, n, force: env.setdefault("refit", (p, v, force)),
+    )
+    assert cli.main(["topics-refit", "--force"]) == 0
+    assert env["refit"] == ("p", "topics_v1", True)
+
+
+def test_aspects_backfill_needs_a_cap_to_approve(env: dict) -> None:
+    with pytest.raises(SystemExit):
+        cli.main(["aspects-backfill", "--approve"])
+
+
+@pytest.mark.parametrize("approve", [False, True])
+def test_aspects_backfill_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, approve: bool
+) -> None:
+    import ml_inference.aspects_backfill as backfill
+    import voc_nlp.aspects as aspects
+
+    monkeypatch.setattr(
+        backfill, "estimate", lambda s, b: env.setdefault("e", b)
+    )
+    monkeypatch.setattr(
+        aspects, "make_client", lambda project, location: "genai"
+    )
+
+    class _Run:
+        status = type("S", (), {"value": "succeeded"})()
+
+    monkeypatch.setattr(
+        backfill,
+        "run_aspects_backfill",
+        lambda s, b, g, cap, n: env.setdefault("run", (g, cap)) and _Run(),
+    )
+    argv = ["aspects-backfill"] + (
+        ["--approve", "--max-usd", "2"] if approve else []
+    )
+    assert cli.main(argv) == 0
+    assert env["e"] == "bq"
+    assert env.get("run") == (("genai", 2.0) if approve else None)
+
+
+@pytest.mark.parametrize("status", ["succeeded", "failed"])
+def test_train_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, status: str
+) -> None:
+    import ml_inference.registry as registry
+    import ml_inference.rescore as rescore
+    import ml_inference.state as state
+    import ml_inference.training as training
+    import voc_nlp.aspects as aspects
+
+    monkeypatch.setattr(
+        aspects, "make_client", lambda project, location: "genai"
+    )
+    monkeypatch.setattr(rescore, "KaggleApiClient", lambda: "kaggle")
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: {"v1": 1})
+    monkeypatch.setattr(
+        state, "load_state", lambda b, d: type("S", (), {"policy": "pol"})()
+    )
+
+    def new(*args: Any) -> Any:
+        env["new"] = args
+        return type("J", (), {})()
+
+    class _Run:
+        pass
+
+    _Run.status = type("S", (), {"value": status})()
+    monkeypatch.setattr(training, "new_training", new)
+    monkeypatch.setattr(
+        training,
+        "run_training",
+        lambda job, w, t, n: env.setdefault("t", t) and _Run(),
+    )
+    argv = ["train", "--run", "r1", "--actor-hash", ACTOR, "--reason", "κ bajo"]
+    assert cli.main(argv) == (0 if status == "succeeded" else 1)
+    _, _, _, kaggle, genai, run, versions, policy, jobs = env["new"]
+    assert (kaggle, genai, run, versions, policy) == (
+        "kaggle",
+        "genai",
+        "r1",
+        {"v1": 1},
+        "pol",
+    )
+    assert jobs.region == "us-central1" and env["t"] == 10800
+
+
+def test_upload_gold_ids_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import ml_inference.load_local as load
+
+    monkeypatch.setattr(
+        load, "upload_gold_ids", lambda s, g, d: env.setdefault("d", d) and 3
+    )
+    assert cli.main(["upload-gold-ids", "--labels", str(tmp_path)]) == 0
+    assert env["d"] == tmp_path

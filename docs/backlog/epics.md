@@ -1,8 +1,8 @@
 # Mapa de Épicas del Proyecto (App Store Label Noise & Incident Analyzer)
 
-El proyecto se divide en **7 épicas técnicas** para construir y desplegar en Google Cloud Platform (GCP) el motor analítico de NLP: medir el sentimiento real del texto separado de las estrellas (*Label Noise Bias*, sesgo de *Obligatory 5-Star*), detectar y priorizar incidencias, y exponerlo con revisión humana (HITL) bajo lineamientos de *Ethics by Design*.
+El proyecto se divide en **8 épicas** para construir y desplegar en Google Cloud Platform (GCP) el motor analítico de NLP: medir el sentimiento real del texto separado de las estrellas (*Label Noise Bias*, sesgo de *Obligatory 5-Star*), detectar y priorizar incidencias, y exponerlo con revisión humana (HITL) bajo lineamientos de *Ethics by Design*.
 
-* **Estado (2026-10-23):** EPIC-1 a EPIC-4 cerradas; EPIC-5 cerrada (2026-10-23); EPIC-6 detallada y pendiente de implementar; EPIC-7 pendiente. Lo que falta decidir antes de montar la infraestructura está en el [registro de decisiones](epic_5.md#decisiones-pendientes).
+* **Estado (2026-10-25):** EPIC-1 a EPIC-5 cerradas; EPIC-6 con el código cerrado y solo la carga y validación en dev abierta (6.6); EPIC-7 pendiente; EPIC-8 es la lista de pendientes técnicos que no bloquean.
 * **Reorganización (2026-10-22):** se agregó EPIC-6 (despliegue del core analítico), que absorbe la antigua fase 3 de EPIC-5 (`epic_5_deployment.md`) y los cambios a los contratos de EPIC-1 y a la infraestructura de EPIC-2. El portal pasó de EPIC-6 a EPIC-7 (features 6.x → 7.x). El cierre de EPIC-1 a EPIC-4, que estaba en `closure_epics_1_4.md`, quedó en la sección [Cierre de las épicas 1 a 4](#cierre-de-las-épicas-1-a-4).
 
 ---
@@ -16,8 +16,9 @@ El proyecto se divide en **7 épicas técnicas** para construir y desplegar en G
 | **EPIC-3** | Ingesta multibanco reanudable desde Google Play (`batchexecute`) | **Cerrada** | `services/ingestion-worker/`, `experiments/playstore/` | [`epic_3.md`](epic_3.md) |
 | **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
 | **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **Cerrada** (2026-10-23) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
-| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **Pendiente** (5.8 aprobada; se detalla al empezar) | `packages/voc-common/`, `infra/`, `services/ml-*/` | [`epic_6.md`](epic_6.md) |
+| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **En curso** (6.1 a 6.5 cerradas; abierta 6.6, carga y validación en dev) | `packages/voc-common/`, `packages/voc-nlp/`, `infra/`, `services/ml-inference/` | [`epic_6.md`](epic_6.md) |
 | **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Pendiente** | `services/api-backend/`, `web/hitl-portal/`, `docs/governance/` | [`epic_7.md`](epic_7.md) |
+| **EPIC-8** | Pendientes técnicos (respaldo en GCS de los insumos locales y otras deudas) | **Abierta** (lista) | — | [`epic_8.md`](epic_8.md) |
 
 Orden: cada épica usa los contratos y recursos de las anteriores. EPIC-6 empieza al aprobarse el registro de decisión de EPIC-5 (5.8), y EPIC-7 lee lo que despliega EPIC-6.
 
@@ -45,7 +46,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-1: Fundamentos del Monorepo, Contratos de Datos v2 (`voc-common`) y Quality Gates
 
-* **Estado:** **Cerrada.** Features 1.1 a 1.8 verificadas localmente con cobertura del 100 % y usadas en producción. Los contratos de predicción se reemplazan en EPIC-6 (6.1).
+* **Estado:** **Cerrada.** Features 1.1 a 1.8 verificadas localmente con cobertura del 100 % y usadas en producción. Los contratos de predicción (`AnalyzedReviewPrediction`, `ABSATopic`, `IncidentAlertMessage`, `HitlTriageAuditRecord`) se reemplazaron en EPIC-6 (6.1); la lista de abajo describe lo que se construyó.
 * **Objetivo Técnico:** Establecer la columna vertebral de tipado, contratos inmutables (`extra="forbid"`, normalización UTC), reducer de estado por página y tubería de integración continua (CI) antes de acoplar servicios o infraestructura.
 * **Alcance y Componentes Implementados:**
   * **Catálogo y Constantes (`constants.py`):** Definición de instituciones (`BBVA`, `NUBANK`, `SANTANDER`, `AZTECA`, `BANORTE`), modos de ingesta (`INCREMENTAL`, `BACKFILL` anual, `FULL_BACKFILL`), tópicos `ABSATopic`, parámetros del protocolo interno `batchexecute` (RPC `oCPfdb`, tamaño inicial de política `199`) y umbrales del EDA 2 a 60 palabras.
@@ -63,7 +64,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC)
 
-* **Estado:** **Cerrada.** Features 2.1 a 2.10; desplegada en el stack `dev` (54 recursos, `pulumi preview` sin cambios). Los recursos de predicción se reemplazan en EPIC-6 (6.2).
+* **Estado:** **Cerrada.** Features 2.1 a 2.10; desplegada en el stack `dev` (54 recursos, `pulumi preview` sin cambios). Los recursos de predicción (`delora_predictions`, `hitl_triage_audit_log`, `vertex_ai.py`) se reemplazaron en EPIC-6 (6.2); la lista de abajo describe lo que se construyó.
 * **Objetivo Técnico:** Codificar en **Pulumi (Python)** el despliegue reproducible, de mínimo privilegio y compatible con **GCP Free Tier** de las 5 capas de la solución.
 * **Alcance y Componentes Implementados:**
   * **Seguridad e IAM (`kms_iam.py`):** 4 *Service Accounts* dedicadas (`voc-sa-ingestion`, `voc-sa-scheduler`, `voc-sa-sanitization`, `voc-sa-ml-backend`) con permisos acotados por recurso (`roles/storage.objectUser` a nivel bucket, `roles/run.jobsExecutorWithOverrides` sobre el Job histórico) y soporte condicional para llaves KMS/CMEK (`enable_cmek`).
@@ -94,7 +95,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-4: Sanitización PII (*Ethics by Design*), Persistencia Idempotente y Cobertura TDS
 
-* **Estado:** **Cerrada.** Features 4.1 a 4.5; desplegada; el replay rápido cargó el histórico y la operación diaria corre sin intervención.
+* **Estado:** **Cerrada.** Features 4.1 a 4.5; desplegada; el replay rápido cargó el histórico y la operación diaria corre sin intervención. El filtro de 2 a 60 palabras se retiró el 2026-10-15: el TDS conserva toda reseña con texto.
 * **Objetivo Técnico:** Desarrollar el pipeline en **Apache Beam** (`services/sanitization-pipeline/`) ejecutable con `DirectRunner` dentro de `voc-sanitization-job` (`DataflowRunner` queda opt-in hasta aprovisionar Dataflow) que drena los sobres `RawReviewEnvelope`, desidentifica PII mediante **Cloud DLP + Regex de segunda barrera**, filtra el umbral de 2 a 60 palabras del EDA, actualiza `bbva_voc_tds.sanitized_reviews_tds` de forma idempotente y emite recibos `ProcessingReceipt` para cerrar la cobertura TDS por página.
 * **Alcance y Componentes:**
   * **Transformación DLP Tabular y *Fail-Closed* (`dlp_transforms.py`):** Empaquetador dual ($\le 250$ filas y $\le 400\text{ KB}$) con *sidecar* posicional para no enviar IDs a DLP, protección de códigos diagnósticos `ref: 3702` mediante nonce, segunda barrera `LocalRegexFallbackSanitizer`, conteo exacto de tokens `[<INFO_TYPE>]` por fila (`pii_findings_count: int`) y política *fail-closed* en producción.
@@ -105,7 +106,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-5: Planteamiento Analítico y Experimentación del Core NLP
 
-* **Estado:** **En curso** (fase 2). Estado por feature y siguientes pasos en [`epic_5.md`](epic_5.md); historia de los resultados en [`docs/analytics/`](../analytics/README.md).
+* **Estado:** **Cerrada** (2026-10-23). Estado por feature en [`epic_5.md`](epic_5.md); historia de los resultados en [`docs/analytics/`](../analytics/README.md).
 * **Objetivo técnico:** decidir con evidencia el pipeline analítico sobre las 2 649 047 reseñas antes de construir el paquete desplegable: sentimiento real separado de las estrellas, temas recurrentes y su evolución, detección de incidentes y priorización.
 * **Alcance:** planteamiento y elegibilidad (5.1), EDA (5.2), etiquetado oro y plata (5.3), competencia de modelos de sentimiento (5.4), tópicos e incidencias (5.5), calibración y HITL (5.6), escala y monitoreo (5.7), registro de decisión (5.8) e incidentes y versiones con la estrategia elegida (5.9).
 
@@ -113,9 +114,9 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado:** **Pendiente de implementar.** Features 6.1 a 6.4 detalladas el 2026-10-23 a partir del registro de decisión de EPIC-5 (5.8).
+* **Estado:** **En curso.** 6.1 a 6.5 cerradas (código, infraestructura y pruebas); abierta 6.6, carga y validación en dev.
 * **Objetivo técnico:** llevar a producción la estrategia de 5.8 con un backfill único y un delta diario.
-* **Alcance:** contratos de predicción v3 en `voc-common` (6.1), tablas de salida y de curaduría en Pulumi (6.2), servicio de inferencia batch con `MERGE` y alertas (6.3), y monitor de *drift* y ciclo de vida de modelos (6.4).
+* **Alcance:** contratos v3 (6.1), tablas y curadurías en Pulumi (6.2), inferencia batch (6.3), monitoreo y ciclo de vida (6.4), reentrenamiento y backfills (6.5), carga y validación en dev (6.6).
 
 ---
 
@@ -124,3 +125,10 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 * **Estado:** **Pendiente** (antes EPIC-6).
 * **Objetivo técnico:** construir la capa de consumo (`services/api-backend/` y `web/hitl-portal/`): *Satisfaction Gap*, búsqueda semántica de causa raíz, explicabilidad local (atribución por oclusión), protocolo HITL, frontales de curaduría y artefactos normativos (*Data Card*, *Model Card*, matriz FMEA).
 * **Alcance (reescrito el 2026-10-22, P8-12):** API (7.1), seguridad y roles (7.2), landing (7.3), reporte de hallazgos (7.4), cockpit diario (7.5), Explorador con búsqueda y XAI (7.6), HITL de sentimiento, aspectos y tópicos (7.7), alertas e incidentes (7.8), MLOps y AIOps (7.9), administración (7.10), documentos de gobernanza (7.11) y pruebas (7.12), con alcance por niveles para la presentación.
+
+---
+
+### EPIC-8: Pendientes técnicos
+
+* **Estado:** **Abierta** como lista (2026-10-25).
+* **Objetivo:** atender las deudas que no bloquean cerrar EPIC-6 ni avanzar en EPIC-7, empezando por respaldar en GCS los insumos locales de EPIC-5 para que la carga no dependa de la máquina del autor ([`epic_8.md`](epic_8.md)).

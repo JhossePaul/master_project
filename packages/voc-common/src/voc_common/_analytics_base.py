@@ -18,7 +18,8 @@ PositiveInt = Annotated[int, Field(ge=1)]
 
 # Tolerancia de la suma de probabilidades y de ``confidence = max(p)``.
 PROBABILITY_TOLERANCE = 1e-6
-# MiniLM (``paraphrase-multilingual-MiniLM-L12-v2``), P8-6.
+# MiniLM (``paraphrase-multilingual-MiniLM-L12-v2``), para la búsqueda
+# semántica.
 EMBEDDING_DIMENSIONS = 384
 ELIGIBILITY_RULES_VERSION = "eligibility_rules_v1"
 

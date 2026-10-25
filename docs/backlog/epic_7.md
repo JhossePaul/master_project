@@ -15,6 +15,22 @@
 
 ---
 
+## 📥 Insumos de EPIC-6
+
+Revisado el 2026-10-25 contra el código. **Lo que EPIC-6 deja listo:** las 28 tablas y 10 vistas del [contrato v3](../contracts/analytics_outputs_v3.md) (con `inference_runs_current` para MLOps y `promotion_checks` para la pantalla de promoción); los Jobs `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote`, `voc-ml-topics-refit` y los backfills, lanzables con argumentos (`train` y `rescore` aceptan `--actor-hash` y `--reason`; `promote` guarda el motivo en `model_versions`); `ml_inference.jobs.CloudRunJobs.execute` para lanzarlos; la `risk_policy` vigente que leen el delta y el monitor en la corrida siguiente; MiniLM en `ml_artifacts/embeddings/` para la búsqueda semántica; los switches `retrain_trigger` y `topic_refit_trigger`.
+
+**Lo que construye EPIC-7** (no bloquea el cierre de EPIC-6):
+
+* la cuenta de servicio de la API (hoy `voc-api-backend` corre como `voc-sa-ml-backend`) y sus permisos: `roles/run.developer` (o `run.jobsExecutorWithOverrides`) sobre `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote` **y `voc-ml-topics-refit`** (el botón de re-ajuste de 7.9), BigQuery y GCS;
+* el quién y el porqué del re-ajuste de tópicos: `topics-refit` no los recibe ni escribe `inference_runs`;
+* la cola HITL de aspectos (7.7): EPIC-6 solo crea casos de sentimiento;
+* la explicación con dirección (`NEG` frente a `POS`) que pide 7.6: `occlusion_v1` mide la caída de la clase predicha;
+* dónde vive la lógica que comparte la API (`point_for`, `propose_risk_policy`, `drift_rates`, `jobs`, el sanitizador de comentarios de `sanitization-pipeline`): hoy en paquetes de servicio con dependencias pesadas;
+* el costo y la duración de la ingesta para AIOps (7.9): `ingestion_runs_log_v2` no los tiene;
+* el uso de `gold_versions` (ningún Job lo lee todavía) y su relación con el oro de PPI y el reentrenamiento, que excluye `monitor_sample`.
+
+---
+
 ## 🎯 Objetivo
 
 Un portal privado que deje a los equipos de CX, producto y gestión de modelos:
@@ -49,7 +65,7 @@ La épica no decide modelos ni umbrales: muestra y configura los que fijaron EPI
 | API, datos y despliegue | Endpoints por sección sobre el esquema v3 | — | 7.1 | Imprescindible (lo que pidan las demás) |
 | Seguridad y acceso | Portal privado con tres roles | — | 7.2 | Imprescindible |
 | Landing y navegación | Menú hacia las secciones, estado de los datos y enlace a gobernanza | Lector | 7.3 | Imprescindible |
-| Reporte de hallazgos | Resultados del análisis por secciones, con submenú | Lector | 7.4 | Imprescindible |
+| Reporte de la tesis | La tesis redactada, por capítulos, con gráficas generadas de los JSON de métricas | Lector | 7.4 | Imprescindible |
 | Cockpit diario | KPIs, *gap* en estrellas, sentimiento y temas, con actualización diaria | Lector | 7.5 | Imprescindible; la pestaña por versión, importante (decisión del autor, 2026-10-22) |
 | Explorador de reseñas | Tabla con *crossfilter*, búsqueda semántica y ficha con XAI | Analista | 7.6 | Importante |
 | HITL | Colas de sentimiento, aspectos y tópicos, con la guía vigente | Revisor | 7.7 | Sentimiento, imprescindible; aspectos y tópicos, deseable |
@@ -115,21 +131,36 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Navegación común:** filtros globales de banco y periodo que se conservan entre secciones, glosario y ayuda contextual en cada métrica.
 * **Página de gobernanza** (deseable): Data Card, Model Card y FMEA de 7.11, con los límites declarados (licencia no comercial de `pysentimiento`, tasa de nombres de F-01, el riesgo del corpus en Kaggle de F-14).
 
-### FEATURE 7.4: Reporte de hallazgos
+### FEATURE 7.4: Reporte de la tesis
 
-**Objetivo:** el informe de los resultados del análisis (EPIC-5), con un submenú por sección. Es una **foto versionada**: se publica por versión (fecha y commit) a partir de los reportes y JSON de `docs/analytics/`, y no cambia con la operación diaria.
+**Objetivo:** la tesis redactada, publicada como sección del portal con un submenú por capítulo. Cuenta una historia en lenguaje humano y académico. **No es una copia de los reportes de `docs/analytics/`:** esos reportes son la evidencia de la experimentación, se conservan como histórico y la tesis los usa como fuente de cifras (aclaración del autor, 2026-10-24). Es una **foto versionada** (fecha y commit) que no cambia con la operación diaria.
 
-* **Secciones propuestas** (siguen la [historia de los resultados](../analytics/README.md)):
-  1. datos y EDA;
-  2. etiquetado (oro y plata);
-  3. competencia de modelos y evaluación en el oro *test*;
-  4. calibración y HITL;
-  5. estimaciones con PPI y *Satisfaction Gap* por banco;
-  6. familias, tópicos y temas por día (con la comparación de ventanas de 5.9 como hallazgo exploratorio);
-  7. escala y monitoreo;
-  8. decisiones y límites.
-* Cada gráfica trae "cómo leerla" e intervalo cuando corresponde. Solo agregados y ejemplos sintéticos, como `docs/`.
-* **Terminado cuando:** el reporte publica la versión vigente de `docs/analytics/` y cada cifra enlaza a su JSON de métricas.
+**Decisiones del autor (2026-10-24):**
+
+* **Estructura de tesis:**
+  1. Introducción.
+  2. Antecedentes.
+  3. Análisis, técnico en el sentido académico:
+     1. metodología;
+     2. resultados, negativos y positivos (Delora descartado, la detección de incidentes que no se alcanzó, la inestabilidad de los tópicos entre semillas, junto con los que funcionaron);
+     3. discusión;
+     4. conclusiones.
+  4. Despliegue y operativización:
+     1. sistema de extracción y sanitización (EPIC-2 a EPIC-4);
+     2. sistema de MLOps y AIOps (EPIC-6 y EPIC-7).
+  5. Referencias.
+* **Aporte:** se reformula, porque el *Incident Analyzer* no se alcanzó (la detección de incidentes quedó fuera del alcance el 2026-10-22). La formulación nueva la fija el autor antes de redactar la introducción.
+* **Gráficas:** se generan de los JSON de métricas de `docs/analytics/`, nunca transcritas, con D3.js (y dygraphs u otra biblioteca donde convenga, por ejemplo para series largas). Cada gráfica trae "cómo leerla" e intervalo cuando corresponde.
+* **Idioma:** español, con los términos técnicos en inglés donde son los de uso común (*gold* y *silver labels*, *temperature scaling*, *coverage*, *drift*…). Un glosario fija cada término una vez.
+* **Datos:** solo resultados analíticos (agregados, métricas, intervalos), como en cualquier artículo científico; nunca datos crudos ni texto de reseñas. Los ejemplos, sintéticos.
+* **Bancos anonimizados:** seudónimo fijo por banco, conservando su color representativo: azul para BBVA, verde para Azteca, rojo para Santander, morado para Nu y negro (u otro color asociado) para Banorte. El mismo seudónimo y color en todo el portal.
+* **Contexto:** la maestría la patrocinó BBVA, que recibe los beneficios del trabajo. Se declara en la introducción.
+* **Referencias:** las de [`references.md`](../governance/references.md), que hay que completar (huecos en su sección 12).
+* **Relación con otras features:** la Model Card y la Data Card de 7.11 citan la tesis; las ayudas de 7.10 pueden enlazar su capítulo.
+
+**Por decidir al detallar la feature:** el aporte reformulado, los seudónimos de los bancos, dónde vive el texto (por ejemplo, Markdown versionado que el portal renderiza) y si se exporta también a PDF para la entrega formal.
+
+* **Terminado cuando:** los cinco capítulos están publicados en el portal, cada cifra y gráfica sale de su JSON de métricas, no aparece ningún banco por su nombre ni ningún texto de reseña, y cada referencia citada está verificada en `references.md`.
 
 ### FEATURE 7.5: Cockpit diario de KPIs
 
@@ -143,7 +174,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 * **Gráficas interactivas:**
   * serie diaria de sentimiento y de *gap* por banco (proporciones crudas, P8-10, rotuladas como tales). Junto a cada día se muestra el top 5 de familias y el top 5 de tópicos útiles de sus negativas, con su participación del día y su participación habitual de los 28 días previos (5.9, P9-4; vista `daily_topic_labels`). Van las dos listas; la forma visual (*hover*, panel lateral al elegir un día u otra) se decide al diseñar 7.5. Se aclara que es una descripción, no un diagnóstico (F-19, asignada a esta épica al cerrar EPIC-5, 2026-10-23, con RPN 84 de partida; se califica al implementar 7.5);
   * KPIs por banco y periodo con PPI e intervalo;
-  * volumen de negativas por familia y marca `u`, en nivel y en anomalía (priorización de 5.6), como descripción y sin alertas;
+  * volumen de negativas por familia y marca `u`, en nivel y en anomalía (priorización de 5.6), como descripción y sin alertas. Las familias no se re-etiquetan al cambiar el prompt (D29 de EPIC-6), así que la gráfica marca la fecha de cada cambio de prompt y el `prompt_version` de cada tramo;
   * tópicos vigentes con su tendencia;
   * matriz 3 × 3 estrellas × texto como desglose del *gap*;
   * comparación entre bancos.
@@ -210,8 +241,16 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * curva de cobertura y riesgo vigente.
   * Todo sale de `model_quality` y `hitl_coverage_curves`.
 * **Familias:** las revalidaciones de P7-11, con acuerdo exacto e IC por familia.
+* **Tópicos (contexto, sin umbral; D34 de EPIC-6):** proporción de cláusulas sin tópico y de negativas con tópicos no alineados a una familia, por banco y mes, junto a las familias y la marca `u`.
 * **Deriva de entrada y de predicción:** `drift_metrics` por banco y mes, con z o PSI contra el umbral de la `drift_policy` del banco.
 * **Registro de modelos:** versión promovida, candidatos, promociones y *rollbacks* (`model_versions`), y *re-scorings* (P7-4).
+* **Acciones sobre el modelo** (decisiones del autor, 2026-10-24; D25 y D26 de [EPIC-6](epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23)):
+  * **Reentrenar:** con `retrain_trigger = manual`, un botón que solo se habilita con el aviso `retrain` vigente y sin otro reentrenamiento en curso; ejecuta el Job de reentrenamiento (Kaggle) y registra quién y por qué;
+  * **Promover:** un botón por candidato con el *re-scoring* verificado; muestra la regla de promoción (diferencias de κ y macro-F1 con su IC) y la curva nueva antes de confirmar, y si la regla no pasa pide confirmación explícita y motivo;
+  * **Rollback:** desde el mismo panel, a una versión que ya estuvo promovida;
+  * **Re-ajustar tópicos:** con `topic_refit_trigger = manual`, un botón que lanza el re-ajuste; la versión nueva se usa cuando el curador revisa sus tópicos (7.7);
+  * para decidir la promoción, junto a la regla se muestran la curva de la temperatura y el diagrama de confiabilidad del candidato (D33);
+  * la API ejecuta los Jobs de EPIC-6 (`jobs.run` de Cloud Run) con permiso solo sobre esos Jobs; las acciones quedan con el actor (hash) y el motivo.
 * **Salud del pipeline (AIOps):**
   * corridas de ingesta e inferencia (estado, duración, filas, costo);
   * frescura de los datos;
@@ -226,7 +265,8 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * la curva de cobertura y riesgo del modelo vigente (`hitl_coverage_curves`), con el punto vigente marcado;
   * para cada cobertura: error esperado entre lo aceptado, errores atrapados, revisiones por semana y minutos estimados con el tiempo medido (`seconds_spent`);
   * la cobertura objetivo (90 % por defecto, 5.6);
-  * los parámetros de reacción a la deriva, de monitoreo y de reentrenamiento (P7-6, P7-7, P7-10 y P7-11).
+  * los parámetros de reacción a la deriva, de monitoreo y de reentrenamiento (P7-6, P7-7, P7-10 y P7-11);
+  * un switch por modelo (D34 de EPIC-6): sentimiento, `auto` o `manual` (`retrain_trigger`), con la advertencia de que en `auto` el texto sale a Kaggle sin aprobación por corrida; tópicos, `scheduled` o `manual` (`topic_refit_trigger`).
   * Muestra también las subidas activas por banco (`hitl_boosts`).
 * **Deriva por banco (`drift_policy`):** umbrales por serie y regla de entrada, con la tasa histórica de alerta que daría cada umbral (5.7) y la diferencia contra la plantilla.
 * **Ayuda en cada parámetro:** qué significa, qué decisión de EPIC-5 lo fijó y qué pasa si se sube o se baja, con la gráfica o la tabla que lo respalda.
@@ -245,6 +285,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
   * límites: licencia no comercial y la brecha de `NEU` frente a Gemini.
 * **FMEA:** filas vigentes, incluidas F-13 a F-15.
 * La lista de límites sale del tema 11 del [registro de decisión](../analytics/decision_record.md).
+* Las tarjetas citan la tesis (7.4) en lugar de repetir su desarrollo.
 * **Terminado cuando:** los tres documentos reflejan lo decidido en EPIC-5 y no queda texto de la especificación anterior (Delora, 0.65, paridad dialectal sintética).
 
 ### FEATURE 7.12: Pruebas y *quality gates*
@@ -264,7 +305,7 @@ Cada feature se detalla (archivos, firmas y pruebas) al empezar la épica.
 ## ✅ Checklist de Aceptación de la Épica 7
 
 * [ ] Portal privado con IAP y tres roles; ningún lector recibe texto de reseñas (7.2).
-* [ ] Landing, reporte versionado y cockpit diario con el *gap* en estrellas y sus intervalos (7.3 a 7.5).
+* [ ] Landing, reporte de la tesis versionado (con los bancos anonimizados) y cockpit diario con el *gap* en estrellas y sus intervalos (7.3 a 7.5).
 * [ ] HITL de sentimiento con la cola visible, la guía vigente y el modo ciego para `monitor_sample`; sin XAI en la pantalla de revisión (7.7).
 * [ ] Configuración de `risk_policy` y `drift_policy` versionada, con su curva y su ayuda, y usada por la siguiente corrida (7.10).
 * [ ] Lo de nivel importante y deseable que entre en el tiempo: Explorador con XAI y búsqueda (7.6), alertas de deriva (7.8), MLOps y AIOps (7.9), pestaña por versión (7.5) y, de nivel deseable, HITL de aspectos y tópicos (7.7).
@@ -534,7 +575,7 @@ Escribir pruebas deterministas que validen:
 
 1. **`test_hitl_validation_hashes_reviewer_email_and_creates_audit_record`**:
 
-* Enviar una decisión humana a `POST /api/v1/hitl/validate` con `reviewer_email="claudia.martinez@bbva.com"`. Comprobar que el `HitlTriageAuditRecord` insertado en `hitl_triage_audit_log` contenga un `reviewer_email_hash` SHA-256 de 64 caracteres, nunca el email en texto plano, y que refleje el cambio de tópico/TNSS validado.
+* Enviar una decisión humana a `POST /api/v1/hitl/validate` con `reviewer_email="revisor@example.com"`. Comprobar que el `HitlTriageAuditRecord` insertado en `hitl_triage_audit_log` contenga un `reviewer_email_hash` SHA-256 de 64 caracteres, nunca el email en texto plano, y que refleje el cambio de tópico/TNSS validado.
 
 
 ### B.7: Frontales de Curaduría HITL (agregado del autor, 2026-10-22)

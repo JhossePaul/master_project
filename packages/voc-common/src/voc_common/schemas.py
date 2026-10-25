@@ -107,7 +107,7 @@ class _StrictModel(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.1: Solicitudes de ingesta y cursor RPC
+# Solicitudes de ingesta y cursor RPC
 # ---------------------------------------------------------------------------
 
 
@@ -149,7 +149,7 @@ class SequentialBatchIngestionRequest(_StrictModel):
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.2: Watermark bidireccional
+# Watermark bidireccional
 # ---------------------------------------------------------------------------
 
 
@@ -264,7 +264,7 @@ class RawReviewEvent(_StrictModel):
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.4: Registro sanitizado (post-DLP, BigQuery TDS)
+# Registro sanitizado (post-DLP, BigQuery TDS)
 # ---------------------------------------------------------------------------
 
 
@@ -343,7 +343,7 @@ class SanitizedReviewRecord(_StrictModel):
         )
 
 
-# Feature 1.6: contratos v2. Reducer y GCS pertenecen a 1.7/EPIC-3.
+# Contratos v2. El reducer y la escritura en GCS viven en sus servicios.
 NonEmpty = Annotated[str, Field(min_length=1)]
 Digest = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 Counter = Annotated[int, Field(ge=0)]
@@ -865,7 +865,7 @@ class SanitizedReviewEnvelope(_ReviewEnvelopeV2):
 
 
 class IngestionRunAudit(_BankStateV2):
-    """Contrato de tabla ingestion_runs_log_v2 (aprovisionamiento en EPIC-2)."""
+    """Contrato de tabla ingestion_runs_log_v2 (la crea ``infra``)."""
 
     audit_event_id: NonEmpty
     run_id: NonEmpty

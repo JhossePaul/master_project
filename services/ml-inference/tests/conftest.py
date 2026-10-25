@@ -37,7 +37,9 @@ class FakeJob:
     errors: Any = None
     job_id: str = "job"
 
-    def result(self, timeout: float | None = None) -> list[Any]:
+    def result(
+        self, timeout: float | None = None, page_size: int | None = None
+    ) -> list[Any]:
         return [_Row(r) for r in self.rows]
 
 
@@ -146,7 +148,10 @@ class FakeBigQuery:
                 "text_key": p["text_key"],
                 "fecha": p["fecha"],
                 "model_version": p["model_version"],
-                "texto_sanitizado": texts[p["id_resena"]]["texto_sanitizado"],
+                "run_id": p.get("run_id"),
+                "texto_sanitizado": texts.get(p["id_resena"], {}).get(
+                    "texto_sanitizado"
+                ),
             }
             for p in self._current()
             if p["sentiment"] == "NEG"
@@ -154,7 +159,64 @@ class FakeBigQuery:
             and (p["id_resena"], p["text_key"]) not in done
         ]
 
+    def _aspects_backfill(self, sql: str, params: dict[str, Any]) -> list[dict]:
+        done = {
+            (a["id_resena"], a["text_key"])
+            for a in self.rows("review_aspects")
+            if a["prompt_version"] == params["prompt"]
+        }
+        pending = [
+            r
+            for r in self._topic_pending(
+                "review_aspects", "prompt_version", None
+            )
+            if (r["id_resena"], r["text_key"]) not in done
+        ]
+        if "-- Textos sin familias" in sql:
+            return [{"texts": len({r["text_key"] for r in pending})}]
+        keys = sorted(
+            {r["text_key"] for r in pending if r["text_key"] > params["after"]}
+        )
+        keys = set(keys[: params["limit"]])
+        return sorted(
+            (r for r in pending if r["text_key"] in keys),
+            key=lambda r: r["text_key"],
+        )
+
+    def _topics_backfill(self, sql: str, params: dict[str, Any]) -> list[dict]:
+        pending = self._topic_pending(
+            "topic_assignments", "topic_model_version", params["version"]
+        )
+        stored = self.rows("segment_embeddings")
+        if "-- Textos pendientes sin vectores" in sql:
+            with_vectors = {e["text_key"] for e in stored}
+            out = {
+                p["text_key"]: {
+                    "text_key": p["text_key"],
+                    "texto_sanitizado": p["texto_sanitizado"],
+                }
+                for p in pending
+                if p["text_key"] not in with_vectors
+                and p["texto_sanitizado"] is not None
+            }
+            return list(out.values())
+        if "-- Vectores de las cláusulas pendientes" in sql:
+            keys = {p["text_key"] for p in pending}
+            return sorted(
+                (e for e in stored if e["text_key"] in keys),
+                key=lambda e: (e["text_key"], e["segment_index"]),
+            )
+        if "-- Reseñas pendientes de un lote" in sql:
+            return [p for p in pending if p["text_key"] in params["keys"]]
+        if "-- Reseñas que siguen pendientes" in sql:
+            return [{"left_reviews": len(pending)}]
+        raise AssertionError(f"unexpected query: {sql[:120]}")
+
     def _select(self, sql: str, params: dict[str, Any]) -> list[dict]:
+        if "-- " in sql and "sin familias del prompt vigente" in sql:
+            return self._aspects_backfill(sql, params)
+        if "-- " in sql and "WITH pending AS" in sql:
+            return self._topics_backfill(sql, params)
         if ".model_versions`" in sql:
             return list(self.rows("model_versions"))
         if "risk_policy_current" in sql:
@@ -165,7 +227,7 @@ class FakeBigQuery:
             return [
                 b for b in self.rows("hitl_boosts") if not b["ended_reason"]
             ]
-        if "FROM `" + DATASET + ".topic_model_versions`" in sql:
+        if "FROM `" + DATASET + ".topic_model_current`" in sql:
             return list(self.rows("topic_model_versions"))[-1:]
         if "COUNT(*) AS n" in sql:
             week = _iso(params["week_start"])
@@ -193,9 +255,18 @@ class FakeBigQuery:
                 : params["limit"]
             ]
         if "review_aspects` AS a" in sql:
-            return self._topic_pending(
-                "review_aspects", "prompt_version", params["prompt"]
-            )[: params["limit"]]
+            # Cualquier fila, con cualquier prompt, deja la reseña fuera.
+            labeled = {
+                (a["id_resena"], a["text_key"])
+                for a in self.rows("review_aspects")
+            }
+            return [
+                r
+                for r in self._topic_pending(
+                    "review_aspects", "prompt_version", None
+                )
+                if (r["id_resena"], r["text_key"]) not in labeled
+            ][: params["limit"]]
         if "FROM `" + DATASET + ".review_aspects`" in sql:
             latest: dict[str, dict] = {}
             for a in self.rows("review_aspects"):
@@ -233,10 +304,49 @@ class FakeBigQuery:
                         },
                     )
             return list(seen.values())
-        if "topic_assignments` AS a" in sql:
-            return self._topic_pending(
+        if "AS running" in sql:
+            runs = self.rows("inference_runs")
+            closed = {r["run_id"] for r in runs if r["status"] != "running"}
+            since = _iso(params["since"])
+            return [
+                {
+                    "running": sum(
+                        r["kind"] == params["kind"]
+                        and r["status"] == "running"
+                        and _iso(r["started_at"]) >= since
+                        and params["version"]
+                        in (None, r.get("topic_model_version"))
+                        and r["run_id"] not in closed
+                        for r in runs
+                    )
+                }
+            ]
+        if "AS unassigned" in sql:
+            pending = self._topic_pending(
                 "topic_assignments", "topic_model_version", params["version"]
-            )[: params["limit"]]
+            )
+            return [{"unassigned": len(pending)}]
+        if "FROM `" + DATASET + ".segment_embeddings`" in sql:
+            return [
+                e
+                for e in self.rows("segment_embeddings")
+                if e["text_key"] in params["keys"]
+            ]
+        if "topic_assignments` AS a" in sql:
+            delta_runs = {
+                r["run_id"]
+                for r in self.rows("inference_runs")
+                if r["kind"] == "delta"
+            } | {params["run_id"]}
+            return [
+                r
+                for r in self._topic_pending(
+                    "topic_assignments",
+                    "topic_model_version",
+                    params["version"],
+                )
+                if r["run_id"] in delta_runs
+            ][: params["limit"]]
         raise AssertionError(f"unexpected query: {sql[:120]}")
 
 
@@ -293,21 +403,51 @@ class FakeTopics:
         return [3 if "pero" not in s else -1 for s in segments]
 
 
+class FakeJobs:
+    """Registra las ejecuciones (no las corre)."""
+
+    def __init__(self) -> None:
+        self.executed: list[tuple[str, list[str]]] = []
+
+    def execute(self, job: str, args: Sequence[str]) -> str:
+        self.executed.append((job, list(args)))
+        return f"operations/{job}-{len(self.executed)}"
+
+
 class FakeGemini:
     """Responde todas las líneas salvo las de textos con ``omitir``."""
 
     def __init__(self) -> None:
         self.models = self
         self.calls = 0
+        self.sent: list[str] = []
+        # Tokens de entrada por llamada (sin ellos, el costo es 0).
+        self.prompt_tokens: int | None = None
 
     def generate_content(self, *, model: str, contents: str, config: Any):
         self.calls += 1
+        self.sent.extend(
+            line.split(chr(9), 1)[1] for line in contents.splitlines()
+        )
         lines = [
             f"{line.split(chr(9))[0]} AC 1 0 0"
             for line in contents.splitlines()
             if "omitir" not in line
         ]
-        return type("R", (), {"text": "\n".join(lines), "usage_metadata": None})
+        meta = (
+            None
+            if self.prompt_tokens is None
+            else type(
+                "U",
+                (),
+                {
+                    "prompt_token_count": self.prompt_tokens,
+                    "candidates_token_count": 0,
+                    "thoughts_token_count": 0,
+                },
+            )()
+        )
+        return type("R", (), {"text": "\n".join(lines), "usage_metadata": meta})
 
 
 @dataclass
@@ -318,6 +458,7 @@ class World:
     embedder: FakeEmbedder
     gemini: FakeGemini
     clients: Clients
+    jobs: FakeJobs
     settings: InferenceSettings
     lexicon: Lexicon = LEXICON
     now: datetime = NOW
@@ -335,6 +476,7 @@ class World:
 def world(tmp_path: Path) -> World:
     bq = FakeBigQuery()
     sentiment, embedder, gemini = FakeSentiment(), FakeEmbedder(), FakeGemini()
+    jobs = FakeJobs()
     clients = Clients(
         bigquery=bq,
         storage=FakeStorage(),
@@ -344,6 +486,7 @@ def world(tmp_path: Path) -> World:
             embedder=lambda path: embedder,
             topics=lambda path: FakeTopics(),
         ),
+        jobs=jobs,
     )
     settings = InferenceSettings(
         gcp_project_id=PROJECT,
@@ -352,7 +495,14 @@ def world(tmp_path: Path) -> World:
     )
     seed_world(bq)
     return World(
-        bq, clients.storage, sentiment, embedder, gemini, clients, settings
+        bq,
+        clients.storage,
+        sentiment,
+        embedder,
+        gemini,
+        clients,
+        jobs,
+        settings,
     )
 
 
@@ -444,3 +594,8 @@ def seed_world(bq: FakeBigQuery) -> None:
     bq.rows("topic_model_versions").append(
         {"topic_model_version": "topics_v1", "fitted_at": NOW}
     )
+
+
+@pytest.fixture
+def fake_bq() -> FakeBigQuery:
+    return FakeBigQuery()

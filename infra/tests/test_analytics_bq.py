@@ -94,10 +94,12 @@ def test_monthly_partitions_and_clustering(
         ("drift_metrics", "period", ["bank_id"]),
         ("hitl_items", "created_at", ["bank_id", "task"]),
         ("hitl_reviews", "submitted_at", ["task"]),
+        ("promotion_checks", None, []),
+        ("segment_embeddings", None, ["text_key"]),
     ],
 )
 def test_layout_matches_the_backlog(
-    table: str, partition: str, clustering: list[str]
+    table: str, partition: str | None, clustering: list[str]
 ) -> None:
     layout = TABLE_LAYOUTS[table]
     assert (layout.partition, list(layout.clustering)) == (
@@ -210,9 +212,24 @@ def test_daily_topic_labels_keeps_the_rules_of_5_9() -> None:
     assert view_references("daily_topic_labels") == (
         "review_predictions_current",
         "review_aspects",
-        "topic_model_versions",
+        "topic_model_current",
         "curation_topics",
         "topic_assignments",
+    )
+
+
+def test_topic_model_current_waits_for_the_curation() -> None:
+    sql = view_sql("topic_model_current")
+    assert view_references("topic_model_current") == (
+        "topic_catalog",
+        "curation_topics",
+        "topic_model_versions",
+    )
+    assert "c.previous_topic_id IS NOT NULL AND k.topic_id IS NULL" in sql
+    assert "ORDER BY v.fitted_at DESC" in sql
+    # Se crea antes que la vista diaria, que la lee.
+    assert VIEWS.index("topic_model_current") < VIEWS.index(
+        "daily_topic_labels"
     )
 
 

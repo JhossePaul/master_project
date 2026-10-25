@@ -73,3 +73,30 @@ def test_artifacts_round_trip(tmp_path: Path) -> None:
         artifacts.download_prefix(_Storage(), "b", "p/vacio/", tmp_path / "e")
     with pytest.raises(FileNotFoundError):
         artifacts.upload_dir(_Storage(), "b", tmp_path / "nada", "p/")  # type: ignore[arg-type]
+
+
+def test_gemini_cost_uses_the_configured_price() -> None:
+    from ml_inference.config import InferenceSettings
+
+    settings = InferenceSettings(
+        gcp_project_id="p",
+        gcs_raw_datalake_bucket="b",
+        gemini_price_in=1.5,
+        gemini_price_out=6.0,
+    )
+    usage = settings.gemini_usage()
+    usage.prompt, usage.output, usage.thoughts = 1_000_000, 500_000, 500_000
+    assert usage.cost_usd == 1.5 + 6.0
+
+
+def test_gold_period_continues_after_2026() -> None:
+    from ml_inference.lifecycle import gold_period
+
+    assert [gold_period(y) for y in (2019, 2021, 2024, 2026, 2027, 2030)] == [
+        "<=2019",
+        "2020-2022",
+        "2023-2024",
+        "2025-2026",
+        "2027-2028",
+        "2029-2030",
+    ]

@@ -60,6 +60,9 @@ TABLE_LAYOUTS: Final[Mapping[str, TableLayout]] = {
     "guidelines": TableLayout(),
     "gold_versions": TableLayout(),
     "gold_labels": TableLayout(),
+    "promotion_checks": TableLayout(),
+    # Vectores de las cláusulas: se leen por texto (los pendientes de tópico).
+    "segment_embeddings": TableLayout(None, ("text_key",)),
 }
 
 # Orden de creación: una vista puede leer las de arriba.
@@ -71,7 +74,9 @@ VIEWS: Final[tuple[str, ...]] = (
     "hitl_queue",
     "drift_alerts_current",
     "eligibility_counts",
+    "topic_model_current",
     "daily_topic_labels",
+    "inference_runs_current",
 )
 
 _REFERENCE = re.compile(r"`\{project\}\.\{dataset\}\.([a-z0-9_]+)`")
@@ -101,7 +106,7 @@ def create_analytics_bq(
     *,
     deps: list[pulumi.Resource] | None = None,
 ) -> AnalyticsBqResources:
-    """Crea las 26 tablas v3 y sus vistas en el dataset del TDS.
+    """Crea las 28 tablas v3 y sus vistas en el dataset del TDS.
 
     ``deps`` son las APIs y, con CMEK, el permiso del agente de BigQuery.
     """

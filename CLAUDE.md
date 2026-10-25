@@ -74,4 +74,5 @@ El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/
 * **Proyectos uv:**
   * el workspace de la raíz es producción;
   * `experiments/analytics` es un proyecto uv aparte, con su propio `pyproject.toml`, `uv.lock` y Python 3.11. Sus scripts se corren desde esa carpeta como módulos (`uv run python -m voc_analytics.<etapa>.<script>`), y la app de Streamlit con `uv run streamlit run src/voc_analytics/annotation/app.py`.
+* **Lenguaje común** (decisión del autor, 2026-10-24): el código, sus docstrings, los nombres de contratos (señales, columnas, enums) y los documentos fuera de `docs/backlog/` describen las cosas con palabras, sin citar códigos del backlog (`M4`, `P7-10`, `D12`, `F-01`, "5.7 §2"). El modelo de sentimiento es "RoBERTuito ajustado con la plata de Gemini", no "M4". Si importa la evidencia, se enlaza el reporte de `docs/analytics/` y se dice qué mostró. Los códigos se quedan en el backlog.
 * **Decisiones:** los parámetros son decisiones metodológicas del autor; no hay dueño de negocio. Las decisiones se documentan en el reporte de la feature con su criterio.

@@ -1,4 +1,4 @@
-"""Pruebas del catálogo de constantes de voc-common (Feature 1.1)."""
+"""Pruebas del catálogo de constantes de voc-common."""
 
 import json
 

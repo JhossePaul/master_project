@@ -2,7 +2,7 @@
 
 Una clase por tabla de ``bbva_voc_tds`` más el mensaje de Pub/Sub de las
 alertas de deriva (``DriftAlertMessage``), que reemplaza a la alerta de
-incidentes de EPIC-1 y no lleva texto ni PII.
+incidentes del primer diseño y no lleva texto ni PII.
 """
 
 from typing import Literal, Self
@@ -14,6 +14,7 @@ from voc_common._analytics_base import (
     Digest,
     MonthDate,
     NonEmpty,
+    PositiveInt,
     UtcDatetime,
     _AnalyticsRecord,
     require_together,
@@ -26,6 +27,7 @@ from voc_common.analytics_codes import (
     HitlTask,
     KpiMethod,
     ModelStatus,
+    PromotionVerdict,
     QualitySignal,
     QualityStatus,
     RunEnvironment,
@@ -39,7 +41,7 @@ class ModelVersion(_AnalyticsRecord):
     """Fila de ``model_versions``; cada cambio de estado es una fila nueva."""
 
     model_version: NonEmpty
-    # Vertex Model Registry o GCS (P7-3).
+    # Vertex Model Registry o GCS.
     registry_uri: NonEmpty
     base_checkpoint: NonEmpty
     training_data: NonEmpty
@@ -53,6 +55,8 @@ class ModelVersion(_AnalyticsRecord):
     status: ModelStatus
     promoted_at: UtcDatetime | None = None
     promoted_by_hash: Digest | None = None
+    # Motivo del cambio de estado (promoción, rollback o promoción forzada).
+    reason: str | None = None
     # Orden de las filas de una misma versión (la vigente es la última).
     recorded_at: UtcDatetime
 
@@ -71,23 +75,33 @@ class ModelVersion(_AnalyticsRecord):
 
 
 class InferenceRun(_AnalyticsRecord):
-    """Fila de ``inference_runs``: una corrida terminada."""
+    """Fila de ``inference_runs``: el inicio (``running``) o el cierre de una
+    corrida. Clave: ``run_id`` y ``status``."""
 
     run_id: NonEmpty
     kind: RunKind
     environment: RunEnvironment
     model_version: NonEmpty | None
+    # Versión de tópicos con que corrió (delta y backfill de tópicos).
+    topic_model_version: NonEmpty | None = None
     started_at: UtcDatetime
-    ended_at: UtcDatetime
+    # Nulo solo en la fila de inicio.
+    ended_at: UtcDatetime | None
     reviews: Counter
     texts: Counter
     status: RunStatus
     cost_usd: float | None = None
     peak_memory_mib: Counter | None = None
+    # Quién la lanzó a mano y por qué (botones de MLOps o la CLI); nulos en
+    # las corridas programadas.
+    actor_hash: Digest | None = None
+    reason: str | None = None
 
     @model_validator(mode="after")
     def _times(self) -> Self:
-        if self.ended_at < self.started_at:
+        if (self.ended_at is None) != (self.status is RunStatus.RUNNING):
+            raise ValueError("only a running row has no ended_at")
+        if self.ended_at is not None and self.ended_at < self.started_at:
             raise ValueError("ended_at must not precede started_at")
         if self.cost_usd is not None and self.cost_usd < 0:
             raise ValueError("cost_usd must not be negative")
@@ -104,7 +118,7 @@ class DriftMetric(_AnalyticsRecord):
     baseline: float | None = None
     z: float | None = None
     psi: float | None = None
-    # Nulo = serie de contexto que nunca alerta (familias y ``u``, D8).
+    # Nulo = serie de contexto que nunca alerta (familias y ``u``).
     threshold: float | None = None
     alert: bool
     drift_policy_version: NonEmpty
@@ -142,7 +156,7 @@ class DriftAlertEvent(_AnalyticsRecord):
     # Nulo = el monitor (``open``); las personas se guardan como hash.
     actor_hash: Digest | None = None
     at: UtcDatetime
-    # Sanitizada antes de guardarse (FMEA F-21).
+    # Sanitizada antes de guardarse: puede traer datos personales.
     note: str | None = None
     ticket: str | None = None
 
@@ -221,7 +235,7 @@ class TokenAttribution(_AnalyticsRecord):
 
 
 class ReviewExplanation(_AnalyticsRecord):
-    """Fila de ``review_explanations``: texto × versión de modelo (P8-8)."""
+    """Fila de ``review_explanations``: texto × versión de modelo."""
 
     text_key: Digest
     model_version: NonEmpty
@@ -232,7 +246,7 @@ class ReviewExplanation(_AnalyticsRecord):
 
 
 class ModelQuality(_AnalyticsRecord):
-    """Fila de ``model_quality``: modelo × periodo × señal (P7-10, P7-11)."""
+    """Fila de ``model_quality``: modelo × periodo × señal."""
 
     model_version: NonEmpty | None = None
     llm_model: NonEmpty | None = None
@@ -261,8 +275,85 @@ class ModelQuality(_AnalyticsRecord):
         return self
 
 
+class ModelQualityMessage(_AnalyticsRecord):
+    """Payload de ``voc-model-quality-topic``; sin texto ni PII.
+
+    Solo se publican los avisos (``warning``, ``retrain``, ``rejected``); no
+    disparan nada solos: los revisa quien opera el modelo.
+    """
+
+    signal: QualitySignal
+    status: QualityStatus
+    model_version: NonEmpty | None = None
+    llm_model: NonEmpty | None = None
+    prompt_version: NonEmpty | None = None
+    period: NonEmpty
+    value: float
+    threshold: float | None = None
+    n: Counter
+    risk_policy_version: NonEmpty | None = None
+    computed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _notice(self) -> Self:
+        if self.status is QualityStatus.OK:
+            raise ValueError("only warnings are published")
+        return self
+
+    @classmethod
+    def from_quality(cls, row: "ModelQuality") -> "ModelQualityMessage":
+        return cls.model_validate(row.model_dump(exclude={"ci_low", "ci_high"}))
+
+
+class PromotionCheckResult(_AnalyticsRecord):
+    """Fila de ``promotion_checks``: la regla de promoción de un candidato.
+
+    Diferencias pareadas candidato − vigente en el oro *dev*, ponderadas por
+    1/π, con su IC del 95 % por *bootstrap*. Se guarda al verificar el
+    *re-scoring* del candidato, para que la pantalla de promoción la muestre
+    sin recalcularla. El veredicto sigue la regla: peor si algún IC queda
+    entero bajo 0; mejor si alguno queda entero sobre 0; si no, empate.
+    """
+
+    candidate_version: NonEmpty
+    current_version: NonEmpty
+    gold_version: NonEmpty
+    n: PositiveInt
+    kappa_diff: float
+    kappa_ci_low: float
+    kappa_ci_high: float
+    macro_f1_diff: float
+    macro_f1_ci_low: float
+    macro_f1_ci_high: float
+    verdict: PromotionVerdict
+    run_id: NonEmpty
+    computed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _rule(self) -> Self:
+        if self.candidate_version == self.current_version:
+            raise ValueError("candidate must differ from the current version")
+        intervals = (
+            (self.kappa_ci_low, self.kappa_diff, self.kappa_ci_high),
+            (self.macro_f1_ci_low, self.macro_f1_diff, self.macro_f1_ci_high),
+        )
+        if any(not low <= diff <= high for low, diff, high in intervals):
+            raise ValueError("each difference must lie inside its interval")
+        if any(high < 0 for _, _, high in intervals):
+            expected = PromotionVerdict.WORSE
+        elif any(low > 0 for low, _, _ in intervals):
+            expected = PromotionVerdict.BETTER
+        else:
+            expected = PromotionVerdict.TIE
+        if self.verdict is not expected:
+            raise ValueError(
+                f"verdict must be {expected.value} for these intervals"
+            )
+        return self
+
+
 class GoldLabel(_AnalyticsRecord):
-    """Fila de ``gold_labels`` (D10): oro *dev* y ``aspects_gold_v2_1``.
+    """Fila de ``gold_labels``: oro *dev* y ``aspects_gold_v2_1``.
 
     El oro *dev* aleatorio es una muestra estratificada: ``weight`` (1/π) da
     cifras poblacionales en la curva HITL y en PPI. El oro de aspectos es por

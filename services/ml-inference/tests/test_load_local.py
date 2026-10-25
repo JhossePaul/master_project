@@ -57,6 +57,7 @@ class LoadBigQuery:
             p.name: getattr(p, "value", getattr(p, "values", None))
             for p in getattr(job_config, "query_parameters", []) or []
         }
+        assert "${" not in sql, "consulta con una plantilla sin sustituir"
         if sql.startswith("SELECT id_resena, bank_id, fecha, texto_limpio"):
             return _Job(self.tds)
         if ".model_versions`" in sql and sql.lstrip().startswith("SELECT"):
@@ -163,6 +164,10 @@ def _files(tmp_path: Path) -> LocalBackfill:
             }
         ),
         run / "topics" / "segment_topics_v0.parquet",
+    )
+    np.save(
+        run / "topics" / "emb_segments_minilm.npy",
+        np.full((2, 384), 0.25, np.float32),
     )
     (model / "umap.pkl").write_bytes(b"x")
     (model / "bertopic").write_bytes(b"x")
@@ -330,7 +335,7 @@ def test_uploads_artifacts_and_staging_without_text(tmp_path: Path) -> None:
 def test_merge_parameters_and_runs(tmp_path: Path) -> None:
     bq, _, runs = _run(tmp_path)
     sqls = [sql for sql, _ in bq.dml]
-    assert len(sqls) == 4
+    assert len(sqls) == 5
     preds = bq.dml[0][1]
     assert preds["t"] == pytest.approx(1.6811)
     assert preds["threshold"] is None and preds["policy_version"] is None
@@ -415,3 +420,84 @@ def test_embeddings_must_match_keys(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="differ"):
         loader.embeddings_file()
+
+
+def test_segment_embeddings_come_from_the_backfill_vectors(
+    tmp_path: Path,
+) -> None:
+    bq, _, _ = _run(tmp_path)
+    staged = next(t for n, t in bq.loaded.items() if "segment_embeddings" in n)
+    assert staged.column_names == ["text_key", "segment_index", "embedding"]
+    assert staged.column("segment_index").to_pylist() == [0, 1]
+    assert len(staged.column("embedding")[0]) == 384
+    sql, params = next(
+        (q, p) for q, p in bq.dml if ".segment_embeddings` T" in q
+    )
+    assert "T.segment_index = S.segment_index" in sql
+    assert params["segmenter"] == "clause_segmenter_v1"
+    assert params["model"].endswith("MiniLM-L12-v2")
+
+
+def test_segment_vectors_must_match_segments(tmp_path: Path) -> None:
+    files = _files(tmp_path)
+    np.save(
+        files.run_dir / "topics" / "emb_segments_minilm.npy",
+        np.ones((3, 384), np.float32),
+    )
+    loader = Loader(
+        _settings(),
+        LoadBigQuery([], _state()),
+        FakeStorage(),
+        files,
+        tmp_path,
+        ACTOR,
+        NOW,
+    )
+    with pytest.raises(ValueError, match="differ"):
+        loader.segment_embeddings_file()
+
+
+def test_without_segment_vectors_nothing_is_loaded(tmp_path: Path) -> None:
+    files = _files(tmp_path)
+    (files.run_dir / "topics" / "emb_segments_minilm.npy").unlink()
+    bq = LoadBigQuery([], _state())
+    loader = Loader(_settings(), bq, FakeStorage(), files, tmp_path, ACTOR, NOW)
+    assert loader.segment_embeddings() == 0
+    assert bq.loaded == {} and bq.dml == []
+
+
+def test_gold_ids_have_no_text_nor_labels(tmp_path: Path) -> None:
+    from ml_inference.load_local import gold_ids_table, upload_gold_ids
+
+    for queue, ids in (("gold_v0", ["r1", "r2"]), ("gold_v1", ["r2", "r3"])):
+        (tmp_path / queue).mkdir()
+        pq.write_table(
+            pa.table(
+                {
+                    "id_resena": ids,
+                    "texto_sanitizado": [f"texto {i}" for i in ids],
+                    "gemini_s": ["NEG"] * len(ids),
+                }
+            ),
+            tmp_path / queue / "queue.parquet",
+        )
+    table = gold_ids_table(tmp_path)
+    assert table.column_names == ["id_resena", "text_key"]
+    assert sorted(table["id_resena"].to_pylist()) == ["r1", "r2", "r3"]
+    uploaded: dict[str, bytes] = {}
+
+    class _Blob:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def upload_from_string(self, data: bytes, **_: Any) -> None:
+            uploaded[self.name] = data
+
+    class _Storage:
+        def bucket(self, name: str) -> Any:
+            return type("B", (), {"blob": lambda self, n: _Blob(n)})()
+
+    assert upload_gold_ids(_settings(), _Storage(), tmp_path) == 3
+    assert list(uploaded) == ["archive/epic5/labels/silver_v0/gold_ids.parquet"]
+    with pytest.raises(FileNotFoundError):
+        gold_ids_table(tmp_path / "vacio")
