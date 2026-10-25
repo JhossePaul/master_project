@@ -1,0 +1,13 @@
+{
+  "item_id": "item-0001",
+  "id_resena": "synthetic-0001",
+  "bank_id": "BBVA",
+  "task": "sentiment",
+  "reason": "monitor_sample",
+  "display_mode": "blind",
+  "model_version": "M4_robertuito_s1_ppi",
+  "risk_policy_version": "risk_policy_v1",
+  "predicted": {"label": "NEG", "p_neg": 0.9, "p_neu": 0.07, "p_pos": 0.03},
+  "priority": 0.5,
+  "created_at": "2026-11-02T08:00:00Z"
+}

@@ -1,4 +1,4 @@
-"""Pruebas de utilidades de limpieza y hash de voc-common (Feature 1.2)."""
+"""Pruebas de utilidades de limpieza y hash de voc-common."""
 
 import re
 
@@ -6,7 +6,6 @@ import pytest
 import voc_common
 from voc_common.text_utils import (
     contar_palabras,
-    cumple_umbral_palabras,
     hash_username_pii,
     limpiar_texto_bancario,
 )
@@ -57,14 +56,6 @@ def test_contar_palabras(texto: str, expected: int) -> None:
     assert contar_palabras(texto) == expected
 
 
-@pytest.mark.parametrize(
-    ("n_words", "expected"),
-    [(0, False), (1, False), (2, True), (60, True), (61, False)],
-)
-def test_cumple_umbral_palabras(n_words: int, expected: bool) -> None:
-    assert cumple_umbral_palabras(" ".join(["palabra"] * n_words)) is expected
-
-
 def test_hash_username_pii_is_deterministic_and_normalized() -> None:
     salt = "unit-test-salt-1234"
     digest = hash_username_pii("Juan Pérez", salt)
@@ -89,7 +80,6 @@ def test_hash_username_pii_known_vector() -> None:
 def test_text_utils_are_exported() -> None:
     for name in (
         "contar_palabras",
-        "cumple_umbral_palabras",
         "hash_username_pii",
         "limpiar_texto_bancario",
     ):

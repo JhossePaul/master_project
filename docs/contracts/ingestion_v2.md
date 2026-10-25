@@ -95,7 +95,7 @@ Job o permisos existan. La activación requiere el despliegue de EPIC-2 primero.
 
 `PLAYSTORE_DEFAULT_PAGE_SIZE=500` y `PLAYSTORE_PAGE_SIZE_POLICY_LIMIT=500` son
 políticas locales separadas (antes 199; el 500 se validó el 2026-10-15 con una
-cadena de 10 páginas, ver `docs/full_backfill.md`). Settings y payloads de
+cadena de 10 páginas, ver `docs/operations/full_backfill.md`). Settings y payloads de
 ingesta usan las mismas constantes. `ScanContext` puede describir páginas
 experimentales de otro tamaño; eso no las habilita en producción. Subir el
 límite exige validar cadenas y actualizar tests y configuración desplegada

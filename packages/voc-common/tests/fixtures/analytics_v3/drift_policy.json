@@ -1,0 +1,16 @@
+{
+  "drift_policy_version": "drift_policy_synthetic_bbva",
+  "bank_id": "BBVA",
+  "template_version": "drift_template_synthetic",
+  "valid_from": "2026-11-01T00:00:00Z",
+  "thresholds": {
+    "z": {"mean_words": 4.0, "share_neg": 4.0, "family_AC": null, "flag_u": null},
+    "psi": {"length_distribution": 0.25}
+  },
+  "baseline_months": 12,
+  "min_baseline_months": 6,
+  "min_rows_per_month": 200,
+  "entry_months": 12,
+  "set_by_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "reason": "Política sintética para pruebas."
+}

@@ -1,4 +1,4 @@
-"""Feature 1.8: identidades, sobres pre/post-DLP y fixtures."""
+"""Identidades, sobres pre/post-DLP y fixtures."""
 
 import json
 from datetime import timedelta

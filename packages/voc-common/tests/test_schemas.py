@@ -1,4 +1,4 @@
-"""Pruebas de los contratos Pydantic de voc-common (Feature 1.3)."""
+"""Pruebas de los contratos Pydantic de voc-common."""
 
 import json
 import re
@@ -9,16 +9,11 @@ import pytest
 from pydantic import ValidationError
 from voc_common.constants import (
     PLAYSTORE_BANK_APPS,
-    ABSATopic,
     BankKey,
     IngestionMode,
     PlayStoreSortOrder,
-    SentimentLabel,
 )
 from voc_common.schemas import (
-    AnalyzedReviewPrediction,
-    HitlTriageAuditRecord,
-    IncidentAlertMessage,
     IngestionRequestPayload,
     PlayStoreRpcCursor,
     RawReviewEvent,
@@ -53,30 +48,6 @@ def _raw_event(**overrides: Any) -> RawReviewEvent:
     return RawReviewEvent(**data)
 
 
-def _prediction(**overrides: Any) -> AnalyzedReviewPrediction:
-    data: dict[str, Any] = {
-        "id_resena": "r1",
-        "bank_id": BankKey.BBVA,
-        "version_app": "10.2.0",
-        "fecha": T0,
-        "estrellas": 5,
-        "sentimiento_roberta": SentimentLabel.NEG,
-        "tnss_score": SentimentLabel.NEG,
-        "tnss_numeric_calibrated": 1.4,
-        "topico": ABSATopic.BLOQUEO_SEGURIDAD_3702,
-        "priority_weight_score": 3.2,
-        "prediction_entropy": 0.7,
-        "requires_hitl": True,
-    }
-    data.update(overrides)
-    return AnalyzedReviewPrediction(**data)
-
-
-# ---------------------------------------------------------------------------
-# Helpers UTC
-# ---------------------------------------------------------------------------
-
-
 def test_ensure_utc_naive_and_aware() -> None:
     naive = datetime(2026, 1, 1, 10, 0)
     assert ensure_utc(naive) == datetime(2026, 1, 1, 10, 0, tzinfo=UTC)
@@ -88,7 +59,7 @@ def test_ensure_utc_naive_and_aware() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.1
+# Solicitudes de ingesta y cursor RPC
 # ---------------------------------------------------------------------------
 
 
@@ -139,7 +110,7 @@ def test_sequential_batch_request_defaults() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.3
+# Eventos crudos de reseñas
 # ---------------------------------------------------------------------------
 
 
@@ -258,7 +229,7 @@ def test_raw_review_from_batchexecute_entry_sparse_row() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tarea 1.3.4
+# Registro sanitizado
 # ---------------------------------------------------------------------------
 
 
@@ -323,67 +294,3 @@ def test_sanitized_review_record_rejects_pii_and_inconsistency() -> None:
         SanitizedReviewRecord(**{**base, "usuario_hash": "Z" * 64})
     with pytest.raises(ValidationError, match="conteo_palabras"):
         SanitizedReviewRecord(**{**base, "conteo_palabras": 3})
-
-
-# ---------------------------------------------------------------------------
-# Tarea 1.3.5
-# ---------------------------------------------------------------------------
-
-
-def test_obligatory_5_star_label_noise_detection() -> None:
-    assert _prediction(estrellas=5).is_obligatory_5_star_bias is True
-    assert _prediction(estrellas=4).is_obligatory_5_star_bias is True
-    assert _prediction(estrellas=3).is_obligatory_5_star_bias is False
-    pos = _prediction(estrellas=5, tnss_score=SentimentLabel.POS)
-    assert pos.is_obligatory_5_star_bias is False
-    # El valor recibido se ignora: siempre se recalcula.
-    forced = _prediction(estrellas=1, is_obligatory_5_star_bias=True)
-    assert forced.is_obligatory_5_star_bias is False
-
-
-def test_prediction_bounds() -> None:
-    with pytest.raises(ValidationError):
-        _prediction(tnss_numeric_calibrated=5.1)
-    with pytest.raises(ValidationError):
-        _prediction(prediction_entropy=1.2)
-    with pytest.raises(ValidationError):
-        _prediction(priority_weight_score=-0.1)
-    restored = AnalyzedReviewPrediction.model_validate_json(
-        _prediction(embedding_vector=[0.1, -0.2]).model_dump_json()
-    )
-    assert restored.embedding_vector == [0.1, -0.2]
-    assert restored.tnss_score is SentimentLabel.NEG
-
-
-def test_incident_alert_and_hitl_audit() -> None:
-    alert = IncidentAlertMessage(
-        alert_id="al-1",
-        bank_id=BankKey.BBVA,
-        version_app="10.22.0",
-        topico=ABSATopic.RENDIMIENTO_CRASH_POST_RELEASE,
-        negative_reviews_spike_count=42,
-        accumulated_utility_votes=310,
-        sample_review_ids=["r1", "r2"],
-    )
-    assert alert.triggered_at.tzinfo is UTC
-    with pytest.raises(ValidationError):
-        IncidentAlertMessage(
-            **{**alert.model_dump(), "negative_reviews_spike_count": 0}
-        )
-
-    audit = HitlTriageAuditRecord.model_validate(
-        {
-            "audit_id": "au-1",
-            "id_resena": "r1",
-            "bank_id": "BBVA",
-            "original_tnss": "POS",
-            "validated_tnss": "NEG",
-            "original_topic": "OTROS_SERVICIOS_GENERALES",
-            "validated_topic": "TRANSFERENCIAS_SPEI",
-            "reviewer_email_hash": "a" * 64,
-        }
-    )
-    assert audit.validated_tnss is SentimentLabel.NEG
-    assert audit.validated_topic is ABSATopic.TRANSFERENCIAS_SPEI
-    assert audit.backlog_jira_ticket is None
-    assert audit.reviewed_at.tzinfo is UTC

@@ -118,7 +118,7 @@ class IngestionExecutionConfig(BaseModel):
     ingestion_checkpoint_margin_sec: int = Field(default=60, gt=0)
     ingestion_lease_duration_sec: int = Field(default=120, gt=0)
     ingestion_heartbeat_interval_sec: int = Field(default=30, gt=0)
-    # Feature 3.4: valores conservadores; no derivan de límites del origen.
+    # Valores conservadores; no derivan de límites del origen.
     ingestion_max_pages: int = Field(default=100, gt=0)
     ingestion_max_recovery_requests: int = Field(default=10, ge=0)
     ingestion_recovery_max_anchors: int = Field(default=3, ge=0)
@@ -175,11 +175,9 @@ class Settings(BaseSettings, IngestionStorageLayout, IngestionExecutionConfig):
     # BigQuery (Trusted Data Source - TDS)
     bq_dataset_id: str = "bbva_voc_tds"
     bq_sanitized_tds_table: str = "sanitized_reviews_tds"
-    bq_predictions_table: str = "delora_predictions"
     bq_ingestion_runs_log_table: str = Field(
         default="ingestion_runs_log_v2", pattern=r"^[A-Za-z_][A-Za-z0-9_]*$"
     )
-    bq_hitl_audit_table: str = "hitl_triage_audit_log"
 
     # Cloud Pub/Sub
     pubsub_raw_reviews_topic: str = "voc-raw-reviews-topic"
@@ -200,9 +198,6 @@ class Settings(BaseSettings, IngestionStorageLayout, IngestionExecutionConfig):
     # Recursos v2: activar solo después de aprovisionar EPIC-2 (2.7–2.9).
     ingestion_v2_enabled: bool = False
     ingestion_history_job_name: str | None = Field(default=None, min_length=1)
-    # Parámetros MLOps y HITL
-    hitl_entropy_threshold: float = Field(default=0.65, ge=0.0, le=1.0)
-    enable_dedicated_vertex_endpoints: bool = False
 
     @field_validator(
         "dlp_inspect_template_id",

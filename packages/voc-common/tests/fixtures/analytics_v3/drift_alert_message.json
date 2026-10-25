@@ -1,0 +1,11 @@
+{
+  "alert_id": "alert-0001",
+  "bank_id": "SANTANDER",
+  "period": "2026-10",
+  "series": "share_neg",
+  "value": 5.2,
+  "threshold": 4.0,
+  "drift_policy_version": "drift_policy_synthetic_santander",
+  "hitl_boost_id": "boost-0001",
+  "triggered_at": "2026-11-03T06:00:00Z"
+}
