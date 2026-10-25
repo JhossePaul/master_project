@@ -56,10 +56,10 @@ config:
     secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
   gcp:userProjectOverride: "true"
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
-  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:99fa4d5774a63f7ad8a0fd1bea02cff7190f027c@sha256:9fc75f93a20838e0e1ea78e07921f39dc11c44f67c3bba1e07fdc039b91c5534
-  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:99fa4d5774a63f7ad8a0fd1bea02cff7190f027c@sha256:5a8a634f173ae6852961e9c7c607152d88c94c4ce0ccfe58644458d0ff3f53bf
+  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:e5936e5461115af249f8951f29d817f88f09a177@sha256:73f46a33b659756ba54dcb997dd33e036d054c428a4c76962a60c801c8dca64f
+  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:e5936e5461115af249f8951f29d817f88f09a177@sha256:8c9d172331c0ffe9ecdcd8fb25a9b1234bd657985eacd1be8751c5ae22e50989
   bbva-voc-infra:alert_email:
     secure: v1:K8LI9TLqA8C98O9N:Cs61QbLdrmn+AC/E5DlxNS4jCbolRMzROcZjtdNQ+RwMimPmhAfKKnfQvO0=
-  bbva-voc-infra:ml_inference_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ml-inference:99fa4d5774a63f7ad8a0fd1bea02cff7190f027c@sha256:3c00b9518d00a01d4257f63123d4e55028db653329bb10957b640972b3824cd3
+  bbva-voc-infra:ml_inference_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ml-inference:e5936e5461115af249f8951f29d817f88f09a177@sha256:87751716582539ce79850a0b573661f2ecc9908d71d1afe1ecb0cb9af3f54d96
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=
