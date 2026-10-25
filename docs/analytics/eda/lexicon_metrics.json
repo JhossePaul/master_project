@@ -1,0 +1,546 @@
+{
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "parametros": {
+    "min_support": 3,
+    "min_purity": 0.9
+  },
+  "lexico": {
+    "silver_rows_single_word": 12352,
+    "silver_forms": 684,
+    "forms_with_support": 152,
+    "lexicon_forms": 151,
+    "lexicon_by_label": [
+      {
+        "lexico": "NA",
+        "len": 5
+      },
+      {
+        "lexico": "NEG",
+        "len": 22
+      },
+      {
+        "lexico": "NEU",
+        "len": 7
+      },
+      {
+        "lexico": "POS",
+        "len": 117
+      }
+    ]
+  },
+  "corpus": {
+    "filas_elegibles": 2629279,
+    "filas_una_palabra": 465633,
+    "formas_distintas": 6604,
+    "filas": 465633,
+    "cubiertas": 443898,
+    "cobertura": 0.9533,
+    "cubiertas_na": 429
+  },
+  "por_banco": [
+    {
+      "bank_id": "AZTECA",
+      "filas": 124250,
+      "cubiertas": 118737,
+      "cobertura": 0.9556,
+      "cubiertas_na": 100
+    },
+    {
+      "bank_id": "BANORTE",
+      "filas": 87244,
+      "cubiertas": 83415,
+      "cobertura": 0.9561,
+      "cubiertas_na": 85
+    },
+    {
+      "bank_id": "BBVA",
+      "filas": 127080,
+      "cubiertas": 120288,
+      "cobertura": 0.9466,
+      "cubiertas_na": 130
+    },
+    {
+      "bank_id": "NUBANK",
+      "filas": 18000,
+      "cubiertas": 17055,
+      "cobertura": 0.9475,
+      "cubiertas_na": 8
+    },
+    {
+      "bank_id": "SANTANDER",
+      "filas": 109059,
+      "cubiertas": 104403,
+      "cobertura": 0.9573,
+      "cubiertas_na": 106
+    }
+  ],
+  "por_banco_periodo": [
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "filas": 61890,
+      "cubiertas": 59222,
+      "cobertura": 0.9569,
+      "cubiertas_na": 62
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "filas": 19573,
+      "cubiertas": 18691,
+      "cobertura": 0.9549,
+      "cubiertas_na": 10
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "filas": 24988,
+      "cubiertas": 24021,
+      "cobertura": 0.9613,
+      "cubiertas_na": 10
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "filas": 17799,
+      "cubiertas": 16803,
+      "cobertura": 0.944,
+      "cubiertas_na": 18
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "filas": 28173,
+      "cubiertas": 26933,
+      "cobertura": 0.956,
+      "cubiertas_na": 26
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "filas": 16266,
+      "cubiertas": 15597,
+      "cobertura": 0.9589,
+      "cubiertas_na": 5
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "filas": 18891,
+      "cubiertas": 18213,
+      "cobertura": 0.9641,
+      "cubiertas_na": 2
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "filas": 23914,
+      "cubiertas": 22672,
+      "cobertura": 0.9481,
+      "cubiertas_na": 52
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "filas": 31293,
+      "cubiertas": 29544,
+      "cobertura": 0.9441,
+      "cubiertas_na": 37
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "filas": 24990,
+      "cubiertas": 23682,
+      "cobertura": 0.9477,
+      "cubiertas_na": 15
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "filas": 23942,
+      "cubiertas": 22903,
+      "cobertura": 0.9566,
+      "cubiertas_na": 4
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "filas": 46855,
+      "cubiertas": 44159,
+      "cobertura": 0.9425,
+      "cubiertas_na": 74
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "filas": 2484,
+      "cubiertas": 2335,
+      "cobertura": 0.94,
+      "cubiertas_na": 2
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "filas": 3954,
+      "cubiertas": 3682,
+      "cobertura": 0.9312,
+      "cubiertas_na": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "filas": 11562,
+      "cubiertas": 11038,
+      "cobertura": 0.9547,
+      "cubiertas_na": 5
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "filas": 41980,
+      "cubiertas": 40204,
+      "cobertura": 0.9577,
+      "cubiertas_na": 44
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "filas": 19787,
+      "cubiertas": 18913,
+      "cobertura": 0.9558,
+      "cubiertas_na": 13
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "filas": 19159,
+      "cubiertas": 18455,
+      "cobertura": 0.9633,
+      "cubiertas_na": 1
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "filas": 28133,
+      "cubiertas": 26831,
+      "cobertura": 0.9537,
+      "cubiertas_na": 48
+    }
+  ],
+  "por_estrellas": [
+    {
+      "estrellas": 1,
+      "filas": 12308,
+      "cubiertas": 10378,
+      "cobertura": 0.8432,
+      "cubiertas_na": 12
+    },
+    {
+      "estrellas": 2,
+      "filas": 2275,
+      "cubiertas": 1839,
+      "cobertura": 0.8084,
+      "cubiertas_na": 5
+    },
+    {
+      "estrellas": 3,
+      "filas": 9644,
+      "cubiertas": 8810,
+      "cobertura": 0.9135,
+      "cubiertas_na": 23
+    },
+    {
+      "estrellas": 4,
+      "filas": 43025,
+      "cubiertas": 40954,
+      "cobertura": 0.9519,
+      "cubiertas_na": 68
+    },
+    {
+      "estrellas": 5,
+      "filas": 398381,
+      "cubiertas": 381917,
+      "cobertura": 0.9587,
+      "cubiertas_na": 321
+    }
+  ],
+  "cobertura_top_k_formas": [
+    {
+      "k": 10,
+      "cobertura_maxima": 0.8283
+    },
+    {
+      "k": 50,
+      "cobertura_maxima": 0.92
+    },
+    {
+      "k": 100,
+      "cobertura_maxima": 0.9472
+    },
+    {
+      "k": 500,
+      "cobertura_maxima": 0.9781
+    },
+    {
+      "k": 1000,
+      "cobertura_maxima": 0.9848
+    }
+  ],
+  "formas_publicas": [
+    {
+      "forma": "excelente",
+      "filas": 180823,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "buena",
+      "filas": 81543,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "exelente",
+      "filas": 45269,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "bien",
+      "filas": 28731,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "genial",
+      "filas": 14251,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "ok",
+      "filas": 13647,
+      "lexico": "NEU",
+      "pureza": 0.998
+    },
+    {
+      "forma": "bueno",
+      "filas": 10742,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "super",
+      "filas": 4833,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "execelente",
+      "filas": 2931,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "god",
+      "filas": 2896,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "mala",
+      "filas": 2660,
+      "lexico": "NEG",
+      "pureza": 1.0
+    },
+    {
+      "forma": "perfecta",
+      "filas": 2636,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "buenas",
+      "filas": 2507,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "pesima",
+      "filas": 2473,
+      "lexico": "NEG",
+      "pureza": 1.0
+    },
+    {
+      "forma": "perfecto",
+      "filas": 2397,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "buenisima",
+      "filas": 2028,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "practica",
+      "filas": 1650,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "eficiente",
+      "filas": 1574,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "chido",
+      "filas": 1500,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "funcional",
+      "filas": 1407,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "ecxelente",
+      "filas": 1317,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "rapida",
+      "filas": 1251,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "regular",
+      "filas": 1236,
+      "lexico": "NEU",
+      "pureza": 1.0
+    },
+    {
+      "forma": "pesimo",
+      "filas": 1200,
+      "lexico": "NEG",
+      "pureza": 1.0
+    },
+    {
+      "forma": "col",
+      "filas": 1015,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "chida",
+      "filas": 967,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "increible",
+      "filas": 933,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "facil",
+      "filas": 900,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "util",
+      "filas": 780,
+      "lexico": "POS",
+      "pureza": 1.0
+    },
+    {
+      "forma": "excepcional",
+      "filas": 763,
+      "lexico": "POS",
+      "pureza": 1.0
+    }
+  ],
+  "estrellas_por_banco": [
+    {
+      "bank_id": "AZTECA",
+      "todas": 4.394,
+      "sin_una_palabra": 4.293,
+      "sin_no_cubiertas": 4.393,
+      "sesgo_excluir_todas": -0.1,
+      "sesgo_excluir_no_cubiertas": -0.001,
+      "una_palabra": 124250
+    },
+    {
+      "bank_id": "BANORTE",
+      "todas": 4.246,
+      "sin_una_palabra": 4.139,
+      "sin_no_cubiertas": 4.244,
+      "sesgo_excluir_todas": -0.107,
+      "sesgo_excluir_no_cubiertas": -0.002,
+      "una_palabra": 87244
+    },
+    {
+      "bank_id": "BBVA",
+      "todas": 3.71,
+      "sin_una_palabra": 3.503,
+      "sin_no_cubiertas": 3.703,
+      "sesgo_excluir_todas": -0.206,
+      "sesgo_excluir_no_cubiertas": -0.007,
+      "una_palabra": 127080
+    },
+    {
+      "bank_id": "NUBANK",
+      "todas": 4.201,
+      "sin_una_palabra": 4.092,
+      "sin_no_cubiertas": 4.199,
+      "sesgo_excluir_todas": -0.109,
+      "sesgo_excluir_no_cubiertas": -0.003,
+      "una_palabra": 18000
+    },
+    {
+      "bank_id": "SANTANDER",
+      "todas": 4.028,
+      "sin_una_palabra": 3.895,
+      "sin_no_cubiertas": 4.026,
+      "sesgo_excluir_todas": -0.133,
+      "sesgo_excluir_no_cubiertas": -0.001,
+      "una_palabra": 109059
+    }
+  ],
+  "oro_dev_una_palabra": {
+    "items": 113,
+    "cubiertos": 106,
+    "cobertura": 0.9381,
+    "cobertura_ponderada": 0.948,
+    "exactitud": 0.9906,
+    "exactitud_ponderada": 0.9822,
+    "errores": 1,
+    "oro_no_cubiertos": [
+      {
+        "oro": "NA",
+        "len": 2
+      },
+      {
+        "oro": "NEG",
+        "len": 1
+      },
+      {
+        "oro": "NEU",
+        "len": 1
+      },
+      {
+        "oro": "POS",
+        "len": 3
+      }
+    ]
+  }
+}

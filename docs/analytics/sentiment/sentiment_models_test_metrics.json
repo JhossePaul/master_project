@@ -1,0 +1,804 @@
+{
+  "generado": "2026-10-22T21:43:12+00:00",
+  "protocolo": "decision_record.md, tema 1 (aprobado 2026-10-22)",
+  "n_test": 594,
+  "n_test_na_humano_excluidos": 7,
+  "por_muestra": {
+    "gold_v0": 200,
+    "gold_v1": 394
+  },
+  "distribucion_oro": {
+    "NEG": 212,
+    "NEU": 22,
+    "POS": 360
+  },
+  "m9_corrida": "20261018T205030Z",
+  "m9_na_como_neu": 0,
+  "bootstrap": 2000,
+  "control_dev_contra_kaggle": {
+    "M4_robertuito_s1_ppi": {
+      "acuerdo_clase_dev": 1.0,
+      "max_dif_prob_dev": 0.0017
+    },
+    "M4_robertuito_s2_ppi": {
+      "acuerdo_clase_dev": 1.0,
+      "max_dif_prob_dev": 0.0043
+    },
+    "M4_robertuito_s3_ppi": {
+      "acuerdo_clase_dev": 1.0,
+      "max_dif_prob_dev": 0.0016
+    }
+  },
+  "modelos": {
+    "M4_robertuito_s1_ppi": {
+      "muestra": {
+        "macro_f1": 0.8587,
+        "kappa": 0.9288,
+        "exactitud": 0.9646,
+        "neg_precision": 0.9628,
+        "neg_recall": 0.9764,
+        "macro_f1_ic95": [
+          0.7868,
+          0.9123
+        ],
+        "kappa_ic95": [
+          0.9008,
+          0.9545
+        ],
+        "exactitud_ic95": [
+          0.9512,
+          0.9781
+        ],
+        "neg_precision_ic95": [
+          0.9378,
+          0.9855
+        ],
+        "neg_recall_ic95": [
+          0.9565,
+          0.9949
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9696,
+          "NEU": 0.6286,
+          "POS": 0.978
+        }
+      },
+      "poblacion": {
+        "macro_f1": 0.8471,
+        "kappa": 0.927,
+        "exactitud": 0.9673,
+        "neg_precision": 0.9517,
+        "neg_recall": 0.9824,
+        "macro_f1_ic95": [
+          0.7405,
+          0.9209
+        ],
+        "kappa_ic95": [
+          0.8903,
+          0.96
+        ],
+        "exactitud_ic95": [
+          0.9502,
+          0.9824
+        ],
+        "neg_precision_ic95": [
+          0.9087,
+          0.9863
+        ],
+        "neg_recall_ic95": [
+          0.9644,
+          0.9982
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9668,
+          "NEU": 0.593,
+          "POS": 0.9815
+        }
+      },
+      "menos_M4_robertuito_s2_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0013,
+            "ic95": [
+              0.0,
+              0.0038
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0034,
+            "ic95": [
+              0.0,
+              0.0105
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0019,
+            "ic95": [
+              0.0,
+              0.0057
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0051,
+            "ic95": [
+              0.0,
+              0.0159
+            ]
+          }
+        }
+      },
+      "menos_M4_robertuito_s3_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": -0.0135,
+            "ic95": [
+              -0.043,
+              0.0024
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0035,
+            "ic95": [
+              -0.0138,
+              0.0067
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": -0.0043,
+            "ic95": [
+              -0.0136,
+              0.0022
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0056,
+            "ic95": [
+              -0.0244,
+              0.0081
+            ]
+          }
+        }
+      }
+    },
+    "M4_robertuito_s2_ppi": {
+      "muestra": {
+        "macro_f1": 0.8574,
+        "kappa": 0.9254,
+        "exactitud": 0.963,
+        "neg_precision": 0.9626,
+        "neg_recall": 0.9717,
+        "macro_f1_ic95": [
+          0.7853,
+          0.9112
+        ],
+        "kappa_ic95": [
+          0.8962,
+          0.9514
+        ],
+        "exactitud_ic95": [
+          0.9478,
+          0.9764
+        ],
+        "neg_precision_ic95": [
+          0.9375,
+          0.9854
+        ],
+        "neg_recall_ic95": [
+          0.9502,
+          0.9906
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9671,
+          "NEU": 0.6286,
+          "POS": 0.9766
+        }
+      },
+      "poblacion": {
+        "macro_f1": 0.8452,
+        "kappa": 0.9219,
+        "exactitud": 0.9651,
+        "neg_precision": 0.9514,
+        "neg_recall": 0.9746,
+        "macro_f1_ic95": [
+          0.7383,
+          0.9187
+        ],
+        "kappa_ic95": [
+          0.8835,
+          0.9559
+        ],
+        "exactitud_ic95": [
+          0.9472,
+          0.9807
+        ],
+        "neg_precision_ic95": [
+          0.9078,
+          0.9861
+        ],
+        "neg_recall_ic95": [
+          0.9515,
+          0.994
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9628,
+          "NEU": 0.593,
+          "POS": 0.9799
+        }
+      },
+      "menos_M4_robertuito_s1_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": -0.0013,
+            "ic95": [
+              -0.0038,
+              0.0
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0034,
+            "ic95": [
+              -0.0105,
+              0.0
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": -0.0019,
+            "ic95": [
+              -0.0057,
+              0.0
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0051,
+            "ic95": [
+              -0.0159,
+              0.0
+            ]
+          }
+        }
+      },
+      "menos_M4_robertuito_s3_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": -0.0148,
+            "ic95": [
+              -0.0443,
+              0.0013
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0069,
+            "ic95": [
+              -0.0203,
+              0.0065
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": -0.0062,
+            "ic95": [
+              -0.0162,
+              0.0011
+            ]
+          },
+          "kappa": {
+            "diferencia": -0.0107,
+            "ic95": [
+              -0.0316,
+              0.0054
+            ]
+          }
+        }
+      }
+    },
+    "M4_robertuito_s3_ppi": {
+      "muestra": {
+        "macro_f1": 0.8722,
+        "kappa": 0.9323,
+        "exactitud": 0.9663,
+        "neg_precision": 0.9673,
+        "neg_recall": 0.9764,
+        "macro_f1_ic95": [
+          0.8,
+          0.9237
+        ],
+        "kappa_ic95": [
+          0.9053,
+          0.9559
+        ],
+        "exactitud_ic95": [
+          0.9529,
+          0.9781
+        ],
+        "neg_precision_ic95": [
+          0.9434,
+          0.9867
+        ],
+        "neg_recall_ic95": [
+          0.9565,
+          0.9949
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9718,
+          "NEU": 0.6667,
+          "POS": 0.978
+        }
+      },
+      "poblacion": {
+        "macro_f1": 0.8514,
+        "kappa": 0.9326,
+        "exactitud": 0.9699,
+        "neg_precision": 0.96,
+        "neg_recall": 0.9824,
+        "macro_f1_ic95": [
+          0.7457,
+          0.9236
+        ],
+        "kappa_ic95": [
+          0.897,
+          0.9642
+        ],
+        "exactitud_ic95": [
+          0.9532,
+          0.9839
+        ],
+        "neg_precision_ic95": [
+          0.9232,
+          0.9893
+        ],
+        "neg_recall_ic95": [
+          0.9644,
+          0.9982
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9711,
+          "NEU": 0.5999,
+          "POS": 0.9832
+        }
+      },
+      "menos_M4_robertuito_s1_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0135,
+            "ic95": [
+              -0.0024,
+              0.043
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0035,
+            "ic95": [
+              -0.0067,
+              0.0138
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0043,
+            "ic95": [
+              -0.0022,
+              0.0136
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0056,
+            "ic95": [
+              -0.0081,
+              0.0244
+            ]
+          }
+        }
+      },
+      "menos_M4_robertuito_s2_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0148,
+            "ic95": [
+              -0.0013,
+              0.0443
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0069,
+            "ic95": [
+              -0.0065,
+              0.0203
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0062,
+            "ic95": [
+              -0.0011,
+              0.0162
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0107,
+            "ic95": [
+              -0.0054,
+              0.0316
+            ]
+          }
+        }
+      }
+    },
+    "M9_gemini": {
+      "muestra": {
+        "macro_f1": 0.8925,
+        "kappa": 0.9427,
+        "exactitud": 0.9714,
+        "neg_precision": 0.9765,
+        "neg_recall": 0.9811,
+        "macro_f1_ic95": [
+          0.8305,
+          0.9388
+        ],
+        "kappa_ic95": [
+          0.9169,
+          0.9661
+        ],
+        "exactitud_ic95": [
+          0.9579,
+          0.9832
+        ],
+        "neg_precision_ic95": [
+          0.9565,
+          0.9952
+        ],
+        "neg_recall_ic95": [
+          0.9626,
+          0.9953
+        ],
+        "f1_por_clase": {
+          "NEG": 0.9788,
+          "NEU": 0.7179,
+          "POS": 0.9807
+        }
+      },
+      "poblacion": {
+        "macro_f1": 0.8539,
+        "kappa": 0.9415,
+        "exactitud": 0.9739,
+        "neg_precision": 0.9764,
+        "neg_recall": 0.9856,
+        "macro_f1_ic95": [
+          0.7625,
+          0.9256
+        ],
+        "kappa_ic95": [
+          0.906,
+          0.9716
+        ],
+        "exactitud_ic95": [
+          0.9574,
+          0.9875
+        ],
+        "neg_precision_ic95": [
+          0.9449,
+          0.998
+        ],
+        "neg_recall_ic95": [
+          0.9684,
+          0.9992
+        ],
+        "f1_por_clase": {
+          "NEG": 0.981,
+          "NEU": 0.5955,
+          "POS": 0.9853
+        }
+      },
+      "menos_M4_robertuito_s1_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0338,
+            "ic95": [
+              -0.0192,
+              0.0938
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0139,
+            "ic95": [
+              -0.0098,
+              0.0372
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0068,
+            "ic95": [
+              -0.0734,
+              0.0897
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0145,
+            "ic95": [
+              -0.0154,
+              0.0438
+            ]
+          }
+        }
+      },
+      "menos_M4_robertuito_s2_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0351,
+            "ic95": [
+              -0.0184,
+              0.0948
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0173,
+            "ic95": [
+              -0.0066,
+              0.0414
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0087,
+            "ic95": [
+              -0.0706,
+              0.0912
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0196,
+            "ic95": [
+              -0.0104,
+              0.0496
+            ]
+          }
+        }
+      },
+      "menos_M4_robertuito_s3_ppi": {
+        "muestra": {
+          "macro_f1": {
+            "diferencia": 0.0203,
+            "ic95": [
+              -0.0293,
+              0.0758
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0104,
+            "ic95": [
+              -0.0128,
+              0.0318
+            ]
+          }
+        },
+        "poblacion": {
+          "macro_f1": {
+            "diferencia": 0.0025,
+            "ic95": [
+              -0.0781,
+              0.0837
+            ]
+          },
+          "kappa": {
+            "diferencia": 0.0089,
+            "ic95": [
+              -0.0171,
+              0.0327
+            ]
+          }
+        }
+      }
+    }
+  },
+  "m4_media_3_semillas": {
+    "muestra": {
+      "kappa": 0.9288,
+      "macro_f1": 0.8628,
+      "exactitud": 0.9646,
+      "neg_recall": 0.9748,
+      "neg_precision": 0.9642
+    },
+    "poblacion": {
+      "kappa": 0.9272,
+      "macro_f1": 0.8479,
+      "exactitud": 0.9674,
+      "neg_recall": 0.9798,
+      "neg_precision": 0.9544
+    }
+  },
+  "m9_menos_m4_regla": {
+    "M4_robertuito_s1_ppi": {
+      "kappa": {
+        "diferencia": 0.0139,
+        "ic95": [
+          -0.0098,
+          0.0372
+        ]
+      },
+      "neg_recall": {
+        "diferencia": 0.0047,
+        "ic95": [
+          -0.0144,
+          0.0237
+        ]
+      },
+      "neg_precision": {
+        "diferencia": 0.0137,
+        "ic95": [
+          -0.0049,
+          0.0359
+        ]
+      },
+      "f1_NEG": {
+        "diferencia": 0.0093,
+        "ic95": [
+          -0.005,
+          0.0242
+        ]
+      },
+      "f1_NEU": {
+        "diferencia": 0.0894,
+        "ic95": [
+          -0.0596,
+          0.2605
+        ]
+      },
+      "f1_POS": {
+        "diferencia": 0.0027,
+        "ic95": [
+          -0.0056,
+          0.0112
+        ]
+      }
+    },
+    "M4_robertuito_s2_ppi": {
+      "kappa": {
+        "diferencia": 0.0174,
+        "ic95": [
+          -0.0066,
+          0.0414
+        ]
+      },
+      "neg_recall": {
+        "diferencia": 0.0094,
+        "ic95": [
+          -0.0136,
+          0.031
+        ]
+      },
+      "neg_precision": {
+        "diferencia": 0.0139,
+        "ic95": [
+          -0.0048,
+          0.0365
+        ]
+      },
+      "f1_NEG": {
+        "diferencia": 0.0117,
+        "ic95": [
+          -0.0046,
+          0.0278
+        ]
+      },
+      "f1_NEU": {
+        "diferencia": 0.0894,
+        "ic95": [
+          -0.0596,
+          0.2605
+        ]
+      },
+      "f1_POS": {
+        "diferencia": 0.004,
+        "ic95": [
+          -0.0043,
+          0.0133
+        ]
+      }
+    },
+    "M4_robertuito_s3_ppi": {
+      "kappa": {
+        "diferencia": 0.0104,
+        "ic95": [
+          -0.0128,
+          0.0318
+        ]
+      },
+      "neg_recall": {
+        "diferencia": 0.0047,
+        "ic95": [
+          -0.0144,
+          0.0237
+        ]
+      },
+      "neg_precision": {
+        "diferencia": 0.0092,
+        "ic95": [
+          -0.0094,
+          0.0313
+        ]
+      },
+      "f1_NEG": {
+        "diferencia": 0.007,
+        "ic95": [
+          -0.0072,
+          0.0214
+        ]
+      },
+      "f1_NEU": {
+        "diferencia": 0.0513,
+        "ic95": [
+          -0.0869,
+          0.2115
+        ]
+      },
+      "f1_POS": {
+        "diferencia": 0.0027,
+        "ic95": [
+          -0.0056,
+          0.0113
+        ]
+      }
+    }
+  },
+  "ece_m4": {
+    "M4_robertuito_s1_ppi": {
+      "temperatura": 1.6811,
+      "sin_calibrar": {
+        "muestra": 0.0292,
+        "poblacion": 0.0287
+      },
+      "calibrado": {
+        "muestra": 0.0137,
+        "poblacion": 0.0099
+      },
+      "inferencia": {
+        "textos": 594,
+        "segundos": 2.7,
+        "textos_por_segundo": 217.7
+      }
+    },
+    "M4_robertuito_s2_ppi": {
+      "temperatura": 1.7515,
+      "sin_calibrar": {
+        "muestra": 0.0287,
+        "poblacion": 0.0283
+      },
+      "calibrado": {
+        "muestra": 0.0148,
+        "poblacion": 0.0106
+      },
+      "inferencia": {
+        "textos": 594,
+        "segundos": 2.9,
+        "textos_por_segundo": 202.9
+      }
+    },
+    "M4_robertuito_s3_ppi": {
+      "temperatura": 1.7199,
+      "sin_calibrar": {
+        "muestra": 0.0288,
+        "poblacion": 0.0262
+      },
+      "calibrado": {
+        "muestra": 0.0106,
+        "poblacion": 0.0102
+      },
+      "inferencia": {
+        "textos": 594,
+        "segundos": 2.7,
+        "textos_por_segundo": 219.3
+      }
+    }
+  }
+}

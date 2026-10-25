@@ -1,0 +1,67 @@
+{
+  "generado": "2026-10-22T19:21:14+00:00",
+  "filas": 1383138,
+  "tamano_gb": {
+    "plana": 4.284,
+    "agrupada": 4.284,
+    "solo_neg": 2.443
+  },
+  "variantes": {
+    "plana|todo_el_corpus": {
+      "latencia_mediana_s": 5.3,
+      "gb_facturados": 4.26,
+      "busquedas_por_tib": 258
+    },
+    "plana|solo_bbva": {
+      "latencia_mediana_s": 5.63,
+      "gb_facturados": 4.272,
+      "busquedas_por_tib": 257
+    },
+    "plana|solo_negativas": {
+      "latencia_mediana_s": 4.31,
+      "gb_facturados": 4.262,
+      "busquedas_por_tib": 258
+    },
+    "plana|bbva_negativas": {
+      "latencia_mediana_s": 6.56,
+      "gb_facturados": 4.273,
+      "busquedas_por_tib": 257
+    },
+    "plana|ultimos_12_meses": {
+      "latencia_mediana_s": 8.38,
+      "gb_facturados": 4.272,
+      "busquedas_por_tib": 257
+    },
+    "agrupada|todo_el_corpus": {
+      "latencia_mediana_s": 6.77,
+      "gb_facturados": 4.26,
+      "busquedas_por_tib": 258
+    },
+    "agrupada|solo_bbva": {
+      "latencia_mediana_s": 5.89,
+      "gb_facturados": 3.746,
+      "busquedas_por_tib": 294
+    },
+    "agrupada|solo_negativas": {
+      "latencia_mediana_s": 5.14,
+      "gb_facturados": 4.235,
+      "busquedas_por_tib": 260
+    },
+    "agrupada|bbva_negativas": {
+      "latencia_mediana_s": 4.77,
+      "gb_facturados": 3.747,
+      "busquedas_por_tib": 293
+    },
+    "agrupada|ultimos_12_meses": {
+      "latencia_mediana_s": 5.08,
+      "gb_facturados": 0.489,
+      "busquedas_por_tib": 2248
+    },
+    "tabla_solo_neg|todo": {
+      "latencia_mediana_s": 16.49,
+      "gb_facturados": 2.43,
+      "busquedas_por_tib": 452
+    }
+  },
+  "dataset_borrado": true
+}

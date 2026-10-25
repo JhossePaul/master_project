@@ -1,0 +1,1499 @@
+{
+  "generado": "2026-10-23T02:12:29+00:00",
+  "fuente": "incidents/rows_v0.parquet (M4_robertuito_s1_ppi)",
+  "lista_externa": {
+    "archivo": "external_v0.csv",
+    "sha256": "e6e71ae3085ec96df95b849d99f2b96736476627d16f68340c19a5ea1eaaec65",
+    "incidentes": 107,
+    "antes_de_la_entrada": 5,
+    "despues_del_ultimo_mes": 1,
+    "evaluables_por_banco": {
+      "AZTECA": 12,
+      "BANORTE": 16,
+      "BBVA": 37,
+      "NUBANK": 17,
+      "SANTANDER": 19
+    }
+  },
+  "mes_de_entrada": {
+    "AZTECA": "2018-09",
+    "BANORTE": "2018-10",
+    "BBVA": "2016-04",
+    "NUBANK": "2021-12",
+    "SANTANDER": "2019-04"
+  },
+  "ultimo_dia": "2026-09-30",
+  "parametros": {
+    "ventanas_dias": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      10,
+      14,
+      21,
+      30
+    ],
+    "linea_base": "max(12, ceil(28 / w)) ventanas",
+    "piso_mad": 1.0,
+    "umbrales": [
+      2.0,
+      30.0,
+      0.25
+    ],
+    "presupuestos_dias_marcados": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "deteccion": "alerta en [d, d + w]; mes calendario: alerta en el mes de d"
+  },
+  "comparacion": {
+    "0.05": {
+      "1": {
+        "recall": 0.406,
+        "detectados": 41,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 4.25,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.0498,
+            "episodios_por_anio": 6.1
+          },
+          "BANORTE": {
+            "umbral": 5.0,
+            "detectados": 4,
+            "incidentes": 16,
+            "dias_marcados": 0.0496,
+            "episodios_por_anio": 6.1
+          },
+          "BBVA": {
+            "umbral": 5.0,
+            "detectados": 17,
+            "incidentes": 37,
+            "dias_marcados": 0.0441,
+            "episodios_por_anio": 5.6
+          },
+          "NUBANK": {
+            "umbral": 5.75,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0476,
+            "episodios_por_anio": 5.4
+          },
+          "SANTANDER": {
+            "umbral": 3.75,
+            "detectados": 11,
+            "incidentes": 19,
+            "dias_marcados": 0.0482,
+            "episodios_por_anio": 5.9
+          }
+        }
+      },
+      "2": {
+        "recall": 0.366,
+        "detectados": 37,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 6.5,
+            "detectados": 6,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 3.8
+          },
+          "BANORTE": {
+            "umbral": 6.75,
+            "detectados": 4,
+            "incidentes": 16,
+            "dias_marcados": 0.0469,
+            "episodios_por_anio": 4.1
+          },
+          "BBVA": {
+            "umbral": 6.0,
+            "detectados": 16,
+            "incidentes": 37,
+            "dias_marcados": 0.0488,
+            "episodios_por_anio": 3.6
+          },
+          "NUBANK": {
+            "umbral": 8.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0487,
+            "episodios_por_anio": 3.1
+          },
+          "SANTANDER": {
+            "umbral": 5.25,
+            "detectados": 10,
+            "incidentes": 19,
+            "dias_marcados": 0.05,
+            "episodios_por_anio": 4.1
+          }
+        }
+      },
+      "3": {
+        "recall": 0.327,
+        "detectados": 33,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 8.5,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.0471,
+            "episodios_por_anio": 2.5
+          },
+          "BANORTE": {
+            "umbral": 7.5,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.0472,
+            "episodios_por_anio": 3.2
+          },
+          "BBVA": {
+            "umbral": 10.0,
+            "detectados": 13,
+            "incidentes": 37,
+            "dias_marcados": 0.0469,
+            "episodios_por_anio": 2.4
+          },
+          "NUBANK": {
+            "umbral": 10.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0499,
+            "episodios_por_anio": 2.9
+          },
+          "SANTANDER": {
+            "umbral": 6.5,
+            "detectados": 9,
+            "incidentes": 19,
+            "dias_marcados": 0.0485,
+            "episodios_por_anio": 2.7
+          }
+        }
+      },
+      "4": {
+        "recall": 0.297,
+        "detectados": 30,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 10.5,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.0488,
+            "episodios_por_anio": 2.2
+          },
+          "BANORTE": {
+            "umbral": 7.5,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0493,
+            "episodios_por_anio": 2.6
+          },
+          "BBVA": {
+            "umbral": 9.75,
+            "detectados": 12,
+            "incidentes": 37,
+            "dias_marcados": 0.0488,
+            "episodios_por_anio": 2.1
+          },
+          "NUBANK": {
+            "umbral": 12.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0499,
+            "episodios_por_anio": 1.9
+          },
+          "SANTANDER": {
+            "umbral": 8.0,
+            "detectados": 8,
+            "incidentes": 19,
+            "dias_marcados": 0.0493,
+            "episodios_por_anio": 1.9
+          }
+        }
+      },
+      "5": {
+        "recall": 0.198,
+        "detectados": 20,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 10.5,
+            "detectados": 5,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 1.7
+          },
+          "BANORTE": {
+            "umbral": 8.5,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.0462,
+            "episodios_por_anio": 2.2
+          },
+          "BBVA": {
+            "umbral": 9.75,
+            "detectados": 6,
+            "incidentes": 37,
+            "dias_marcados": 0.0477,
+            "episodios_por_anio": 1.6
+          },
+          "NUBANK": {
+            "umbral": 14.5,
+            "detectados": 0,
+            "incidentes": 17,
+            "dias_marcados": 0.0487,
+            "episodios_por_anio": 1.4
+          },
+          "SANTANDER": {
+            "umbral": 8.75,
+            "detectados": 6,
+            "incidentes": 19,
+            "dias_marcados": 0.05,
+            "episodios_por_anio": 1.5
+          }
+        }
+      },
+      "7": {
+        "recall": 0.168,
+        "detectados": 17,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 13.0,
+            "detectados": 4,
+            "incidentes": 12,
+            "dias_marcados": 0.0457,
+            "episodios_por_anio": 1.0
+          },
+          "BANORTE": {
+            "umbral": 8.25,
+            "detectados": 2,
+            "incidentes": 16,
+            "dias_marcados": 0.0483,
+            "episodios_por_anio": 1.5
+          },
+          "BBVA": {
+            "umbral": 9.5,
+            "detectados": 5,
+            "incidentes": 37,
+            "dias_marcados": 0.048,
+            "episodios_por_anio": 1.2
+          },
+          "NUBANK": {
+            "umbral": 12.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0499,
+            "episodios_por_anio": 1.4
+          },
+          "SANTANDER": {
+            "umbral": 11.75,
+            "detectados": 5,
+            "incidentes": 19,
+            "dias_marcados": 0.0493,
+            "episodios_por_anio": 1.2
+          }
+        }
+      },
+      "10": {
+        "recall": 0.149,
+        "detectados": 15,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 13.0,
+            "detectados": 3,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 0.6
+          },
+          "BANORTE": {
+            "umbral": 8.0,
+            "detectados": 2,
+            "incidentes": 16,
+            "dias_marcados": 0.0455,
+            "episodios_por_anio": 1.1
+          },
+          "BBVA": {
+            "umbral": 10.25,
+            "detectados": 5,
+            "incidentes": 37,
+            "dias_marcados": 0.0467,
+            "episodios_por_anio": 1.0
+          },
+          "NUBANK": {
+            "umbral": 16.25,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0493,
+            "episodios_por_anio": 1.0
+          },
+          "SANTANDER": {
+            "umbral": 15.25,
+            "detectados": 3,
+            "incidentes": 19,
+            "dias_marcados": 0.0467,
+            "episodios_por_anio": 0.9
+          }
+        }
+      },
+      "14": {
+        "recall": 0.109,
+        "detectados": 11,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 13.5,
+            "detectados": 1,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 0.6
+          },
+          "BANORTE": {
+            "umbral": 10.5,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0459,
+            "episodios_por_anio": 0.4
+          },
+          "BBVA": {
+            "umbral": 9.5,
+            "detectados": 4,
+            "incidentes": 37,
+            "dias_marcados": 0.0454,
+            "episodios_por_anio": 0.7
+          },
+          "NUBANK": {
+            "umbral": 14.75,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0499,
+            "episodios_por_anio": 0.6
+          },
+          "SANTANDER": {
+            "umbral": 15.0,
+            "detectados": 3,
+            "incidentes": 19,
+            "dias_marcados": 0.0474,
+            "episodios_por_anio": 0.7
+          }
+        }
+      },
+      "21": {
+        "recall": 0.109,
+        "detectados": 11,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 11.5,
+            "detectados": 1,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 0.4
+          },
+          "BANORTE": {
+            "umbral": 5.5,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0462,
+            "episodios_por_anio": 0.6
+          },
+          "BBVA": {
+            "umbral": 12.0,
+            "detectados": 4,
+            "incidentes": 37,
+            "dias_marcados": 0.049,
+            "episodios_por_anio": 0.5
+          },
+          "NUBANK": {
+            "umbral": 11.0,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0487,
+            "episodios_por_anio": 0.4
+          },
+          "SANTANDER": {
+            "umbral": 14.25,
+            "detectados": 3,
+            "incidentes": 19,
+            "dias_marcados": 0.0427,
+            "episodios_por_anio": 0.4
+          }
+        }
+      },
+      "30": {
+        "recall": 0.069,
+        "detectados": 7,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 12.0,
+            "detectados": 0,
+            "incidentes": 12,
+            "dias_marcados": 0.0495,
+            "episodios_por_anio": 0.2
+          },
+          "BANORTE": {
+            "umbral": 5.5,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0459,
+            "episodios_por_anio": 0.5
+          },
+          "BBVA": {
+            "umbral": 11.5,
+            "detectados": 3,
+            "incidentes": 37,
+            "dias_marcados": 0.0498,
+            "episodios_por_anio": 0.4
+          },
+          "NUBANK": {
+            "umbral": 11.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0329,
+            "episodios_por_anio": 0.2
+          },
+          "SANTANDER": {
+            "umbral": 25.0,
+            "detectados": 2,
+            "incidentes": 19,
+            "dias_marcados": 0.0445,
+            "episodios_por_anio": 0.4
+          }
+        }
+      },
+      "mes": {
+        "recall": 0.069,
+        "detectados": 7,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 6.5,
+            "detectados": 0,
+            "incidentes": 12,
+            "dias_marcados": 0.0413,
+            "episodios_por_anio": 0.2
+          },
+          "BANORTE": {
+            "umbral": 3.5,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0318,
+            "episodios_por_anio": 0.4
+          },
+          "BBVA": {
+            "umbral": 7.0,
+            "detectados": 4,
+            "incidentes": 37,
+            "dias_marcados": 0.0477,
+            "episodios_por_anio": 0.4
+          },
+          "NUBANK": {
+            "umbral": 8.25,
+            "detectados": 1,
+            "incidentes": 17,
+            "dias_marcados": 0.0351,
+            "episodios_por_anio": 0.4
+          },
+          "SANTANDER": {
+            "umbral": 8.5,
+            "detectados": 1,
+            "incidentes": 19,
+            "dias_marcados": 0.0434,
+            "episodios_por_anio": 0.4
+          }
+        }
+      }
+    },
+    "0.10": {
+      "1": {
+        "recall": 0.545,
+        "detectados": 55,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 2.75,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.0874,
+            "episodios_por_anio": 10.4
+          },
+          "BANORTE": {
+            "umbral": 3.25,
+            "detectados": 5,
+            "incidentes": 16,
+            "dias_marcados": 0.0972,
+            "episodios_por_anio": 12.0
+          },
+          "BBVA": {
+            "umbral": 3.25,
+            "detectados": 25,
+            "incidentes": 37,
+            "dias_marcados": 0.0915,
+            "episodios_por_anio": 11.3
+          },
+          "NUBANK": {
+            "umbral": 3.0,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.0986,
+            "episodios_por_anio": 11.0
+          },
+          "SANTANDER": {
+            "umbral": 2.75,
+            "detectados": 13,
+            "incidentes": 19,
+            "dias_marcados": 0.0974,
+            "episodios_por_anio": 12.7
+          }
+        }
+      },
+      "2": {
+        "recall": 0.485,
+        "detectados": 49,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.5,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.0976,
+            "episodios_por_anio": 6.8
+          },
+          "BANORTE": {
+            "umbral": 4.5,
+            "detectados": 5,
+            "incidentes": 16,
+            "dias_marcados": 0.0934,
+            "episodios_por_anio": 8.0
+          },
+          "BBVA": {
+            "umbral": 4.0,
+            "detectados": 22,
+            "incidentes": 37,
+            "dias_marcados": 0.097,
+            "episodios_por_anio": 7.6
+          },
+          "NUBANK": {
+            "umbral": 4.75,
+            "detectados": 4,
+            "incidentes": 17,
+            "dias_marcados": 0.0958,
+            "episodios_por_anio": 6.8
+          },
+          "SANTANDER": {
+            "umbral": 3.75,
+            "detectados": 11,
+            "incidentes": 19,
+            "dias_marcados": 0.0964,
+            "episodios_por_anio": 8.3
+          }
+        }
+      },
+      "3": {
+        "recall": 0.426,
+        "detectados": 43,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 4.75,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.0996,
+            "episodios_por_anio": 5.3
+          },
+          "BANORTE": {
+            "umbral": 5.0,
+            "detectados": 4,
+            "incidentes": 16,
+            "dias_marcados": 0.0982,
+            "episodios_por_anio": 6.4
+          },
+          "BBVA": {
+            "umbral": 4.75,
+            "detectados": 18,
+            "incidentes": 37,
+            "dias_marcados": 0.0962,
+            "episodios_por_anio": 5.2
+          },
+          "NUBANK": {
+            "umbral": 6.25,
+            "detectados": 3,
+            "incidentes": 17,
+            "dias_marcados": 0.0992,
+            "episodios_por_anio": 5.0
+          },
+          "SANTANDER": {
+            "umbral": 4.5,
+            "detectados": 10,
+            "incidentes": 19,
+            "dias_marcados": 0.0953,
+            "episodios_por_anio": 6.0
+          }
+        }
+      },
+      "4": {
+        "recall": 0.366,
+        "detectados": 37,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 5.5,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.0972,
+            "episodios_por_anio": 4.0
+          },
+          "BANORTE": {
+            "umbral": 5.0,
+            "detectados": 2,
+            "incidentes": 16,
+            "dias_marcados": 0.0982,
+            "episodios_por_anio": 5.1
+          },
+          "BBVA": {
+            "umbral": 5.0,
+            "detectados": 15,
+            "incidentes": 37,
+            "dias_marcados": 0.0986,
+            "episodios_por_anio": 4.1
+          },
+          "NUBANK": {
+            "umbral": 6.25,
+            "detectados": 3,
+            "incidentes": 17,
+            "dias_marcados": 0.0986,
+            "episodios_por_anio": 3.5
+          },
+          "SANTANDER": {
+            "umbral": 4.75,
+            "detectados": 9,
+            "incidentes": 19,
+            "dias_marcados": 0.096,
+            "episodios_por_anio": 3.9
+          }
+        }
+      },
+      "5": {
+        "recall": 0.396,
+        "detectados": 40,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 6.0,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.0888,
+            "episodios_por_anio": 2.5
+          },
+          "BANORTE": {
+            "umbral": 6.0,
+            "detectados": 6,
+            "incidentes": 16,
+            "dias_marcados": 0.0951,
+            "episodios_por_anio": 4.4
+          },
+          "BBVA": {
+            "umbral": 5.75,
+            "detectados": 14,
+            "incidentes": 37,
+            "dias_marcados": 0.0936,
+            "episodios_por_anio": 3.1
+          },
+          "NUBANK": {
+            "umbral": 7.25,
+            "detectados": 4,
+            "incidentes": 17,
+            "dias_marcados": 0.0975,
+            "episodios_por_anio": 2.9
+          },
+          "SANTANDER": {
+            "umbral": 5.5,
+            "detectados": 9,
+            "incidentes": 19,
+            "dias_marcados": 0.0993,
+            "episodios_por_anio": 3.2
+          }
+        }
+      },
+      "7": {
+        "recall": 0.307,
+        "detectados": 31,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 7.25,
+            "detectados": 6,
+            "incidentes": 12,
+            "dias_marcados": 0.0925,
+            "episodios_por_anio": 1.9
+          },
+          "BANORTE": {
+            "umbral": 5.75,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.0972,
+            "episodios_por_anio": 2.8
+          },
+          "BBVA": {
+            "umbral": 6.75,
+            "detectados": 12,
+            "incidentes": 37,
+            "dias_marcados": 0.0939,
+            "episodios_por_anio": 2.7
+          },
+          "NUBANK": {
+            "umbral": 7.0,
+            "detectados": 3,
+            "incidentes": 17,
+            "dias_marcados": 0.0992,
+            "episodios_por_anio": 2.3
+          },
+          "SANTANDER": {
+            "umbral": 7.0,
+            "detectados": 7,
+            "incidentes": 19,
+            "dias_marcados": 0.0971,
+            "episodios_por_anio": 2.3
+          }
+        }
+      },
+      "10": {
+        "recall": 0.267,
+        "detectados": 27,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 6.0,
+            "detectados": 5,
+            "incidentes": 12,
+            "dias_marcados": 0.0962,
+            "episodios_por_anio": 1.1
+          },
+          "BANORTE": {
+            "umbral": 6.0,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.0948,
+            "episodios_por_anio": 2.0
+          },
+          "BBVA": {
+            "umbral": 7.0,
+            "detectados": 11,
+            "incidentes": 37,
+            "dias_marcados": 0.0983,
+            "episodios_por_anio": 2.0
+          },
+          "NUBANK": {
+            "umbral": 8.0,
+            "detectados": 3,
+            "incidentes": 17,
+            "dias_marcados": 0.098,
+            "episodios_por_anio": 2.1
+          },
+          "SANTANDER": {
+            "umbral": 7.75,
+            "detectados": 5,
+            "incidentes": 19,
+            "dias_marcados": 0.0982,
+            "episodios_por_anio": 2.0
+          }
+        }
+      },
+      "14": {
+        "recall": 0.198,
+        "detectados": 20,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 8.25,
+            "detectados": 5,
+            "incidentes": 12,
+            "dias_marcados": 0.0996,
+            "episodios_por_anio": 1.1
+          },
+          "BANORTE": {
+            "umbral": 8.25,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0982,
+            "episodios_por_anio": 1.6
+          },
+          "BBVA": {
+            "umbral": 6.5,
+            "detectados": 8,
+            "incidentes": 37,
+            "dias_marcados": 0.0957,
+            "episodios_por_anio": 1.5
+          },
+          "NUBANK": {
+            "umbral": 6.75,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0946,
+            "episodios_por_anio": 1.2
+          },
+          "SANTANDER": {
+            "umbral": 7.75,
+            "detectados": 4,
+            "incidentes": 19,
+            "dias_marcados": 0.0971,
+            "episodios_por_anio": 1.2
+          }
+        }
+      },
+      "21": {
+        "recall": 0.198,
+        "detectados": 20,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 7.75,
+            "detectados": 4,
+            "incidentes": 12,
+            "dias_marcados": 0.0976,
+            "episodios_por_anio": 0.6
+          },
+          "BANORTE": {
+            "umbral": 4.75,
+            "detectados": 2,
+            "incidentes": 16,
+            "dias_marcados": 0.0866,
+            "episodios_por_anio": 0.9
+          },
+          "BBVA": {
+            "umbral": 6.75,
+            "detectados": 7,
+            "incidentes": 37,
+            "dias_marcados": 0.0902,
+            "episodios_por_anio": 0.9
+          },
+          "NUBANK": {
+            "umbral": 6.25,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0958,
+            "episodios_por_anio": 0.6
+          },
+          "SANTANDER": {
+            "umbral": 9.0,
+            "detectados": 5,
+            "incidentes": 19,
+            "dias_marcados": 0.0985,
+            "episodios_por_anio": 0.9
+          }
+        }
+      },
+      "30": {
+        "recall": 0.149,
+        "detectados": 15,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 7.5,
+            "detectados": 2,
+            "incidentes": 12,
+            "dias_marcados": 0.085,
+            "episodios_por_anio": 0.4
+          },
+          "BANORTE": {
+            "umbral": 4.75,
+            "detectados": 2,
+            "incidentes": 16,
+            "dias_marcados": 0.0945,
+            "episodios_por_anio": 0.9
+          },
+          "BBVA": {
+            "umbral": 7.75,
+            "detectados": 5,
+            "incidentes": 37,
+            "dias_marcados": 0.0874,
+            "episodios_por_anio": 0.7
+          },
+          "NUBANK": {
+            "umbral": 5.75,
+            "detectados": 2,
+            "incidentes": 17,
+            "dias_marcados": 0.0935,
+            "episodios_por_anio": 0.4
+          },
+          "SANTANDER": {
+            "umbral": 9.0,
+            "detectados": 4,
+            "incidentes": 19,
+            "dias_marcados": 0.0967,
+            "episodios_por_anio": 0.7
+          }
+        }
+      },
+      "mes": {
+        "recall": 0.158,
+        "detectados": 16,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 4.25,
+            "detectados": 3,
+            "incidentes": 12,
+            "dias_marcados": 0.0932,
+            "episodios_por_anio": 0.5
+          },
+          "BANORTE": {
+            "umbral": 2.75,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.0838,
+            "episodios_por_anio": 0.6
+          },
+          "BBVA": {
+            "umbral": 4.25,
+            "detectados": 5,
+            "incidentes": 37,
+            "dias_marcados": 0.0957,
+            "episodios_por_anio": 0.6
+          },
+          "NUBANK": {
+            "umbral": 3.25,
+            "detectados": 3,
+            "incidentes": 17,
+            "dias_marcados": 0.0873,
+            "episodios_por_anio": 0.6
+          },
+          "SANTANDER": {
+            "umbral": 4.25,
+            "detectados": 4,
+            "incidentes": 19,
+            "dias_marcados": 0.0985,
+            "episodios_por_anio": 0.8
+          }
+        }
+      }
+    },
+    "0.20": {
+      "1": {
+        "recall": 0.653,
+        "detectados": 66,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 2.0,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.1548,
+            "episodios_por_anio": 18.8
+          },
+          "BANORTE": {
+            "umbral": 2.0,
+            "detectados": 9,
+            "incidentes": 16,
+            "dias_marcados": 0.1773,
+            "episodios_por_anio": 21.6
+          },
+          "BBVA": {
+            "umbral": 2.0,
+            "detectados": 26,
+            "incidentes": 37,
+            "dias_marcados": 0.1653,
+            "episodios_por_anio": 20.6
+          },
+          "NUBANK": {
+            "umbral": 2.0,
+            "detectados": 9,
+            "incidentes": 17,
+            "dias_marcados": 0.1847,
+            "episodios_por_anio": 23.0
+          },
+          "SANTANDER": {
+            "umbral": 2.0,
+            "detectados": 15,
+            "incidentes": 19,
+            "dias_marcados": 0.1672,
+            "episodios_por_anio": 21.3
+          }
+        }
+      },
+      "2": {
+        "recall": 0.574,
+        "detectados": 58,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 2.25,
+            "detectados": 7,
+            "incidentes": 12,
+            "dias_marcados": 0.1721,
+            "episodios_por_anio": 12.1
+          },
+          "BANORTE": {
+            "umbral": 2.75,
+            "detectados": 8,
+            "incidentes": 16,
+            "dias_marcados": 0.1762,
+            "episodios_por_anio": 14.5
+          },
+          "BBVA": {
+            "umbral": 2.5,
+            "detectados": 23,
+            "incidentes": 37,
+            "dias_marcados": 0.1828,
+            "episodios_por_anio": 13.9
+          },
+          "NUBANK": {
+            "umbral": 2.5,
+            "detectados": 7,
+            "incidentes": 17,
+            "dias_marcados": 0.1955,
+            "episodios_por_anio": 14.7
+          },
+          "SANTANDER": {
+            "umbral": 2.25,
+            "detectados": 13,
+            "incidentes": 19,
+            "dias_marcados": 0.1993,
+            "episodios_por_anio": 15.7
+          }
+        }
+      },
+      "3": {
+        "recall": 0.545,
+        "detectados": 55,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 2.5,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.1887,
+            "episodios_por_anio": 8.7
+          },
+          "BANORTE": {
+            "umbral": 2.75,
+            "detectados": 9,
+            "incidentes": 16,
+            "dias_marcados": 0.1954,
+            "episodios_por_anio": 11.0
+          },
+          "BBVA": {
+            "umbral": 2.75,
+            "detectados": 20,
+            "incidentes": 37,
+            "dias_marcados": 0.1718,
+            "episodios_por_anio": 8.9
+          },
+          "NUBANK": {
+            "umbral": 3.0,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.183,
+            "episodios_por_anio": 8.7
+          },
+          "SANTANDER": {
+            "umbral": 3.0,
+            "detectados": 13,
+            "incidentes": 19,
+            "dias_marcados": 0.188,
+            "episodios_por_anio": 11.5
+          }
+        }
+      },
+      "4": {
+        "recall": 0.525,
+        "detectados": 53,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.0,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.1948,
+            "episodios_por_anio": 6.2
+          },
+          "BANORTE": {
+            "umbral": 3.0,
+            "detectados": 8,
+            "incidentes": 16,
+            "dias_marcados": 0.1903,
+            "episodios_por_anio": 8.9
+          },
+          "BBVA": {
+            "umbral": 2.75,
+            "detectados": 22,
+            "incidentes": 37,
+            "dias_marcados": 0.2,
+            "episodios_por_anio": 8.2
+          },
+          "NUBANK": {
+            "umbral": 3.25,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.1864,
+            "episodios_por_anio": 6.8
+          },
+          "SANTANDER": {
+            "umbral": 3.0,
+            "detectados": 10,
+            "incidentes": 19,
+            "dias_marcados": 0.1883,
+            "episodios_por_anio": 8.0
+          }
+        }
+      },
+      "5": {
+        "recall": 0.495,
+        "detectados": 50,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.25,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.1819,
+            "episodios_por_anio": 5.1
+          },
+          "BANORTE": {
+            "umbral": 3.25,
+            "detectados": 6,
+            "incidentes": 16,
+            "dias_marcados": 0.1797,
+            "episodios_por_anio": 6.6
+          },
+          "BBVA": {
+            "umbral": 3.25,
+            "detectados": 20,
+            "incidentes": 37,
+            "dias_marcados": 0.1841,
+            "episodios_por_anio": 6.2
+          },
+          "NUBANK": {
+            "umbral": 3.5,
+            "detectados": 4,
+            "incidentes": 17,
+            "dias_marcados": 0.1943,
+            "episodios_por_anio": 5.6
+          },
+          "SANTANDER": {
+            "umbral": 3.25,
+            "detectados": 12,
+            "incidentes": 19,
+            "dias_marcados": 0.196,
+            "episodios_por_anio": 6.8
+          }
+        }
+      },
+      "7": {
+        "recall": 0.416,
+        "detectados": 42,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.25,
+            "detectados": 6,
+            "incidentes": 12,
+            "dias_marcados": 0.1944,
+            "episodios_por_anio": 4.0
+          },
+          "BANORTE": {
+            "umbral": 3.25,
+            "detectados": 5,
+            "incidentes": 16,
+            "dias_marcados": 0.1903,
+            "episodios_por_anio": 4.2
+          },
+          "BBVA": {
+            "umbral": 3.5,
+            "detectados": 16,
+            "incidentes": 37,
+            "dias_marcados": 0.1995,
+            "episodios_por_anio": 4.4
+          },
+          "NUBANK": {
+            "umbral": 3.25,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.1983,
+            "episodios_por_anio": 4.8
+          },
+          "SANTANDER": {
+            "umbral": 3.75,
+            "detectados": 10,
+            "incidentes": 19,
+            "dias_marcados": 0.1996,
+            "episodios_por_anio": 4.9
+          }
+        }
+      },
+      "10": {
+        "recall": 0.396,
+        "detectados": 40,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.25,
+            "detectados": 5,
+            "incidentes": 12,
+            "dias_marcados": 0.1843,
+            "episodios_por_anio": 2.6
+          },
+          "BANORTE": {
+            "umbral": 4.25,
+            "detectados": 5,
+            "incidentes": 16,
+            "dias_marcados": 0.1783,
+            "episodios_por_anio": 3.4
+          },
+          "BBVA": {
+            "umbral": 4.25,
+            "detectados": 15,
+            "incidentes": 37,
+            "dias_marcados": 0.1979,
+            "episodios_por_anio": 3.3
+          },
+          "NUBANK": {
+            "umbral": 3.75,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.1926,
+            "episodios_por_anio": 3.7
+          },
+          "SANTANDER": {
+            "umbral": 4.25,
+            "detectados": 10,
+            "incidentes": 19,
+            "dias_marcados": 0.1949,
+            "episodios_por_anio": 2.9
+          }
+        }
+      },
+      "14": {
+        "recall": 0.337,
+        "detectados": 34,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 4.0,
+            "detectados": 6,
+            "incidentes": 12,
+            "dias_marcados": 0.1917,
+            "episodios_por_anio": 2.0
+          },
+          "BANORTE": {
+            "umbral": 4.5,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.1838,
+            "episodios_por_anio": 2.1
+          },
+          "BBVA": {
+            "umbral": 4.5,
+            "detectados": 15,
+            "incidentes": 37,
+            "dias_marcados": 0.1893,
+            "episodios_por_anio": 2.7
+          },
+          "NUBANK": {
+            "umbral": 4.0,
+            "detectados": 4,
+            "incidentes": 17,
+            "dias_marcados": 0.1819,
+            "episodios_por_anio": 2.3
+          },
+          "SANTANDER": {
+            "umbral": 4.25,
+            "detectados": 6,
+            "incidentes": 19,
+            "dias_marcados": 0.1938,
+            "episodios_por_anio": 2.1
+          }
+        }
+      },
+      "21": {
+        "recall": 0.337,
+        "detectados": 34,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 4.75,
+            "detectados": 8,
+            "incidentes": 12,
+            "dias_marcados": 0.1985,
+            "episodios_por_anio": 1.5
+          },
+          "BANORTE": {
+            "umbral": 3.25,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.192,
+            "episodios_por_anio": 1.8
+          },
+          "BBVA": {
+            "umbral": 4.25,
+            "detectados": 11,
+            "incidentes": 37,
+            "dias_marcados": 0.1922,
+            "episodios_por_anio": 1.4
+          },
+          "NUBANK": {
+            "umbral": 3.25,
+            "detectados": 6,
+            "incidentes": 17,
+            "dias_marcados": 0.1739,
+            "episodios_por_anio": 1.2
+          },
+          "SANTANDER": {
+            "umbral": 4.25,
+            "detectados": 6,
+            "incidentes": 19,
+            "dias_marcados": 0.1996,
+            "episodios_por_anio": 1.7
+          }
+        }
+      },
+      "30": {
+        "recall": 0.297,
+        "detectados": 30,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 3.25,
+            "detectados": 4,
+            "incidentes": 12,
+            "dias_marcados": 0.1975,
+            "episodios_por_anio": 0.7
+          },
+          "BANORTE": {
+            "umbral": 3.25,
+            "detectados": 3,
+            "incidentes": 16,
+            "dias_marcados": 0.1834,
+            "episodios_por_anio": 1.1
+          },
+          "BBVA": {
+            "umbral": 4.25,
+            "detectados": 9,
+            "incidentes": 37,
+            "dias_marcados": 0.193,
+            "episodios_por_anio": 0.9
+          },
+          "NUBANK": {
+            "umbral": 3.25,
+            "detectados": 8,
+            "incidentes": 17,
+            "dias_marcados": 0.1977,
+            "episodios_por_anio": 1.0
+          },
+          "SANTANDER": {
+            "umbral": 5.25,
+            "detectados": 6,
+            "incidentes": 19,
+            "dias_marcados": 0.1945,
+            "episodios_por_anio": 1.1
+          }
+        }
+      },
+      "mes": {
+        "recall": 0.277,
+        "detectados": 28,
+        "por_banco": {
+          "AZTECA": {
+            "umbral": 2.0,
+            "detectados": 4,
+            "incidentes": 12,
+            "dias_marcados": 0.1863,
+            "episodios_por_anio": 1.0
+          },
+          "BANORTE": {
+            "umbral": 2.0,
+            "detectados": 1,
+            "incidentes": 16,
+            "dias_marcados": 0.1366,
+            "episodios_por_anio": 0.8
+          },
+          "BBVA": {
+            "umbral": 2.5,
+            "detectados": 11,
+            "incidentes": 37,
+            "dias_marcados": 0.1997,
+            "episodios_por_anio": 1.1
+          },
+          "NUBANK": {
+            "umbral": 2.0,
+            "detectados": 5,
+            "incidentes": 17,
+            "dias_marcados": 0.1382,
+            "episodios_por_anio": 0.8
+          },
+          "SANTANDER": {
+            "umbral": 2.0,
+            "detectados": 7,
+            "incidentes": 19,
+            "dias_marcados": 0.1993,
+            "episodios_por_anio": 1.3
+          }
+        }
+      }
+    }
+  },
+  "sensibilidad_tolerancia": {
+    "presupuesto_dias_marcados": 0.1,
+    "zona": "alerta en [d - T, d + T + w - 1]",
+    "recall": {
+      "1": {
+        "0": 0.554,
+        "1": 0.525,
+        "3": 0.396,
+        "7": 0.337
+      },
+      "2": {
+        "0": 0.495,
+        "1": 0.465,
+        "3": 0.376,
+        "7": 0.307
+      },
+      "3": {
+        "0": 0.436,
+        "1": 0.396,
+        "3": 0.386,
+        "7": 0.317
+      },
+      "4": {
+        "0": 0.376,
+        "1": 0.386,
+        "3": 0.347,
+        "7": 0.267
+      },
+      "5": {
+        "0": 0.376,
+        "1": 0.366,
+        "3": 0.297,
+        "7": 0.248
+      },
+      "7": {
+        "0": 0.307,
+        "1": 0.297,
+        "3": 0.257,
+        "7": 0.208
+      },
+      "10": {
+        "0": 0.277,
+        "1": 0.257,
+        "3": 0.238,
+        "7": 0.228
+      },
+      "14": {
+        "0": 0.218,
+        "1": 0.198,
+        "3": 0.178,
+        "7": 0.168
+      },
+      "21": {
+        "0": 0.198,
+        "1": 0.198,
+        "3": 0.178,
+        "7": 0.158
+      },
+      "30": {
+        "0": 0.149,
+        "1": 0.149,
+        "3": 0.149,
+        "7": 0.139
+      }
+    }
+  },
+  "desfase_del_pico": {
+    "z_minimo": 4.0,
+    "dias_alrededor": 7,
+    "incidentes_con_pico": 60,
+    "por_dia": {
+      "-7": 2,
+      "-6": 3,
+      "-4": 1,
+      "-2": 3,
+      "-1": 2,
+      "0": 34,
+      "1": 8,
+      "3": 1,
+      "4": 2,
+      "5": 1,
+      "6": 1,
+      "7": 2
+    }
+  }
+}

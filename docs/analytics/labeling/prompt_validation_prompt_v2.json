@@ -1,0 +1,88 @@
+{
+  "candidato": "prompt_v2",
+  "corridas": [
+    "20261018T064949Z",
+    "20261018T065005Z"
+  ],
+  "costo_usd_por_1k": 0.04509,
+  "calibracion": {
+    "v0": {
+      "n": 30,
+      "acuerdo": 0.8,
+      "kappa": 0.531
+    },
+    "v1": {
+      "n": 30,
+      "acuerdo": 0.533,
+      "kappa": 0.255
+    },
+    "prompt_v2": {
+      "n": 30,
+      "acuerdo": 0.833,
+      "kappa": 0.568
+    },
+    "fronterizos_v0_v1": {
+      "n": 10,
+      "humano_igual_v0": 9,
+      "humano_igual_v1": 1,
+      "humano_igual_prompt_v2": 7
+    }
+  },
+  "ciego": {
+    "v0": {
+      "n": 201,
+      "acuerdo": 0.93,
+      "kappa": 0.845
+    },
+    "v1": {
+      "n": 201,
+      "acuerdo": 0.925,
+      "kappa": 0.837
+    },
+    "prompt_v2": {
+      "n": 201,
+      "acuerdo": 0.945,
+      "kappa": 0.878
+    },
+    "prompt_v2_falla": {
+      "n": 201,
+      "acuerdo": 0.94,
+      "kappa": 0.828
+    },
+    "confusion_prompt_v2": [
+      {
+        "humano": "NA",
+        "POS": 1,
+        "NEG": 0,
+        "NA": 1,
+        "NEU": 0
+      },
+      {
+        "humano": "NEG",
+        "POS": 1,
+        "NEG": 53,
+        "NA": 0,
+        "NEU": 0
+      },
+      {
+        "humano": "NEU",
+        "POS": 2,
+        "NEG": 0,
+        "NA": 0,
+        "NEU": 3
+      },
+      {
+        "humano": "POS",
+        "POS": 133,
+        "NEG": 4,
+        "NA": 0,
+        "NEU": 3
+      }
+    ]
+  },
+  "estabilidad": {
+    "n": 430,
+    "acuerdo": 0.984,
+    "kappa": 0.965
+  }
+}

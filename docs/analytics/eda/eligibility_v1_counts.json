@@ -1,0 +1,1388 @@
+{
+  "generado": "2026-10-22T23:32:10+00:00",
+  "version": "eligibility_rules_v1",
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "lexico": {
+    "archivo": "lexicon_v1.parquet",
+    "sha256": "c632e174de021de55375c058d34326b6f02cfb7413b8cbc9fc0c0d0da5c2736d",
+    "silver_rows_single_word": 12352,
+    "silver_forms": 684,
+    "forms_with_support": 152,
+    "lexicon_forms": 151,
+    "lexicon_by_label": [
+      {
+        "lexico": "NA",
+        "len": 5
+      },
+      {
+        "lexico": "NEG",
+        "len": 22
+      },
+      {
+        "lexico": "NEU",
+        "len": 7
+      },
+      {
+        "lexico": "POS",
+        "len": 117
+      }
+    ]
+  },
+  "prediccion_topicos": {
+    "modelo": "M4_robertuito_s1_ppi",
+    "backfill": "20261022",
+    "filas_modelo_sin_prediccion": 99
+  },
+  "tnss": {
+    "filas": 2649047,
+    "por_motivo": {
+      "ELEGIBLE_MODEL": {
+        "filas": 2163646,
+        "proporcion": 0.81676
+      },
+      "ELEGIBLE_RULE_BASED": {
+        "filas": 443469,
+        "proporcion": 0.16741
+      },
+      "TNSS_SINGLE_WORD": {
+        "filas": 22164,
+        "proporcion": 0.00837
+      },
+      "TNSS_NO_TEXT_CONTENT": {
+        "filas": 19586,
+        "proporcion": 0.00739
+      },
+      "TNSS_TIME_OUTLIER": {
+        "filas": 174,
+        "proporcion": 7e-05
+      },
+      "TNSS_EMPTY": {
+        "filas": 8,
+        "proporcion": 0.0
+      }
+    }
+  },
+  "tnss_por_banco": {
+    "AZTECA": {
+      "filas": 590981,
+      "por_motivo": {
+        "ELEGIBLE_MODEL": {
+          "filas": 461226,
+          "proporcion": 0.78044
+        },
+        "ELEGIBLE_RULE_BASED": {
+          "filas": 118637,
+          "proporcion": 0.20075
+        },
+        "TNSS_SINGLE_WORD": {
+          "filas": 5613,
+          "proporcion": 0.0095
+        },
+        "TNSS_NO_TEXT_CONTENT": {
+          "filas": 5503,
+          "proporcion": 0.00931
+        },
+        "TNSS_EMPTY": {
+          "filas": 2,
+          "proporcion": 0.0
+        }
+      }
+    },
+    "BANORTE": {
+      "filas": 518393,
+      "por_motivo": {
+        "ELEGIBLE_MODEL": {
+          "filas": 427526,
+          "proporcion": 0.82471
+        },
+        "ELEGIBLE_RULE_BASED": {
+          "filas": 83330,
+          "proporcion": 0.16075
+        },
+        "TNSS_SINGLE_WORD": {
+          "filas": 3914,
+          "proporcion": 0.00755
+        },
+        "TNSS_NO_TEXT_CONTENT": {
+          "filas": 3622,
+          "proporcion": 0.00699
+        },
+        "TNSS_EMPTY": {
+          "filas": 1,
+          "proporcion": 0.0
+        }
+      }
+    },
+    "BBVA": {
+      "filas": 787875,
+      "por_motivo": {
+        "ELEGIBLE_MODEL": {
+          "filas": 655689,
+          "proporcion": 0.83222
+        },
+        "ELEGIBLE_RULE_BASED": {
+          "filas": 120158,
+          "proporcion": 0.15251
+        },
+        "TNSS_SINGLE_WORD": {
+          "filas": 6922,
+          "proporcion": 0.00879
+        },
+        "TNSS_NO_TEXT_CONTENT": {
+          "filas": 5101,
+          "proporcion": 0.00647
+        },
+        "TNSS_EMPTY": {
+          "filas": 5,
+          "proporcion": 1e-05
+        }
+      }
+    },
+    "NUBANK": {
+      "filas": 128204,
+      "por_motivo": {
+        "ELEGIBLE_MODEL": {
+          "filas": 109239,
+          "proporcion": 0.85207
+        },
+        "ELEGIBLE_RULE_BASED": {
+          "filas": 17047,
+          "proporcion": 0.13297
+        },
+        "TNSS_SINGLE_WORD": {
+          "filas": 953,
+          "proporcion": 0.00743
+        },
+        "TNSS_NO_TEXT_CONTENT": {
+          "filas": 791,
+          "proporcion": 0.00617
+        },
+        "TNSS_TIME_OUTLIER": {
+          "filas": 174,
+          "proporcion": 0.00136
+        }
+      }
+    },
+    "SANTANDER": {
+      "filas": 623594,
+      "por_motivo": {
+        "ELEGIBLE_MODEL": {
+          "filas": 509966,
+          "proporcion": 0.81779
+        },
+        "ELEGIBLE_RULE_BASED": {
+          "filas": 104297,
+          "proporcion": 0.16725
+        },
+        "TNSS_SINGLE_WORD": {
+          "filas": 4762,
+          "proporcion": 0.00764
+        },
+        "TNSS_NO_TEXT_CONTENT": {
+          "filas": 4569,
+          "proporcion": 0.00733
+        }
+      }
+    }
+  },
+  "tnss_por_banco_periodo": [
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 234937
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 59160
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_EMPTY",
+      "filas": 2
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 2927
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 2730
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 80752
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 18681
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 996
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 892
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 81187
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 24011
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 876
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 977
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 64350
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 16785
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 704
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1014
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 147971
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 26907
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1294
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1266
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 87926
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 15592
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 734
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 674
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 83948
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 18211
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 714
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 680
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 107681
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 22620
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TNSS_EMPTY",
+      "filas": 1
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 880
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1294
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 180128
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 29507
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_EMPTY",
+      "filas": 3
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1480
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1786
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 117079
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 23667
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_EMPTY",
+      "filas": 1
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1112
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1323
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 127165
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 22899
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 874
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1043
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 231317
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 44085
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TNSS_EMPTY",
+      "filas": 1
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1635
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 2770
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 17747
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 2333
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 150
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 151
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 25584
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 3681
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 199
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 273
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 65908
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 11033
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 441
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 529
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "<=2019",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "<=2019",
+      "motivo": "TNSS_TIME_OUTLIER",
+      "filas": 174
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 186645
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 40160
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1777
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1820
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 95991
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 18900
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 876
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 887
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 94494
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 18454
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 670
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 705
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_MODEL",
+      "filas": 132836
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE_RULE_BASED",
+      "filas": 26783
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "TNSS_NO_TEXT_CONTENT",
+      "filas": 1246
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "TNSS_SINGLE_WORD",
+      "filas": 1350
+    }
+  ],
+  "topicos": {
+    "filas": 2649047,
+    "por_motivo": {
+      "TOPIC_NOT_NEGATIVE": {
+        "filas": 1893282,
+        "proporcion": 0.7147
+      },
+      "ELEGIBLE": {
+        "filas": 703353,
+        "proporcion": 0.26551
+      },
+      "TOPIC_TNSS_NOT_PREDICTED": {
+        "filas": 41932,
+        "proporcion": 0.01583
+      },
+      "TOPIC_TOO_SHORT": {
+        "filas": 10381,
+        "proporcion": 0.00392
+      },
+      "SIN_PREDICCION_EN_BACKFILL": {
+        "filas": 99,
+        "proporcion": 4e-05
+      }
+    }
+  },
+  "topicos_por_banco": {
+    "AZTECA": {
+      "filas": 590981,
+      "por_motivo": {
+        "TOPIC_NOT_NEGATIVE": {
+          "filas": 485048,
+          "proporcion": 0.82075
+        },
+        "ELEGIBLE": {
+          "filas": 93004,
+          "proporcion": 0.15737
+        },
+        "TOPIC_TNSS_NOT_PREDICTED": {
+          "filas": 11118,
+          "proporcion": 0.01881
+        },
+        "TOPIC_TOO_SHORT": {
+          "filas": 1802,
+          "proporcion": 0.00305
+        },
+        "SIN_PREDICCION_EN_BACKFILL": {
+          "filas": 9,
+          "proporcion": 2e-05
+        }
+      }
+    },
+    "BANORTE": {
+      "filas": 518393,
+      "por_motivo": {
+        "TOPIC_NOT_NEGATIVE": {
+          "filas": 388482,
+          "proporcion": 0.7494
+        },
+        "ELEGIBLE": {
+          "filas": 120675,
+          "proporcion": 0.23279
+        },
+        "TOPIC_TNSS_NOT_PREDICTED": {
+          "filas": 7537,
+          "proporcion": 0.01454
+        },
+        "TOPIC_TOO_SHORT": {
+          "filas": 1692,
+          "proporcion": 0.00326
+        },
+        "SIN_PREDICCION_EN_BACKFILL": {
+          "filas": 7,
+          "proporcion": 1e-05
+        }
+      }
+    },
+    "BBVA": {
+      "filas": 787875,
+      "por_motivo": {
+        "TOPIC_NOT_NEGATIVE": {
+          "filas": 481078,
+          "proporcion": 0.6106
+        },
+        "ELEGIBLE": {
+          "filas": 292190,
+          "proporcion": 0.37086
+        },
+        "TOPIC_TNSS_NOT_PREDICTED": {
+          "filas": 12028,
+          "proporcion": 0.01527
+        },
+        "TOPIC_TOO_SHORT": {
+          "filas": 2534,
+          "proporcion": 0.00322
+        },
+        "SIN_PREDICCION_EN_BACKFILL": {
+          "filas": 45,
+          "proporcion": 6e-05
+        }
+      }
+    },
+    "NUBANK": {
+      "filas": 128204,
+      "por_motivo": {
+        "TOPIC_NOT_NEGATIVE": {
+          "filas": 95199,
+          "proporcion": 0.74256
+        },
+        "ELEGIBLE": {
+          "filas": 30849,
+          "proporcion": 0.24062
+        },
+        "TOPIC_TNSS_NOT_PREDICTED": {
+          "filas": 1918,
+          "proporcion": 0.01496
+        },
+        "TOPIC_TOO_SHORT": {
+          "filas": 227,
+          "proporcion": 0.00177
+        },
+        "SIN_PREDICCION_EN_BACKFILL": {
+          "filas": 11,
+          "proporcion": 9e-05
+        }
+      }
+    },
+    "SANTANDER": {
+      "filas": 623594,
+      "por_motivo": {
+        "TOPIC_NOT_NEGATIVE": {
+          "filas": 443475,
+          "proporcion": 0.71116
+        },
+        "ELEGIBLE": {
+          "filas": 166635,
+          "proporcion": 0.26722
+        },
+        "TOPIC_TNSS_NOT_PREDICTED": {
+          "filas": 9331,
+          "proporcion": 0.01496
+        },
+        "TOPIC_TOO_SHORT": {
+          "filas": 4126,
+          "proporcion": 0.00662
+        },
+        "SIN_PREDICCION_EN_BACKFILL": {
+          "filas": 27,
+          "proporcion": 4e-05
+        }
+      }
+    }
+  },
+  "topicos_por_banco_periodo": [
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE",
+      "filas": 47010
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 246227
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 5659
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 860
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE",
+      "filas": 16407
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 2
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 82763
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1888
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 261
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE",
+      "filas": 16059
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 7
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 88693
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1853
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 439
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE",
+      "filas": 13528
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 67365
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1718
+    },
+    {
+      "bank_id": "AZTECA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 242
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE",
+      "filas": 51454
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 122622
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 2560
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 802
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE",
+      "filas": 17933
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 2
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 85366
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1408
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 217
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE",
+      "filas": 20107
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 4
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 81748
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1394
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 300
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE",
+      "filas": 31181
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 1
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 98746
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 2175
+    },
+    {
+      "bank_id": "BANORTE",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 373
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE",
+      "filas": 83888
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 6
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 125062
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 3269
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 679
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE",
+      "filas": 54445
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 5
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 85803
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 2436
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 493
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE",
+      "filas": 73600
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 31
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 75691
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1917
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 742
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE",
+      "filas": 80257
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 3
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 194522
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 4406
+    },
+    {
+      "bank_id": "BBVA",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 620
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE",
+      "filas": 4793
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 15251
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 301
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 36
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE",
+      "filas": 10110
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 19093
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 472
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 62
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE",
+      "filas": 15946
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 11
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 60855
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 970
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 129
+    },
+    {
+      "bank_id": "NUBANK",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 175
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "ELEGIBLE",
+      "filas": 66616
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 1
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 158325
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 3597
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2020-2022",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 1863
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "ELEGIBLE",
+      "filas": 26392
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 3
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 87778
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1763
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2023-2024",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 718
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "ELEGIBLE",
+      "filas": 33246
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 19
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 79014
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 1375
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "2025-2026",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 669
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "ELEGIBLE",
+      "filas": 40381
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "SIN_PREDICCION_EN_BACKFILL",
+      "filas": 4
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_NOT_NEGATIVE",
+      "filas": 118358
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TNSS_NOT_PREDICTED",
+      "filas": 2596
+    },
+    {
+      "bank_id": "SANTANDER",
+      "periodo": "<=2019",
+      "motivo": "TOPIC_TOO_SHORT",
+      "filas": 876
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "generado": "2026-10-22T08:30:46+00:00",
+  "filas": 99926,
+  "filas_por_mes_bbva_mediana": 126.0,
+  "incidentes": {
+    "2024-07": [
+      "u"
+    ],
+    "2025-10": [
+      "DV",
+      "UX"
+    ],
+    "2025-11": [
+      "DV",
+      "UX"
+    ]
+  },
+  "desde": "2022-01",
+  "criterio_a_mes": {
+    "volumen_neg|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 3,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 1.0,
+      "rango_medio": 2.0
+    },
+    "volumen_neg|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 1,
+        "2025-10": 2,
+        "2025-11": 5
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 2.67
+    },
+    "proporcion_neg|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 3,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 1.0,
+      "rango_medio": 2.0
+    },
+    "proporcion_neg|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 2,
+        "2025-10": 1,
+        "2025-11": 4
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 2.33
+    },
+    "formula_anterior|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 3,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 1.0,
+      "rango_medio": 2.0
+    },
+    "formula_anterior|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 1,
+        "2025-10": 2,
+        "2025-11": 4
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 2.33
+    },
+    "votos_neg|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 17,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 6.67
+    },
+    "votos_neg|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 19,
+        "2025-10": 1,
+        "2025-11": 3
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 7.67
+    },
+    "volumen_u|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 3,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 1.0,
+      "rango_medio": 2.0
+    },
+    "volumen_u|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 1,
+        "2025-10": 4,
+        "2025-11": 6
+      },
+      "precision_en_3": 0.333,
+      "rango_medio": 3.67
+    },
+    "proporcion_u|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 5,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 2.67
+    },
+    "proporcion_u|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 1,
+        "2025-10": 6,
+        "2025-11": 8
+      },
+      "precision_en_3": 0.333,
+      "rango_medio": 5.0
+    },
+    "formula_con_u|nivel": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 3,
+        "2025-10": 1,
+        "2025-11": 2
+      },
+      "precision_en_3": 1.0,
+      "rango_medio": 2.0
+    },
+    "formula_con_u|anomalia": {
+      "meses": 58,
+      "rango_incidentes": {
+        "2024-07": 1,
+        "2025-10": 2,
+        "2025-11": 4
+      },
+      "precision_en_3": 0.667,
+      "rango_medio": 2.33
+    }
+  },
+  "criterio_b_dentro_del_mes": {
+    "2024-07": {
+      "filas_neg": 226,
+      "esperado": [
+        "u"
+      ],
+      "volumen": {
+        "orden": [
+          "u",
+          "FA",
+          "AC",
+          "TR",
+          "LE"
+        ],
+        "rango_esperado": 1
+      },
+      "formula_anterior": {
+        "orden": [
+          "u",
+          "AC",
+          "FA",
+          "TR",
+          "LE"
+        ],
+        "rango_esperado": 1
+      }
+    },
+    "2025-10": {
+      "filas_neg": 362,
+      "esperado": [
+        "DV",
+        "UX"
+      ],
+      "volumen": {
+        "orden": [
+          "u",
+          "UX",
+          "FA",
+          "DV",
+          "PR"
+        ],
+        "rango_esperado": 2
+      },
+      "formula_anterior": {
+        "orden": [
+          "u",
+          "UX",
+          "FA",
+          "DV",
+          "PR"
+        ],
+        "rango_esperado": 2
+      }
+    },
+    "2025-11": {
+      "filas_neg": 264,
+      "esperado": [
+        "DV",
+        "UX"
+      ],
+      "volumen": {
+        "orden": [
+          "u",
+          "UX",
+          "FA",
+          "LE",
+          "DV"
+        ],
+        "rango_esperado": 2
+      },
+      "formula_anterior": {
+        "orden": [
+          "u",
+          "UX",
+          "FA",
+          "LE",
+          "DV"
+        ],
+        "rango_esperado": 2
+      }
+    }
+  }
+}

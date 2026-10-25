@@ -1,0 +1,1590 @@
+{
+  "generated_at": "2026-10-22T06:25:06+00:00",
+  "source": "topics_working_v0 (plata NEG), 5 bancos; MiniLM; min_samples 10",
+  "aspects_reference": "aspects_v2_1 (vigente; las claves sin sufijo usan aspects_v2 provisional)",
+  "units": {
+    "params": {
+      "mcs": [
+        50,
+        100,
+        150
+      ],
+      "ms": 10,
+      "umbrales": [
+        0.15,
+        0.3
+      ],
+      "folds": 5
+    },
+    "results": [
+      {
+        "variante": "resena_mcs50",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.6352,
+        "n_codificados": 1434,
+        "f1_familias": 0.3755,
+        "precision_familias": 0.6216,
+        "recall_familias": 0.269,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs50_p0.15",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.6851,
+        "n_codificados": 1434,
+        "f1_familias": 0.4285,
+        "precision_familias": 0.5363,
+        "recall_familias": 0.3568,
+        "multi_predicho": 0.1553,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0967
+      },
+      {
+        "variante": "distribucion_mcs50_p0.3",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.4078,
+        "n_codificados": 1434,
+        "f1_familias": 0.2552,
+        "precision_familias": 0.5463,
+        "recall_familias": 0.1665,
+        "multi_predicho": 0.0313,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.005
+      },
+      {
+        "variante": "clausulas_mcs50",
+        "min_cluster_size": 50,
+        "topicos": 186,
+        "npmi": -0.0243,
+        "ruido_segmentos": 0.3905,
+        "cobertura": 0.7034,
+        "n_codificados": 1434,
+        "f1_familias": 0.3917,
+        "precision_familias": 0.5132,
+        "recall_familias": 0.3167,
+        "multi_predicho": 0.1127,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.1458
+      },
+      {
+        "variante": "resena_mcs100",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.6255,
+        "n_codificados": 1434,
+        "f1_familias": 0.3617,
+        "precision_familias": 0.5982,
+        "recall_familias": 0.2592,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs100_p0.15",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.6389,
+        "n_codificados": 1434,
+        "f1_familias": 0.4162,
+        "precision_familias": 0.5035,
+        "recall_familias": 0.3547,
+        "multi_predicho": 0.2147,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0953
+      },
+      {
+        "variante": "distribucion_mcs100_p0.3",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.4196,
+        "n_codificados": 1434,
+        "f1_familias": 0.281,
+        "precision_familias": 0.6014,
+        "recall_familias": 0.1833,
+        "multi_predicho": 0.0227,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0031
+      },
+      {
+        "variante": "clausulas_mcs100",
+        "min_cluster_size": 100,
+        "topicos": 97,
+        "npmi": 0.017,
+        "ruido_segmentos": 0.3135,
+        "cobertura": 0.7631,
+        "n_codificados": 1434,
+        "f1_familias": 0.436,
+        "precision_familias": 0.5223,
+        "recall_familias": 0.3742,
+        "multi_predicho": 0.1307,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.1446
+      },
+      {
+        "variante": "resena_mcs150",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.6323,
+        "n_codificados": 1434,
+        "f1_familias": 0.3464,
+        "precision_familias": 0.5636,
+        "recall_familias": 0.25,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs150_p0.15",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.6241,
+        "n_codificados": 1434,
+        "f1_familias": 0.4029,
+        "precision_familias": 0.5126,
+        "recall_familias": 0.3319,
+        "multi_predicho": 0.1867,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.097
+      },
+      {
+        "variante": "distribucion_mcs150_p0.3",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.4179,
+        "n_codificados": 1434,
+        "f1_familias": 0.2622,
+        "precision_familias": 0.5821,
+        "recall_familias": 0.1692,
+        "multi_predicho": 0.02,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.0083
+      },
+      {
+        "variante": "clausulas_mcs150",
+        "min_cluster_size": 150,
+        "topicos": 70,
+        "npmi": 0.086,
+        "ruido_segmentos": 0.2891,
+        "cobertura": 0.7865,
+        "n_codificados": 1434,
+        "f1_familias": 0.4238,
+        "precision_familias": 0.4953,
+        "recall_familias": 0.3704,
+        "multi_predicho": 0.1447,
+        "multi_codificado": 0.2747,
+        "kappa_multi": 0.1624
+      }
+    ]
+  },
+  "dynamics_clausulas_mcs100": {
+    "variante": "clausulas_mcs100",
+    "trimestres_banco_evaluables": 197,
+    "persistencia_topicos": {
+      "estables_>=50%_de_trimestres": 16,
+      "intermitentes_10-50%": 61,
+      "raros_<10%": 20
+    },
+    "hipotesis": {
+      "H-T1 token": {
+        "topicos": 1,
+        "por_banco_etapa": [
+          {
+            "banco": "AZTECA",
+            "etapa": "2018-2020",
+            "share": 0.0007,
+            "filas": 1925
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2531
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 2127
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "<=2017",
+            "share": 0.0079,
+            "filas": 174
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2018-2020",
+            "share": 0.0022,
+            "filas": 2570
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2021-2023",
+            "share": 0.0002,
+            "filas": 2616
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 2550
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "<=2017",
+            "share": 0.0081,
+            "filas": 714
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2018-2020",
+            "share": 0.0054,
+            "filas": 2965
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2021-2023",
+            "share": 0.0014,
+            "filas": 2502
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2024+",
+            "share": 0.0021,
+            "filas": 3736
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "<=2017",
+            "share": 0.0051,
+            "filas": 942
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 265
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2783
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 5476
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2018-2020",
+            "share": 0.0341,
+            "filas": 2772
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2021-2023",
+            "share": 0.0325,
+            "filas": 2738
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2024+",
+            "share": 0.022,
+            "filas": 2821
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "<=2017",
+            "share": 0.0227,
+            "filas": 366
+          }
+        ]
+      },
+      "H-T1 wallet": {
+        "topicos": 0,
+        "por_banco_etapa": [
+          {
+            "banco": "AZTECA",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 1925
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2531
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 2127
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "<=2017",
+            "share": 0.0,
+            "filas": 174
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 2570
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2616
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 2550
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "<=2017",
+            "share": 0.0,
+            "filas": 714
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 2965
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2502
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 3736
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "<=2017",
+            "share": 0.0,
+            "filas": 942
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 265
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2783
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 5476
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2018-2020",
+            "share": 0.0,
+            "filas": 2772
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2021-2023",
+            "share": 0.0,
+            "filas": 2738
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2024+",
+            "share": 0.0,
+            "filas": 2821
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "<=2017",
+            "share": 0.0,
+            "filas": 366
+          }
+        ]
+      },
+      "H-T2 biometria": {
+        "topicos": 4,
+        "por_banco_etapa": [
+          {
+            "banco": "AZTECA",
+            "etapa": "2018-2020",
+            "share": 0.0028,
+            "filas": 1925
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2021-2023",
+            "share": 0.0122,
+            "filas": 2531
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2024+",
+            "share": 0.0112,
+            "filas": 2127
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "<=2017",
+            "share": 0.0314,
+            "filas": 174
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2018-2020",
+            "share": 0.0037,
+            "filas": 2570
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2021-2023",
+            "share": 0.0025,
+            "filas": 2616
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2024+",
+            "share": 0.0048,
+            "filas": 2550
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "<=2017",
+            "share": 0.0073,
+            "filas": 714
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2018-2020",
+            "share": 0.0841,
+            "filas": 2965
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2021-2023",
+            "share": 0.1148,
+            "filas": 2502
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2024+",
+            "share": 0.0297,
+            "filas": 3736
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "<=2017",
+            "share": 0.0014,
+            "filas": 942
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2018-2020",
+            "share": 0.003,
+            "filas": 265
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2021-2023",
+            "share": 0.0047,
+            "filas": 2783
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2024+",
+            "share": 0.0095,
+            "filas": 5476
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2018-2020",
+            "share": 0.0068,
+            "filas": 2772
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2021-2023",
+            "share": 0.0029,
+            "filas": 2738
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2024+",
+            "share": 0.0039,
+            "filas": 2821
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "<=2017",
+            "share": 0.0033,
+            "filas": 366
+          }
+        ]
+      },
+      "H-T2 alta digital": {
+        "topicos": 1,
+        "por_banco_etapa": [
+          {
+            "banco": "AZTECA",
+            "etapa": "2018-2020",
+            "share": 0.0033,
+            "filas": 1925
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2021-2023",
+            "share": 0.0062,
+            "filas": 2531
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "2024+",
+            "share": 0.0023,
+            "filas": 2127
+          },
+          {
+            "banco": "AZTECA",
+            "etapa": "<=2017",
+            "share": 0.0079,
+            "filas": 174
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2018-2020",
+            "share": 0.0069,
+            "filas": 2570
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2021-2023",
+            "share": 0.0016,
+            "filas": 2616
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "2024+",
+            "share": 0.0016,
+            "filas": 2550
+          },
+          {
+            "banco": "BANORTE",
+            "etapa": "<=2017",
+            "share": 0.0,
+            "filas": 714
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2018-2020",
+            "share": 0.0053,
+            "filas": 2965
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2021-2023",
+            "share": 0.0036,
+            "filas": 2502
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "2024+",
+            "share": 0.0019,
+            "filas": 3736
+          },
+          {
+            "banco": "BBVA",
+            "etapa": "<=2017",
+            "share": 0.0083,
+            "filas": 942
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2018-2020",
+            "share": 0.025,
+            "filas": 265
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2021-2023",
+            "share": 0.0155,
+            "filas": 2783
+          },
+          {
+            "banco": "NUBANK",
+            "etapa": "2024+",
+            "share": 0.007,
+            "filas": 5476
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2018-2020",
+            "share": 0.0053,
+            "filas": 2772
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2021-2023",
+            "share": 0.0047,
+            "filas": 2738
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "2024+",
+            "share": 0.0004,
+            "filas": 2821
+          },
+          {
+            "banco": "SANTANDER",
+            "etapa": "<=2017",
+            "share": 0.0164,
+            "filas": 366
+          }
+        ]
+      }
+    },
+    "especificidad_por_banco": {
+      "topicos": 97,
+      "especificos_por_banco": {
+        "BBVA": 3,
+        "SANTANDER": 1
+      },
+      "topicos_con_marcas_de_portugues": 0
+    },
+    "senal_incidentes": {
+      "z_alerta": 3.0,
+      "min_filas_topico": 10,
+      "incidentes": [
+        {
+          "banco": "BBVA",
+          "mes": "2024-07",
+          "topicos_en_alerta": 1,
+          "topicos_en_alerta_mes_previo": 2,
+          "z_volumen": 19.43,
+          "z_volumen_mes_previo": 11.68
+        },
+        {
+          "banco": "BBVA",
+          "mes": "2025-10",
+          "topicos_en_alerta": 3,
+          "topicos_en_alerta_mes_previo": 0,
+          "z_volumen": 12.42,
+          "z_volumen_mes_previo": 1.42
+        },
+        {
+          "banco": "BBVA",
+          "mes": "2025-11",
+          "topicos_en_alerta": 2,
+          "topicos_en_alerta_mes_previo": 3,
+          "z_volumen": 5.71,
+          "z_volumen_mes_previo": 12.42
+        }
+      ],
+      "meses_banco_evaluables": 632,
+      "meses_sin_incidente_con_alerta": 68,
+      "tasa_meses_con_alerta_fuera_de_incidentes": 0.1081,
+      "meses_con_alerta_de_volumen": 79,
+      "meses_con_alerta_de_volumen_fuera_de_incidentes": 76
+    },
+    "versiones": {
+      "BANORTE": {
+        "versiones_con_masa": 26,
+        "js_mediana": 0.1655,
+        "js_p90": 0.2817
+      },
+      "BBVA": {
+        "versiones_con_masa": 58,
+        "js_mediana": 0.2983,
+        "js_p90": 0.3934
+      },
+      "AZTECA": {
+        "versiones_con_masa": 19,
+        "js_mediana": 0.3409,
+        "js_p90": 0.3932
+      },
+      "SANTANDER": {
+        "versiones_con_masa": 54,
+        "js_mediana": 0.2797,
+        "js_p90": 0.3518
+      },
+      "NUBANK": {
+        "versiones_con_masa": 31,
+        "js_mediana": 0.3165,
+        "js_p90": 0.443
+      }
+    }
+  },
+  "units_aspects_v2_1": {
+    "params": {
+      "mcs": [
+        50,
+        100,
+        150
+      ],
+      "ms": 10,
+      "umbrales": [
+        0.15,
+        0.3
+      ],
+      "folds": 5
+    },
+    "results": [
+      {
+        "variante": "resena_mcs50",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.6352,
+        "n_codificados": 1434,
+        "f1_familias": 0.3688,
+        "precision_familias": 0.6013,
+        "recall_familias": 0.266,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs50_p0.15",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.6851,
+        "n_codificados": 1434,
+        "f1_familias": 0.4424,
+        "precision_familias": 0.5461,
+        "recall_familias": 0.3718,
+        "multi_predicho": 0.1453,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1008
+      },
+      {
+        "variante": "distribucion_mcs50_p0.3",
+        "min_cluster_size": 50,
+        "topicos": 94,
+        "npmi": 0.1089,
+        "cobertura": 0.4078,
+        "n_codificados": 1434,
+        "f1_familias": 0.2873,
+        "precision_familias": 0.6197,
+        "recall_familias": 0.187,
+        "multi_predicho": 0.0253,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0135
+      },
+      {
+        "variante": "clausulas_mcs50",
+        "min_cluster_size": 50,
+        "topicos": 186,
+        "npmi": -0.0243,
+        "ruido_segmentos": 0.3905,
+        "cobertura": 0.7034,
+        "n_codificados": 1434,
+        "f1_familias": 0.3875,
+        "precision_familias": 0.4906,
+        "recall_familias": 0.3203,
+        "multi_predicho": 0.112,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1651
+      },
+      {
+        "variante": "resena_mcs100",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.6255,
+        "n_codificados": 1434,
+        "f1_familias": 0.3575,
+        "precision_familias": 0.5759,
+        "recall_familias": 0.2592,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs100_p0.15",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.6389,
+        "n_codificados": 1434,
+        "f1_familias": 0.4303,
+        "precision_familias": 0.5322,
+        "recall_familias": 0.3611,
+        "multi_predicho": 0.1627,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1411
+      },
+      {
+        "variante": "distribucion_mcs100_p0.3",
+        "min_cluster_size": 100,
+        "topicos": 57,
+        "npmi": 0.1208,
+        "cobertura": 0.4196,
+        "n_codificados": 1434,
+        "f1_familias": 0.2998,
+        "precision_familias": 0.6375,
+        "recall_familias": 0.196,
+        "multi_predicho": 0.02,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0135
+      },
+      {
+        "variante": "clausulas_mcs100",
+        "min_cluster_size": 100,
+        "topicos": 97,
+        "npmi": 0.017,
+        "ruido_segmentos": 0.3135,
+        "cobertura": 0.7631,
+        "n_codificados": 1434,
+        "f1_familias": 0.4312,
+        "precision_familias": 0.5019,
+        "recall_familias": 0.3779,
+        "multi_predicho": 0.1327,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1483
+      },
+      {
+        "variante": "resena_mcs150",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.6323,
+        "n_codificados": 1434,
+        "f1_familias": 0.3553,
+        "precision_familias": 0.5729,
+        "recall_familias": 0.2576,
+        "multi_predicho": 0.0,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0
+      },
+      {
+        "variante": "distribucion_mcs150_p0.15",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.6241,
+        "n_codificados": 1434,
+        "f1_familias": 0.4171,
+        "precision_familias": 0.5356,
+        "recall_familias": 0.3415,
+        "multi_predicho": 0.156,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1158
+      },
+      {
+        "variante": "distribucion_mcs150_p0.3",
+        "min_cluster_size": 150,
+        "topicos": 45,
+        "npmi": 0.1135,
+        "cobertura": 0.4179,
+        "n_codificados": 1434,
+        "f1_familias": 0.2774,
+        "precision_familias": 0.6142,
+        "recall_familias": 0.1792,
+        "multi_predicho": 0.0147,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.0188
+      },
+      {
+        "variante": "clausulas_mcs150",
+        "min_cluster_size": 150,
+        "topicos": 70,
+        "npmi": 0.086,
+        "ruido_segmentos": 0.2891,
+        "cobertura": 0.7865,
+        "n_codificados": 1434,
+        "f1_familias": 0.4235,
+        "precision_familias": 0.4835,
+        "recall_familias": 0.3768,
+        "multi_predicho": 0.144,
+        "multi_codificado": 0.2467,
+        "kappa_multi": 0.1657
+      }
+    ]
+  },
+  "ab_aspects_v2_1": {
+    "extracciones": 1500,
+    "textos": 1434,
+    "clausulas_mcs100": {
+      "f1_por_familia": {
+        "AC": {
+          "soporte": 366,
+          "f1": 0.521
+        },
+        "AT": {
+          "soporte": 121,
+          "f1": 0.188
+        },
+        "CO": {
+          "soporte": 119,
+          "f1": 0.23
+        },
+        "DI": {
+          "soporte": 40,
+          "f1": 0.0
+        },
+        "DV": {
+          "soporte": 27,
+          "f1": 0.065
+        },
+        "FA": {
+          "soporte": 443,
+          "f1": 0.465
+        },
+        "LE": {
+          "soporte": 159,
+          "f1": 0.685
+        },
+        "OT": {
+          "soporte": 9,
+          "f1": 0.0
+        },
+        "PR": {
+          "soporte": 172,
+          "f1": 0.369
+        },
+        "TR": {
+          "soporte": 206,
+          "f1": 0.503
+        },
+        "UX": {
+          "soporte": 124,
+          "f1": 0.251
+        }
+      },
+      "topicos_con_soporte": 47,
+      "pureza": {
+        ">=0.7": 18,
+        "0.5-0.7": 7,
+        "<0.5": 22
+      },
+      "familia_mayoritaria": {
+        "AC": 12,
+        "AT": 2,
+        "CO": 1,
+        "FA": 17,
+        "LE": 2,
+        "PR": 2,
+        "SIN": 5,
+        "TR": 4,
+        "UX": 2
+      },
+      "familias_sin_topico_mayoritario": [
+        "DI",
+        "DV",
+        "OT"
+      ],
+      "candidatos_emergentes": 24,
+      "peso_filas_neg_en_emergentes": 0.4194
+    },
+    "resena_mcs100": {
+      "f1_por_familia": {
+        "AC": {
+          "soporte": 366,
+          "f1": 0.488
+        },
+        "AT": {
+          "soporte": 121,
+          "f1": 0.0
+        },
+        "CO": {
+          "soporte": 119,
+          "f1": 0.133
+        },
+        "DI": {
+          "soporte": 40,
+          "f1": 0.277
+        },
+        "DV": {
+          "soporte": 27,
+          "f1": 0.0
+        },
+        "FA": {
+          "soporte": 443,
+          "f1": 0.383
+        },
+        "LE": {
+          "soporte": 159,
+          "f1": 0.659
+        },
+        "OT": {
+          "soporte": 9,
+          "f1": 0.0
+        },
+        "PR": {
+          "soporte": 172,
+          "f1": 0.371
+        },
+        "TR": {
+          "soporte": 206,
+          "f1": 0.325
+        },
+        "UX": {
+          "soporte": 124,
+          "f1": 0.199
+        }
+      },
+      "topicos_con_soporte": 25,
+      "pureza": {
+        ">=0.7": 10,
+        "0.5-0.7": 6,
+        "<0.5": 9
+      },
+      "familia_mayoritaria": {
+        "AC": 5,
+        "DI": 1,
+        "FA": 7,
+        "LE": 1,
+        "PR": 1,
+        "SIN": 6,
+        "TR": 3,
+        "UX": 1
+      },
+      "familias_sin_topico_mayoritario": [
+        "AT",
+        "CO",
+        "DV",
+        "OT"
+      ],
+      "candidatos_emergentes": 13,
+      "peso_filas_neg_en_emergentes": 0.1768
+    },
+    "problema_por_largo": {
+      "1": {
+        "n": 28,
+        "con_problema": 0.0357,
+        "ic95": [
+          0.0063,
+          0.1771
+        ],
+        "multi": 0.0
+      },
+      "2": {
+        "n": 50,
+        "con_problema": 0.46,
+        "ic95": [
+          0.3297,
+          0.596
+        ],
+        "multi": 0.0
+      },
+      "3-5": {
+        "n": 146,
+        "con_problema": 0.774,
+        "ic95": [
+          0.6996,
+          0.8343
+        ],
+        "multi": 0.0274
+      },
+      "6-10": {
+        "n": 265,
+        "con_problema": 0.8604,
+        "ic95": [
+          0.8135,
+          0.897
+        ],
+        "multi": 0.0792
+      },
+      "11+": {
+        "n": 1011,
+        "con_problema": 0.9753,
+        "ic95": [
+          0.9638,
+          0.9832
+        ],
+        "multi": 0.3412
+      }
+    },
+    "h_t4_u_por_dias_desde_version": {
+      "0-3": {
+        "n": 343,
+        "u": 0.1341,
+        "ic95": [
+          0.1021,
+          0.1743
+        ]
+      },
+      "4-7": {
+        "n": 317,
+        "u": 0.2114,
+        "ic95": [
+          0.17,
+          0.2596
+        ]
+      },
+      "8-14": {
+        "n": 334,
+        "u": 0.2246,
+        "ic95": [
+          0.1831,
+          0.2723
+        ]
+      },
+      "15-30": {
+        "n": 327,
+        "u": 0.1346,
+        "ic95": [
+          0.1018,
+          0.1758
+        ]
+      },
+      "31+": {
+        "n": 179,
+        "u": 0.0726,
+        "ic95": [
+          0.0429,
+          0.1203
+        ]
+      }
+    },
+    "h_t4_u_en_incidentes": {
+      "resto": {
+        "n": 1428,
+        "u": 0.1408,
+        "ic95": [
+          0.1237,
+          0.1598
+        ]
+      },
+      "incidente": {
+        "n": 72,
+        "u": 0.6111,
+        "ic95": [
+          0.4956,
+          0.7153
+        ]
+      }
+    }
+  },
+  "families_aspects_v2_1": {
+    "textos": 40382,
+    "cautela": [
+      "DV",
+      "OT"
+    ],
+    "proporcion_por_anio_todos_los_bancos": {
+      "AC": {
+        "2012": 0.3221,
+        "2013": 0.3608,
+        "2014": 0.4447,
+        "2015": 0.5799,
+        "2016": 0.5041,
+        "2017": 0.4399,
+        "2018": 0.3478,
+        "2019": 0.2458,
+        "2020": 0.3223,
+        "2021": 0.2744,
+        "2022": 0.2567,
+        "2023": 0.2522,
+        "2024": 0.2554,
+        "2025": 0.1711,
+        "2026": 0.1922
+      },
+      "TR": {
+        "2012": 0.0213,
+        "2013": 0.1074,
+        "2014": 0.0713,
+        "2015": 0.0615,
+        "2016": 0.0778,
+        "2017": 0.0923,
+        "2018": 0.1563,
+        "2019": 0.1797,
+        "2020": 0.1178,
+        "2021": 0.1182,
+        "2022": 0.1618,
+        "2023": 0.1694,
+        "2024": 0.1576,
+        "2025": 0.1088,
+        "2026": 0.1092
+      },
+      "DI": {
+        "2016": 0.0099,
+        "2017": 0.0126,
+        "2018": 0.0148,
+        "2019": 0.0163,
+        "2020": 0.0147,
+        "2021": 0.0211,
+        "2022": 0.0363,
+        "2023": 0.0429,
+        "2024": 0.0357,
+        "2025": 0.0329,
+        "2026": 0.0455
+      },
+      "PR": {
+        "2012": 0.1105,
+        "2013": 0.1503,
+        "2014": 0.0395,
+        "2015": 0.0777,
+        "2016": 0.0623,
+        "2017": 0.0931,
+        "2018": 0.1,
+        "2019": 0.1192,
+        "2020": 0.1179,
+        "2021": 0.106,
+        "2022": 0.1222,
+        "2023": 0.1401,
+        "2024": 0.1216,
+        "2025": 0.1422,
+        "2026": 0.1374
+      },
+      "AT": {
+        "2014": 0.0364,
+        "2015": 0.096,
+        "2016": 0.1093,
+        "2017": 0.1061,
+        "2018": 0.0746,
+        "2019": 0.0847,
+        "2020": 0.0893,
+        "2021": 0.0778,
+        "2022": 0.0943,
+        "2023": 0.1035,
+        "2024": 0.0905,
+        "2025": 0.0639,
+        "2026": 0.0765
+      },
+      "FA": {
+        "2011": 1.0,
+        "2012": 0.451,
+        "2013": 0.2251,
+        "2014": 0.3305,
+        "2015": 0.148,
+        "2016": 0.2191,
+        "2017": 0.2358,
+        "2018": 0.259,
+        "2019": 0.294,
+        "2020": 0.2945,
+        "2021": 0.2964,
+        "2022": 0.2171,
+        "2023": 0.2061,
+        "2024": 0.3048,
+        "2025": 0.2514,
+        "2026": 0.3085
+      },
+      "LE": {
+        "2013": 0.0109,
+        "2014": 0.0099,
+        "2015": 0.0111,
+        "2016": 0.0455,
+        "2017": 0.0372,
+        "2018": 0.0701,
+        "2019": 0.0821,
+        "2020": 0.0703,
+        "2021": 0.0756,
+        "2022": 0.0974,
+        "2023": 0.0932,
+        "2024": 0.1014,
+        "2025": 0.1716,
+        "2026": 0.1661
+      },
+      "CO": {
+        "2013": 0.1884,
+        "2014": 0.0519,
+        "2015": 0.0884,
+        "2016": 0.0873,
+        "2017": 0.1163,
+        "2018": 0.0747,
+        "2019": 0.0647,
+        "2020": 0.1029,
+        "2021": 0.1567,
+        "2022": 0.1102,
+        "2023": 0.0894,
+        "2024": 0.0485,
+        "2025": 0.0438,
+        "2026": 0.0556
+      },
+      "DV": {
+        "2015": 0.0047,
+        "2016": 0.0033,
+        "2017": 0.0016,
+        "2018": 0.0032,
+        "2019": 0.0061,
+        "2020": 0.0019,
+        "2021": 0.0054,
+        "2022": 0.0062,
+        "2023": 0.0043,
+        "2024": 0.0102,
+        "2025": 0.0511,
+        "2026": 0.0202
+      },
+      "UX": {
+        "2012": 0.0997,
+        "2013": 0.0677,
+        "2014": 0.0579,
+        "2015": 0.0361,
+        "2016": 0.0272,
+        "2017": 0.0341,
+        "2018": 0.0618,
+        "2019": 0.086,
+        "2020": 0.0467,
+        "2021": 0.0552,
+        "2022": 0.0669,
+        "2023": 0.074,
+        "2024": 0.0677,
+        "2025": 0.1626,
+        "2026": 0.0969
+      },
+      "OT": {
+        "2014": 0.0103,
+        "2015": 0.0102,
+        "2016": 0.0053,
+        "2017": 0.0123,
+        "2018": 0.0097,
+        "2019": 0.01,
+        "2020": 0.0046,
+        "2021": 0.0057,
+        "2022": 0.0076,
+        "2023": 0.0079,
+        "2024": 0.0081,
+        "2025": 0.0055,
+        "2026": 0.009
+      },
+      "u": {
+        "2012": 0.065,
+        "2013": 0.2985,
+        "2014": 0.1795,
+        "2015": 0.1213,
+        "2016": 0.1844,
+        "2017": 0.1768,
+        "2018": 0.1483,
+        "2019": 0.1771,
+        "2020": 0.1573,
+        "2021": 0.1391,
+        "2022": 0.112,
+        "2023": 0.1022,
+        "2024": 0.1919,
+        "2025": 0.2956,
+        "2026": 0.1411
+      }
+    },
+    "senal": {
+      "familias_y_u": {
+        "series": 12,
+        "incidentes_detectados": 3,
+        "incidentes_con_aviso_el_mes_previo": 3,
+        "tasa_meses_con_alerta_fuera_de_incidentes": 0.2198,
+        "alertas_por_serie_y_mes": 0.0225,
+        "detalle": [
+          {
+            "banco": "BBVA",
+            "mes": "2024-07",
+            "topicos_en_alerta": 1,
+            "topicos_en_alerta_mes_previo": 1,
+            "z_volumen": 19.43,
+            "z_volumen_mes_previo": 11.68
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-10",
+            "topicos_en_alerta": 3,
+            "topicos_en_alerta_mes_previo": 2,
+            "z_volumen": 12.42,
+            "z_volumen_mes_previo": 1.42
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-11",
+            "topicos_en_alerta": 2,
+            "topicos_en_alerta_mes_previo": 3,
+            "z_volumen": 5.71,
+            "z_volumen_mes_previo": 12.42
+          }
+        ]
+      },
+      "solo_u": {
+        "series": 1,
+        "incidentes_detectados": 2,
+        "incidentes_con_aviso_el_mes_previo": 2,
+        "tasa_meses_con_alerta_fuera_de_incidentes": 0.0433,
+        "alertas_por_serie_y_mes": 0.0462,
+        "detalle": [
+          {
+            "banco": "BBVA",
+            "mes": "2024-07",
+            "topicos_en_alerta": 1,
+            "topicos_en_alerta_mes_previo": 1,
+            "z_volumen": 19.43,
+            "z_volumen_mes_previo": 11.68
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-10",
+            "topicos_en_alerta": 1,
+            "topicos_en_alerta_mes_previo": 0,
+            "z_volumen": 12.42,
+            "z_volumen_mes_previo": 1.42
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-11",
+            "topicos_en_alerta": 0,
+            "topicos_en_alerta_mes_previo": 1,
+            "z_volumen": 5.71,
+            "z_volumen_mes_previo": 12.42
+          }
+        ]
+      },
+      "topicos": {
+        "series": 97,
+        "incidentes_detectados": 3,
+        "incidentes_con_aviso_el_mes_previo": 2,
+        "tasa_meses_con_alerta_fuera_de_incidentes": 0.1081,
+        "alertas_por_serie_y_mes": 0.0016,
+        "detalle": [
+          {
+            "banco": "BBVA",
+            "mes": "2024-07",
+            "topicos_en_alerta": 1,
+            "topicos_en_alerta_mes_previo": 2,
+            "z_volumen": 19.43,
+            "z_volumen_mes_previo": 11.68
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-10",
+            "topicos_en_alerta": 3,
+            "topicos_en_alerta_mes_previo": 0,
+            "z_volumen": 12.42,
+            "z_volumen_mes_previo": 1.42
+          },
+          {
+            "banco": "BBVA",
+            "mes": "2025-11",
+            "topicos_en_alerta": 2,
+            "topicos_en_alerta_mes_previo": 3,
+            "z_volumen": 5.71,
+            "z_volumen_mes_previo": 12.42
+          }
+        ]
+      }
+    },
+    "alertas_de_familias_en_incidentes": [
+      {
+        "bank_id": "BBVA",
+        "mes": "2024-07",
+        "topicos": "u",
+        "z": 8.0,
+        "share": 0.409,
+        "base": 0.104
+      },
+      {
+        "bank_id": "BBVA",
+        "mes": "2025-10",
+        "topicos": "u",
+        "z": 3.1,
+        "share": 0.68,
+        "base": 0.251
+      },
+      {
+        "bank_id": "BBVA",
+        "mes": "2025-10",
+        "topicos": "UX",
+        "z": 11.8,
+        "share": 0.338,
+        "base": 0.036
+      },
+      {
+        "bank_id": "BBVA",
+        "mes": "2025-10",
+        "topicos": "DV",
+        "z": 8.2,
+        "share": 0.137,
+        "base": 0.01
+      },
+      {
+        "bank_id": "BBVA",
+        "mes": "2025-11",
+        "topicos": "UX",
+        "z": 11.9,
+        "share": 0.339,
+        "base": 0.036
+      },
+      {
+        "bank_id": "BBVA",
+        "mes": "2025-11",
+        "topicos": "DV",
+        "z": 5.9,
+        "share": 0.102,
+        "base": 0.01
+      }
+    ],
+    "alineacion_a_escala": {
+      "textos": 40382,
+      "f1_por_familia": {
+        "AC": 0.536,
+        "TR": 0.484,
+        "DI": 0.0,
+        "PR": 0.436,
+        "AT": 0.209,
+        "FA": 0.447,
+        "LE": 0.736,
+        "CO": 0.218,
+        "DV": 0.289,
+        "UX": 0.267,
+        "OT": 0.0
+      },
+      "topicos_con_soporte": 96,
+      "pureza": {
+        ">=0.7": 25,
+        "0.5-0.7": 27,
+        "<0.5": 44
+      },
+      "familia_mayoritaria": {
+        "AC": 31,
+        "AT": 3,
+        "CO": 4,
+        "DV": 1,
+        "FA": 31,
+        "LE": 5,
+        "PR": 6,
+        "SIN": 4,
+        "TR": 4,
+        "UX": 7
+      },
+      "topicos_no_alineados": 46,
+      "peso_filas_neg_en_no_alineados": 0.4056
+    }
+  },
+  "review_material": {
+    "variante": "clausulas_mcs100",
+    "topicos_principales": 20,
+    "topicos_no_alineados_adicionales": 15,
+    "peso_neg_de_los_principales": 0.5734,
+    "filas_hipotesis": 6,
+    "ejemplos_por_topico": 5,
+    "ubicacion": "data/topics/phase4_v0/ (fuera de git)"
+  }
+}

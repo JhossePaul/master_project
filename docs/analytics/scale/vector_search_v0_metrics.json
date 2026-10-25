@@ -1,0 +1,33 @@
+{
+  "generado": "2026-10-22T18:40:14+00:00",
+  "ubicacion": "us-central1",
+  "tabla_sintetica": {
+    "filas": 1383138,
+    "gb": 4.26
+  },
+  "sintetica_sin_indice": {
+    "consultas": 5,
+    "latencia_mediana_s": 8.88,
+    "bytes_procesados_mediana": 4260065040,
+    "gb_facturados_mediana": 4.26
+  },
+  "indice": {
+    "estado": "ACTIVE",
+    "minutos_hasta_cobertura_total": 6.0
+  },
+  "sintetica_con_indice": {
+    "consultas": 5,
+    "latencia_mediana_s": 6.55,
+    "bytes_procesados_mediana": 4260065040,
+    "gb_facturados_mediana": 4.26
+  },
+  "real_sin_indice": {
+    "consultas": 5,
+    "latencia_mediana_s": 4.73,
+    "bytes_procesados_mediana": 124376560,
+    "gb_facturados_mediana": 0.125,
+    "vecinos_misma_familia": 0.432,
+    "pares_al_azar_misma_familia": 0.139
+  },
+  "dataset_borrado": true
+}

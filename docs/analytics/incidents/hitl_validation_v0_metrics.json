@@ -1,0 +1,79 @@
+{
+  "generado": "2026-10-23T17:32:48+00:00",
+  "modelo": "M4_robertuito_s1_ppi",
+  "semana": [
+    "2026-10-05",
+    "2026-10-11"
+  ],
+  "umbral": {
+    "cobertura": 0.9011,
+    "riesgo": 0.0042,
+    "umbral": 0.9743,
+    "error_en_revision": 0.2503,
+    "errores_atrapados": 0.8661
+  },
+  "cola": 387,
+  "cobertura_real_semana": 0.8637,
+  "anotadas": 387,
+  "no_evaluables": 31,
+  "tasa_correccion": 0.1826,
+  "ic_tasa_correccion": [
+    0.1459,
+    0.226
+  ],
+  "esperada_5_7": 0.249,
+  "aviso_p7_10": 0.28,
+  "por_prediccion": {
+    "NEG": {
+      "n": 166,
+      "corregidas": 9
+    },
+    "NEU": {
+      "n": 53,
+      "corregidas": 11
+    },
+    "POS": {
+      "n": 137,
+      "corregidas": 45
+    }
+  },
+  "matriz": {
+    "NEU→POS": 2,
+    "POS→NEU": 15,
+    "NEU→NEU": 42,
+    "NEG→NEG": 157,
+    "NEG→NEU": 5,
+    "POS→POS": 92,
+    "NEU→NEG": 9,
+    "POS→NEG": 30,
+    "NEG→POS": 4
+  },
+  "segundos_por_resena_mediana": 7.1,
+  "segundos_por_resena_p90": 30.0,
+  "minutos_totales": 188.1,
+  "minutos_activos": 80.5,
+  "registros_pausa": 7,
+  "correcciones_del_revisor": 16,
+  "por_banco": {
+    "AZTECA": {
+      "n": 54,
+      "corregidas": 10
+    },
+    "BANORTE": {
+      "n": 77,
+      "corregidas": 9
+    },
+    "BBVA": {
+      "n": 95,
+      "corregidas": 16
+    },
+    "NUBANK": {
+      "n": 50,
+      "corregidas": 10
+    },
+    "SANTANDER": {
+      "n": 80,
+      "corregidas": 20
+    }
+  }
+}

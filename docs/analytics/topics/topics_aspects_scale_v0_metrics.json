@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-10-22T04:58:02+00:00",
+  "prompt": "aspects_v2_1",
+  "model": "gemini-3.6-flash",
+  "textos": 40382,
+  "corridas": 3,
+  "costo_usd_total": 3.6414,
+  "reproducibilidad_contra_5_2": {
+    "textos": 1434,
+    "acuerdo_exacto": 0.698,
+    "kappa_por_codigo": {
+      "AC": 0.82,
+      "TR": 0.787,
+      "DI": 0.778,
+      "PR": 0.751,
+      "AT": 0.832,
+      "FA": 0.785,
+      "LE": 0.894,
+      "CO": 0.778,
+      "DV": 0.576,
+      "UX": 0.707,
+      "OT": 0.217
+    },
+    "kappa_u": 0.88
+  },
+  "poblacion_filas_neg": {
+    "filas_estimadas": 706197,
+    "multi_aspecto": 0.2471,
+    "sin_problema": 0.0953,
+    "u": 0.1701,
+    "s": 0.0237,
+    "familias": {
+      "AC": 0.2649,
+      "TR": 0.1358,
+      "DI": 0.0271,
+      "PR": 0.1209,
+      "AT": 0.084,
+      "FA": 0.2721,
+      "LE": 0.1005,
+      "CO": 0.0856,
+      "DV": 0.0127,
+      "UX": 0.0793,
+      "OT": 0.0074
+    }
+  }
+}

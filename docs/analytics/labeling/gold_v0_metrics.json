@@ -1,0 +1,292 @@
+{
+  "anotadas": 450,
+  "correcciones": 13,
+  "tiempo": {
+    "total_min": 39.8,
+    "mediana_s_por_modo": {
+      "aleatorio|asistido": 1.3,
+      "calibracion|ciego": 11.0,
+      "reanotacion|ciego": 3.1500000000000004,
+      "aleatorio|ciego": 2.4
+    }
+  },
+  "poblacion": {
+    "clase": {
+      "NEG": {
+        "p": 0.252,
+        "se": 0.0252,
+        "n": 400
+      },
+      "NEU": {
+        "p": 0.0327,
+        "se": 0.0092,
+        "n": 400
+      },
+      "POS": {
+        "p": 0.7107,
+        "se": 0.0261,
+        "n": 400
+      },
+      "NA": {
+        "p": 0.0046,
+        "se": 0.0044,
+        "n": 400
+      }
+    },
+    "duda": {
+      "p": 0.0035,
+      "se": 0.0025,
+      "n": 400
+    },
+    "menciona_falla": {
+      "p": 0.219,
+      "se": 0.0236,
+      "n": 400
+    },
+    "incongruencia_extremos": {
+      "p": 0.0416,
+      "se": 0.0123,
+      "n": 400
+    },
+    "estrellas_difiere_de_oro": {
+      "p": 0.1037,
+      "se": 0.0172,
+      "n": 398
+    },
+    "incongruencia_por_banco": {
+      "AZTECA": {
+        "p": 0.0324,
+        "se": 0.0263,
+        "n": 80
+      },
+      "BANORTE": {
+        "p": 0.0357,
+        "se": 0.0203,
+        "n": 80
+      },
+      "BBVA": {
+        "p": 0.0537,
+        "se": 0.0275,
+        "n": 80
+      },
+      "NUBANK": {
+        "p": 0.0379,
+        "se": 0.0256,
+        "n": 80
+      },
+      "SANTANDER": {
+        "p": 0.0406,
+        "se": 0.0244,
+        "n": 80
+      }
+    },
+    "incongruencia_por_periodo": {
+      "2020-2022": {
+        "p": 0.029,
+        "se": 0.0201,
+        "n": 107
+      },
+      "2023-2024": {
+        "p": 0.0417,
+        "se": 0.0226,
+        "n": 107
+      },
+      "2025-2026": {
+        "p": 0.0157,
+        "se": 0.0116,
+        "n": 106
+      },
+      "<=2019": {
+        "p": 0.0814,
+        "se": 0.0353,
+        "n": 80
+      }
+    }
+  },
+  "poblacion_solo_ciego": {
+    "clase": {
+      "NEG": {
+        "p": 0.2891,
+        "se": 0.0374,
+        "n": 201
+      },
+      "NEU": {
+        "p": 0.0183,
+        "se": 0.0095,
+        "n": 201
+      },
+      "POS": {
+        "p": 0.6833,
+        "se": 0.0384,
+        "n": 201
+      },
+      "NA": {
+        "p": 0.0093,
+        "se": 0.0087,
+        "n": 201
+      }
+    },
+    "incongruencia_extremos": {
+      "p": 0.053,
+      "se": 0.0185,
+      "n": 201
+    },
+    "estrellas_difiere_de_oro": {
+      "p": 0.0978,
+      "se": 0.0233,
+      "n": 199
+    }
+  },
+  "estrellas_vs_oro": {
+    "kappa": {
+      "n": 398,
+      "acuerdo": 0.887,
+      "kappa": 0.714
+    },
+    "confusion": [
+      {
+        "estrellas": 1,
+        "NEG": 61,
+        "POS": 1,
+        "NEU": 1
+      },
+      {
+        "estrellas": 2,
+        "NEG": 10,
+        "POS": 0,
+        "NEU": 0
+      },
+      {
+        "estrellas": 3,
+        "NEG": 10,
+        "POS": 3,
+        "NEU": 1
+      },
+      {
+        "estrellas": 4,
+        "NEG": 10,
+        "POS": 25,
+        "NEU": 7
+      },
+      {
+        "estrellas": 5,
+        "NEG": 4,
+        "POS": 256,
+        "NEU": 9
+      }
+    ]
+  },
+  "gemini_ciego": {
+    "v1": {
+      "n": 201,
+      "acuerdo": 0.925,
+      "kappa": 0.837
+    },
+    "v0": {
+      "n": 201,
+      "acuerdo": 0.93,
+      "kappa": 0.845
+    },
+    "v1_falla": {
+      "n": 201,
+      "acuerdo": 0.95,
+      "kappa": 0.857
+    },
+    "v0_falla": {
+      "n": 201,
+      "acuerdo": 0.94,
+      "kappa": 0.823
+    },
+    "confusion_v1": [
+      {
+        "humano": "NA",
+        "POS": 2,
+        "NEG": 0,
+        "NEU": 0
+      },
+      {
+        "humano": "NEG",
+        "POS": 1,
+        "NEG": 50,
+        "NEU": 3
+      },
+      {
+        "humano": "NEU",
+        "POS": 1,
+        "NEG": 0,
+        "NEU": 4
+      },
+      {
+        "humano": "POS",
+        "POS": 132,
+        "NEG": 1,
+        "NEU": 7
+      }
+    ],
+    "confusion_v0": [
+      {
+        "humano": "NA",
+        "POS": 2,
+        "NEU": 0,
+        "NEG": 0
+      },
+      {
+        "humano": "NEG",
+        "POS": 0,
+        "NEU": 3,
+        "NEG": 51
+      },
+      {
+        "humano": "NEU",
+        "POS": 2,
+        "NEU": 3,
+        "NEG": 0
+      },
+      {
+        "humano": "POS",
+        "POS": 133,
+        "NEU": 3,
+        "NEG": 4
+      }
+    ]
+  },
+  "anclaje": {
+    "acuerdo_v1_ciego": {
+      "n": 201,
+      "acuerdo": 0.925,
+      "kappa": 0.837
+    },
+    "acuerdo_v1_asistido": {
+      "n": 199,
+      "acuerdo": 0.995,
+      "kappa": 0.988
+    },
+    "acuerdo_v0_asistido": {
+      "n": 199,
+      "acuerdo": 0.98,
+      "kappa": 0.952
+    }
+  },
+  "calibracion": {
+    "v0": {
+      "n": 30,
+      "acuerdo": 0.8,
+      "kappa": 0.531
+    },
+    "v1": {
+      "n": 30,
+      "acuerdo": 0.533,
+      "kappa": 0.255
+    },
+    "discrepantes_v0_v1": {
+      "n": 10,
+      "humano_igual_v0": 9,
+      "humano_igual_v1": 1
+    }
+  },
+  "reanotacion": {
+    "n": 20,
+    "acuerdo": 0.95,
+    "kappa": 0.832
+  }
+}

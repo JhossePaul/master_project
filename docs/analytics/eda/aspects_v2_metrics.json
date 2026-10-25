@@ -1,0 +1,595 @@
+{
+  "prompt": "aspects_v2",
+  "guia": "aspects_guideline_v2",
+  "model": "gemini-3.6-flash",
+  "codes": [
+    "AC",
+    "FA",
+    "LE",
+    "TR",
+    "DI",
+    "PR",
+    "AT",
+    "DV",
+    "UX",
+    "FQ",
+    "CO",
+    "OT"
+  ],
+  "regla_decision": {
+    "kappa_intra_autor_min": 0.7,
+    "kappa_autor_gemini_min": 0.6,
+    "confusion_max": 0.2,
+    "prevalencia_min": 0.02,
+    "kappa_fusion_min": 0.6,
+    "kappa_marca_min": 0.6
+  },
+  "esquema_salida": {
+    "archivo": "data/eda/aspects_v2/labels_aspects_v2_<set>.parquet",
+    "columnas": {
+      "text_id": "UInt32; texto único de silver_v0",
+      "codes": "String; familias separadas por comas, vacío si no hay problema concreto",
+      "actualizacion": "Boolean; marca u (problema atribuido a actualización)",
+      "seguridad": "Boolean; marca s (queja de seguridad o privacidad)",
+      "elogio": "Boolean; elogio concreto"
+    }
+  },
+  "intra_autor": {
+    "fuente": "muestra_v21",
+    "nota": "recodificación con la guía v2.1 y casillas agrupadas; solo códigos cuya definición no cambió",
+    "items": 300,
+    "dias_entre_codificaciones_min": 0.71,
+    "kappa_por_codigo": {
+      "LE": 0.876,
+      "DI": 0.854,
+      "AT": 0.705,
+      "DV": 0.973,
+      "OT": 0.497
+    },
+    "kappa_u": 0.831,
+    "kappa_s": 0.932
+  },
+  "poblacion_filas_neg": {
+    "extracciones": 1500,
+    "multi_aspecto": {
+      "n": 1500,
+      "p": 0.2747,
+      "ic95": [
+        0.252,
+        0.2973
+      ]
+    },
+    "multi_aspecto_v1": {
+      "n": 1500,
+      "p": 0.3207,
+      "ic95": [
+        0.2967,
+        0.344
+      ]
+    },
+    "sin_aspecto_concreto": {
+      "n": 1500,
+      "p": 0.0987,
+      "ic95": [
+        0.084,
+        0.1147
+      ]
+    },
+    "actualizacion_u": {
+      "n": 1500,
+      "p": 0.1613,
+      "ic95": [
+        0.1433,
+        0.1793
+      ]
+    },
+    "seguridad_s": {
+      "n": 1500,
+      "p": 0.0233,
+      "ic95": [
+        0.016,
+        0.0313
+      ]
+    },
+    "elogio_concreto": {
+      "n": 1500,
+      "p": 0.0967,
+      "ic95": [
+        0.082,
+        0.1113
+      ]
+    },
+    "por_codigo": [
+      {
+        "codigo": "AC",
+        "n": 1500,
+        "p": 0.276,
+        "ic95": [
+          0.254,
+          0.2987
+        ]
+      },
+      {
+        "codigo": "FA",
+        "n": 1500,
+        "p": 0.2607,
+        "ic95": [
+          0.2387,
+          0.2827
+        ]
+      },
+      {
+        "codigo": "LE",
+        "n": 1500,
+        "p": 0.1213,
+        "ic95": [
+          0.1053,
+          0.1373
+        ]
+      },
+      {
+        "codigo": "TR",
+        "n": 1500,
+        "p": 0.1527,
+        "ic95": [
+          0.134,
+          0.1713
+        ]
+      },
+      {
+        "codigo": "DI",
+        "n": 1500,
+        "p": 0.0267,
+        "ic95": [
+          0.0193,
+          0.0347
+        ]
+      },
+      {
+        "codigo": "PR",
+        "n": 1500,
+        "p": 0.1233,
+        "ic95": [
+          0.1073,
+          0.1407
+        ]
+      },
+      {
+        "codigo": "AT",
+        "n": 1500,
+        "p": 0.0773,
+        "ic95": [
+          0.064,
+          0.0907
+        ]
+      },
+      {
+        "codigo": "DV",
+        "n": 1500,
+        "p": 0.0213,
+        "ic95": [
+          0.014,
+          0.0287
+        ]
+      },
+      {
+        "codigo": "UX",
+        "n": 1500,
+        "p": 0.0933,
+        "ic95": [
+          0.078,
+          0.108
+        ]
+      },
+      {
+        "codigo": "FQ",
+        "n": 1500,
+        "p": 0.008,
+        "ic95": [
+          0.004,
+          0.0127
+        ]
+      },
+      {
+        "codigo": "CO",
+        "n": 1500,
+        "p": 0.0607,
+        "ic95": [
+          0.0487,
+          0.074
+        ]
+      },
+      {
+        "codigo": "OT",
+        "n": 1500,
+        "p": 0.008,
+        "ic95": [
+          0.004,
+          0.0127
+        ]
+      }
+    ],
+    "multi_por_largo": [
+      {
+        "largo": "1",
+        "n": 28,
+        "p": 0.0,
+        "ic95": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "largo": "2-5",
+        "n": 196,
+        "p": 0.0306,
+        "ic95": [
+          0.0102,
+          0.0561
+        ]
+      },
+      {
+        "largo": "6-15",
+        "n": 480,
+        "p": 0.1521,
+        "ic95": [
+          0.1208,
+          0.1834
+        ]
+      },
+      {
+        "largo": "16-40",
+        "n": 597,
+        "p": 0.3551,
+        "ic95": [
+          0.3183,
+          0.3937
+        ]
+      },
+      {
+        "largo": ">40",
+        "n": 199,
+        "p": 0.608,
+        "ic95": [
+          0.5427,
+          0.6784
+        ]
+      }
+    ],
+    "multi_desde_k_palabras": [
+      {
+        "k": 2,
+        "n": 1472,
+        "p": 0.2799,
+        "ic95": [
+          0.2554,
+          0.303
+        ]
+      },
+      {
+        "k": 3,
+        "n": 1422,
+        "p": 0.2897,
+        "ic95": [
+          0.2658,
+          0.3136
+        ]
+      },
+      {
+        "k": 5,
+        "n": 1340,
+        "p": 0.3052,
+        "ic95": [
+          0.2813,
+          0.3306
+        ]
+      },
+      {
+        "k": 10,
+        "n": 1060,
+        "p": 0.367,
+        "ic95": [
+          0.3368,
+          0.3972
+        ]
+      },
+      {
+        "k": 20,
+        "n": 641,
+        "p": 0.4555,
+        "ic95": [
+          0.4165,
+          0.4945
+        ]
+      }
+    ],
+    "marcas_por_banco": [
+      {
+        "bank_id": "AZTECA",
+        "actualizacion_u": {
+          "n": 210,
+          "p": 0.0857,
+          "ic95": [
+            0.0524,
+            0.1238
+          ]
+        },
+        "seguridad_s": {
+          "n": 210,
+          "p": 0.019,
+          "ic95": [
+            0.0048,
+            0.0381
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 210,
+          "p": 0.0143,
+          "ic95": [
+            0.0,
+            0.0333
+          ]
+        }
+      },
+      {
+        "bank_id": "BANORTE",
+        "actualizacion_u": {
+          "n": 259,
+          "p": 0.1274,
+          "ic95": [
+            0.0888,
+            0.1699
+          ]
+        },
+        "seguridad_s": {
+          "n": 259,
+          "p": 0.0193,
+          "ic95": [
+            0.0039,
+            0.0386
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 259,
+          "p": 0.0077,
+          "ic95": [
+            0.0,
+            0.0193
+          ]
+        }
+      },
+      {
+        "bank_id": "BBVA",
+        "actualizacion_u": {
+          "n": 611,
+          "p": 0.2488,
+          "ic95": [
+            0.2144,
+            0.2815
+          ]
+        },
+        "seguridad_s": {
+          "n": 611,
+          "p": 0.0344,
+          "ic95": [
+            0.0212,
+            0.0491
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 611,
+          "p": 0.0033,
+          "ic95": [
+            0.0,
+            0.0082
+          ]
+        }
+      },
+      {
+        "bank_id": "NUBANK",
+        "actualizacion_u": {
+          "n": 63,
+          "p": 0.0794,
+          "ic95": [
+            0.0159,
+            0.1433
+          ]
+        },
+        "seguridad_s": {
+          "n": 63,
+          "p": 0.0317,
+          "ic95": [
+            0.0,
+            0.0794
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 63,
+          "p": 0.0,
+          "ic95": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "bank_id": "SANTANDER",
+        "actualizacion_u": {
+          "n": 357,
+          "p": 0.0952,
+          "ic95": [
+            0.0644,
+            0.1261
+          ]
+        },
+        "seguridad_s": {
+          "n": 357,
+          "p": 0.0084,
+          "ic95": [
+            0.0,
+            0.0196
+          ]
+        },
+        "sin_familia_ot": {
+          "n": 357,
+          "p": 0.014,
+          "ic95": [
+            0.0028,
+            0.028
+          ]
+        }
+      }
+    ]
+  },
+  "validacion_autor": {
+    "cola": "muestra",
+    "prompt_gemini": "aspects_v2",
+    "guias": {
+      "aspects_guideline_v2": 300
+    },
+    "muestra": {
+      "items": 300,
+      "kappa_por_codigo": {
+        "AC": 0.7,
+        "FA": 0.62,
+        "LE": 0.916,
+        "TR": 0.735,
+        "DI": 0.707,
+        "PR": 0.522,
+        "AT": 0.658,
+        "DV": 0.813,
+        "UX": 0.55,
+        "FQ": 0.594,
+        "CO": 0.607,
+        "OT": 0.327
+      },
+      "kappa_u": 0.658,
+      "kappa_s": 0.708,
+      "multi_autor": 0.2367,
+      "multi_gemini": 0.3267,
+      "acuerdo_conjunto_exacto": 0.54
+    },
+    "mitad_aleatoria": {
+      "items": 150,
+      "kappa_por_codigo": {
+        "AC": 0.648,
+        "FA": 0.577,
+        "LE": 0.853,
+        "TR": 0.691,
+        "DI": 0.743,
+        "PR": 0.483,
+        "AT": 0.672,
+        "DV": 0.854,
+        "UX": 0.389,
+        "FQ": null,
+        "CO": 0.599,
+        "OT": 0.39
+      },
+      "kappa_u": 0.672,
+      "kappa_s": 0.653,
+      "multi_autor": 0.1467,
+      "multi_gemini": 0.2533,
+      "acuerdo_conjunto_exacto": 0.567
+    },
+    "confusion": {
+      "DV": {
+        "desacuerdos": 6,
+        "cambios": 1,
+        "proporcion": 0.167
+      },
+      "UX": {
+        "desacuerdos": 39,
+        "cambios": 1,
+        "proporcion": 0.026
+      },
+      "FQ": {
+        "desacuerdos": 4,
+        "cambios": 1,
+        "proporcion": 0.25
+      }
+    },
+    "kappa_fusion": {
+      "UX+FQ": 0.567,
+      "DV+UX": 0.65
+    }
+  },
+  "decision": {
+    "DV": {
+      "valores": {
+        "kappa_intra_autor": 0.973,
+        "kappa_autor_gemini": 0.813,
+        "confusion": 0.167,
+        "prevalencia": 0.0213
+      },
+      "cumple": {
+        "kappa_intra_autor": true,
+        "kappa_autor_gemini": true,
+        "confusion": true,
+        "prevalencia": true
+      },
+      "no_medible": [],
+      "separado": true,
+      "fusion": null
+    },
+    "UX": {
+      "valores": {
+        "kappa_intra_autor": null,
+        "kappa_autor_gemini": 0.55,
+        "confusion": 0.026,
+        "prevalencia": 0.0933
+      },
+      "cumple": {
+        "kappa_intra_autor": null,
+        "kappa_autor_gemini": false,
+        "confusion": true,
+        "prevalencia": true
+      },
+      "no_medible": [
+        "kappa_intra_autor"
+      ],
+      "separado": false,
+      "fusion": {
+        "codigo": "DU",
+        "con": "DV+UX",
+        "fallan": [
+          "kappa_autor_gemini"
+        ],
+        "kappa_autor_gemini": 0.65,
+        "valida": true
+      }
+    },
+    "FQ": {
+      "valores": {
+        "kappa_intra_autor": null,
+        "kappa_autor_gemini": 0.594,
+        "confusion": 0.25,
+        "prevalencia": 0.008
+      },
+      "cumple": {
+        "kappa_intra_autor": null,
+        "kappa_autor_gemini": false,
+        "confusion": false,
+        "prevalencia": false
+      },
+      "no_medible": [
+        "kappa_intra_autor"
+      ],
+      "separado": false,
+      "fusion": {
+        "codigo": "UX",
+        "con": "UX+FQ",
+        "fallan": [
+          "kappa_autor_gemini",
+          "confusion",
+          "prevalencia"
+        ],
+        "kappa_autor_gemini": 0.567,
+        "valida": false
+      }
+    },
+    "resumen": {
+      "DV_UX_separados": false,
+      "FQ_separado": false
+    }
+  }
+}

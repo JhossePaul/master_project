@@ -1,0 +1,49 @@
+{
+  "generado": "2026-10-22T17:36:37+00:00",
+  "entorno": "cloudrun-1cpu-2gi",
+  "cpus_visibles": 5,
+  "plataforma": "Linux-6.9.12-x86_64-with-glibc2.41",
+  "torch": "2.14.1+cpu",
+  "corridas": [
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 365.14,
+      "textos_por_segundo": 5.5,
+      "carga_modelo_s": 3.65,
+      "rss_pico_mb": 1283.2
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": false,
+      "textos": 2000,
+      "segundos": 88.35,
+      "textos_por_segundo": 22.6,
+      "carga_modelo_s": 1.54,
+      "rss_pico_mb": 1227.7
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": false,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 318.69,
+      "textos_por_segundo": 6.3,
+      "carga_modelo_s": 3.06,
+      "rss_pico_mb": 1381.7
+    },
+    {
+      "hilos": 1,
+      "orden_por_longitud": true,
+      "int8": true,
+      "textos": 2000,
+      "segundos": 73.6,
+      "textos_por_segundo": 27.2,
+      "carga_modelo_s": 2.67,
+      "rss_pico_mb": 1381.9
+    }
+  ]
+}

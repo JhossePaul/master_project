@@ -1,0 +1,268 @@
+{
+  "anotadas": 1350,
+  "tiempo": {
+    "minutos_efectivos": 173.6,
+    "mediana_s": 3.75,
+    "media_s_truncada": 7.7,
+    "por_bloque_media_s": {
+      "aleatorio": 6.7,
+      "dirigido": 10.9
+    }
+  },
+  "consistencia_reanotacion": {
+    "n": 50,
+    "acuerdo": 0.96,
+    "kappa": 0.933,
+    "transiciones": [
+      {
+        "oro": "NEU",
+        "POS": 1,
+        "NA": 0
+      },
+      {
+        "oro": "POS",
+        "POS": 0,
+        "NA": 1
+      }
+    ]
+  },
+  "marcas": {
+    "duda": 0.025,
+    "con_nota": 20,
+    "nota_claridad": 10,
+    "nota_claridad_oro": {
+      "NEG": 9,
+      "NEU": 1
+    },
+    "nota_claridad_falla_oro": 9,
+    "nota_claridad_falla_gemini": 5
+  },
+  "nombre_persona": {
+    "aleatorio": {
+      "casos": 0,
+      "n": 1000,
+      "tasa": 0.0,
+      "cota_95_si_cero": 0.003
+    },
+    "dirigido": {
+      "casos": 0,
+      "n": 300,
+      "tasa": 0.0,
+      "cota_95_si_cero": 0.01
+    }
+  },
+  "clases_dev": {
+    "aleatorio": {
+      "NA": 5,
+      "NEG": 228,
+      "NEU": 23,
+      "POS": 344
+    },
+    "dirigido": {
+      "NA": 3,
+      "NEG": 155,
+      "NEU": 75,
+      "POS": 67
+    },
+    "total_dev_gold_v1": {
+      "NA": 8,
+      "NEG": 383,
+      "NEU": 98,
+      "POS": 411
+    }
+  },
+  "poblacion_dev_aleatorio": {
+    "clase": {
+      "NEG": {
+        "p": 0.2821,
+        "se": 0.0109,
+        "n": 600
+      },
+      "NEU": {
+        "p": 0.0285,
+        "se": 0.0077,
+        "n": 600
+      },
+      "POS": {
+        "p": 0.6801,
+        "se": 0.0134,
+        "n": 600
+      },
+      "NA": {
+        "p": 0.0094,
+        "se": 0.0056,
+        "n": 600
+      }
+    },
+    "incongruencia_extremos": {
+      "p": 0.0571,
+      "se": 0.0098,
+      "n": 600
+    },
+    "estrellas_difiere_de_oro": {
+      "p": 0.1245,
+      "se": 0.0128,
+      "n": 595
+    },
+    "estrellas_vs_oro": {
+      "n": 595,
+      "acuerdo": 0.832,
+      "kappa": 0.676
+    },
+    "confusion_estrellas": [
+      {
+        "estrellas": 1,
+        "NEU": 5,
+        "POS": 1,
+        "NEG": 129
+      },
+      {
+        "estrellas": 2,
+        "NEU": 1,
+        "POS": 2,
+        "NEG": 22
+      },
+      {
+        "estrellas": 3,
+        "NEU": 7,
+        "POS": 4,
+        "NEG": 38
+      },
+      {
+        "estrellas": 4,
+        "NEU": 4,
+        "POS": 63,
+        "NEG": 28
+      },
+      {
+        "estrellas": 5,
+        "NEU": 6,
+        "POS": 274,
+        "NEG": 11
+      }
+    ]
+  },
+  "gemini_vs_oro": {
+    "dev_aleatorio": {
+      "n": 600,
+      "acuerdo": 0.957,
+      "kappa": 0.916
+    },
+    "dev_aleatorio_confusion": [
+      {
+        "oro": "NA",
+        "POS": 2,
+        "NA": 2,
+        "NEG": 0,
+        "NEU": 1
+      },
+      {
+        "oro": "NEG",
+        "POS": 8,
+        "NA": 0,
+        "NEG": 219,
+        "NEU": 1
+      },
+      {
+        "oro": "NEU",
+        "POS": 5,
+        "NA": 2,
+        "NEG": 4,
+        "NEU": 12
+      },
+      {
+        "oro": "POS",
+        "POS": 341,
+        "NA": 0,
+        "NEG": 3,
+        "NEU": 0
+      }
+    ],
+    "dirigido": {
+      "n": 300,
+      "acuerdo": 0.75,
+      "kappa": 0.597
+    },
+    "falla_dev_aleatorio": {
+      "n": 600,
+      "acuerdo": 0.935,
+      "kappa": 0.855,
+      "oro_si_gemini_no": 11,
+      "oro_no_gemini_si": 28,
+      "tasa_oro": 0.325,
+      "tasa_gemini": 0.353
+    },
+    "falla_dirigido": {
+      "n": 300,
+      "acuerdo": 0.8,
+      "kappa": 0.587,
+      "oro_si_gemini_no": 30,
+      "oro_no_gemini_si": 30,
+      "tasa_oro": 0.41,
+      "tasa_gemini": 0.41
+    }
+  },
+  "dirigido_por_criterio": {
+    "neu": {
+      "n": 60,
+      "oro": {
+        "NEG": 12,
+        "NEU": 41,
+        "POS": 7
+      },
+      "acuerdo_gemini": 0.683,
+      "acuerdo_m1_seleccion": 0.733,
+      "acuerdo_estrellas": 0.317,
+      "duda": 0.083
+    },
+    "cinco_neg": {
+      "n": 45,
+      "oro": {
+        "NEG": 42,
+        "NEU": 1,
+        "POS": 2
+      },
+      "acuerdo_gemini": 0.933,
+      "acuerdo_m1_seleccion": 0.889,
+      "acuerdo_estrellas": 0.044,
+      "duda": 0.067
+    },
+    "pico_3_4": {
+      "n": 45,
+      "oro": {
+        "NEG": 30,
+        "POS": 15
+      },
+      "acuerdo_gemini": 0.911,
+      "acuerdo_m1_seleccion": 0.911,
+      "acuerdo_estrellas": 0.333,
+      "duda": 0.044
+    },
+    "desacuerdo": {
+      "n": 75,
+      "oro": {
+        "NA": 1,
+        "NEG": 43,
+        "NEU": 12,
+        "POS": 19
+      },
+      "acuerdo_gemini": 0.653,
+      "acuerdo_m1_seleccion": 0.213,
+      "acuerdo_estrellas": 0.533,
+      "duda": 0.013
+    },
+    "incertidumbre_m1": {
+      "n": 75,
+      "oro": {
+        "NA": 2,
+        "NEG": 28,
+        "NEU": 21,
+        "POS": 24
+      },
+      "acuerdo_gemini": 0.693,
+      "acuerdo_m1_seleccion": 0.48,
+      "acuerdo_estrellas": 0.52,
+      "duda": 0.027
+    }
+  }
+}

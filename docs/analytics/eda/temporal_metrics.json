@@ -1,0 +1,9369 @@
+{
+  "snapshot_file": "tds_20261016T054714Z.parquet",
+  "periodo": [
+    "2020-01-01",
+    "2026-10-13"
+  ],
+  "parametros": {
+    "min_reviews": 30,
+    "release_nth": 5,
+    "quincena": "días 14-16, penúltimo y último día del mes, y día 1",
+    "series": "volumen total y volumen de cada nivel de estrellas"
+  },
+  "dia_del_mes": [
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 1,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 2,
+      "indice": 0.995
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 3,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 4,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 5,
+      "indice": 1.012
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 6,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 7,
+      "indice": 1.046
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 8,
+      "indice": 0.978
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 9,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 10,
+      "indice": 0.953
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 11,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 12,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 13,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 14,
+      "indice": 1.06
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 15,
+      "indice": 1.099
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 16,
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 17,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 18,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 19,
+      "indice": 0.958
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 20,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 21,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 22,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 23,
+      "indice": 0.978
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 24,
+      "indice": 0.98
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 25,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 26,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 27,
+      "indice": 0.961
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 28,
+      "indice": 1.001
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 29,
+      "indice": 1.025
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 30,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_mes": 31,
+      "indice": 1.047
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 1,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 2,
+      "indice": 0.95
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 3,
+      "indice": 0.927
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 4,
+      "indice": 0.888
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 5,
+      "indice": 1.068
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 6,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 7,
+      "indice": 1.565
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 8,
+      "indice": 0.944
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 9,
+      "indice": 0.911
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 10,
+      "indice": 0.873
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 11,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 12,
+      "indice": 0.893
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 13,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 14,
+      "indice": 1.212
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 15,
+      "indice": 1.116
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 16,
+      "indice": 0.942
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 17,
+      "indice": 1.355
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 18,
+      "indice": 1.023
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 19,
+      "indice": 0.873
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 20,
+      "indice": 0.931
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 21,
+      "indice": 0.892
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 22,
+      "indice": 0.887
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 23,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 24,
+      "indice": 0.943
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 25,
+      "indice": 0.937
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 26,
+      "indice": 0.891
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 27,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 28,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 29,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 30,
+      "indice": 1.141
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_mes": 31,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 1,
+      "indice": 0.882
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 2,
+      "indice": 0.97
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 3,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 4,
+      "indice": 0.906
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 5,
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 6,
+      "indice": 0.922
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 7,
+      "indice": 1.297
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 8,
+      "indice": 0.864
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 9,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 10,
+      "indice": 0.882
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 11,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 12,
+      "indice": 0.955
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 13,
+      "indice": 0.882
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 14,
+      "indice": 1.117
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 15,
+      "indice": 1.111
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 16,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 17,
+      "indice": 1.234
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 18,
+      "indice": 1.062
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 19,
+      "indice": 0.89
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 20,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 21,
+      "indice": 1.016
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 22,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 23,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 24,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 25,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 26,
+      "indice": 0.997
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 27,
+      "indice": 0.979
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 28,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 29,
+      "indice": 1.02
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 30,
+      "indice": 1.166
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_mes": 31,
+      "indice": 1.174
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 1,
+      "indice": 0.983
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 2,
+      "indice": 0.953
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 3,
+      "indice": 0.98
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 4,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 5,
+      "indice": 1.036
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 6,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 7,
+      "indice": 1.106
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 8,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 9,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 10,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 11,
+      "indice": 0.962
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 12,
+      "indice": 0.933
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 13,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 14,
+      "indice": 1.041
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 15,
+      "indice": 1.119
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 16,
+      "indice": 1.025
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 17,
+      "indice": 1.145
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 18,
+      "indice": 0.939
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 19,
+      "indice": 0.868
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 20,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 21,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 22,
+      "indice": 1.023
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 23,
+      "indice": 1.005
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 24,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 25,
+      "indice": 0.986
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 26,
+      "indice": 0.955
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 27,
+      "indice": 0.903
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 28,
+      "indice": 0.988
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 29,
+      "indice": 1.045
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 30,
+      "indice": 1.102
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_mes": 31,
+      "indice": 1.141
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 1,
+      "indice": 1.026
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 2,
+      "indice": 0.975
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 3,
+      "indice": 1.035
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 4,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 5,
+      "indice": 1.031
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 6,
+      "indice": 0.983
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 7,
+      "indice": 0.956
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 8,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 9,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 10,
+      "indice": 0.955
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 11,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 12,
+      "indice": 0.956
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 13,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 14,
+      "indice": 1.045
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 15,
+      "indice": 1.094
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 16,
+      "indice": 1.036
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 17,
+      "indice": 1.055
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 18,
+      "indice": 1.041
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 19,
+      "indice": 0.995
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 20,
+      "indice": 1.016
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 21,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 22,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 23,
+      "indice": 1.007
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 24,
+      "indice": 0.965
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 25,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 26,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 27,
+      "indice": 0.899
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 28,
+      "indice": 0.953
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 29,
+      "indice": 1.053
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 30,
+      "indice": 1.05
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_mes": 31,
+      "indice": 1.064
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 1,
+      "indice": 0.995
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 2,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 3,
+      "indice": 1.011
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 4,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 5,
+      "indice": 1.002
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 6,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 7,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 8,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 9,
+      "indice": 0.953
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 10,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 11,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 12,
+      "indice": 0.988
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 13,
+      "indice": 1.018
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 14,
+      "indice": 1.043
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 15,
+      "indice": 1.096
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 16,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 17,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 18,
+      "indice": 1.005
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 19,
+      "indice": 0.969
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 20,
+      "indice": 0.997
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 21,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 22,
+      "indice": 0.981
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 23,
+      "indice": 0.98
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 24,
+      "indice": 0.988
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 25,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 26,
+      "indice": 0.977
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 27,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 28,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 29,
+      "indice": 1.018
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 30,
+      "indice": 1.097
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_mes": 31,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 1,
+      "indice": 1.225
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 2,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 3,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 4,
+      "indice": 1.022
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 5,
+      "indice": 0.977
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 6,
+      "indice": 0.863
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 7,
+      "indice": 0.859
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 8,
+      "indice": 0.838
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 9,
+      "indice": 0.879
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 10,
+      "indice": 0.938
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 11,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 12,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 13,
+      "indice": 1.065
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 14,
+      "indice": 1.283
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 15,
+      "indice": 1.369
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 16,
+      "indice": 1.106
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 17,
+      "indice": 1.103
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 18,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 19,
+      "indice": 0.935
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 20,
+      "indice": 0.934
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 21,
+      "indice": 0.861
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 22,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 23,
+      "indice": 0.814
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 24,
+      "indice": 0.798
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 25,
+      "indice": 0.795
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 26,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 27,
+      "indice": 0.927
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 28,
+      "indice": 1.031
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 29,
+      "indice": 1.105
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 30,
+      "indice": 1.338
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_mes": 31,
+      "indice": 1.259
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 1,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 2,
+      "indice": 0.897
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 3,
+      "indice": 1.066
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 4,
+      "indice": 1.127
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 5,
+      "indice": 1.078
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 6,
+      "indice": 0.969
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 7,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 8,
+      "indice": 0.922
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 9,
+      "indice": 0.941
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 10,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 11,
+      "indice": 0.914
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 12,
+      "indice": 1.063
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 13,
+      "indice": 1.124
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 14,
+      "indice": 1.3
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 15,
+      "indice": 1.281
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 16,
+      "indice": 0.962
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 17,
+      "indice": 1.07
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 18,
+      "indice": 0.956
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 19,
+      "indice": 0.962
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 20,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 21,
+      "indice": 0.915
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 22,
+      "indice": 0.854
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 23,
+      "indice": 0.81
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 24,
+      "indice": 0.762
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 25,
+      "indice": 0.848
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 26,
+      "indice": 0.93
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 27,
+      "indice": 0.888
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 28,
+      "indice": 0.97
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 29,
+      "indice": 1.13
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 30,
+      "indice": 1.215
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_mes": 31,
+      "indice": 1.052
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 1,
+      "indice": 1.148
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 2,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 3,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 4,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 5,
+      "indice": 1.024
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 6,
+      "indice": 0.983
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 7,
+      "indice": 0.894
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 8,
+      "indice": 0.791
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 9,
+      "indice": 0.888
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 10,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 11,
+      "indice": 0.935
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 12,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 13,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 14,
+      "indice": 1.326
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 15,
+      "indice": 1.317
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 16,
+      "indice": 1.069
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 17,
+      "indice": 1.132
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 18,
+      "indice": 0.989
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 19,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 20,
+      "indice": 0.977
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 21,
+      "indice": 0.923
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 22,
+      "indice": 0.768
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 23,
+      "indice": 0.896
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 24,
+      "indice": 0.753
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 25,
+      "indice": 0.768
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 26,
+      "indice": 0.869
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 27,
+      "indice": 0.944
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 28,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 29,
+      "indice": 1.035
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 30,
+      "indice": 1.337
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_mes": 31,
+      "indice": 1.215
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 1,
+      "indice": 1.162
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 2,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 3,
+      "indice": 0.989
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 4,
+      "indice": 1.021
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 5,
+      "indice": 1.044
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 6,
+      "indice": 0.883
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 7,
+      "indice": 0.825
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 8,
+      "indice": 0.809
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 9,
+      "indice": 0.896
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 10,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 11,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 12,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 13,
+      "indice": 1.079
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 14,
+      "indice": 1.367
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 15,
+      "indice": 1.349
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 16,
+      "indice": 1.128
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 17,
+      "indice": 1.062
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 18,
+      "indice": 0.971
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 19,
+      "indice": 0.951
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 20,
+      "indice": 1.005
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 21,
+      "indice": 0.857
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 22,
+      "indice": 0.848
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 23,
+      "indice": 0.898
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 24,
+      "indice": 0.83
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 25,
+      "indice": 0.737
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 26,
+      "indice": 0.869
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 27,
+      "indice": 0.958
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 28,
+      "indice": 1.071
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 29,
+      "indice": 1.134
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 30,
+      "indice": 1.237
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_mes": 31,
+      "indice": 1.138
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 1,
+      "indice": 1.234
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 2,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 3,
+      "indice": 1.061
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 4,
+      "indice": 0.95
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 5,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 6,
+      "indice": 0.813
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 7,
+      "indice": 0.848
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 8,
+      "indice": 0.78
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 9,
+      "indice": 0.838
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 10,
+      "indice": 0.938
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 11,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 12,
+      "indice": 1.04
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 13,
+      "indice": 1.111
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 14,
+      "indice": 1.296
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 15,
+      "indice": 1.411
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 16,
+      "indice": 1.135
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 17,
+      "indice": 1.121
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 18,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 19,
+      "indice": 0.904
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 20,
+      "indice": 0.912
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 21,
+      "indice": 0.906
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 22,
+      "indice": 0.776
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 23,
+      "indice": 0.838
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 24,
+      "indice": 0.789
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 25,
+      "indice": 0.751
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 26,
+      "indice": 0.92
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 27,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 28,
+      "indice": 1.051
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 29,
+      "indice": 1.165
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 30,
+      "indice": 1.323
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_mes": 31,
+      "indice": 1.302
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 1,
+      "indice": 1.251
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 2,
+      "indice": 1.012
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 3,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 4,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 5,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 6,
+      "indice": 0.847
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 7,
+      "indice": 0.847
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 8,
+      "indice": 0.838
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 9,
+      "indice": 0.874
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 10,
+      "indice": 0.931
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 11,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 12,
+      "indice": 0.988
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 13,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 14,
+      "indice": 1.271
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 15,
+      "indice": 1.379
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 16,
+      "indice": 1.125
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 17,
+      "indice": 1.107
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 18,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 19,
+      "indice": 0.933
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 20,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 21,
+      "indice": 0.843
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 22,
+      "indice": 0.837
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 23,
+      "indice": 0.802
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 24,
+      "indice": 0.805
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 25,
+      "indice": 0.798
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 26,
+      "indice": 0.909
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 27,
+      "indice": 0.93
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 28,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 29,
+      "indice": 1.092
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 30,
+      "indice": 1.367
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_mes": 31,
+      "indice": 1.295
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 1,
+      "indice": 1.223
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 2,
+      "indice": 1.03
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 3,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 4,
+      "indice": 0.944
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 5,
+      "indice": 0.92
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 6,
+      "indice": 0.954
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 7,
+      "indice": 1.027
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 8,
+      "indice": 1.028
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 9,
+      "indice": 0.979
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 10,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 11,
+      "indice": 0.971
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 12,
+      "indice": 1.078
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 13,
+      "indice": 1.068
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 14,
+      "indice": 1.065
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 15,
+      "indice": 1.122
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 16,
+      "indice": 0.942
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 17,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 18,
+      "indice": 0.859
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 19,
+      "indice": 0.837
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 20,
+      "indice": 0.875
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 21,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 22,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 23,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 24,
+      "indice": 0.899
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 25,
+      "indice": 0.922
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 26,
+      "indice": 0.933
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 27,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 28,
+      "indice": 1.16
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 29,
+      "indice": 1.095
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 30,
+      "indice": 1.227
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_mes": 31,
+      "indice": 1.214
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 1,
+      "indice": 1.153
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 2,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 3,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 4,
+      "indice": 0.954
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 5,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 6,
+      "indice": 0.861
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 7,
+      "indice": 0.89
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 8,
+      "indice": 0.903
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 9,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 10,
+      "indice": 0.935
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 11,
+      "indice": 0.887
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 12,
+      "indice": 1.144
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 13,
+      "indice": 0.996
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 14,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 15,
+      "indice": 1.066
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 16,
+      "indice": 0.872
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 17,
+      "indice": 0.865
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 18,
+      "indice": 0.787
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 19,
+      "indice": 0.788
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 20,
+      "indice": 0.836
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 21,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 22,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 23,
+      "indice": 0.955
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 24,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 25,
+      "indice": 1.019
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 26,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 27,
+      "indice": 1.115
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 28,
+      "indice": 1.466
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 29,
+      "indice": 1.27
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 30,
+      "indice": 1.398
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_mes": 31,
+      "indice": 1.348
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 1,
+      "indice": 1.138
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 2,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 3,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 4,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 5,
+      "indice": 0.868
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 6,
+      "indice": 0.952
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 7,
+      "indice": 0.932
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 8,
+      "indice": 0.947
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 9,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 10,
+      "indice": 1.038
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 11,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 12,
+      "indice": 1.133
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 13,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 14,
+      "indice": 1.051
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 15,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 16,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 17,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 18,
+      "indice": 0.834
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 19,
+      "indice": 0.849
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 20,
+      "indice": 0.845
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 21,
+      "indice": 0.888
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 22,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 23,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 24,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 25,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 26,
+      "indice": 0.939
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 27,
+      "indice": 1.053
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 28,
+      "indice": 1.323
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 29,
+      "indice": 1.184
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 30,
+      "indice": 1.202
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_mes": 31,
+      "indice": 1.255
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 1,
+      "indice": 1.13
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 2,
+      "indice": 1.022
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 3,
+      "indice": 0.921
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 4,
+      "indice": 0.852
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 5,
+      "indice": 0.906
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 6,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 7,
+      "indice": 1.001
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 8,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 9,
+      "indice": 1.011
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 10,
+      "indice": 1.044
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 11,
+      "indice": 1.016
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 12,
+      "indice": 1.166
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 13,
+      "indice": 1.111
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 14,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 15,
+      "indice": 1.156
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 16,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 17,
+      "indice": 1.001
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 18,
+      "indice": 0.843
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 19,
+      "indice": 0.819
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 20,
+      "indice": 0.795
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 21,
+      "indice": 0.952
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 22,
+      "indice": 0.923
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 23,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 24,
+      "indice": 0.893
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 25,
+      "indice": 0.9
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 26,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 27,
+      "indice": 1.017
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 28,
+      "indice": 1.174
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 29,
+      "indice": 1.133
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 30,
+      "indice": 1.161
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_mes": 31,
+      "indice": 1.187
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 1,
+      "indice": 1.21
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 2,
+      "indice": 1.021
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 3,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 4,
+      "indice": 0.929
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 5,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 6,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 7,
+      "indice": 1.117
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 8,
+      "indice": 1.124
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 9,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 10,
+      "indice": 1.056
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 11,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 12,
+      "indice": 1.065
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 13,
+      "indice": 1.154
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 14,
+      "indice": 1.106
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 15,
+      "indice": 1.16
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 16,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 17,
+      "indice": 0.913
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 18,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 19,
+      "indice": 0.823
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 20,
+      "indice": 0.858
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 21,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 22,
+      "indice": 0.94
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 23,
+      "indice": 0.859
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 24,
+      "indice": 0.878
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 25,
+      "indice": 0.878
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 26,
+      "indice": 0.873
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 27,
+      "indice": 0.943
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 28,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 29,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 30,
+      "indice": 1.142
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_mes": 31,
+      "indice": 1.147
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 1,
+      "indice": 1.277
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 2,
+      "indice": 1.056
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 3,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 4,
+      "indice": 0.944
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 5,
+      "indice": 0.928
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 6,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 7,
+      "indice": 1.097
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 8,
+      "indice": 1.095
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 9,
+      "indice": 1.029
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 10,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 11,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 12,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 13,
+      "indice": 1.096
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 14,
+      "indice": 1.093
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 15,
+      "indice": 1.145
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 16,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 17,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 18,
+      "indice": 0.904
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 19,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 20,
+      "indice": 0.908
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 21,
+      "indice": 0.901
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 22,
+      "indice": 0.9
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 23,
+      "indice": 0.897
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 24,
+      "indice": 0.863
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 25,
+      "indice": 0.881
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 26,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 27,
+      "indice": 0.937
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 28,
+      "indice": 1.002
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 29,
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 30,
+      "indice": 1.158
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_mes": 31,
+      "indice": 1.153
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 1,
+      "indice": 2.064
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 2,
+      "indice": 1.227
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 3,
+      "indice": 0.932
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 4,
+      "indice": 0.781
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 5,
+      "indice": 0.898
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 6,
+      "indice": 0.878
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 7,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 8,
+      "indice": 0.751
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 9,
+      "indice": 0.688
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 10,
+      "indice": 0.658
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 11,
+      "indice": 0.668
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 12,
+      "indice": 0.749
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 13,
+      "indice": 1.591
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 14,
+      "indice": 1.212
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 15,
+      "indice": 1.323
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 16,
+      "indice": 1.465
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 17,
+      "indice": 1.368
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 18,
+      "indice": 1.082
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 19,
+      "indice": 0.882
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 20,
+      "indice": 0.797
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 21,
+      "indice": 0.827
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 22,
+      "indice": 0.746
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 23,
+      "indice": 0.741
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 24,
+      "indice": 0.73
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 25,
+      "indice": 1.051
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 26,
+      "indice": 1.106
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 27,
+      "indice": 1.114
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 28,
+      "indice": 0.887
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 29,
+      "indice": 0.68
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 30,
+      "indice": 0.654
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_mes": 31,
+      "indice": 1.393
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 1,
+      "indice": 1.304
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 2,
+      "indice": 1.11
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 3,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 4,
+      "indice": 1.017
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 5,
+      "indice": 1.061
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 6,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 7,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 8,
+      "indice": 0.824
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 9,
+      "indice": 0.9
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 10,
+      "indice": 0.846
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 11,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 12,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 13,
+      "indice": 1.012
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 14,
+      "indice": 1.021
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 15,
+      "indice": 1.109
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 16,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 17,
+      "indice": 1.044
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 18,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 19,
+      "indice": 0.944
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 20,
+      "indice": 0.855
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 21,
+      "indice": 0.846
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 22,
+      "indice": 0.861
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 23,
+      "indice": 0.908
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 24,
+      "indice": 0.921
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 25,
+      "indice": 1.039
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 26,
+      "indice": 1.022
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 27,
+      "indice": 1.175
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 28,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 29,
+      "indice": 1.001
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 30,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_mes": 31,
+      "indice": 1.112
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 1,
+      "indice": 1.446
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 2,
+      "indice": 1.186
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 3,
+      "indice": 1.084
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 4,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 5,
+      "indice": 0.927
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 6,
+      "indice": 0.896
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 7,
+      "indice": 0.786
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 8,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 9,
+      "indice": 0.778
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 10,
+      "indice": 0.951
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 11,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 12,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 13,
+      "indice": 1.296
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 14,
+      "indice": 0.779
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 15,
+      "indice": 1.074
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 16,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 17,
+      "indice": 0.978
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 18,
+      "indice": 1.05
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 19,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 20,
+      "indice": 0.986
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 21,
+      "indice": 0.827
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 22,
+      "indice": 0.835
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 23,
+      "indice": 0.867
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 24,
+      "indice": 0.938
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 25,
+      "indice": 0.931
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 26,
+      "indice": 0.883
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 27,
+      "indice": 1.225
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 28,
+      "indice": 1.042
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 29,
+      "indice": 1.077
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 30,
+      "indice": 0.958
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_mes": 31,
+      "indice": 1.151
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 1,
+      "indice": 1.726
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 2,
+      "indice": 1.066
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 3,
+      "indice": 1.144
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 4,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 5,
+      "indice": 0.863
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 6,
+      "indice": 1.046
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 7,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 8,
+      "indice": 0.804
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 9,
+      "indice": 0.896
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 10,
+      "indice": 0.817
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 11,
+      "indice": 0.837
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 12,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 13,
+      "indice": 0.929
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 14,
+      "indice": 1.159
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 15,
+      "indice": 1.304
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 16,
+      "indice": 1.152
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 17,
+      "indice": 1.225
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 18,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 19,
+      "indice": 0.887
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 20,
+      "indice": 0.781
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 21,
+      "indice": 0.947
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 22,
+      "indice": 0.854
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 23,
+      "indice": 0.781
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 24,
+      "indice": 0.894
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 25,
+      "indice": 0.927
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 26,
+      "indice": 1.092
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 27,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 28,
+      "indice": 1.033
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 29,
+      "indice": 0.981
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 30,
+      "indice": 0.855
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_mes": 31,
+      "indice": 0.958
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 1,
+      "indice": 2.075
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 2,
+      "indice": 1.323
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 3,
+      "indice": 1.026
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 4,
+      "indice": 0.752
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 5,
+      "indice": 0.937
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 6,
+      "indice": 0.969
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 7,
+      "indice": 0.997
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 8,
+      "indice": 0.893
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 9,
+      "indice": 0.716
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 10,
+      "indice": 0.688
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 11,
+      "indice": 0.744
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 12,
+      "indice": 0.72
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 13,
+      "indice": 1.287
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 14,
+      "indice": 1.022
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 15,
+      "indice": 1.437
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 16,
+      "indice": 1.506
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 17,
+      "indice": 1.266
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 18,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 19,
+      "indice": 0.916
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 20,
+      "indice": 0.786
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 21,
+      "indice": 0.904
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 22,
+      "indice": 0.721
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 23,
+      "indice": 0.607
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 24,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 25,
+      "indice": 0.79
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 26,
+      "indice": 1.095
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 27,
+      "indice": 1.217
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 28,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 29,
+      "indice": 0.634
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 30,
+      "indice": 0.735
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_mes": 31,
+      "indice": 1.382
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 1,
+      "indice": 2.253
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 2,
+      "indice": 1.252
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 3,
+      "indice": 0.877
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 4,
+      "indice": 0.715
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 5,
+      "indice": 0.863
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 6,
+      "indice": 0.841
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 7,
+      "indice": 1.094
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 8,
+      "indice": 0.713
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 9,
+      "indice": 0.63
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 10,
+      "indice": 0.599
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 11,
+      "indice": 0.587
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 12,
+      "indice": 0.681
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 13,
+      "indice": 1.772
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 14,
+      "indice": 1.285
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 15,
+      "indice": 1.366
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 16,
+      "indice": 1.573
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 17,
+      "indice": 1.462
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 18,
+      "indice": 1.111
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 19,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 20,
+      "indice": 0.78
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 21,
+      "indice": 0.811
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 22,
+      "indice": 0.716
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 23,
+      "indice": 0.712
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 24,
+      "indice": 0.669
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 25,
+      "indice": 1.085
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 26,
+      "indice": 1.133
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 27,
+      "indice": 1.092
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 28,
+      "indice": 0.841
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 29,
+      "indice": 0.59
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 30,
+      "indice": 0.551
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_mes": 31,
+      "indice": 1.479
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 1,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 2,
+      "indice": 0.97
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 3,
+      "indice": 0.946
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 4,
+      "indice": 0.92
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 5,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 6,
+      "indice": 0.901
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 7,
+      "indice": 0.897
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 8,
+      "indice": 0.879
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 9,
+      "indice": 0.897
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 10,
+      "indice": 0.916
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 11,
+      "indice": 0.914
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 12,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 13,
+      "indice": 1.096
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 14,
+      "indice": 1.18
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 15,
+      "indice": 1.289
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 16,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 17,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 18,
+      "indice": 0.917
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 19,
+      "indice": 0.93
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 20,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 21,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 22,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 23,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 24,
+      "indice": 0.923
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 25,
+      "indice": 0.919
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 26,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 27,
+      "indice": 1.017
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 28,
+      "indice": 1.141
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 29,
+      "indice": 1.187
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 30,
+      "indice": 1.354
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_mes": 31,
+      "indice": 1.117
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 1,
+      "indice": 1.099
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 2,
+      "indice": 1.023
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 3,
+      "indice": 0.911
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 4,
+      "indice": 0.879
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 5,
+      "indice": 0.843
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 6,
+      "indice": 0.841
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 7,
+      "indice": 0.809
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 8,
+      "indice": 0.783
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 9,
+      "indice": 0.784
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 10,
+      "indice": 0.81
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 11,
+      "indice": 0.808
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 12,
+      "indice": 1.007
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 13,
+      "indice": 1.111
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 14,
+      "indice": 1.171
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 15,
+      "indice": 1.534
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 16,
+      "indice": 1.002
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 17,
+      "indice": 0.903
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 18,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 19,
+      "indice": 0.853
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 20,
+      "indice": 0.898
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 21,
+      "indice": 0.879
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 22,
+      "indice": 1.018
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 23,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 24,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 25,
+      "indice": 0.865
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 26,
+      "indice": 0.952
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 27,
+      "indice": 0.949
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 28,
+      "indice": 1.346
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 29,
+      "indice": 1.299
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 30,
+      "indice": 1.678
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_mes": 31,
+      "indice": 1.162
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 1,
+      "indice": 1.159
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 2,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 3,
+      "indice": 1.019
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 4,
+      "indice": 0.872
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 5,
+      "indice": 0.909
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 6,
+      "indice": 0.854
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 7,
+      "indice": 0.782
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 8,
+      "indice": 0.8
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 9,
+      "indice": 0.849
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 10,
+      "indice": 0.874
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 11,
+      "indice": 0.86
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 12,
+      "indice": 0.92
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 13,
+      "indice": 1.099
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 14,
+      "indice": 1.142
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 15,
+      "indice": 1.392
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 16,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 17,
+      "indice": 0.924
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 18,
+      "indice": 0.87
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 19,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 20,
+      "indice": 0.925
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 21,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 22,
+      "indice": 0.94
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 23,
+      "indice": 1.039
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 24,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 25,
+      "indice": 0.852
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 26,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 27,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 28,
+      "indice": 1.258
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 29,
+      "indice": 1.331
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 30,
+      "indice": 1.475
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_mes": 31,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 1,
+      "indice": 1.07
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 2,
+      "indice": 0.916
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 3,
+      "indice": 0.908
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 4,
+      "indice": 0.899
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 5,
+      "indice": 0.893
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 6,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 7,
+      "indice": 0.876
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 8,
+      "indice": 0.876
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 9,
+      "indice": 0.865
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 10,
+      "indice": 0.901
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 11,
+      "indice": 0.853
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 12,
+      "indice": 0.955
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 13,
+      "indice": 1.128
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 14,
+      "indice": 1.219
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 15,
+      "indice": 1.429
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 16,
+      "indice": 1.046
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 17,
+      "indice": 0.983
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 18,
+      "indice": 0.873
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 19,
+      "indice": 0.868
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 20,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 21,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 22,
+      "indice": 0.941
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 23,
+      "indice": 1.017
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 24,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 25,
+      "indice": 0.863
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 26,
+      "indice": 0.938
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 27,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 28,
+      "indice": 1.161
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 29,
+      "indice": 1.164
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 30,
+      "indice": 1.483
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_mes": 31,
+      "indice": 1.191
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 1,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 2,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 3,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 4,
+      "indice": 0.926
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 5,
+      "indice": 0.866
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 6,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 7,
+      "indice": 0.902
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 8,
+      "indice": 0.89
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 9,
+      "indice": 0.906
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 10,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 11,
+      "indice": 0.932
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 12,
+      "indice": 0.992
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 13,
+      "indice": 1.068
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 14,
+      "indice": 1.261
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 15,
+      "indice": 1.291
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 16,
+      "indice": 0.989
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 17,
+      "indice": 0.947
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 18,
+      "indice": 0.931
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 19,
+      "indice": 0.889
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 20,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 21,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 22,
+      "indice": 0.995
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 23,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 24,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 25,
+      "indice": 0.922
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 26,
+      "indice": 0.914
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 27,
+      "indice": 1.028
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 28,
+      "indice": 1.105
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 29,
+      "indice": 1.147
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 30,
+      "indice": 1.34
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_mes": 31,
+      "indice": 1.121
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 1,
+      "indice": 0.971
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 2,
+      "indice": 0.952
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 3,
+      "indice": 0.945
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 4,
+      "indice": 0.934
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 5,
+      "indice": 0.929
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 6,
+      "indice": 0.925
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 7,
+      "indice": 0.928
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 8,
+      "indice": 0.907
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 9,
+      "indice": 0.931
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 10,
+      "indice": 0.95
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 11,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 12,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 13,
+      "indice": 1.094
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 14,
+      "indice": 1.169
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 15,
+      "indice": 1.207
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 16,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 17,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 18,
+      "indice": 0.934
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 19,
+      "indice": 0.964
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 20,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 21,
+      "indice": 0.986
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 22,
+      "indice": 0.962
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 23,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 24,
+      "indice": 0.938
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 25,
+      "indice": 0.941
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 26,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 27,
+      "indice": 1.038
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 28,
+      "indice": 1.084
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 29,
+      "indice": 1.156
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 30,
+      "indice": 1.252
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_mes": 31,
+      "indice": 1.101
+    }
+  ],
+  "dia_semana": [
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 1,
+      "indice": 1.053
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 2,
+      "indice": 1.001
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 3,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 4,
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 5,
+      "indice": 1.087
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 6,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dia_semana": 7,
+      "indice": 0.877
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 1,
+      "indice": 0.977
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 2,
+      "indice": 0.967
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 3,
+      "indice": 0.947
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 4,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 5,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 6,
+      "indice": 1.14
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dia_semana": 7,
+      "indice": 0.833
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 1,
+      "indice": 1.046
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 2,
+      "indice": 0.914
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 3,
+      "indice": 0.947
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 4,
+      "indice": 1.038
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 5,
+      "indice": 1.195
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 6,
+      "indice": 1.019
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dia_semana": 7,
+      "indice": 0.84
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 1,
+      "indice": 1.031
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 2,
+      "indice": 0.978
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 3,
+      "indice": 0.981
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 4,
+      "indice": 1.04
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 5,
+      "indice": 1.1
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 6,
+      "indice": 1.016
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dia_semana": 7,
+      "indice": 0.854
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 1,
+      "indice": 1.064
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 2,
+      "indice": 1.025
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 3,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 4,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 5,
+      "indice": 1.098
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 6,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dia_semana": 7,
+      "indice": 0.857
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 1,
+      "indice": 1.062
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 2,
+      "indice": 1.006
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 3,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 4,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 5,
+      "indice": 1.082
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 6,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dia_semana": 7,
+      "indice": 0.887
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 1,
+      "indice": 0.974
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 2,
+      "indice": 0.968
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 3,
+      "indice": 1.005
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 4,
+      "indice": 1.128
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 5,
+      "indice": 1.265
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 6,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dia_semana": 7,
+      "indice": 0.702
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 1,
+      "indice": 0.965
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 2,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 3,
+      "indice": 1.052
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 4,
+      "indice": 1.16
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 5,
+      "indice": 1.221
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 6,
+      "indice": 0.913
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dia_semana": 7,
+      "indice": 0.676
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 1,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 2,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 3,
+      "indice": 1.06
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 4,
+      "indice": 1.138
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 5,
+      "indice": 1.194
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 6,
+      "indice": 0.905
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dia_semana": 7,
+      "indice": 0.716
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 1,
+      "indice": 0.956
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 2,
+      "indice": 0.995
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 3,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 4,
+      "indice": 1.096
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 5,
+      "indice": 1.281
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 6,
+      "indice": 0.946
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dia_semana": 7,
+      "indice": 0.719
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 1,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 2,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 3,
+      "indice": 1.015
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 4,
+      "indice": 1.094
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 5,
+      "indice": 1.239
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 6,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dia_semana": 7,
+      "indice": 0.706
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 1,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 2,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 3,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 4,
+      "indice": 1.129
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 5,
+      "indice": 1.278
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 6,
+      "indice": 0.965
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dia_semana": 7,
+      "indice": 0.704
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 1,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 2,
+      "indice": 1.039
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 3,
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 4,
+      "indice": 1.063
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 5,
+      "indice": 1.197
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 6,
+      "indice": 0.922
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dia_semana": 7,
+      "indice": 0.771
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 1,
+      "indice": 0.984
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 2,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 3,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 4,
+      "indice": 1.079
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 5,
+      "indice": 1.214
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 6,
+      "indice": 0.913
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dia_semana": 7,
+      "indice": 0.791
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 1,
+      "indice": 1.007
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 2,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 3,
+      "indice": 0.988
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 4,
+      "indice": 1.126
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 5,
+      "indice": 1.197
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 6,
+      "indice": 0.902
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dia_semana": 7,
+      "indice": 0.78
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 1,
+      "indice": 1.035
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 2,
+      "indice": 1.019
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 3,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 4,
+      "indice": 1.072
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 5,
+      "indice": 1.201
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 6,
+      "indice": 0.886
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dia_semana": 7,
+      "indice": 0.783
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 1,
+      "indice": 1.037
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 2,
+      "indice": 1.051
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 3,
+      "indice": 1.022
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 4,
+      "indice": 1.057
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 5,
+      "indice": 1.182
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 6,
+      "indice": 0.898
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dia_semana": 7,
+      "indice": 0.754
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 1,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 2,
+      "indice": 1.043
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 3,
+      "indice": 1.007
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 4,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 5,
+      "indice": 1.19
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 6,
+      "indice": 0.935
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dia_semana": 7,
+      "indice": 0.762
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 1,
+      "indice": 0.942
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 2,
+      "indice": 0.91
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 3,
+      "indice": 1.134
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 4,
+      "indice": 1.304
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 5,
+      "indice": 1.078
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 6,
+      "indice": 0.818
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dia_semana": 7,
+      "indice": 0.814
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 1,
+      "indice": 1.027
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 2,
+      "indice": 1.055
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 3,
+      "indice": 1.138
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 4,
+      "indice": 1.069
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 5,
+      "indice": 1.049
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 6,
+      "indice": 0.857
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dia_semana": 7,
+      "indice": 0.805
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 1,
+      "indice": 1.054
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 2,
+      "indice": 1.09
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 3,
+      "indice": 1.087
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 4,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 5,
+      "indice": 1.028
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 6,
+      "indice": 0.853
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dia_semana": 7,
+      "indice": 0.839
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 1,
+      "indice": 1.058
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 2,
+      "indice": 0.996
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 3,
+      "indice": 1.214
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 4,
+      "indice": 1.115
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 5,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 6,
+      "indice": 0.831
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dia_semana": 7,
+      "indice": 0.797
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 1,
+      "indice": 0.902
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 2,
+      "indice": 0.912
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 3,
+      "indice": 1.123
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 4,
+      "indice": 1.303
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 5,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 6,
+      "indice": 0.823
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dia_semana": 7,
+      "indice": 0.848
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 1,
+      "indice": 0.918
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 2,
+      "indice": 0.87
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 3,
+      "indice": 1.132
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 4,
+      "indice": 1.37
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 5,
+      "indice": 1.089
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 6,
+      "indice": 0.808
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dia_semana": 7,
+      "indice": 0.813
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 1,
+      "indice": 1.002
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 2,
+      "indice": 1.024
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 3,
+      "indice": 1.051
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 4,
+      "indice": 1.174
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 5,
+      "indice": 1.274
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 6,
+      "indice": 0.808
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dia_semana": 7,
+      "indice": 0.667
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 1,
+      "indice": 0.981
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 2,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 3,
+      "indice": 0.969
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 4,
+      "indice": 1.16
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 5,
+      "indice": 1.418
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 6,
+      "indice": 0.841
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dia_semana": 7,
+      "indice": 0.639
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 1,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 2,
+      "indice": 1.016
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 3,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 4,
+      "indice": 1.117
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 5,
+      "indice": 1.348
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 6,
+      "indice": 0.84
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dia_semana": 7,
+      "indice": 0.656
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 1,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 2,
+      "indice": 1.052
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 3,
+      "indice": 1.028
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 4,
+      "indice": 1.143
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 5,
+      "indice": 1.318
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 6,
+      "indice": 0.815
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dia_semana": 7,
+      "indice": 0.663
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 1,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 2,
+      "indice": 1.035
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 3,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 4,
+      "indice": 1.171
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 5,
+      "indice": 1.249
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 6,
+      "indice": 0.821
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dia_semana": 7,
+      "indice": 0.663
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 1,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 2,
+      "indice": 1.029
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 3,
+      "indice": 1.075
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 4,
+      "indice": 1.183
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 5,
+      "indice": 1.232
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 6,
+      "indice": 0.795
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dia_semana": 7,
+      "indice": 0.676
+    }
+  ],
+  "mes_del_trimestre": [
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "mes_trimestre": 1,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "mes_trimestre": 2,
+      "indice": 1.047
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "mes_trimestre": 3,
+      "indice": 0.993
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "mes_trimestre": 1,
+      "indice": 0.932
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "mes_trimestre": 2,
+      "indice": 1.055
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "mes_trimestre": 3,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "mes_trimestre": 1,
+      "indice": 0.963
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "mes_trimestre": 2,
+      "indice": 1.028
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "mes_trimestre": 3,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "mes_trimestre": 1,
+      "indice": 0.961
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "mes_trimestre": 2,
+      "indice": 1.015
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "mes_trimestre": 3,
+      "indice": 1.024
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "mes_trimestre": 1,
+      "indice": 0.966
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "mes_trimestre": 2,
+      "indice": 1.053
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "mes_trimestre": 3,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "mes_trimestre": 1,
+      "indice": 0.962
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "mes_trimestre": 2,
+      "indice": 1.048
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "mes_trimestre": 3,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "mes_trimestre": 1,
+      "indice": 0.977
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "mes_trimestre": 2,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "mes_trimestre": 3,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "mes_trimestre": 1,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "mes_trimestre": 2,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "mes_trimestre": 3,
+      "indice": 1.003
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "mes_trimestre": 1,
+      "indice": 0.997
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "mes_trimestre": 2,
+      "indice": 0.99
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "mes_trimestre": 3,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "mes_trimestre": 1,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "mes_trimestre": 2,
+      "indice": 0.982
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "mes_trimestre": 3,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "mes_trimestre": 1,
+      "indice": 0.969
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "mes_trimestre": 2,
+      "indice": 1.018
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "mes_trimestre": 3,
+      "indice": 1.013
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "mes_trimestre": 1,
+      "indice": 0.971
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "mes_trimestre": 2,
+      "indice": 1.015
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "mes_trimestre": 3,
+      "indice": 1.014
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "mes_trimestre": 1,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "mes_trimestre": 2,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "mes_trimestre": 3,
+      "indice": 0.96
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "mes_trimestre": 1,
+      "indice": 1.113
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "mes_trimestre": 2,
+      "indice": 0.998
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "mes_trimestre": 3,
+      "indice": 0.89
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "mes_trimestre": 1,
+      "indice": 1.091
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "mes_trimestre": 2,
+      "indice": 0.973
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "mes_trimestre": 3,
+      "indice": 0.936
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "mes_trimestre": 1,
+      "indice": 1.039
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "mes_trimestre": 2,
+      "indice": 1.002
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "mes_trimestre": 3,
+      "indice": 0.959
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "mes_trimestre": 1,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "mes_trimestre": 2,
+      "indice": 1.034
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "mes_trimestre": 3,
+      "indice": 0.994
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "mes_trimestre": 1,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "mes_trimestre": 2,
+      "indice": 1.058
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "mes_trimestre": 3,
+      "indice": 0.994
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "mes_trimestre": 1,
+      "indice": 1.1
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "mes_trimestre": 2,
+      "indice": 0.987
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "mes_trimestre": 3,
+      "indice": 0.912
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "mes_trimestre": 1,
+      "indice": 0.996
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "mes_trimestre": 2,
+      "indice": 1.032
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "mes_trimestre": 3,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "mes_trimestre": 1,
+      "indice": 1.046
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "mes_trimestre": 2,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "mes_trimestre": 3,
+      "indice": 0.951
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "mes_trimestre": 1,
+      "indice": 1.01
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "mes_trimestre": 2,
+      "indice": 1.009
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "mes_trimestre": 3,
+      "indice": 0.981
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "mes_trimestre": 1,
+      "indice": 1.097
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "mes_trimestre": 2,
+      "indice": 0.991
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "mes_trimestre": 3,
+      "indice": 0.912
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "mes_trimestre": 1,
+      "indice": 1.128
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "mes_trimestre": 2,
+      "indice": 0.976
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "mes_trimestre": 3,
+      "indice": 0.896
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "mes_trimestre": 1,
+      "indice": 0.965
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "mes_trimestre": 2,
+      "indice": 1.004
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "mes_trimestre": 3,
+      "indice": 1.031
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "mes_trimestre": 1,
+      "indice": 0.948
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "mes_trimestre": 2,
+      "indice": 0.937
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "mes_trimestre": 3,
+      "indice": 1.115
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "mes_trimestre": 1,
+      "indice": 0.957
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "mes_trimestre": 2,
+      "indice": 0.942
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "mes_trimestre": 3,
+      "indice": 1.101
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "mes_trimestre": 1,
+      "indice": 0.942
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "mes_trimestre": 2,
+      "indice": 0.999
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "mes_trimestre": 3,
+      "indice": 1.059
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "mes_trimestre": 1,
+      "indice": 0.972
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "mes_trimestre": 2,
+      "indice": 1.019
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "mes_trimestre": 3,
+      "indice": 1.008
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "mes_trimestre": 1,
+      "indice": 0.971
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "mes_trimestre": 2,
+      "indice": 1.023
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "mes_trimestre": 3,
+      "indice": 1.006
+    }
+  ],
+  "quincena_vs_resto": [
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "razon": 1.074,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.052,
+      "razon_max_anual": 1.135
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "razon": 1.104,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.933,
+      "razon_max_anual": 1.389
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "razon": 1.083,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.988,
+      "razon_max_anual": 1.295
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "razon": 1.099,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.017,
+      "razon_max_anual": 1.306
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "razon": 1.077,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.048,
+      "razon_max_anual": 1.149
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "razon": 1.069,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.048,
+      "razon_max_anual": 1.092
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "razon": 1.361,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.171,
+      "razon_max_anual": 1.488
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "razon": 1.217,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.05,
+      "razon_max_anual": 1.407
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "razon": 1.314,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.086,
+      "razon_max_anual": 1.504
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "razon": 1.334,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.115,
+      "razon_max_anual": 1.522
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "razon": 1.399,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.267,
+      "razon_max_anual": 1.547
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "razon": 1.383,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.231,
+      "razon_max_anual": 1.49
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "razon": 1.159,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.008,
+      "razon_max_anual": 1.295
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "razon": 1.158,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.975,
+      "razon_max_anual": 1.364
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "razon": 1.139,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.947,
+      "razon_max_anual": 1.339
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "razon": 1.146,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.916,
+      "razon_max_anual": 1.294
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "razon": 1.146,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.009,
+      "razon_max_anual": 1.361
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "razon": 1.165,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.022,
+      "razon_max_anual": 1.391
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "razon": 1.418,
+      "anios": 7,
+      "anios_razon_mayor_1": 5,
+      "razon_min_anual": 0.746,
+      "razon_max_anual": 2.003
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "razon": 1.119,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.995,
+      "razon_max_anual": 1.181
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "razon": 1.083,
+      "anios": 7,
+      "anios_razon_mayor_1": 4,
+      "razon_min_anual": 0.961,
+      "razon_max_anual": 1.216
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "razon": 1.242,
+      "anios": 7,
+      "anios_razon_mayor_1": 4,
+      "razon_min_anual": 0.798,
+      "razon_max_anual": 1.542
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "razon": 1.432,
+      "anios": 7,
+      "anios_razon_mayor_1": 6,
+      "razon_min_anual": 0.815,
+      "razon_max_anual": 1.986
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "razon": 1.504,
+      "anios": 7,
+      "anios_razon_mayor_1": 4,
+      "razon_min_anual": 0.622,
+      "razon_max_anual": 2.223
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "razon": 1.239,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.156,
+      "razon_max_anual": 1.334
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "razon": 1.475,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.208,
+      "razon_max_anual": 1.831
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "razon": 1.368,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.26,
+      "razon_max_anual": 1.691
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "razon": 1.35,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.242,
+      "razon_max_anual": 1.498
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "razon": 1.229,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.119,
+      "razon_max_anual": 1.29
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "razon": 1.166,
+      "anios": 7,
+      "anios_razon_mayor_1": 7,
+      "razon_min_anual": 1.115,
+      "razon_max_anual": 1.229
+    }
+  ],
+  "mezcla_estrellas_quincena": [
+    {
+      "bank_id": "AZTECA",
+      "quincena": false,
+      "p_1": 0.0936,
+      "p_2": 0.0195,
+      "p_3": 0.0328,
+      "p_4": 0.0949,
+      "p_5": 0.7592
+    },
+    {
+      "bank_id": "AZTECA",
+      "quincena": true,
+      "p_1": 0.0962,
+      "p_2": 0.0197,
+      "p_3": 0.0335,
+      "p_4": 0.0951,
+      "p_5": 0.7555
+    },
+    {
+      "bank_id": "BANORTE",
+      "quincena": false,
+      "p_1": 0.1173,
+      "p_2": 0.0267,
+      "p_3": 0.0445,
+      "p_4": 0.1083,
+      "p_5": 0.7032
+    },
+    {
+      "bank_id": "BANORTE",
+      "quincena": true,
+      "p_1": 0.1049,
+      "p_2": 0.0257,
+      "p_3": 0.0436,
+      "p_4": 0.1113,
+      "p_5": 0.7144
+    },
+    {
+      "bank_id": "BBVA",
+      "quincena": false,
+      "p_1": 0.2821,
+      "p_2": 0.0502,
+      "p_3": 0.0501,
+      "p_4": 0.0718,
+      "p_5": 0.5458
+    },
+    {
+      "bank_id": "BBVA",
+      "quincena": true,
+      "p_1": 0.2818,
+      "p_2": 0.0493,
+      "p_3": 0.0495,
+      "p_4": 0.071,
+      "p_5": 0.5485
+    },
+    {
+      "bank_id": "NUBANK",
+      "quincena": false,
+      "p_1": 0.1518,
+      "p_2": 0.0319,
+      "p_3": 0.0373,
+      "p_4": 0.0583,
+      "p_5": 0.7206
+    },
+    {
+      "bank_id": "NUBANK",
+      "quincena": true,
+      "p_1": 0.1197,
+      "p_2": 0.0244,
+      "p_3": 0.0327,
+      "p_4": 0.0589,
+      "p_5": 0.7643
+    },
+    {
+      "bank_id": "SANTANDER",
+      "quincena": false,
+      "p_1": 0.1638,
+      "p_2": 0.0351,
+      "p_3": 0.0478,
+      "p_4": 0.1058,
+      "p_5": 0.6474
+    },
+    {
+      "bank_id": "SANTANDER",
+      "quincena": true,
+      "p_1": 0.1949,
+      "p_2": 0.0388,
+      "p_3": 0.0521,
+      "p_4": 0.1049,
+      "p_5": 0.6093
+    }
+  ],
+  "releases": {
+    "versiones": [
+      {
+        "bank_id": "AZTECA",
+        "versiones": 187,
+        "features": 27
+      },
+      {
+        "bank_id": "BANORTE",
+        "versiones": 62,
+        "features": 13
+      },
+      {
+        "bank_id": "BBVA",
+        "versiones": 189,
+        "features": 100
+      },
+      {
+        "bank_id": "NUBANK",
+        "versiones": 263,
+        "features": 157
+      },
+      {
+        "bank_id": "SANTANDER",
+        "versiones": 96,
+        "features": 45
+      }
+    ],
+    "cadencia_parches": [
+      {
+        "bank_id": "AZTECA",
+        "intervalos": 187,
+        "mediana_dias": 12.0,
+        "p25": 8.0,
+        "p75": 16.0,
+        "share_11_17_dias": 0.369,
+        "share_80_100_dias": 0.0
+      },
+      {
+        "bank_id": "BANORTE",
+        "intervalos": 62,
+        "mediana_dias": 36.0,
+        "p25": 23.0,
+        "p75": 50.0,
+        "share_11_17_dias": 0.097,
+        "share_80_100_dias": 0.032
+      },
+      {
+        "bank_id": "BBVA",
+        "intervalos": 189,
+        "mediana_dias": 11.0,
+        "p25": 7.0,
+        "p75": 18.0,
+        "share_11_17_dias": 0.275,
+        "share_80_100_dias": 0.0
+      },
+      {
+        "bank_id": "NUBANK",
+        "intervalos": 262,
+        "mediana_dias": 7.0,
+        "p25": 7.0,
+        "p75": 8.0,
+        "share_11_17_dias": 0.111,
+        "share_80_100_dias": 0.0
+      },
+      {
+        "bank_id": "SANTANDER",
+        "intervalos": 96,
+        "mediana_dias": 23.0,
+        "p25": 13.0,
+        "p75": 34.0,
+        "share_11_17_dias": 0.25,
+        "share_80_100_dias": 0.031
+      }
+    ],
+    "cadencia_features": [
+      {
+        "bank_id": "AZTECA",
+        "intervalos": 27,
+        "mediana_dias": 23.0,
+        "p25": 14.0,
+        "p75": 118.0,
+        "share_11_17_dias": 0.407,
+        "share_80_100_dias": 0.074
+      },
+      {
+        "bank_id": "BANORTE",
+        "intervalos": 13,
+        "mediana_dias": 132.0,
+        "p25": 98.0,
+        "p75": 207.0,
+        "share_11_17_dias": 0.0,
+        "share_80_100_dias": 0.077
+      },
+      {
+        "bank_id": "BBVA",
+        "intervalos": 100,
+        "mediana_dias": 22.5,
+        "p25": 15.0,
+        "p75": 30.0,
+        "share_11_17_dias": 0.32,
+        "share_80_100_dias": 0.0
+      },
+      {
+        "bank_id": "NUBANK",
+        "intervalos": 156,
+        "mediana_dias": 8.5,
+        "p25": 7.0,
+        "p75": 21.0,
+        "share_11_17_dias": 0.16,
+        "share_80_100_dias": 0.0
+      },
+      {
+        "bank_id": "SANTANDER",
+        "intervalos": 45,
+        "mediana_dias": 39.0,
+        "p25": 27.0,
+        "p75": 59.0,
+        "share_11_17_dias": 0.022,
+        "share_80_100_dias": 0.022
+      }
+    ],
+    "features_por_mes_del_trimestre": [
+      {
+        "bank_id": "AZTECA",
+        "mes_trimestre": 1,
+        "len": 11
+      },
+      {
+        "bank_id": "AZTECA",
+        "mes_trimestre": 2,
+        "len": 7
+      },
+      {
+        "bank_id": "AZTECA",
+        "mes_trimestre": 3,
+        "len": 9
+      },
+      {
+        "bank_id": "BANORTE",
+        "mes_trimestre": 1,
+        "len": 3
+      },
+      {
+        "bank_id": "BANORTE",
+        "mes_trimestre": 2,
+        "len": 4
+      },
+      {
+        "bank_id": "BANORTE",
+        "mes_trimestre": 3,
+        "len": 6
+      },
+      {
+        "bank_id": "BBVA",
+        "mes_trimestre": 1,
+        "len": 30
+      },
+      {
+        "bank_id": "BBVA",
+        "mes_trimestre": 2,
+        "len": 35
+      },
+      {
+        "bank_id": "BBVA",
+        "mes_trimestre": 3,
+        "len": 35
+      },
+      {
+        "bank_id": "NUBANK",
+        "mes_trimestre": 1,
+        "len": 51
+      },
+      {
+        "bank_id": "NUBANK",
+        "mes_trimestre": 2,
+        "len": 50
+      },
+      {
+        "bank_id": "NUBANK",
+        "mes_trimestre": 3,
+        "len": 56
+      },
+      {
+        "bank_id": "SANTANDER",
+        "mes_trimestre": 1,
+        "len": 15
+      },
+      {
+        "bank_id": "SANTANDER",
+        "mes_trimestre": 2,
+        "len": 12
+      },
+      {
+        "bank_id": "SANTANDER",
+        "mes_trimestre": 3,
+        "len": 18
+      }
+    ],
+    "versiones_por_dia_semana": [
+      {
+        "bank_id": "AZTECA",
+        "dia": 1,
+        "len": 39
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 2,
+        "len": 27
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 3,
+        "len": 20
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 4,
+        "len": 18
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 5,
+        "len": 27
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 6,
+        "len": 32
+      },
+      {
+        "bank_id": "AZTECA",
+        "dia": 7,
+        "len": 24
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 1,
+        "len": 10
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 2,
+        "len": 7
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 3,
+        "len": 11
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 4,
+        "len": 8
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 5,
+        "len": 7
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 6,
+        "len": 11
+      },
+      {
+        "bank_id": "BANORTE",
+        "dia": 7,
+        "len": 8
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 1,
+        "len": 25
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 2,
+        "len": 32
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 3,
+        "len": 32
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 4,
+        "len": 24
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 5,
+        "len": 19
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 6,
+        "len": 32
+      },
+      {
+        "bank_id": "BBVA",
+        "dia": 7,
+        "len": 25
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 1,
+        "len": 5
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 2,
+        "len": 8
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 3,
+        "len": 21
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 4,
+        "len": 177
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 5,
+        "len": 50
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 6,
+        "len": 1
+      },
+      {
+        "bank_id": "NUBANK",
+        "dia": 7,
+        "len": 1
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 1,
+        "len": 11
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 2,
+        "len": 9
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 3,
+        "len": 13
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 4,
+        "len": 23
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 5,
+        "len": 16
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 6,
+        "len": 13
+      },
+      {
+        "bank_id": "SANTANDER",
+        "dia": 7,
+        "len": 11
+      }
+    ],
+    "versiones_en_quincena": [
+      {
+        "bank_id": "AZTECA",
+        "versiones": 187,
+        "en_quincena": 33,
+        "share": 0.176,
+        "esperado": 0.197
+      },
+      {
+        "bank_id": "BANORTE",
+        "versiones": 62,
+        "en_quincena": 6,
+        "share": 0.097,
+        "esperado": 0.197
+      },
+      {
+        "bank_id": "BBVA",
+        "versiones": 189,
+        "en_quincena": 22,
+        "share": 0.116,
+        "esperado": 0.197
+      },
+      {
+        "bank_id": "NUBANK",
+        "versiones": 263,
+        "en_quincena": 55,
+        "share": 0.209,
+        "esperado": 0.197
+      },
+      {
+        "bank_id": "SANTANDER",
+        "versiones": 96,
+        "en_quincena": 18,
+        "share": 0.188,
+        "esperado": 0.197
+      }
+    ]
+  },
+  "evento_release": [
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "ventana": "0_3",
+      "indice": 1.036
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "ventana": "11_21",
+      "indice": 1.059
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "ventana": "4_10",
+      "indice": 1.023
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "ventana": "0_3",
+      "indice": 1.196
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "ventana": "11_21",
+      "indice": 1.12
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "ventana": "4_10",
+      "indice": 1.112
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "ventana": "0_3",
+      "indice": 1.245
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "ventana": "11_21",
+      "indice": 1.169
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "ventana": "4_10",
+      "indice": 1.051
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "ventana": "0_3",
+      "indice": 1.008
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "ventana": "11_21",
+      "indice": 1.054
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "ventana": "4_10",
+      "indice": 1.007
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "ventana": "0_3",
+      "indice": 0.992
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "ventana": "11_21",
+      "indice": 1.087
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "ventana": "4_10",
+      "indice": 1.014
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "ventana": "0_3",
+      "indice": 1.018
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "ventana": "11_21",
+      "indice": 1.046
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "ventana": "4_10",
+      "indice": 1.014
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "ventana": "0_3",
+      "indice": 1.241
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "ventana": "11_21",
+      "indice": 1.13
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "ventana": "4_10",
+      "indice": 1.194
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "ventana": "0_3",
+      "indice": 1.333
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "ventana": "11_21",
+      "indice": 1.355
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "ventana": "4_10",
+      "indice": 1.336
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "ventana": "0_3",
+      "indice": 1.48
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "ventana": "11_21",
+      "indice": 1.24
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "ventana": "4_10",
+      "indice": 1.364
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "ventana": "0_3",
+      "indice": 1.342
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "ventana": "11_21",
+      "indice": 1.213
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "ventana": "4_10",
+      "indice": 1.292
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "ventana": "0_3",
+      "indice": 1.156
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "ventana": "11_21",
+      "indice": 1.11
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "ventana": "4_10",
+      "indice": 1.211
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "ventana": "0_3",
+      "indice": 1.233
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "ventana": "11_21",
+      "indice": 1.104
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "ventana": "4_10",
+      "indice": 1.169
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "ventana": "0_3",
+      "indice": 1.105
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "ventana": "11_21",
+      "indice": 1.136
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "ventana": "4_10",
+      "indice": 1.212
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "ventana": "0_3",
+      "indice": 1.072
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "ventana": "11_21",
+      "indice": 1.232
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "ventana": "4_10",
+      "indice": 1.347
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "ventana": "0_3",
+      "indice": 1.119
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "ventana": "11_21",
+      "indice": 1.223
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "ventana": "4_10",
+      "indice": 1.26
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "ventana": "0_3",
+      "indice": 1.066
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "ventana": "11_21",
+      "indice": 1.169
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "ventana": "4_10",
+      "indice": 1.206
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "ventana": "0_3",
+      "indice": 1.129
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "ventana": "11_21",
+      "indice": 1.125
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "ventana": "4_10",
+      "indice": 1.187
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "ventana": "0_3",
+      "indice": 1.12
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "ventana": "11_21",
+      "indice": 1.084
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "ventana": "4_10",
+      "indice": 1.15
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "ventana": "0_3",
+      "indice": 1.046
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "ventana": "11_21",
+      "indice": 0.97
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "ventana": "4_10",
+      "indice": 1.022
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "ventana": "0_3",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "ventana": "11_21",
+      "indice": 0.996
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "ventana": "4_10",
+      "indice": 1.058
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "ventana": "0_3",
+      "indice": 0.966
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "ventana": "11_21",
+      "indice": 0.97
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "ventana": "4_10",
+      "indice": 1.017
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "ventana": "0_3",
+      "indice": 1.023
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "ventana": "11_21",
+      "indice": 1.002
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "ventana": "4_10",
+      "indice": 1.087
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "ventana": "0_3",
+      "indice": 1.103
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "ventana": "11_21",
+      "indice": 0.98
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "ventana": "4_10",
+      "indice": 1.05
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "ventana": "0_3",
+      "indice": 1.054
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "ventana": "11_21",
+      "indice": 0.963
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "ventana": "4_10",
+      "indice": 1.011
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "ventana": "0_3",
+      "indice": 1.116
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "ventana": "11_21",
+      "indice": 1.035
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "ventana": "4_10",
+      "indice": 1.092
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "ventana": "0_3",
+      "indice": 1.313
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "ventana": "11_21",
+      "indice": 1.06
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "ventana": "4_10",
+      "indice": 1.192
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "ventana": "0_3",
+      "indice": 1.152
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "ventana": "11_21",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "ventana": "4_10",
+      "indice": 1.067
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "ventana": "0_3",
+      "indice": 1.166
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "ventana": "11_21",
+      "indice": 0.99
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "ventana": "4_10",
+      "indice": 1.075
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "ventana": "0_3",
+      "indice": 1.137
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "ventana": "11_21",
+      "indice": 1.028
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "ventana": "4_10",
+      "indice": 1.068
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "ventana": "0_3",
+      "indice": 1.058
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "ventana": "11_21",
+      "indice": 1.035
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "ventana": "4_10",
+      "indice": 1.073
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "ventana": "antes_-7_-1",
+      "indice": 1.0
+    }
+  ],
+  "dias_pico": [
+    {
+      "bank_id": "BBVA",
+      "serie": "n",
+      "dias_pico": 17,
+      "en_quincena": 2,
+      "share_quincena": 0.118,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.875,
+      "tras_release": 4,
+      "share_tras_release": 0.235,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.2865
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_1",
+      "dias_pico": 30,
+      "en_quincena": 8,
+      "share_quincena": 0.267,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.2241,
+      "tras_release": 3,
+      "share_tras_release": 0.1,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.8814
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_2",
+      "dias_pico": 25,
+      "en_quincena": 9,
+      "share_quincena": 0.36,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0423,
+      "tras_release": 4,
+      "share_tras_release": 0.16,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.587
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_3",
+      "dias_pico": 25,
+      "en_quincena": 6,
+      "share_quincena": 0.24,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.3663,
+      "tras_release": 8,
+      "share_tras_release": 0.32,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.0368
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_4",
+      "dias_pico": 18,
+      "en_quincena": 2,
+      "share_quincena": 0.111,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.8948,
+      "tras_release": 6,
+      "share_tras_release": 0.333,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.056
+    },
+    {
+      "bank_id": "BBVA",
+      "serie": "n_5",
+      "dias_pico": 10,
+      "en_quincena": 1,
+      "share_quincena": 0.1,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.8879,
+      "tras_release": 3,
+      "share_tras_release": 0.3,
+      "esperado_tras_release": 0.161,
+      "p_tras_release": 0.2081
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n",
+      "dias_pico": 10,
+      "en_quincena": 4,
+      "share_quincena": 0.4,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.1148,
+      "tras_release": 3,
+      "share_tras_release": 0.3,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.0312
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_1",
+      "dias_pico": 19,
+      "en_quincena": 9,
+      "share_quincena": 0.474,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0059,
+      "tras_release": 3,
+      "share_tras_release": 0.158,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.1559
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_2",
+      "dias_pico": 18,
+      "en_quincena": 8,
+      "share_quincena": 0.444,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0147,
+      "tras_release": 4,
+      "share_tras_release": 0.222,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.0374
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_3",
+      "dias_pico": 18,
+      "en_quincena": 7,
+      "share_quincena": 0.389,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0471,
+      "tras_release": 3,
+      "share_tras_release": 0.167,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.1383
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_4",
+      "dias_pico": 7,
+      "en_quincena": 3,
+      "share_quincena": 0.429,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.1421,
+      "tras_release": 3,
+      "share_tras_release": 0.429,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.0107
+    },
+    {
+      "bank_id": "SANTANDER",
+      "serie": "n_5",
+      "dias_pico": 6,
+      "en_quincena": 2,
+      "share_quincena": 0.333,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.3361,
+      "tras_release": 3,
+      "share_tras_release": 0.5,
+      "esperado_tras_release": 0.073,
+      "p_tras_release": 0.0065
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n",
+      "dias_pico": 3,
+      "en_quincena": 2,
+      "share_quincena": 0.667,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.1007,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_1",
+      "dias_pico": 26,
+      "en_quincena": 11,
+      "share_quincena": 0.423,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0069,
+      "tras_release": 2,
+      "share_tras_release": 0.077,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": 0.3141
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_2",
+      "dias_pico": 10,
+      "en_quincena": 5,
+      "share_quincena": 0.5,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0306,
+      "tras_release": 1,
+      "share_tras_release": 0.1,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": 0.3596
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_3",
+      "dias_pico": 13,
+      "en_quincena": 7,
+      "share_quincena": 0.538,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0063,
+      "tras_release": 2,
+      "share_tras_release": 0.154,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": 0.1078
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_4",
+      "dias_pico": 1,
+      "en_quincena": 1,
+      "share_quincena": 1.0,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.1965,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "AZTECA",
+      "serie": "n_5",
+      "dias_pico": 0,
+      "en_quincena": 0,
+      "share_quincena": null,
+      "esperado_quincena": 0.197,
+      "p_quincena": null,
+      "tras_release": 0,
+      "share_tras_release": null,
+      "esperado_tras_release": 0.044,
+      "p_tras_release": null
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n",
+      "dias_pico": 30,
+      "en_quincena": 9,
+      "share_quincena": 0.3,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.1184,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_1",
+      "dias_pico": 63,
+      "en_quincena": 24,
+      "share_quincena": 0.381,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0005,
+      "tras_release": 1,
+      "share_tras_release": 0.016,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 0.7371
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_2",
+      "dias_pico": 26,
+      "en_quincena": 4,
+      "share_quincena": 0.154,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.7806,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_3",
+      "dias_pico": 46,
+      "en_quincena": 10,
+      "share_quincena": 0.217,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.418,
+      "tras_release": 1,
+      "share_tras_release": 0.022,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 0.623
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_4",
+      "dias_pico": 27,
+      "en_quincena": 11,
+      "share_quincena": 0.407,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0096,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "BANORTE",
+      "serie": "n_5",
+      "dias_pico": 23,
+      "en_quincena": 5,
+      "share_quincena": 0.217,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.4824,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.021,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n",
+      "dias_pico": 59,
+      "en_quincena": 17,
+      "share_quincena": 0.288,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0588,
+      "tras_release": 13,
+      "share_tras_release": 0.22,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 0.7649
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_1",
+      "dias_pico": 20,
+      "en_quincena": 7,
+      "share_quincena": 0.35,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0802,
+      "tras_release": 5,
+      "share_tras_release": 0.25,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 0.5989
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_2",
+      "dias_pico": 5,
+      "en_quincena": 1,
+      "share_quincena": 0.2,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.6652,
+      "tras_release": 0,
+      "share_tras_release": 0.0,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 1.0
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_3",
+      "dias_pico": 13,
+      "en_quincena": 8,
+      "share_quincena": 0.615,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0011,
+      "tras_release": 3,
+      "share_tras_release": 0.231,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 0.6777
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_4",
+      "dias_pico": 42,
+      "en_quincena": 14,
+      "share_quincena": 0.333,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0259,
+      "tras_release": 12,
+      "share_tras_release": 0.286,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 0.3708
+    },
+    {
+      "bank_id": "NUBANK",
+      "serie": "n_5",
+      "dias_pico": 68,
+      "en_quincena": 19,
+      "share_quincena": 0.279,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0629,
+      "tras_release": 14,
+      "share_tras_release": 0.206,
+      "esperado_tras_release": 0.253,
+      "p_tras_release": 0.8517
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n",
+      "dias_pico": 119,
+      "en_quincena": 34,
+      "share_quincena": 0.286,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0123,
+      "tras_release": 20,
+      "share_tras_release": 0.168,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.0366
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n_1",
+      "dias_pico": 158,
+      "en_quincena": 59,
+      "share_quincena": 0.373,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0,
+      "tras_release": 14,
+      "share_tras_release": 0.089,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.8406
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n_2",
+      "dias_pico": 84,
+      "en_quincena": 27,
+      "share_quincena": 0.321,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0046,
+      "tras_release": 9,
+      "share_tras_release": 0.107,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.5877
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n_3",
+      "dias_pico": 115,
+      "en_quincena": 38,
+      "share_quincena": 0.33,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0005,
+      "tras_release": 17,
+      "share_tras_release": 0.148,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.1292
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n_4",
+      "dias_pico": 95,
+      "en_quincena": 31,
+      "share_quincena": 0.326,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0019,
+      "tras_release": 21,
+      "share_tras_release": 0.221,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.0014
+    },
+    {
+      "bank_id": "TODOS",
+      "serie": "n_5",
+      "dias_pico": 107,
+      "en_quincena": 27,
+      "share_quincena": 0.252,
+      "esperado_quincena": 0.197,
+      "p_quincena": 0.0942,
+      "tras_release": 20,
+      "share_tras_release": 0.187,
+      "esperado_tras_release": 0.11,
+      "p_tras_release": 0.0127
+    }
+  ]
+}
