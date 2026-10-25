@@ -9,6 +9,7 @@ from ml_inference.bq_io import StagingMergeWriter
 from ml_inference.monitor.drift_job import (
     ASPECTS_SQL,
     INPUT_SQL,
+    TOPICS_SQL,
     BqDriftSource,
     MonitorClients,
     MonthlyInput,
@@ -383,6 +384,14 @@ def test_bq_source_reads_and_merges_monthly_inputs() -> None:
     boost = _boost("b1", NOW).model_dump()
     client = _Client(
         {
+            "topic_noise_share": [
+                {
+                    "bank_id": "bbva",
+                    "period": "2026-06",
+                    "topic_noise_share": 0.36,
+                    "topic_unaligned_share": None,
+                }
+            ],
             "drift_policy_current": [p],
             "risk_policy_current": [risk().model_dump()],
             "review_predictions_current": [row],
@@ -405,6 +414,8 @@ def test_bq_source_reads_and_merges_monthly_inputs() -> None:
         "mean_words": 10.0,
         "neg_share": None,
         "family_FA": 0.2,
+        "topic_noise_share": 0.36,
+        "topic_unaligned_share": None,
     }
     assert source.done() == {"bbva": {"2026-05"}}
     assert [b.boost_id for b in source.open_boosts()] == ["b1"]
@@ -448,3 +459,38 @@ def test_generated_sql_uses_constants_and_parameters() -> None:
     assert (
         "family_OT" in ASPECTS_SQL and "GROUP BY bank_id, period" in ASPECTS_SQL
     )
+
+
+def test_topic_series_are_stored_and_never_alert() -> None:
+    p = policy("bbva")
+    assert p.thresholds.z["topic_noise_share"] is None
+    assert p.thresholds.z["topic_unaligned_share"] is None
+    months = [
+        MonthlyInput(
+            "bbva",
+            m,
+            300,
+            {
+                "topic_noise_share": 0.9 if m == "2026-06" else 0.3,
+                "topic_unaligned_share": 0.1 + (i % 3) / 100,
+            },
+        )
+        for i, m in enumerate(MONTHS)
+    ]
+    outcome = evaluate_bank(p, months, set(), "2026-06", NOW)
+    shares = [m for m in outcome.metrics if m.metric.startswith("topic_")]
+    assert {m.metric for m in shares} == {
+        "topic_noise_share",
+        "topic_unaligned_share",
+    }
+    assert all(m.threshold is None and not m.alert for m in shares)
+    assert outcome.alerts == []
+
+
+def test_topic_sql_measures_noise_and_alignment_of_the_current_version() -> (
+    None
+):
+    assert "topic_model_current" in TOPICS_SQL and "@before" in TOPICS_SQL
+    assert "COUNTIF(s.topic_id = -1) AS noise" in TOPICS_SQL
+    assert "ARRAY_LENGTH(c.families) > 0 AS aligned" in TOPICS_SQL
+    assert "sentiment = 'NEG' AND palabras >= 2" in TOPICS_SQL

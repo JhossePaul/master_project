@@ -2,7 +2,9 @@
 
 Corre cuando la ``risk_policy`` vigente pide ``topic_refit_frequency =
 quarterly`` y no hay una versión ajustada en el trimestre en curso (o con
-``--force``). No usa Gemini ni sale de GCP.
+``--force``). Con ``topic_refit_trigger = manual`` el Job programado no
+re-ajusta: solo ``--force`` (el botón de MLOps). No usa Gemini ni sale de
+GCP.
 
 1. **Muestra** (decisión del autor, 2026-10-24): textos únicos que el modelo
    predijo ``NEG`` con dos palabras o más en los 12 meses cerrados más
@@ -34,6 +36,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import numpy as np
+from voc_common.analytics_codes import TopicRefitTrigger
 from voc_common.policies import RiskPolicy
 from voc_common.predictions_v3 import TopicCatalogEntry, TopicModelVersion
 from voc_nlp.topics_refit import (
@@ -131,6 +134,9 @@ def is_due(
             "topics-refit: frecuencia %r no soportada",
             None if policy is None else policy.topic_refit_frequency,
         )
+        return False
+    if policy.topic_refit_mode == TopicRefitTrigger.MANUAL:
+        log.info("topics-refit: re-ajuste manual, solo con --force")
         return False
     return latest_fit is None or latest_fit < quarter_start(now)
 

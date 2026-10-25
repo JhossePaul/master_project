@@ -57,6 +57,8 @@ def test_risk_policy_v1_keeps_business_parameters_null(world: Any) -> None:
         "human_agreement_frequency",
     ):
         assert policy[field] is None, field
+    assert policy["retrain_trigger"] == "manual"
+    assert policy["topic_refit_trigger"] == "scheduled"
 
 
 def test_seed_is_idempotent(world: Any) -> None:
@@ -89,3 +91,4 @@ def test_context_series_never_alert() -> None:
     assert (
         "family_AC" in CONTEXT_SERIES and "flag_update_share" in CONTEXT_SERIES
     )
+    assert {"topic_noise_share", "topic_unaligned_share"} <= set(CONTEXT_SERIES)

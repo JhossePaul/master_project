@@ -1,8 +1,11 @@
 """Calidad del modelo de sentimiento y de las familias → ``model_quality``.
 
 Cada medición es una fila (sujeto × señal × periodo) que no se repite. Los
-avisos se publican sin texto en ``voc-model-quality-topic``; no disparan nada
-solos: los revisa quien opera el modelo.
+avisos se publican sin texto en ``voc-model-quality-topic`` y los revisa
+quien opera el modelo. La única excepción es ``retrain`` con
+``retrain_trigger = auto``: lanza el Job ``voc-ml-training`` si no hubo un
+reentrenamiento en el trimestre ni hay uno en curso. El candidato se
+re-predice, pero nunca se promueve solo.
 
 * ``kappa_monitor``: κ del modelo contra la primera revisión humana de la
   muestra de concepto del último trimestre cerrado (``samples``), cuando
@@ -35,7 +38,11 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
 import numpy as np
-from voc_common.analytics_codes import QualitySignal, QualityStatus
+from voc_common.analytics_codes import (
+    QualitySignal,
+    QualityStatus,
+    RetrainTrigger,
+)
 from voc_common.operations_v3 import ModelQuality, ModelQualityMessage
 from voc_common.policies import RiskPolicy
 from voc_nlp.agreement import (
@@ -47,7 +54,12 @@ from voc_nlp.agreement import (
 from voc_nlp.sentiment_gemini import NOT_EVALUABLE
 
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
-from ml_inference.monitor.samples import last_closed_period
+from ml_inference.jobs import JobRunner
+from ml_inference.monitor.samples import (
+    last_closed_period,
+    period_bounds,
+    period_of,
+)
 
 log = logging.getLogger(__name__)
 
@@ -318,6 +330,12 @@ LIMIT @weeks
 # ``(key, texto)`` → ``{key: etiqueta}``; los textos sin etiqueta faltan.
 SentimentLabeler = Callable[[Sequence[tuple[str, str]]], Mapping[str, str]]
 
+# Reentrenamientos registrados desde el inicio del trimestre en curso.
+TRAININGS_SQL: Final = """
+SELECT COUNT(*) AS trainings FROM `${ds}.inference_runs`
+WHERE kind = 'training' AND started_at >= @since
+"""
+
 # ``(key, texto)`` → ``{key: familias}``; los textos sin etiqueta faltan.
 FamilyLabeler = Callable[
     [Sequence[tuple[str, str]]], Mapping[str, frozenset[str]]
@@ -336,6 +354,9 @@ class QualityJob:
     sentiment_labeler: SentimentLabeler | None = None
     llm_model: str = "gemini-3.6-flash"
     prompt_version: str = "aspects_v2_1"
+    # Sin él, un ``retrain`` en modo ``auto`` solo se avisa.
+    jobs: JobRunner | None = None
+    training_job: str = "voc-ml-training"
     _measured: set[tuple[Any, ...]] = field(default_factory=set)
 
     def _rows(self, sql: str, **params: Any) -> list[dict[str, Any]]:
@@ -370,10 +391,34 @@ class QualityJob:
         for row in rows:
             if row.status is not QualityStatus.OK:
                 self.publish(ModelQualityMessage.from_quality(row))
+        if any(r.status is QualityStatus.RETRAIN for r in rows):
+            self._retrain(policy, now)
         log.info(
             "quality: %s", [(r.signal.value, r.status.value) for r in rows]
         )
         return rows
+
+    def _retrain(self, policy: RiskPolicy, now: datetime) -> str | None:
+        """Lanza el reentrenamiento en ``auto``, uno por trimestre."""
+        if policy.retrain_mode is not RetrainTrigger.AUTO:
+            log.info("quality: retrain en modo manual, solo se avisa")
+            return None
+        if self.jobs is None:
+            log.warning("quality: retrain en auto sin lanzador de Jobs")
+            return None
+        since, _ = period_bounds(
+            period_of(now.astimezone(UTC).date(), "quarterly")
+        )
+        rows = self._rows(TRAININGS_SQL, since=since)
+        if rows and int(rows[0]["trainings"]):
+            log.info("quality: ya hubo un reentrenamiento este trimestre")
+            return None
+        if self.jobs.running(self.training_job):
+            log.info("quality: %s ya está en curso", self.training_job)
+            return None
+        operation = self.jobs.execute(self.training_job, ["train"])
+        log.info("quality: lanzado %s (%s)", self.training_job, operation)
+        return operation
 
     def _kappa(
         self, policy: RiskPolicy, model_version: str, now: datetime

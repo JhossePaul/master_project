@@ -28,10 +28,13 @@ CANDIDATE = "robertuito_sentiment_v2"
 TEXTS = {"k1": "la app no abre", "k2": "me cobraron doble", "k3": "excelente"}
 
 
-def model(status: str = "candidate") -> ModelVersion:
+CURRENT = "robertuito_sentiment_v1"
+
+
+def model(status: str = "candidate", version: str = CANDIDATE) -> ModelVersion:
     return ModelVersion(
-        model_version=CANDIDATE,
-        registry_uri=f"gs://{BUCKET}/ml_artifacts/sentiment/{CANDIDATE}/",
+        model_version=version,
+        registry_uri=f"gs://{BUCKET}/ml_artifacts/sentiment/{version}/",
         base_checkpoint="base",
         training_data="silver_v1",
         calibration_version="temperature_v2",
@@ -175,6 +178,8 @@ class BigQuery:
         self.loaded_gap = loaded_gap
         self.curve = curve
         self.texts = 3
+        # Oro dev por versión: el candidato acierta todas, el vigente no.
+        self.gold: dict[str, list[dict[str, Any]]] = {}
 
     def query(self, sql: str, job_config: Any = None, **_: Any) -> Job:
         params = {
@@ -198,6 +203,8 @@ class BigQuery:
             return Job([{"hitl_target_coverage": 0.9}])
         if "hitl_coverage_curves" in sql:
             return Job([{}] if self.curve else [])
+        if "gold_labels" in sql:
+            return Job(self.gold.get(params["model_version"], []))
         return Job()
 
     def load_table_from_file(self, handle: Any, table_id: str, **_: Any) -> Job:
@@ -227,11 +234,39 @@ class Tokenizer:
 class Writer:
     def __init__(self) -> None:
         self.rows: list[Any] = []
+        self.checks: list[Any] = []
 
     def write(self, table: str, rows: list, key: list, run_id: str) -> int:
-        assert table == "inference_runs"
-        self.rows += rows
+        assert table in ("inference_runs", "promotion_checks")
+        if table == "promotion_checks":
+            assert key == ["candidate_version", "current_version", "run_id"]
+            self.checks += rows
+        else:
+            self.rows += rows
         return len(rows)
+
+
+def gold_rows(right: int, n: int = 40) -> list[dict[str, Any]]:
+    """Oro dev de una versión que acierta las primeras ``right`` reseñas."""
+    labels = ["NEG", "NEU", "POS"]
+    rows = []
+    for i in range(n):
+        label = labels[i % 3]
+        rows.append(
+            {
+                "id_resena": f"g{i}",
+                "label": label,
+                "weight": 1.0,
+                "bank_id": "BBVA",
+                "fecha": NOW,
+                "sentiment": label if i < right else labels[(i + 1) % 3],
+                "label_source": "MODEL",
+                "p_neg": 0.8,
+                "p_neu": 0.1,
+                "p_pos": 0.1,
+            }
+        )
+    return rows
 
 
 @pytest.fixture
@@ -286,7 +321,9 @@ def make(
 
 def run(job: Rescoring, timeout: float = 600) -> tuple[Any, Writer]:
     writer = Writer()
-    times = iter([NOW, NOW + timedelta(minutes=30)])
+    times = iter(
+        [NOW, NOW + timedelta(minutes=20), NOW + timedelta(minutes=30)]
+    )
     row = run_rescore(job, writer, timeout, lambda: next(times))  # type: ignore[arg-type]
     return row, writer
 
@@ -466,4 +503,61 @@ def test_new_rescoring_needs_a_candidate(setup: dict) -> None:
         settings, None, None, Kaggle([]), CANDIDATE, RUN, {CANDIDATE: model()}
     )
     assert job.work.exists() and job.run_id == f"rescore-{CANDIDATE}-{RUN}"
+    job.work.rmdir()
+
+
+def test_verified_load_writes_the_promotion_check(setup: dict) -> None:
+    bq = BigQuery()
+    bq.gold = {CURRENT: gold_rows(20), CANDIDATE: gold_rows(40)}
+    job = make(
+        setup, Kaggle(["complete"]), bq, current=model("promoted", CURRENT)
+    )
+    row, writer = run(job)
+    assert row.status.value == "succeeded"
+    (check,) = writer.checks
+    assert (check.candidate_version, check.current_version) == (
+        CANDIDATE,
+        CURRENT,
+    )
+    assert check.n == 40 and check.gold_version == "gold_epic5_v1"
+    assert check.verdict.value == "better"
+    assert check.kappa_ci_low <= check.kappa_diff <= check.kappa_ci_high
+    assert check.run_id == job.run_id
+    assert check.computed_at == NOW + timedelta(minutes=20)
+
+
+def test_failed_load_writes_no_promotion_check(setup: dict) -> None:
+    bq = BigQuery(loaded_gap=1)
+    bq.gold = {CURRENT: gold_rows(20), CANDIDATE: gold_rows(40)}
+    job = make(
+        setup, Kaggle(["complete"]), bq, current=model("promoted", CURRENT)
+    )
+    row, writer = run(job)
+    assert row.status.value == "failed" and writer.checks == []
+
+
+@pytest.mark.parametrize("current", [None, "promoted"])
+def test_rule_that_cannot_be_computed_does_not_fail_the_run(
+    setup: dict, current: str | None
+) -> None:
+    # Sin versión promovida, o sin oro en común: se avisa y la corrida sigue.
+    promoted = model("promoted", CURRENT) if current else None
+    job = make(setup, Kaggle(["complete"]), BigQuery(), current=promoted)
+    row, writer = run(job)
+    assert row.status.value == "succeeded" and writer.checks == []
+
+
+def test_new_rescoring_measures_against_the_promoted_version(
+    setup: dict,
+) -> None:
+    job = new_rescoring(
+        setup["settings"],
+        None,
+        None,
+        Kaggle([]),
+        CANDIDATE,
+        RUN,
+        {CANDIDATE: model(), CURRENT: model("promoted", CURRENT)},
+    )
+    assert job.current is not None and job.current.model_version == CURRENT
     job.work.rmdir()

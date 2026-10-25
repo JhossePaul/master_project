@@ -5,7 +5,16 @@ cerrados que faltan en ``drift_metrics`` desde su mes de entrada (excluido,
 como en el análisis histórico). Cada serie que nombra la política se mide
 con z robusto contra
 sus ``baseline_months`` previos o con PSI contra su suma; una serie con
-umbral nulo se guarda como contexto y nunca alerta (familias y ``u``).
+umbral nulo se guarda como contexto y nunca alerta (familias, ``u`` y las
+dos de tópicos).
+
+Series de tópicos, de la versión vigente y sobre las negativas de dos
+palabras o más con asignación (contexto hasta tener trimestres de datos):
+
+* ``topic_noise_share``: cláusulas que ningún tópico asigna (``-1``) entre
+  las asignadas;
+* ``topic_unaligned_share``: negativas con algún tópico (sin contar el
+  ruido) cuyos tópicos no tienen ninguna familia en la curaduría vigente.
 
 Solo el último mes cerrado alerta (decisión del autor, 2026-10-24): la
 primera corrida llena la historia, y sus meses anteriores quedan en
@@ -369,6 +378,53 @@ GROUP BY bank_id, period
 """
 
 
+TOPIC_SERIES: Final = ("topic_noise_share", "topic_unaligned_share")
+
+TOPICS_SQL: Final = """
+WITH version AS (
+  SELECT topic_model_version FROM `${ds}.topic_model_current`
+),
+neg AS (
+  SELECT id_resena, text_key, bank_id, fecha
+  FROM `${ds}.review_predictions_current`
+  WHERE sentiment = 'NEG' AND palabras >= 2 AND fecha < @before
+),
+assigned AS (
+  SELECT n.bank_id, FORMAT_TIMESTAMP('%Y-%m', n.fecha) AS period,
+    a.id_resena, a.topic_id
+  FROM neg AS n
+  JOIN `${ds}.topic_assignments` AS a
+    ON a.id_resena = n.id_resena AND a.text_key = n.text_key
+  JOIN version AS v ON v.topic_model_version = a.topic_model_version
+),
+curated AS (
+  SELECT c.topic_id, ARRAY_LENGTH(c.families) > 0 AS aligned
+  FROM `${ds}.curation_topics` AS c
+  JOIN version USING (topic_model_version)
+  WHERE TRUE
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY c.topic_id ORDER BY c.curated_at DESC
+  ) = 1
+),
+by_review AS (
+  SELECT s.bank_id, s.period, s.id_resena,
+    COUNTIF(s.topic_id = -1) AS noise,
+    COUNT(*) AS clauses,
+    COUNTIF(s.topic_id != -1) AS topics,
+    LOGICAL_OR(s.topic_id != -1 AND COALESCE(c.aligned, FALSE)) AS aligned
+  FROM assigned AS s
+  LEFT JOIN curated AS c USING (topic_id)
+  GROUP BY s.bank_id, s.period, s.id_resena
+)
+SELECT bank_id, period,
+  SAFE_DIVIDE(SUM(noise), SUM(clauses)) AS topic_noise_share,
+  SAFE_DIVIDE(COUNTIF(topics > 0 AND NOT aligned), COUNTIF(topics > 0))
+    AS topic_unaligned_share
+FROM by_review
+GROUP BY bank_id, period
+"""
+
+
 def _clean(row: Mapping[str, Any], model: type) -> dict[str, Any]:
     return {k: v for k, v in row.items() if k in model.model_fields}
 
@@ -429,6 +485,10 @@ class BqDriftSource:
             for r in self._rows(ASPECTS_SQL, before=before)
         }
         oov = self._oov(before)
+        topics = {
+            (r["bank_id"], r["period"]): r
+            for r in self._rows(TOPICS_SQL, before=before)
+        }
         out = []
         for r in self._rows(
             INPUT_SQL, before=before, predictable=list(_NOT_PREDICTED_OK)
@@ -447,6 +507,12 @@ class BqDriftSource:
                 k: (None if v is None else float(v))
                 for k, v in extra.items()
                 if k not in {"bank_id", "period"}
+            }
+            shares = topics.get(key, {})
+            values |= {
+                k: (None if shares[k] is None else float(shares[k]))
+                for k in TOPIC_SERIES
+                if k in shares
             }
             hist = [int(r[f"b{i}"]) for i in range(len(BINS) - 1)]
             out.append(

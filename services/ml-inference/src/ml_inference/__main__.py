@@ -214,6 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     writer = StagingMergeWriter(bigquery, settings.dataset)
     if args.command == "monitor":
+        from ml_inference.jobs import CloudRunJobs
         from ml_inference.monitor.drift_job import (
             BqDriftSource,
             MonitorClients,
@@ -250,6 +251,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 family_labeler=_family_labeler(settings),
                 sentiment_labeler=_sentiment_labeler(settings),
                 llm_model=settings.gemini_model,
+                jobs=CloudRunJobs(settings.gcp_project_id, settings.gcp_region),
+                training_job=settings.training_job,
             ).run(state.policy, state.model.model_version, now)
             KpiJob(bigquery, writer, settings.dataset, run_id).run(
                 state.model.model_version, now

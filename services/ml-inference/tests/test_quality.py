@@ -15,6 +15,7 @@ from ml_inference.monitor.quality import (
     kappa_monitor,
     last_closed_week,
 )
+from voc_common.analytics_codes import RetrainTrigger
 from voc_common.policies import RiskPolicy
 
 NOW = datetime(2026, 7, 8, 6, tzinfo=UTC)
@@ -172,8 +173,25 @@ def sample_rows(n_wrong: int, missing: int = 0) -> list[dict[str, Any]]:
     ]
 
 
+class _Jobs:
+    def __init__(self, busy: bool = False) -> None:
+        self.executed: list[tuple[str, list[str]]] = []
+        self.busy = busy
+
+    def execute(self, job: str, args: Any) -> str:
+        self.executed.append((job, list(args)))
+        return "operations/1"
+
+    def running(self, job: str) -> bool:
+        return self.busy
+
+
 def job(
-    fake_bq: Any, answers: dict, labeler: Any = None, sentiment: Any = None
+    fake_bq: Any,
+    answers: dict,
+    labeler: Any = None,
+    sentiment: Any = None,
+    jobs: Any = None,
 ):
     sent: list[Any] = []
     writer = StagingMergeWriter(fake_bq, "p.ds")
@@ -186,6 +204,7 @@ def job(
         "t",
         family_labeler=labeler,
         sentiment_labeler=sentiment,
+        jobs=jobs,
     )
     return q, sent
 
@@ -333,3 +352,59 @@ def test_job_measures_the_weekly_agreement(fake_bq: Any) -> None:
 def test_job_skips_agreement_without_texts(fake_bq: Any) -> None:
     q, _ = job(fake_bq, {}, sentiment=lambda items: pytest.fail("no texts"))
     assert q.run(policy(), "m1", NOW) == []
+
+
+def _retrain_answers(trainings: int = 0) -> dict:
+    return {
+        "FROM `p.ds.model_quality`": [],
+        "monitor_sample": sample_rows(20),
+        "AS trainings": [{"trainings": trainings}],
+    }
+
+
+@pytest.mark.parametrize("trigger", [None, RetrainTrigger.MANUAL])
+def test_retrain_in_manual_mode_only_warns(fake_bq: Any, trigger: Any) -> None:
+    jobs = _Jobs()
+    q, sent = job(fake_bq, _retrain_answers(), jobs=jobs)
+    p = policy().model_copy(update={"retrain_trigger": trigger})
+    rows = q.run(p, "m1", NOW)
+    assert ("kappa_monitor", "retrain") in [(r.signal, r.status) for r in rows]
+    assert [m.signal for m in sent] == ["kappa_monitor"]
+    assert jobs.executed == []
+
+
+def test_retrain_in_auto_mode_launches_training(fake_bq: Any) -> None:
+    jobs = _Jobs()
+    q, _ = job(fake_bq, _retrain_answers(), jobs=jobs)
+    q.run(
+        policy().model_copy(update={"retrain_trigger": RetrainTrigger.AUTO}),
+        "m1",
+        NOW,
+    )
+    assert jobs.executed == [("voc-ml-training", ["train"])]
+    since = next(p for p in q.client.params if set(p) == {"since"})["since"]
+    assert since == datetime(2026, 7, 1, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(("trainings", "busy"), [(1, False), (0, True)])
+def test_auto_retrain_at_most_once_per_quarter(
+    fake_bq: Any, trainings: int, busy: bool
+) -> None:
+    jobs = _Jobs(busy=busy)
+    q, _ = job(fake_bq, _retrain_answers(trainings), jobs=jobs)
+    q.run(
+        policy().model_copy(update={"retrain_trigger": RetrainTrigger.AUTO}),
+        "m1",
+        NOW,
+    )
+    assert jobs.executed == []
+
+
+def test_auto_retrain_without_job_runner_only_warns(fake_bq: Any) -> None:
+    q, sent = job(fake_bq, _retrain_answers())
+    q.run(
+        policy().model_copy(update={"retrain_trigger": RetrainTrigger.AUTO}),
+        "m1",
+        NOW,
+    )
+    assert [m.signal for m in sent] == ["kappa_monitor"]

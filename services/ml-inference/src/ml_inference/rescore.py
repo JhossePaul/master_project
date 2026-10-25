@@ -34,7 +34,12 @@ Pasos (``run_rescore``):
    ``risk_policy_version`` queda nulo hasta que ``promote`` inserte su
    política. Verifica que cada texto exportado tiene predicción y que cada
    fila esperada quedó en la tabla.
-6. ``cleanup``: solo después de una carga verificada, borra el dataset de
+6. ``promotion_checks``: con la carga verificada, la regla de promoción
+   (diferencias de κ y macro-F1 con su IC contra la versión promovida, en
+   el oro *dev*) queda guardada para la pantalla de promoción; ``promote``
+   la vuelve a calcular. Si no se puede calcular (sin versión promovida o
+   sin oro en común), se avisa en el log y la corrida sigue.
+7. ``cleanup``: solo después de una carga verificada, borra el dataset de
    Kaggle y los textos exportados a GCS. Si la verificación falla, el
    dataset se queda y la corrida no termina (se borra a mano).
 """
@@ -56,8 +61,17 @@ from typing import Any, Final, Protocol
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-from voc_common.analytics_codes import RunEnvironment, RunKind, RunStatus
-from voc_common.operations_v3 import InferenceRun, ModelVersion
+from voc_common.analytics_codes import (
+    PromotionVerdict,
+    RunEnvironment,
+    RunKind,
+    RunStatus,
+)
+from voc_common.operations_v3 import (
+    InferenceRun,
+    ModelVersion,
+    PromotionCheckResult,
+)
 from voc_common.policies import HitlCoverageCurve, RiskPolicy
 from voc_nlp.eligibility import RULES_VERSION
 from voc_nlp.sentiment_model import load_tokenizer, prepare, token_ids
@@ -316,6 +330,8 @@ class Rescoring:
     clock: Callable[[], float] = time.monotonic
     texts: int = 0
     pad: int | None = None
+    # La versión promovida, contra la que se mide la regla de promoción.
+    current: ModelVersion | None = None
 
     def __post_init__(self) -> None:
         check_slug(self.dataset_slug)
@@ -608,6 +624,55 @@ class Rescoring:
             blob.delete()
         log.info("rescore: dataset %s borrado", self.dataset_ref)
 
+    # 6. Regla de promoción ------------------------------------------------
+
+    def record_promotion_check(
+        self, writer: StagingMergeWriter, computed_at: datetime
+    ) -> PromotionCheckResult | None:
+        """Guarda la regla contra la versión promovida, o avisa y sigue."""
+        from ml_inference.lifecycle import Lifecycle, check_promotion
+
+        if self.current is None:
+            log.warning(
+                "rescore %s: sin versión promovida, sin regla", self.run
+            )
+            return None
+        lifecycle = Lifecycle(self.bigquery, writer, self.settings.dataset)
+        try:
+            check = check_promotion(
+                lifecycle.gold(self.current.model_version),
+                lifecycle.gold(self.model.model_version),
+            )
+            diff = {d.metric: d for d in check.differences}
+            row = PromotionCheckResult(
+                candidate_version=self.model.model_version,
+                current_version=self.current.model_version,
+                gold_version=lifecycle.gold_version,
+                n=check.n,
+                kappa_diff=diff["kappa"].value,
+                kappa_ci_low=diff["kappa"].ci[0],
+                kappa_ci_high=diff["kappa"].ci[1],
+                macro_f1_diff=diff["macro_f1"].value,
+                macro_f1_ci_low=diff["macro_f1"].ci[0],
+                macro_f1_ci_high=diff["macro_f1"].ci[1],
+                verdict=PromotionVerdict(check.verdict),
+                run_id=self.run_id,
+                computed_at=computed_at,
+            )
+        except ValueError as exc:
+            log.warning(
+                "rescore %s: regla de promoción no calculada: %s", self.run, exc
+            )
+            return None
+        writer.write(
+            "promotion_checks",
+            [row],
+            ["candidate_version", "current_version", "run_id"],
+            self.run_id,
+        )
+        log.info("rescore %s: regla %s", self.run, check.describe())
+        return row
+
 
 def run_rescore(
     job: Rescoring,
@@ -626,6 +691,7 @@ def run_rescore(
         job.wait_kernel(timeout_sec)
         job.pull()
         reviews = job.load(started)
+        job.record_promotion_check(writer, now())
         job.cleanup()
         status = RunStatus.SUCCEEDED
     except RescoreError as exc:
@@ -661,5 +727,12 @@ def new_rescoring(
     model = versions[model_version]
     if model.status.value == "promoted":
         raise ValueError(f"{model_version} is promoted: nothing to rescore")
+    current = max(
+        (v for v in versions.values() if v.status.value == "promoted"),
+        key=lambda v: v.promoted_at or v.recorded_at,
+        default=None,
+    )
     work = Path(tempfile.mkdtemp(prefix="rescore-"))
-    return Rescoring(settings, bigquery, storage, kaggle, model, run, work)
+    return Rescoring(
+        settings, bigquery, storage, kaggle, model, run, work, current=current
+    )

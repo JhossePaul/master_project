@@ -23,7 +23,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Final
 
-from voc_common.analytics_codes import AspectFamily, HitlTask, ModelStatus
+from voc_common.analytics_codes import (
+    AspectFamily,
+    HitlTask,
+    ModelStatus,
+    RetrainTrigger,
+    TopicRefitTrigger,
+)
 from voc_common.constants import BankKey
 from voc_common.hitl_v3 import Guideline
 from voc_common.operations_v3 import ModelVersion
@@ -50,8 +56,9 @@ DRIFT_TEMPLATE_VERSION: Final = "drift_policy_template_v1"
 # Mediana de segundos por reseña al validar la cola de revisión.
 SECONDS_PER_REVIEW: Final = 7.1
 
-# Series del monitor de deriva y su umbral; las de contexto (familias y
-# ``u``) se miden con umbral nulo y nunca alertan.
+# Series del monitor de deriva y su umbral; las de contexto (familias, ``u``
+# y ruido y alineación de los tópicos) se miden con umbral nulo y nunca
+# alertan.
 Z_SERIES: Final = (
     "mean_words",
     "single_word_share",
@@ -66,6 +73,8 @@ PSI_THRESHOLD: Final = 0.25
 CONTEXT_SERIES: Final = (
     *(f"family_{f.value}" for f in AspectFamily),
     "flag_update_share",
+    "topic_noise_share",
+    "topic_unaligned_share",
 )
 
 
@@ -153,6 +162,9 @@ def risk_policy(
         agreement_sample_weekly=500,
         families_exact_floor=0.53,
         families_min_prevalence=0.05,
+        # Reentrenar lo decide una persona; los tópicos, por calendario.
+        retrain_trigger=RetrainTrigger.MANUAL,
+        topic_refit_trigger=TopicRefitTrigger.SCHEDULED,
         set_by_hash=actor_hash,
         reason=reason,
     )

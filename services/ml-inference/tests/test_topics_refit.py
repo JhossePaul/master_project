@@ -28,8 +28,10 @@ THEMES = {
 }
 
 
-def policy(frequency: str = "quarterly") -> Any:
-    return type("P", (), {"topic_refit_frequency": frequency})()
+def policy(frequency: str = "quarterly", mode: str = "scheduled") -> Any:
+    return type(
+        "P", (), {"topic_refit_frequency": frequency, "topic_refit_mode": mode}
+    )()
 
 
 def test_due_once_per_quarter() -> None:
@@ -232,3 +234,13 @@ def test_a_fit_without_topics_fails_before_writing() -> None:
     with pytest.raises(RuntimeError, match="no topics"):
         refit.run(policy(), None, NOW)
     assert writer.tables == [] and storage.uploaded == []
+
+
+def test_manual_mode_refits_only_with_force() -> None:
+    assert not is_due(policy(mode="manual"), None, NOW)
+    refit, _, writer = job(BigQuery([]))
+    assert refit.run(policy(mode="manual"), None, NOW) is None
+    assert writer.tables == []
+    assert (
+        refit.run(policy(mode="manual"), None, NOW, force=True) == "topics_v1"
+    )
