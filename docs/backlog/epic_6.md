@@ -150,6 +150,12 @@ Puertas de calidad al cerrar (2026-10-25, con `uv sync --all-packages` como CI):
 | 14 | Ciclo de modelo | `gcloud run jobs execute voc-ml-training --args=train,--actor-hash=<sha256>,--reason=<motivo> --wait`, luego `rescore --model-version=<candidato>` | Plata, revisiones y plata reciente → Kaggle (solo ids) → candidato en `model_versions`, curva, `promotion_checks` | `inference_runs_current`: `training` y `rescoring` `succeeded`; el candidato con `training_data_hash`, `ece_dev` y `aurc_dev`; una fila en `promotion_checks`. Promover es decisión del autor. Requiere aprobar ~$1 de Gemini (tope $2) |
 | 15 | Backfill de familias, solo estimación | `gcloud run jobs execute voc-ml-aspects-backfill --args=aspects-backfill --wait` | — | El log da textos pendientes del prompt vigente y costo estimado; no llama a Gemini |
 
+**Avance (validaciones anotadas):**
+
+* Paso 1 (2026-10-25): las columnas nuevas de `model_versions` e `inference_runs` están en BigQuery; falta anotar el resultado de `pulumi preview`.
+* Paso 2 (2026-10-25): `data/handoff/gold_labels_v1.parquet` existe.
+* Paso 3 (2026-10-25): `seed` escribió 1 fila en `model_versions`, 1 en `hitl_coverage_curves`, 1 en `risk_policy`, 1 en `drift_policy_template`, 5 en `drift_policy` y 2 en `guidelines`. `robertuito_sentiment_v1` quedó `promoted` (T 1.6811) y `risk_policy_current` da `risk_policy_v1` (cobertura 0.9, `retrain_trigger = manual`, `topic_refit_trigger = scheduled`). El primer intento falló: `INSERT ROW` empareja por posición y `model_versions`, `inference_runs`, `risk_policy` y `gold_labels` tienen sus columnas nuevas al final. El `MERGE` de `StagingMergeWriter` ahora lista las columnas por nombre.
+
 **Terminado cuando:**
 
 * [ ] los pasos 1 a 13 y 15 tienen su validación anotada aquí (fecha y cifra);
