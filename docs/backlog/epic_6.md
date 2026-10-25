@@ -3,7 +3,7 @@
 * **Estado (2026-10-24, limpieza antes de 6.5):**
   * **6.1 y 6.2 terminadas** y desplegadas en el stack dev.
   * **6.3 y 6.4 con el código terminado**, pero nada de ML corre todavía en dev: la imagen `ml-inference` no está fijada en `Pulumi.dev.yaml`, así que los Jobs de ML no existen y no se ha sembrado ni cargado nada. Los pasos que faltan son del autor ([pendientes en dev](#-pendientes-en-dev-del-autor)).
-  * **6.5 por detallar** ([propuesta](#feature-65-reentrenamiento-y-backfills)).
+  * **6.5 detallada** ([detalle](#feature-65-reentrenamiento-y-backfills)); sus decisiones (D25 a D34) están aprobadas; falta implementarla.
 * **Dependencias:** [EPIC-5](epic_5.md) cerrada, con el [registro de decisión](../analytics/decision_record.md) aprobado, y EPIC-1 a EPIC-4 cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
 * **La consume:** [EPIC-7](epic_7.md): su API y su portal leen las tablas y vistas de salida, escriben en las de curaduría y HITL y muestran alertas, calidad y KPI.
 * **Orden:** 6.1 → 6.2 → 6.3 → 6.4 → 6.5.
@@ -49,8 +49,8 @@ Todo con la imagen `ml-inference` (`python -m ml_inference <comando>`) y la cuen
 **Lo que hoy no está automatizado** (lo cubre 6.5):
 
 * el reentrenamiento: el aviso `retrain` llega por correo y nadie entrena;
-* el histórico de tópicos al activarse una versión nueva: lo re-asigna el delta en CPU, 20 000 reseñas por corrida de lo más reciente a lo más viejo (~33 días para ~660 000 negativas);
-* las familias del histórico cuando cambia el conjunto de negativas o el prompt: hoy el delta las etiqueta con Gemini sin aviso ni tope de costo; 6.5 lo limita a lo nuevo y pasa el histórico a un comando con aprobación ([ver 6.5](#el-backfill-de-familias-con-gemini)).
+* el histórico de tópicos al activarse una versión nueva (6.5 lo pasa a un Job sobre los embeddings de cláusulas guardados): hoy lo re-asigna el delta en CPU, 20 000 reseñas por corrida de lo más reciente a lo más viejo (~33 días para ~660 000 negativas);
+* las familias del histórico: hoy el delta re-etiqueta con Gemini, sin aviso ni tope de costo, lo que no tenga fila para el prompt vigente; 6.5 lo limita a los textos que Gemini nunca etiquetó ([ver 6.5](#feature-65-reentrenamiento-y-backfills)).
 
 ---
 
@@ -114,6 +114,14 @@ Solo las vigentes. D5 se retiró (la reemplazó D13) y los dos huecos de diseño
 | D24 | Vocabulario fuera del entrenamiento (2026-10-24) | Artefacto `training_vocab.txt` junto a los pesos de cada versión, armado en GCP desde la plata archivada; sin él, la serie se omite con un aviso |
 | D25 | Disparo del reentrenamiento (2026-10-24) | Configurable en `risk_policy` (`retrain_trigger`: `auto` o `manual`; `manual` en v1), versionado con quién y motivo y editable en 7.10. En `auto`, el `monitor` lanza el Job de reentrenamiento al escribir `retrain`; en `manual`, MLOps (7.9) muestra un botón que solo se habilita con `retrain` vigente y sin otro reentrenamiento en curso. El texto del correo de avisos lleva el comando del Job como respaldo. Auto saca texto a Kaggle sin aprobación por corrida (F-13): pasar a `auto` es esa aprobación. Auto llega como mucho al *re-scoring* del candidato; la promoción siempre es humana |
 | D26 | Botón de promoción (2026-10-24) | MLOps (7.9) promueve un candidato con un botón, que se habilita cuando su *re-scoring* está verificado. Antes de confirmar muestra el resultado de la regla de promoción (diferencias de κ y macro-F1 con su IC) y la curva nueva; si la regla no pasa, pide confirmación explícita y motivo (el `--force` de la CLI). El mismo panel hace el *rollback* a una versión que ya estuvo promovida. Ejecuta el comando `promote` en un Job y queda en el log con el actor y el motivo |
+| D27 | Punto de partida del reentrenamiento (2026-10-24) | La receta de 5.4 desde el modelo base (`pysentimiento/robertuito-sentiment-analysis`), no desde el modelo vigente: cada versión sale solo de la receta y de un conjunto con hash, y un error de una versión no se hereda a la siguiente. Una semilla por reentrenamiento (en 5.4 las tres quedaron dentro de 0.01 de κ) |
+| D28 | Conjunto de entrenamiento (2026-10-24) | La partición `entrenamiento` de la plata de 5.3 (63 720 textos, sin `NA`) más las revisiones de sentimiento del HITL de `low_confidence` y `drift_boost` (primera ronda, sin `no_evaluable`); la revisión reemplaza a la plata del mismo texto. Se excluyen `monitor_sample` y `agreement_sample` (miden el κ y alimentan el oro de PPI) y todo texto del oro *dev* y *test* |
+| D29 | Gemini solo etiqueta lo que nunca etiquetó (2026-10-24) | El delta manda a Gemini solo los textos `NEG` sin ninguna fila en `review_aspects`, con cualquier prompt. Un cambio de prompt no re-etiqueta el histórico: las familias quedan con el prompt con el que se etiquetaron, y la serie mezcla prompts. Es un hueco aceptado por presupuesto (un backfill cuesta ~$60, unos $1 200 MXN, en un proyecto académico); en producción se re-etiquetaría. RoBERTuito, MiniLM y los tópicos, que no cuestan, solo procesan lo que llega por la ingesta diaria; sus históricos se rehacen con el *re-scoring* y el backfill de tópicos |
+| D30 | Embeddings de cláusulas (2026-10-24) | Tabla `segment_embeddings` en BigQuery (vector de MiniLM por `text_key` × `segment_index`, agrupada por `text_key`), calculada una sola vez y extendida por el delta. Leer todos los vectores cuesta ~$0.02 por corrida y guardarlos ~$0.06 al mes. La re-asignación del histórico de tópicos corre en Cloud Run sobre ellos, sin Kaggle: el texto no sale de GCP |
+| D31 | Plata reciente en cada reentrenamiento (2026-10-24) | Prendida por defecto: cada reentrenamiento sortea 20 000 textos de los meses posteriores a la plata de 5.3, los etiqueta con Gemini con el prompt de la plata y los suma al conjunto. Es lo que más acerca el modelo a los datos recientes, porque las revisiones humanas son pocas y son los casos difíciles. Cuesta ~$1 (~$0.048 por 1 000 textos) y lleva un tope de $2 por corrida en lugar de `--approve`, así que también corre en modo `auto`; `--recent-silver 0` la apaga |
+| D32 | Disparo del backfill de tópicos (2026-10-24) | Lo lanza el delta cuando la versión de tópicos en uso no tiene su backfill terminado ni uno en curso; mientras tanto, el delta asigna tópicos solo a lo que llegó por la ingesta diaria |
+| D33 | Calibración y curva de cada candidato (2026-10-24) | Un modelo recién entrenado exagera su seguridad; se corrige con un solo número (la temperatura) ajustado contra las reseñas que etiquetaron personas (el oro *dev*), como se hizo con el modelo vigente. Con la confianza corregida se calcula la curva de cobertura y riesgo: para cada porcentaje de reseñas que se aceptan sin revisión, cuántos errores quedan. El corte que se usa no es fijo: sale de la cobertura objetivo de la `risk_policy` (90 % por defecto, parámetro del apetito de riesgo que se cambia en 7.10). Los dos se calculan antes de `register` con el mismo oro *dev*; el error estimado sale un poco optimista, igual que en el modelo vigente, así que se comparan en las mismas condiciones. Además se guarda, sin costo (son ~800 reseñas y un parámetro), la curva de la temperatura: el error de calibración para cada temperatura probada, con la elegida marcada, y el diagrama de confiabilidad antes y después. MLOps (7.9) los muestra para decidir la promoción |
+| D34 | Un switch de reentrenamiento por modelo (2026-10-24) | **Sentimiento:** `retrain_trigger` (`auto` o `manual`, `manual` en v1). En `auto`, cuando el κ trimestral cae bajo su piso, se entrena un candidato y se vuelve a predecir el histórico con él, pero no se pone en uso: eso lo decide una persona con el botón de promoción. Como mucho uno por trimestre. **Tópicos:** `topic_refit_trigger` (`scheduled` o `manual`, `scheduled` en v1). EPIC-5 no dejó evidencia para un umbral: `OT` no sirve como alarma (es el 0.6 % de las negativas y su κ autor–Gemini es 0) y que los tópicos no alineados detecten temas nuevos quedó como hipótesis. Por eso el re-ajuste sigue por calendario (`topic_refit_frequency`) o con el botón de MLOps, y una versión nueva solo se usa cuando el curador revisa sus tópicos. El monitor guarda como contexto, sin umbral, la proporción de cláusulas sin tópico (ruido; 36.2 % en el histórico de 5.9) y la de negativas cuyos tópicos no tienen familia en la curaduría (no alineados), para fijar un umbral cuando haya trimestres de datos. **Familias y marca `u`:** siguen como contexto sin umbral (D8); se decide si llevan umbral con las tasas que dé `drift-rates` en el primer monitor de dev |
 
 ### Parámetros que fija el dueño de negocio (EPIC-7, 7.10)
 
@@ -140,7 +148,7 @@ En orden. Hasta el paso 2 no existe ningún Job de ML en dev.
 7. **Primer delta:** `gcloud run jobs execute voc-ml-inference-delta`; revisar duración y memoria en `inference_runs` (D9). Cubre los textos posteriores al snapshot y el lote que Gemini no etiquetó.
 8. **Validar `daily_topic_labels`** contra `daily_topics_v0` de 5.9 en una muestra de días × banco.
 9. **Primer monitor:** `gcloud run jobs execute voc-ml-monitor`; llena el histórico de `drift_metrics` sin alertas viejas, crea la muestra del trimestre, mide la calidad (~$0.05) y llena `kpi_estimates`.
-10. **Tasas:** `gcloud run jobs execute voc-ml-monitor --args=drift-rates`.
+10. **Tasas:** `gcloud run jobs execute voc-ml-monitor --args=drift-rates`. Con las de las familias y la marca `u` se decide si llevan umbral (D34).
 11. **Avisos:** comprobar que llega un correo (el primero real o un mensaje de prueba en `voc-model-quality-topic`).
 12. **Secreto de Kaggle:** `gcloud secrets versions add voc-kaggle-token` (hace falta antes del primer `rescore`, en 6.5).
 13. **Borrar las copias locales** que usó la carga (F-11).
@@ -197,42 +205,126 @@ En orden. Hasta el paso 2 no existe ningún Job de ML en dev.
 
 ### FEATURE 6.5: Reentrenamiento y backfills
 
-**Por detallar.** Es la feature de los backfills, la parte más delicada en costo. Propuesta del autor (2026-10-24): **todo lo que se pueda hacer en Kaggle se hace en Kaggle**; lo único que necesita Gemini son las familias.
+**Objetivo:** reentrenar RoBERTuito y rehacer los históricos que dependen de un modelo sin pasar por la máquina de nadie y sin gastos sin aprobar. El entrenamiento y el *re-scoring* corren en Kaggle; la re-asignación de tópicos, en Cloud Run (D30); Gemini solo etiqueta textos que nunca etiquetó (D29).
 
-**Objetivo:** reentrenar RoBERTuito y rehacer los históricos que dependen de un modelo sin pasar por la máquina de nadie y sin gastos sin aprobar.
+**Estado (2026-10-24):** detallada, con todas sus decisiones aprobadas (D25 a D34). Falta implementarla.
 
 #### Los tres backfills
 
 | Backfill | Cuándo hace falta | Dónde | Costo | Estado |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sentimiento** (*re-scoring*) | Cada candidato, antes de `promote` | Kaggle con GPU (Job `voc-ml-rescoring`) | $0 | Hecho en 6.4; sin correr |
-| **Tópicos** (re-asignación del histórico) | Al activarse una versión nueva de tópicos (trimestral) | Kaggle con GPU: segmentar, MiniLM y asignar con el UMAP y el BERTopic congelados, con el patrón del *re-scoring* (dataset privado por corrida, verificación, borrado). Puede ser un segundo kernel del mismo Job | $0 | Por hacer. Hoy lo hace el delta en CPU, 20 000 por corrida (~33 días) |
-| **Familias** (Gemini) | Al cambiar el prompt de Gemini, o al cambiar qué textos son negativos tras una promoción | Gemini en Vertex AI, dentro de GCP | Medido en 5.9: **$60.61 por 659 316 textos** ($0.092 por 1 000), con el precio introductorio vigente hasta el 2026-12-31 | Decidido: comando explícito con costo estimado y `--approve`; hoy el delta lo hace solo ([abajo](#el-backfill-de-familias-con-gemini)) |
+| **Sentimiento** (*re-scoring*) | Cada candidato, antes de `promote` | Kaggle con GPU (`voc-ml-rescoring`) | $0 | Hecho en 6.4; 6.5 le suma guardar la regla de promoción |
+| **Tópicos** (re-asignación del histórico) | Al activarse una versión nueva de tópicos (trimestral) | Cloud Run en CPU (`voc-ml-topics-backfill`, nuevo), sobre los embeddings de cláusulas guardados (D30) | ~$0.02 de lectura en BigQuery por corrida | Nuevo. Reemplaza la re-asignación por tandas del delta |
+| **Familias** (Gemini) | Solo si el autor lo decide (prompt nuevo) | Gemini en Vertex AI (`voc-ml-aspects-backfill`, nuevo) | Medido en 5.9: **$60.61 por 659 316 textos** ($0.092 por 1 000), con el precio introductorio vigente hasta el 2026-12-31 | Nuevo: comando con costo estimado y `--approve`. Por presupuesto, no se espera correrlo (D29) |
 
-#### El backfill de familias con Gemini
+#### Decisiones del autor (2026-10-24)
 
-* **Costo real:** el backfill completo de 5.9 costó $60.61, no cientos de dólares. El riesgo está en el precio después del 2026-12-31 (sin dato) y en repetirlo sin control.
-* **Riesgo que hay que cerrar en 6.5:** el paso de familias del delta etiqueta cualquier negativa de la versión promovida que no tenga fila para el `prompt_version` vigente, de la más reciente a la más vieja y hasta 20 000 por corrida. Así, sin que nadie lo apruebe:
-  * **al cambiar el prompt** (`aspects_v2_2`, por ejemplo) re-etiqueta todo el histórico en ~33 días (~$60);
-  * **al promover un modelo nuevo** etiqueta las reseñas que pasaron a `NEG` (una fracción del histórico; costo proporcional).
-  * Cambiar solo `gemini_model` no re-etiqueta (la clave es `text_key` × `prompt_version`), pero el monitor corre la validación de familias del par nuevo.
-* **Decisión del autor (2026-10-24): el delta solo etiqueta lo nuevo.** Las reseñas que entraron después de la última corrida se etiquetan con Gemini como hoy. El histórico (por un prompt nuevo o por las reseñas que pasan a `NEG` tras una promoción) ya no se etiqueta solo: pasa a un comando explícito que estima el costo antes de correr y exige `--approve`. Así, el gasto en Gemini fuera del delta siempre lo aprueba el autor.
-* **Alternativas descartadas:**
-  * no re-etiquetar el histórico al cambiar el prompt y mostrar las familias por `prompt_version`: cuesta $0, pero el cockpit pierde la serie larga de familias. Sigue disponible si el autor no aprueba un backfill;
-  * *batch prediction* de Vertex AI: abarataría el comando del histórico (por verificar con el precio vigente), pero no cambia la decisión.
-* **La mejor alternativa sería destilar las familias a un clasificador propio**, entrenado con las etiquetas de Gemini y corrido en Kaggle, como RoBERTuito con la plata: cada backfill costaría $0 y dejaría de depender del precio y de la vigencia del modelo de Gemini. **No se hace porque implica un modelo nuevo**, que tendría que pasar por la experimentación y por la regla de familias (acuerdo exacto ≥ 53 % y sin familias frecuentes bajo su IC en `aspects_gold_v2_1`). Eso es trabajo de EPIC-5, no de despliegue, y queda fuera del alcance de la tesis.
+Todas están en la [tabla de decisiones](#-decisiones-de-diseño-de-epic-6-autor-2026-10-23) como D25 a D34. Además:
 
-#### Reentrenamiento (D14)
+* **La mejor alternativa para las familias sería destilarlas a un clasificador propio**, entrenado con las etiquetas de Gemini y corrido en Kaggle, como RoBERTuito con la plata: cada backfill costaría $0 y dejaría de depender del precio y de la vigencia del modelo de Gemini. **No se hace porque implica un modelo nuevo**, que tendría que pasar por la experimentación y por la regla de familias (acuerdo exacto ≥ 53 % y sin familias frecuentes bajo su IC en `aspects_gold_v2_1`). Eso es trabajo de EPIC-5, no de despliegue, y queda fuera del alcance de la tesis.
+* **Descartadas para las familias:** re-etiquetar el histórico en cada cambio de prompt (~$60, unos $1 200 MXN, que un proyecto académico no puede costear cada vez; en producción sí se haría) y *batch prediction* de Vertex AI (abarataría el comando, por verificar con el precio vigente, pero no cambia la decisión).
+* **Descartados para los embeddings de cláusulas:** un vector por fila del TDS (mezcla la salida de la sanitización con artefactos del modelo y repite el vector de textos idénticos) y un almacén clave-valor (Bigtable y Memorystore cobran por estar encendidos; Firestore es lento y más caro para leer el millón de vectores de una vez, que es el uso real).
+* **Disparo del reentrenamiento (D25)** y **botón de promoción (D26)**.
 
-* **Disparo (D25):** el aviso `retrain` de `model_quality` (κ trimestral bajo 0.89), según `retrain_trigger` de la `risk_policy`: en `auto` lo lanza el `monitor`; en `manual`, el botón de MLOps, el comando del correo o el autor con `gcloud run jobs execute`. Como κ se mide por trimestre, hay como mucho un reentrenamiento automático por trimestre.
-* **Lo que suma 6.5 para el disparo:** `retrain_trigger` en `RiskPolicy` (contrato, tabla y `seed` en `manual`), el Job de reentrenamiento y su permiso de ejecución para `voc-sa-ml-backend`, el lanzamiento desde el `monitor` y el comando en el texto de la política de alerta de `voc-model-quality-topic`. El switch y los botones son de EPIC-7 (7.9 y 7.10).
-* **Para el botón de promoción (D26):** un Job que corre `promote` con los argumentos de la API, y el resultado de la regla guardado con el candidato al terminar su *re-scoring*, para que el botón lo muestre sin evaluarlo de nuevo.
-* **Conjunto de entrenamiento** en BigQuery: la plata de Gemini (hoy archivada en `archive/epic5/labels/silver_v0/`) más las revisiones del HITL, sin el oro *test* (consumido en 5.8) ni el oro *dev* (con el que se decide la promoción). Por decidir: si se etiqueta plata nueva con Gemini (~$0.048 por 1 000 textos; la plata de 5.3 costó $3.37 por 99 926 filas) para cubrir los meses recientes.
-* **Entrenamiento en GPU:** kernel de Kaggle con el ajuste de 5.4 sin constantes de proyecto (texto y etiquetas salen a Kaggle: F-13), dentro de las 30 h semanales.
-* **Evaluación y registro:** T nueva, curva y métricas en el oro *dev*, vocabulario de entrenamiento (D24) y `register`.
-* **Después, lo que ya existe:** `rescore` → `promote` con aprobación humana (botón de MLOps, D26, o el autor) → *rollback* si hace falta.
+#### Archivos que cambian o se crean
 
-**Ya existe en 6.4** y 6.5 lo reutiliza: `register`, `rescore`, `promote` con la regla, la curva y la política nueva, el *rollback* y el aviso `retrain`.
+**`packages/voc-common/`:**
+
+* `analytics_codes.py`: `RunKind` suma `TRAINING = "training"`, `TOPIC_BACKFILL = "topic_backfill"` y `ASPECT_BACKFILL = "aspect_backfill"`; nuevos `RetrainTrigger` (`auto`, `manual`) y `TopicRefitTrigger` (`scheduled`, `manual`).
+* `policies.py`: `RiskPolicy.retrain_trigger: RetrainTrigger | None` (nulo = `manual`) y `RiskPolicy.topic_refit_trigger: TopicRefitTrigger | None` (nulo = `scheduled`), para que las versiones ya sembradas sigan valiendo (D34).
+* `operations_v3.py`: `PromotionCheck` (tabla `promotion_checks`): `candidate_version`, `current_version`, `gold_version`, `n`, `differences` (κ y macro-F1 con su IC, JSON), `verdict` (`better`, `tie`, `worse`), `run_id`, `computed_at`.
+* `predictions_v3.py`: `SegmentEmbedding` (tabla `segment_embeddings`, D30): `text_key`, `segment_index`, `segmenter`, `embedding_model`, `vector` (384 floats), `run_id`, `computed_at`.
+* `bq_schema.py`: las dos tablas en `ANALYTICS_V3_TABLES` (28 tablas).
+* [Contrato v3](../contracts/analytics_outputs_v3.md): las dos tablas, los dos switches, los tres `RunKind` y las series de contexto `topic_noise_share` y `topic_unaligned_share` de `drift_metrics`.
+
+**`packages/voc-nlp/`:**
+
+* `training.py` `[sentiment]`: port de `voc_analytics.sentiment.models.finetune` y de `encoder.val_split` y `train_defaults`, sin constantes de proyecto.
+
+  ```python
+  @dataclass(frozen=True)
+  class TrainParams:  # la receta de 5.4 (D27)
+      base: str = "pysentimiento/robertuito-sentiment-analysis"
+      epochs: int = 2; lr: float = 2e-5; warmup: float = 0.06; clip: float = 1.0
+      batch: int = 32; accum: int = 1; max_length: int = 128; seed: int = 1; val_share: float = 0.05
+
+  def val_split(groups: Sequence[str], share: float, seed: int) -> NDArray[np.bool_]: ...  # por texto, como 5.4
+  def train(model, ids: Sequence[Sequence[int]], labels: NDArray[np.int64], is_val: NDArray[np.bool_],
+            params: TrainParams) -> TrainResult: ...  # mejor época por macro-F1 de validación
+  def kernel_source() -> str: ...  # el script del kernel, sin dependencias fuera de torch y transformers
+  ```
+
+* `calibration.py`: suma `fit_temperature(proba: NDArray, y: NDArray, w: NDArray) -> float`, port de `calibration.calibrate.fit` (solo temperatura).
+
+**`services/ml-inference/`:**
+
+* `training.py` (comando `train`, Job `voc-ml-training`):
+
+  ```python
+  def build_training_set(bigquery, storage, settings, now) -> TrainingSet: ...  # D28; manifiesto con conteos y SHA-256
+  def run_training(job: Training, writer: StagingMergeWriter, timeout_sec: float,
+                   now: Callable[[], datetime]) -> InferenceRun: ...
+  ```
+
+  Pasos: `build` (plata de `archive/epic5/labels/silver_v0/`, las revisiones del HITL y la plata reciente (D31); en memoria) → `tokenize` (`preprocess_tweet` y el tokenizador, como el *re-scoring*: a Kaggle suben ids de tokens y etiquetas, no texto) → `push_dataset` (ids, etiquetas, ids del oro *dev* y el modelo base de `ml_artifacts/sentiment/base/`) → `run_kernel` y `wait_kernel` (GPU, sin internet) → `pull` (pesos fp16, métricas de validación y predicciones del oro *dev*) → `calibrate` (D33: temperatura, su curva y la curva de cobertura y riesgo) → `publish` (pesos y `training_vocab.txt` en `ml_artifacts/sentiment/<versión>/`) → `register` (con `training_data_hash` del manifiesto) → `cleanup` (borra el dataset de Kaggle tras verificar la subida). En `auto` termina lanzando `voc-ml-rescoring` (D34). La versión nueva sigue el patrón vigente: `robertuito_sentiment_v<n>` y `temperature_v<n>`.
+* `rescore.py`: al verificar la carga, calcula `check_promotion` contra la versión promovida y escribe `promotion_checks`. `promote` lo sigue recalculando (es barato) y se niega igual que hoy.
+* `topics_backfill.py` (comando `topics-backfill`, Job `voc-ml-topics-backfill`, D30): lee de `segment_embeddings`, por lotes de 50 000 cláusulas, las de las negativas de dos palabras o más sin asignación para la versión activa; asigna con el UMAP y el BERTopic congelados de la versión y escribe `topic_assignments` con `MERGE`. Una negativa sin vectores (por ejemplo, una que pasó a `NEG` tras una promoción) se segmenta y se embebe en el momento, y sus vectores se guardan. Verifica que cada negativa pendiente quedó asignada.
+* `aspects_backfill.py` (comando `aspects-backfill`, Job `voc-ml-aspects-backfill`), para cuando el autor decida pagar un prompt nuevo:
+  * sin `--approve`: cuenta los textos únicos de las negativas sin fila para el `prompt_version` vigente y escribe en el log el costo estimado con `gemini_usd_per_1000` (0.092); no llama a Gemini;
+  * con `--approve --max-usd <tope>`: etiqueta como el delta (lotes de 100, reintento en lotes más chicos) y se detiene al llegar al tope con el costo medido; una corrida interrumpida se retoma sin repetir lo hecho. Fila en `inference_runs` con `kind = aspect_backfill` y su costo.
+* `delta.py` (D29):
+  * familias: solo los textos `NEG` sin ninguna fila en `review_aspects`, con cualquier `prompt_version`;
+  * tópicos y embeddings: solo lo que llegó por la ingesta diaria (filas que predijo una corrida `delta`); guarda los vectores de las cláusulas nuevas en `segment_embeddings`; lanza `voc-ml-topics-backfill` si hace falta (D32).
+* `load_local.py`: carga `segment_embeddings` si 5.9 guardó los vectores de las cláusulas en `data/backfill/20261022/`; si no, los calcula una vez.
+* `monitor/quality.py`: con `retrain_trigger = auto`, al escribir `retrain` lanza `voc-ml-training` si no hay un reentrenamiento del trimestre (D34).
+* `monitor/drift_job.py`: suma `topic_noise_share` y `topic_unaligned_share` por banco y mes, con umbral nulo (D34).
+* `topics_refit.py`: con `topic_refit_trigger = manual`, el Job programado no re-ajusta; solo `--force` (el botón de MLOps).
+* `jobs.py` (nuevo): `execute(job: str, args: Sequence[str]) -> str`, el `jobs.run` de Cloud Run con argumentos; lo usan el delta, el monitor, el entrenamiento y, en EPIC-7, la API.
+* `seed.py`: la `risk_policy` v1 nace con `retrain_trigger = manual` y `topic_refit_trigger = scheduled`.
+* `config.py`: `training_kernel_timeout_sec` (3 h) y `gemini_usd_per_1000` (0.092).
+
+**`infra/`:**
+
+* `cloud_run.py`: cuatro `MlJobSpec` nuevos, sin Scheduler:
+  * `voc-ml-training` (`train`; 2 vCPU, 4 GiB, 4 h, sin reintentos, secreto de Kaggle);
+  * `voc-ml-topics-backfill` (`topics-backfill`; 2 vCPU, 4 GiB, 2 h, sin reintentos; a 8 GiB si UMAP no cabe con lotes de 50 000);
+  * `voc-ml-aspects-backfill` (`aspects-backfill`; 1 vCPU, 2 GiB, 6 h, sin reintentos);
+  * `voc-ml-promote` (`promote`; 1 vCPU, 2 GiB, 30 min, sin reintentos), para el botón de EPIC-7.
+* IAM: `voc-sa-ml-backend` recibe `roles/run.developer` solo sobre `voc-ml-training`, `voc-ml-rescoring` y `voc-ml-topics-backfill` (ejecutar con argumentos). El permiso de la API sobre `voc-ml-training`, `voc-ml-rescoring` y `voc-ml-promote` lo agrega EPIC-7 con su cuenta.
+* `alerting.py`: el texto de la política de `voc-model-quality-topic` suma el comando del reentrenamiento (`gcloud run jobs execute voc-ml-training`) y el de la promoción.
+* `analytics_bq.py`: `promotion_checks` y `segment_embeddings` (agrupada por `text_key`).
+
+**Paso único del autor:** subir el modelo base (`pysentimiento/robertuito-sentiment-analysis`, licencia no comercial) a `ml_artifacts/sentiment/base/` y comprobar que `labels_prompt_v3.parquet` de la plata está en `archive/epic5/labels/silver_v0/` (el código de hoy solo lee `texts.parquet` y `rows.parquet` de ahí).
+
+**Efecto en el portal (EPIC-7):** con D29, las familias de un mismo periodo pueden venir de prompts distintos. Las gráficas de familias del cockpit (7.5) marcan la fecha de cada cambio de prompt y el `prompt_version` de cada tramo.
+
+#### Pruebas
+
+Sin red ni descargas; cobertura ≥ 85 % (≥ 80 % en `infra/`).
+
+* `voc-nlp`:
+  * `test_training.py`: con un RoBERTa diminuto aleatorio, una época baja la pérdida, la mejor época se elige por macro-F1 de validación, la partición agrupa por texto y es reproducible con su semilla, y `kernel_source` se compila;
+  * `test_calibration.py`: `fit_temperature` recupera una T conocida en datos sintéticos e iguala a `calibrate.fit` en un caso fijo.
+* `ml-inference` (Kaggle, GCS, BigQuery y Cloud Run simulados):
+  * `test_training.py`: el conjunto excluye `monitor_sample`, `agreement_sample` y el oro; la revisión reemplaza a la plata; la plata reciente se detiene al llegar a su tope; a Kaggle no sube texto; un kernel fallido o que excede el tiempo deja la corrida en `failed` sin registrar; el registro lleva `training_data_hash`; en `auto` se lanza el *re-scoring* y en `manual` no;
+  * `test_rescore.py`: la carga verificada escribe `promotion_checks`, la fallida no;
+  * `test_topics_backfill.py`: solo procesa las negativas sin asignación de la versión activa; embebe y guarda los vectores que faltan; la verificación falla si una negativa queda sin asignar;
+  * `test_aspects_backfill.py`: sin `--approve` no llama a Gemini; con tope, se detiene al alcanzarlo; una segunda corrida retoma;
+  * `test_delta.py`: Gemini nunca recibe un texto que ya tiene familias con otro prompt; los tópicos solo cubren lo que llegó por la ingesta; los vectores de las cláusulas nuevas se guardan; el backfill de tópicos se lanza una vez por versión;
+  * `test_quality.py`: `retrain` con `auto` lanza el entrenamiento una vez por trimestre; con `manual` o nulo, no.
+  * `test_drift_job.py`: las dos series de tópicos se guardan y nunca alertan;
+  * `test_topics_refit.py`: con `manual`, el Job programado no re-ajusta y `--force` sí.
+* `infra/`: los cuatro Jobs con su memoria, comando, secreto y sin Scheduler; el permiso de ejecución solo sobre sus Jobs; las dos tablas; el comando en el texto de la alerta.
+
+#### Terminado cuando
+
+* un reentrenamiento manual en dev produce un candidato registrado con su T, su curva, su `training_data_hash` y su vocabulario, entrenado desde el modelo base y sin pasar por la máquina de nadie;
+* su *re-scoring* deja `promotion_checks` con la regla, y `promote` (o su *rollback*) funciona sobre él;
+* `segment_embeddings` tiene los vectores de las cláusulas del histórico, y el backfill de tópicos de una versión activada llena `topic_assignments` sin Kaggle;
+* el delta ya no manda a Gemini textos que tienen familias, ni re-asigna el histórico;
+* `aspects-backfill` estima sin gastar y, aprobado, respeta el tope;
+* en `auto`, un `retrain` simulado lanza la cadena hasta el *re-scoring* y se detiene antes de promover;
+* la FMEA refleja F-13 (entrenamiento en Kaggle) con el modo `auto`.
 
 ---
 

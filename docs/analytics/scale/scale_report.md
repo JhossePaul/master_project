@@ -167,18 +167,18 @@ Con las decisiones del autor del 2026-10-22, esto es lo que EPIC-6 (6.2 a 6.4) i
 
 1. **Candidato:** se ajusta en Kaggle (lote como `m4_ppi`) y guarda pesos fp16, tokenizador y predicciones del oro *dev*.
 2. **Registro:** se sube a Vertex Model Registry como versión nueva, con alias `candidato`, la T de calibración, la curva HITL y las métricas en el oro *dev* como metadatos (`model_versions`).
-3. **Promoción:** con la regla de 5.4 (diferencia pareada en el oro *dev* que excluye el 0, o empate a menor costo). Se mueve el alias `produccion` y se re-predice todo el histórico en Kaggle (P7-4), con `model_version` en cada predicción; las predicciones anteriores se conservan.
+3. **Promoción:** con la regla de 5.4 (diferencia pareada en el oro *dev* que excluye el 0, o empate a menor costo). Se mueve el alias `produccion` y se re-predice todo el histórico en Kaggle (P7-4), con `model_version` en cada predicción; las predicciones anteriores se conservan. *Corregido después (2026-10-24, [EPIC-6](../../backlog/epic_6.md)):* el orden es el inverso. El candidato se re-predice primero y después se promueve, porque la vista de producción solo muestra la versión promovida y la regla necesita las predicciones del candidato en el oro *dev*.
 4. **Rollback:** se mueve el alias a la versión anterior; sus predicciones siguen en la tabla, así que no hace falta re-predecir.
 5. **Política HITL:** al promover, se recalcula la curva de cobertura y riesgo y se propone el umbral equivalente a la cobertura vigente, como versión nueva de `risk_policy`.
 
-**Monitoreo** (tabla `drift_metrics`, alertas en `incident_alerts`):
+**Monitoreo** (tabla `drift_metrics`, alertas en `incident_alerts`; *corregido después:* la tabla de alertas que se implementó es `drift_alerts`):
 
 | Nivel | Series | Umbral (plantilla, P7-9) | Tasa histórica de alerta |
 | :--- | :--- | :--- | :--- |
 | Entrada | Palabras medias, textos de una palabra, de más de 60, no predecibles, vocabulario fuera del entrenamiento | z ≥ 4 contra los 12 meses previos | 2.3–6.9 % de los meses |
 | Entrada | Distribución de longitud | PSI ≥ 0.25 | 2.0 % |
 | Predicción | Proporción de `NEG` por banco | z ≥ 4 | 6.6 % |
-| Familias y marca `u` | Proporción por banco y mes | La fija 5.9 (P9-1), en la `drift_policy` de cada banco | — |
+| Familias y marca `u` | Proporción por banco y mes | La fija 5.9 (P9-1), en la `drift_policy` de cada banco. *Corregido después:* 5.9 no la fijó, porque su señal de incidentes quedó fuera del alcance el 2026-10-22. Las familias y la marca `u` se guardan como contexto, sin umbral; se decide si llevan uno con las tasas del primer monitor en producción ([EPIC-6](../../backlog/epic_6.md), 2026-10-24) | — |
 | Concepto | Muestra humana periódica (P7-7) | Parámetro de la política | — |
 | Tópicos | Re-ajuste trimestral con emparejamiento por centroides (P7-8) | Parámetro de la política | — |
 
@@ -231,7 +231,7 @@ Muestras aleatorias simuladas desde el oro *dev* aleatorio (remuestreo proporcio
 | OT | 0.00 | — | 0.3 % |
 
 * Acuerdo exacto del conjunto de familias: 58.3 % [52.7, 64.0].
-* Las familias de baja prevalencia (DI, OT) tienen intervalos demasiado anchos para juzgar un cambio; solo se vigilan las que tienen 5 % o más.
+* Las familias de baja prevalencia (DI, OT) tienen intervalos demasiado anchos para juzgar un cambio; solo se vigilan las que tienen 5 % o más. *Aclaración (2026-10-24):* esta regla es para validar a Gemini cuando cambia su modelo o su prompt, comparando contra estas 300 reseñas; no es un umbral de la deriva de la sección 7.
 * Repetir el prompt sobre estas 300 reseñas cuesta ~$0.03.
 
 ## 9. Backfill de M4 en Kaggle (P7-1, 5.8, 2026-10-22)

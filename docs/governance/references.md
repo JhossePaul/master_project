@@ -218,3 +218,30 @@ varias afirmaciones técnicas del caso de uso.
 | `epic_5.md` | Sección 1 completa; sección 3 (calibración); sección 4 (evaluación). En la competencia de modelos (5.4) Delora es un candidato, no el fundamento |
 | `epic_6.md` | Gama (2014) (monitor de *drift*) |
 | `epic_7.md` | Lundberg (2017); Ribeiro (2016); Dhurandhar (2018) |
+
+## 12. Pendientes para la tesis (EPIC-7, 7.4)
+
+La tesis del portal cita desde este documento y solo con entradas verificadas (decisión del autor, 2026-10-24). Faltan tres cosas.
+
+**Entradas que describen el diseño anterior** y hay que actualizar a lo que se implementó:
+
+- sección 1.2 y 1.3: Delora pasó a ser un **resultado negativo** (se probó y se descartó en la competencia de modelos), no el fundamento del método;
+- sección 3: Guo et al. (2017) sustenta el *temperature scaling* de RoBERTuito y el umbral por probabilidad máxima calibrada, no la entropía ni el 0.65;
+- sección 5: la explicación que se implementó es por oclusión, no SHAP ni LIME;
+- sección 10: los ocho `ABSATopic` se reemplazaron por las 11 familias de aspectos con Gemini y los tópicos de BERTopic.
+
+**Métodos usados sin referencia.** Las candidatas de abajo son puntos de partida para buscar; ninguna está verificada:
+
+| Método usado | Candidatas a localizar y verificar |
+| :--- | :--- |
+| Clasificación con rechazo (curva de cobertura y riesgo, umbral HITL) | Chow (1970), *On optimum recognition error and reject tradeoff*; Geifman y El-Yaniv (2017), *Selective classification for deep neural networks* |
+| PPI con ajuste de λ (PPI++) | Angelopoulos, Duchi y Zrnic (2023), *PPI++: Efficient prediction-powered inference*; confirmar la versión publicada del PPI original |
+| Tópicos: BERTopic, UMAP, HDBSCAN | Grootendorst (2022), *BERTopic*; McInnes, Healy y Melville (2018), *UMAP*; Campello, Moulavi y Sander (2013), HDBSCAN |
+| Embeddings de oraciones (MiniLM) | Reimers y Gurevych (2019), *Sentence-BERT*; Wang et al. (2020), *MiniLM* |
+| Deriva: z robusta con MAD y PSI | Leys et al. (2013), sobre la desviación absoluta de la mediana; una referencia formal del PSI (por ejemplo, Yurdakul, 2018) |
+| Acuerdo y bootstrap | Cohen (1960), κ; Efron y Tibshirani (1993), *An introduction to the bootstrap* |
+| Explicación por oclusión en texto | Li, Monroe y Jurafsky (2016), *Understanding neural networks through representation erasure*; Zeiler y Fergus (2014) |
+| Etiquetado con LLM (plata, familias) | La ficha técnica del modelo de Gemini usado; trabajos de anotación con LLM además de Gilardi et al. (2023) |
+| MLOps y operación del modelo | Sculley et al. (2015), *Hidden technical debt in machine learning systems*; Kreuzberger, Kühl y Hirschl (2023), *MLOps: overview, definition, and architecture* |
+
+**Entradas del caso de uso sin resolver:** las secciones 8 y 9 (C5, C6 y las citas truncadas). Zuhir (2025) y Yang (2021) siguen siendo críticas si la introducción conserva las afirmaciones que sustentan.
