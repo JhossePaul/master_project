@@ -57,6 +57,7 @@ class LoadBigQuery:
             p.name: getattr(p, "value", getattr(p, "values", None))
             for p in getattr(job_config, "query_parameters", []) or []
         }
+        assert "${" not in sql, "consulta con una plantilla sin sustituir"
         if sql.startswith("SELECT id_resena, bank_id, fecha, texto_limpio"):
             return _Job(self.tds)
         if ".model_versions`" in sql and sql.lstrip().startswith("SELECT"):

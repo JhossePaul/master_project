@@ -160,7 +160,7 @@ class Loader:
     def _tds_pages(self) -> Iterator[list[dict[str, Any]]]:
         job = self.bigquery.query(
             render(
-                "SELECT id_resena, bank_id, fecha, texto_limpio FROM `$${tds}`",
+                "SELECT id_resena, bank_id, fecha, texto_limpio FROM `${tds}`",
                 tds=self.settings.tds_table,
             )
         )
