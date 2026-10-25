@@ -10,8 +10,9 @@ Inserta, de solo inserción e idempotente por clave:
   al validar la cola de revisión);
 * ``risk_policy`` v1: la evidencia de los experimentos y nulos en los
   parámetros que fija el dueño de negocio en la pantalla de administración;
-* ``drift_policy_template`` v1 y una ``drift_policy`` por banco, con
-  umbral nulo en las familias y la marca ``u`` (se miden, pero no alertan);
+* ``drift_policy_template`` v2 y una ``drift_policy`` por banco, con z ≥ 4
+  también en las familias y la marca ``u`` (la v1 las medía sin umbral);
+  solo las series de tópicos quedan como contexto, sin umbral;
 * ``guidelines``: ``v2.2`` de sentimiento y ``v2.1`` de aspectos.
 
 El oro (``gold_labels``) lo carga ``load-local``.
@@ -52,13 +53,14 @@ MODEL_VERSION: Final = "robertuito_sentiment_v1"
 REPORTS_MODEL: Final = "M4_robertuito_s1_ppi"
 CALIBRATION_VERSION: Final = "temperature_v0_s1"
 RISK_POLICY_VERSION: Final = "risk_policy_v1"
-DRIFT_TEMPLATE_VERSION: Final = "drift_policy_template_v1"
+DRIFT_TEMPLATE_VERSION: Final = "drift_policy_template_v2"
 # Mediana de segundos por reseña al validar la cola de revisión.
 SECONDS_PER_REVIEW: Final = 7.1
 
-# Series del monitor de deriva y su umbral; las de contexto (familias, ``u``
-# y ruido y alineación de los tópicos) se miden con umbral nulo y nunca
-# alertan.
+# Series del monitor de deriva y su umbral; las de contexto (ruido y
+# alineación de los tópicos) se miden con umbral nulo y nunca alertan. Las
+# familias y la marca ``u`` alertan con el mismo z desde la política v2
+# (decisión del autor, 2026-10-25).
 Z_SERIES: Final = (
     "mean_words",
     "single_word_share",
@@ -66,13 +68,13 @@ Z_SERIES: Final = (
     "not_predicted_share",
     "out_of_vocabulary_share",
     "neg_share",
+    *(f"family_{f.value}" for f in AspectFamily),
+    "flag_update_share",
 )
 Z_THRESHOLD: Final = 4.0
 PSI_SERIES: Final = ("length_distribution",)
 PSI_THRESHOLD: Final = 0.25
 CONTEXT_SERIES: Final = (
-    *(f"family_{f.value}" for f in AspectFamily),
-    "flag_update_share",
     "topic_noise_share",
     "topic_unaligned_share",
 )
@@ -194,7 +196,7 @@ def drift_policies(
     )
     policies = [
         DriftPolicy(
-            drift_policy_version=f"drift_policy_v1_{bank.value.lower()}",
+            drift_policy_version=f"drift_policy_v2_{bank.value.lower()}",
             bank_id=bank.value,
             template_version=DRIFT_TEMPLATE_VERSION,
             **body,

@@ -48,7 +48,7 @@
 
 ## 3. Tópicos, familias e incidentes (5.5, P8-7, P9-1 a P9-4)
 
-* **Decidido (5.5):** híbrido: las 11 familias `aspects_v2_1` y las marcas `u` y `s` como núcleo de medición (al acotar 5.9 ya no alertan: el monitor las guarda como contexto, con umbral nulo; D8 de [EPIC-6](../backlog/epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23)); los tópicos (BERTopic por cláusulas, MiniLM, HDBSCAN) como capa de detalle curada.
+* **Decidido (5.5):** híbrido: las 11 familias `aspects_v2_1` y las marcas `u` y `s` como núcleo de medición (al acotar 5.9 el monitor guardó primero las familias y `u` como contexto, con umbral nulo; el 2026-10-25 les puso z ≥ 4, D35 de [EPIC-6](../backlog/epic_6.md#-decisiones-de-diseño-de-epic-6-autor-2026-10-23)); los tópicos (BERTopic por cláusulas, MiniLM, HDBSCAN) como capa de detalle curada.
 * **Decidido (P8-7):** las familias se etiquetan con Gemini dentro de GCP. Costo medido: $0.091 por 1 000 textos; llenado histórico de ~788 000 negativas únicas, **~$72**.
 * **Incidentes, fuera del alcance (decisión del autor, 2026-10-22, P9-1):** la detección de incidentes (series de tiempo, anomalías, umbrales y su validación, y el cruce con redes sociales) tiene metodología propia y supera el alcance de la tesis; queda como trabajo futuro. La comparación de ventanas de 5.9 queda como hallazgo exploratorio: la ventana de 1 día capta más incidentes de la lista de medios del autor ([reporte de 5.9, §1](incidents/incidents_report.md#1-ventana-de-la-señal-de-incidentes-p9-1)).
 * **5.9, descriptiva:** backfill de familias y tópicos de todas las negativas (P9-3, con el modelo de tópicos de 5.5 congelado), etiquetas de temas por día para el cockpit (P9-4) y, si alcanza el tiempo, una vista por versión (P9-2).

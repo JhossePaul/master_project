@@ -5,8 +5,7 @@ cerrados que faltan en ``drift_metrics`` desde su mes de entrada (excluido,
 como en el análisis histórico). Cada serie que nombra la política se mide
 con z robusto contra
 sus ``baseline_months`` previos o con PSI contra su suma; una serie con
-umbral nulo se guarda como contexto y nunca alerta (familias, ``u`` y las
-dos de tópicos).
+umbral nulo se guarda como contexto y nunca alerta (las dos de tópicos).
 
 Series de tópicos, de la versión vigente y sobre las negativas de dos
 palabras o más con asignación (contexto hasta tener trimestres de datos):

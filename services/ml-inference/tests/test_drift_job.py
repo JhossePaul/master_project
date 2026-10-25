@@ -87,6 +87,8 @@ def series(bank: str, spikes: dict[str, float] | None = None, rows=300):
             "neg_share": 0.4 + wobble / 50,
             "family_FA": 0.2 + wobble / 50,
             "flag_update_share": 0.1 + wobble / 50,
+            "topic_noise_share": 0.3 + wobble / 50,
+            "topic_unaligned_share": 0.2 + wobble / 50,
         }
         if period == MONTHS[-1]:
             values |= spikes or {}
@@ -134,13 +136,29 @@ def test_last_closed_month() -> None:
     assert last_closed_month(datetime(2026, 1, 3, tzinfo=UTC)) == "2025-12"
 
 
+def test_families_and_update_mark_alert_like_any_other_series(
+    fake_bq: Any,
+) -> None:
+    source = FakeSource(
+        [policy("banorte")],
+        series("banorte", {"family_FA": 0.9, "flag_update_share": 0.9}),
+        risk(),
+    )
+    c, _, _ = clients(source, fake_bq)
+    alerts = run_drift(None, c, NOW)  # type: ignore[arg-type]
+
+    assert {a.series for a in alerts} == {"family_FA", "flag_update_share"}
+
+
 def test_spike_alerts_only_its_bank_with_event_message_and_boost(
     fake_bq: Any,
 ) -> None:
     source = FakeSource(
         [policy("bbva"), policy("banorte")],
         series("bbva", {"mean_words": 30.0})
-        + series("banorte", {"family_FA": 0.9, "flag_update_share": 0.9}),
+        + series(
+            "banorte", {"topic_noise_share": 0.9, "topic_unaligned_share": 0.9}
+        ),
         risk(),
     )
     c, bq, sent = clients(source, fake_bq)
@@ -161,7 +179,9 @@ def test_spike_alerts_only_its_bank_with_event_message_and_boost(
 
     metrics = bq.rows("drift_metrics")
     context = [
-        m for m in metrics if m["metric"] in {"family_FA", "flag_update_share"}
+        m
+        for m in metrics
+        if m["metric"] in {"topic_noise_share", "topic_unaligned_share"}
     ]
     assert context and all(not m["alert"] for m in context)
     assert all(m["threshold"] is None for m in context)
@@ -169,7 +189,7 @@ def test_spike_alerts_only_its_bank_with_event_message_and_boost(
         m
         for m in context
         if m["bank_id"] == "banorte"
-        and m["metric"] == "family_FA"
+        and m["metric"] == "topic_noise_share"
         and m["period"] == "2026-06-01"
     )
     assert spiked["z"] > 4
