@@ -56,14 +56,16 @@ def merge_statement(
     """``MERGE`` de solo inserción por ``key`` (dos nulos son iguales).
 
     Las columnas van por nombre: ``INSERT ROW`` las empareja por posición y
-    las que se agregan a una tabla ya creada quedan al final.
+    las que se agregan a una tabla ya creada quedan al final. Van entre
+    comillas invertidas porque algunas son palabras reservadas (``at``).
     """
     if not key or not all(_IDENT.fullmatch(k) for k in key):
         raise ValueError("invalid merge key")
     if not columns or not all(_IDENT.fullmatch(c) for c in columns):
         raise ValueError("invalid merge columns")
     on = " AND ".join(
-        f"(T.{k} = S.{k} OR (T.{k} IS NULL AND S.{k} IS NULL))" for k in key
+        f"(T.`{k}` = S.`{k}` OR (T.`{k}` IS NULL AND S.`{k}` IS NULL))"
+        for k in key
     )
     return render(
         "MERGE `${target}` T USING `${staging}` S ON ",
@@ -73,8 +75,8 @@ def merge_statement(
         "$on WHEN NOT MATCHED THEN INSERT ($cols) VALUES ($vals)"
     ).substitute(
         on=on,
-        cols=", ".join(columns),
-        vals=", ".join(f"S.{c}" for c in columns),
+        cols=", ".join(f"`{c}`" for c in columns),
+        vals=", ".join(f"S.`{c}`" for c in columns),
     )
 
 

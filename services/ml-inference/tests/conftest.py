@@ -98,7 +98,7 @@ class FakeBigQuery:
 
             raise InternalServerError("merge failed")
         target, staging = re.findall(r"`([^`]+)`", sql)[:2]
-        key = list(dict.fromkeys(re.findall(r"T\.(\w+) = S\.\w+", sql)))
+        key = list(dict.fromkeys(re.findall(r"T\.`?(\w+)`? = S\.`?\w+`?", sql)))
         rows = self.rows(_name(target))
         seen = {tuple(str(r[k]) for k in key) for r in rows}
         added = 0
