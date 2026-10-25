@@ -4,6 +4,7 @@ Usa los mismos nombres que el resto de las cargas de Cloud Run (``infra``):
 ``GCP_PROJECT_ID``, ``BQ_DATASET_ID``, ``GCS_RAW_DATALAKE_BUCKET``…
 """
 
+from datetime import date
 from pathlib import Path
 
 from pydantic import Field
@@ -41,6 +42,20 @@ class InferenceSettings(BaseSettings):
     topics_backfill_job: str = "voc-ml-topics-backfill"
     # Job de reentrenamiento que lanza el monitor en modo auto.
     training_job: str = "voc-ml-training"
+    # Job del re-scoring, que el entrenamiento lanza en modo auto.
+    rescoring_job: str = "voc-ml-rescoring"
+    # Tiempo máximo del kernel de entrenamiento (el Job tiene 4 h).
+    training_kernel_timeout_sec: int = Field(default=10800, ge=60)
+    # Imagen de ml-inference (la exige el registro de modelos de Vertex).
+    serving_image: str | None = None
+    # Plata reciente de cada reentrenamiento: textos posteriores a la plata
+    # de los experimentos (su partición de entrenamiento termina antes del
+    # 2026-04-01), etiquetados con el prompt de la plata y con tope de costo.
+    recent_silver_texts: int = Field(default=20_000, ge=0)
+    recent_silver_since: date = date(2026, 4, 1)
+    recent_silver_max_usd: float = Field(default=2.0, ge=0)
+    # Costo medido del prompt de la plata por 1 000 textos.
+    recent_silver_usd_per_1000: float = Field(default=0.048, gt=0)
 
     @property
     def dataset(self) -> str:

@@ -702,6 +702,45 @@ def topics_sql(ds: str, staging: str) -> str:
     )
 
 
+def gold_ids_table(labels_dir: Path) -> pa.Table:
+    """``id_resena`` y ``text_key`` de todas las colas del oro (``gold_*``),
+    *dev* y *test*: sin texto ni etiquetas."""
+    import hashlib
+
+    ids: dict[str, str] = {}
+    for queue in sorted(labels_dir.glob("gold_*/queue.parquet")):
+        table = pq.read_table(queue, columns=["id_resena", "texto_sanitizado"])
+        for rid, text in zip(
+            table["id_resena"].to_pylist(),
+            table["texto_sanitizado"].to_pylist(),
+            strict=True,
+        ):
+            ids[rid] = hashlib.sha256((text or "").encode()).hexdigest()
+    if not ids:
+        raise FileNotFoundError(f"no gold queues under {labels_dir}")
+    return pa.table({"id_resena": list(ids), "text_key": list(ids.values())})
+
+
+def upload_gold_ids(
+    settings: InferenceSettings, storage: Any, labels_dir: Path
+) -> int:
+    """Sube los ids del oro junto a la plata archivada; el entrenamiento los
+    excluye. Devuelve cuántas reseñas subió."""
+    from ml_inference.training import GOLD_IDS_FILE
+    from ml_inference.vocab import ARCHIVE_PREFIX
+
+    table = gold_ids_table(labels_dir)
+    buffer = pa.BufferOutputStream()
+    pq.write_table(table, buffer)
+    storage.bucket(settings.gcs_raw_datalake_bucket).blob(
+        f"{ARCHIVE_PREFIX}{GOLD_IDS_FILE}"
+    ).upload_from_string(
+        buffer.getvalue().to_pybytes(),
+        content_type="application/vnd.apache.parquet",
+    )
+    return table.num_rows
+
+
 def load_backfill(
     settings: InferenceSettings,
     bigquery: Any,

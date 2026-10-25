@@ -388,3 +388,62 @@ def test_aspects_backfill_dispatch(
     assert cli.main(argv) == 0
     assert env["e"] == "bq"
     assert env.get("run") == (("genai", 2.0) if approve else None)
+
+
+@pytest.mark.parametrize("status", ["succeeded", "failed"])
+def test_train_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, status: str
+) -> None:
+    import ml_inference.registry as registry
+    import ml_inference.rescore as rescore
+    import ml_inference.state as state
+    import ml_inference.training as training
+    import voc_nlp.aspects as aspects
+
+    monkeypatch.setattr(
+        aspects, "make_client", lambda project, location: "genai"
+    )
+    monkeypatch.setattr(rescore, "KaggleApiClient", lambda: "kaggle")
+    monkeypatch.setattr(registry, "latest_versions", lambda b, d: {"v1": 1})
+    monkeypatch.setattr(
+        state, "load_state", lambda b, d: type("S", (), {"policy": "pol"})()
+    )
+
+    def new(*args: Any) -> str:
+        env["new"] = args
+        return "job"
+
+    class _Run:
+        pass
+
+    _Run.status = type("S", (), {"value": status})()
+    monkeypatch.setattr(training, "new_training", new)
+    monkeypatch.setattr(
+        training,
+        "run_training",
+        lambda job, w, t, n: env.setdefault("t", t) and _Run(),
+    )
+    assert cli.main(["train", "--run", "r1"]) == (
+        0 if status == "succeeded" else 1
+    )
+    _, _, _, kaggle, genai, run, versions, policy, jobs = env["new"]
+    assert (kaggle, genai, run, versions, policy) == (
+        "kaggle",
+        "genai",
+        "r1",
+        {"v1": 1},
+        "pol",
+    )
+    assert jobs.region == "us-central1" and env["t"] == 10800
+
+
+def test_upload_gold_ids_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import ml_inference.load_local as load
+
+    monkeypatch.setattr(
+        load, "upload_gold_ids", lambda s, g, d: env.setdefault("d", d) and 3
+    )
+    assert cli.main(["upload-gold-ids", "--labels", str(tmp_path)]) == 0
+    assert env["d"] == tmp_path

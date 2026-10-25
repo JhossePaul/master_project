@@ -54,6 +54,7 @@ def register(
     training_data: str,
     license_name: str,
     now: datetime,
+    training_data_hash: str | None = None,
 ) -> ModelVersion:
     """Sube una versión candidata al registro y la anota en BigQuery."""
     aiplatform = _aiplatform()
@@ -75,6 +76,7 @@ def register(
         registry_uri=weights_uri,
         base_checkpoint=base_checkpoint,
         training_data=training_data,
+        training_data_hash=training_data_hash,
         calibration_version=calibration_version,
         calibration_t=calibration_t,
         kappa_dev=metrics.get("kappa_dev"),

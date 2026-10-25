@@ -250,6 +250,7 @@ def _check_ml_jobs(
         assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
         assert env["DRIFT_TOPIC"] == "voc-incident-alerts-topic"
         assert env["QUALITY_TOPIC"] == "voc-model-quality-topic"
+        assert env["SERVING_IMAGE"] == ML_INFERENCE_IMAGE
         grant = states[f"{name}-scheduler-invoker"]
         assert grant["role"] == "roles/run.invoker"
         assert grant["member"] == invoker

@@ -463,3 +463,40 @@ def test_without_segment_vectors_nothing_is_loaded(tmp_path: Path) -> None:
     loader = Loader(_settings(), bq, FakeStorage(), files, tmp_path, ACTOR, NOW)
     assert loader.segment_embeddings() == 0
     assert bq.loaded == {} and bq.dml == []
+
+
+def test_gold_ids_have_no_text_nor_labels(tmp_path: Path) -> None:
+    from ml_inference.load_local import gold_ids_table, upload_gold_ids
+
+    for queue, ids in (("gold_v0", ["r1", "r2"]), ("gold_v1", ["r2", "r3"])):
+        (tmp_path / queue).mkdir()
+        pq.write_table(
+            pa.table(
+                {
+                    "id_resena": ids,
+                    "texto_sanitizado": [f"texto {i}" for i in ids],
+                    "gemini_s": ["NEG"] * len(ids),
+                }
+            ),
+            tmp_path / queue / "queue.parquet",
+        )
+    table = gold_ids_table(tmp_path)
+    assert table.column_names == ["id_resena", "text_key"]
+    assert sorted(table["id_resena"].to_pylist()) == ["r1", "r2", "r3"]
+    uploaded: dict[str, bytes] = {}
+
+    class _Blob:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def upload_from_string(self, data: bytes, **_: Any) -> None:
+            uploaded[self.name] = data
+
+    class _Storage:
+        def bucket(self, name: str) -> Any:
+            return type("B", (), {"blob": lambda self, n: _Blob(n)})()
+
+    assert upload_gold_ids(_settings(), _Storage(), tmp_path) == 3
+    assert list(uploaded) == ["archive/epic5/labels/silver_v0/gold_ids.parquet"]
+    with pytest.raises(FileNotFoundError):
+        gold_ids_table(tmp_path / "vacio")

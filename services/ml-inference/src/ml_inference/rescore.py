@@ -295,6 +295,31 @@ pq.write_table(pa.table({"text_key": keys, "p_NEG": out[:, 0],
 '''
 
 
+def wait_for(
+    status: Callable[[], str],
+    timeout_sec: float,
+    what: str,
+    sleep: Callable[[float], None],
+    clock: Callable[[], float],
+    first_delay: bool = True,
+) -> None:
+    """Espera a que un dataset o kernel de Kaggle termine o falle."""
+    start = clock()
+    if first_delay:
+        # Recién empujado, el estado puede ser todavía el de la versión
+        # anterior; la salida se comprueba además contra la corrida.
+        sleep(POLL_SECONDS)
+    while True:
+        current = status()
+        if DONE in current or current == "ready":
+            return
+        if any(word in current for word in FAILED):
+            raise KernelFailed(f"Kaggle {what} ended with {current}")
+        if clock() - start > timeout_sec:
+            raise KernelFailed(f"Kaggle {what} timed out ({current})")
+        sleep(POLL_SECONDS)
+
+
 def kernel_script(run: str, pad: int, batch: int = BATCH) -> str:
     return f"RUN = {run!r}\nPAD = {pad}\nBATCH = {batch}\n" + KERNEL
 
@@ -504,21 +529,7 @@ class Rescoring:
         what: str,
         first_delay: bool = True,
     ) -> None:
-        start = self.clock()
-        if first_delay:
-            # Recién empujado, el estado puede ser todavía el de la versión
-            # anterior; ``pull`` comprueba además que la salida es de esta
-            # corrida.
-            self.sleep(POLL_SECONDS)
-        while True:
-            current = status()
-            if DONE in current or current == "ready":
-                return
-            if any(word in current for word in FAILED):
-                raise KernelFailed(f"Kaggle {what} ended with {current}")
-            if self.clock() - start > timeout_sec:
-                raise KernelFailed(f"Kaggle {what} timed out ({current})")
-            self.sleep(POLL_SECONDS)
+        wait_for(status, timeout_sec, what, self.sleep, self.clock, first_delay)
 
     # 4. Salida ---------------------------------------------------------------
 

@@ -281,6 +281,13 @@ def create_cloud_run_resources(
         **common,
         "DRIFT_TOPIC": pubsub.alerts_topic.name,
         "QUALITY_TOPIC": pubsub.quality_topic.name,
+        # El registro de modelos de Vertex exige una imagen de serving: la
+        # propia (el entrenamiento registra sus candidatos).
+        **(
+            {"SERVING_IMAGE": images.ml_inference}
+            if images.ml_inference is not None
+            else {}
+        ),
     }
     deps = [
         repository,

@@ -406,13 +406,7 @@ class Lifecycle:
     ) -> HitlCoverageCurve:
         """Recalcula la curva de ``model`` y la guarda."""
         gold = self.gold(model.model_version) if gold is None else gold
-        start, end = week_window(now)
-        by_bank, total = weekly_volume(
-            self._rows(VOLUME_SQL, start=start, end=end)
-        )
-        curve = build_curve(
-            model, gold, by_bank, total, self.seconds_per_review(now), now
-        )
+        curve = self.curve_for(model, gold, now)
         self.writer.write(
             "hitl_coverage_curves",
             [curve],
@@ -426,6 +420,21 @@ class Lifecycle:
             curve.weekly_volume_total,
         )
         return curve
+
+    def curve_for(
+        self,
+        model: ModelVersion,
+        gold: Sequence[GoldPrediction],
+        now: datetime,
+    ) -> HitlCoverageCurve:
+        """Curva de ``model`` con el volumen real, sin guardarla."""
+        start, end = week_window(now)
+        by_bank, total = weekly_volume(
+            self._rows(VOLUME_SQL, start=start, end=end)
+        )
+        return build_curve(
+            model, gold, by_bank, total, self.seconds_per_review(now), now
+        )
 
     def current_policy(self) -> RiskPolicy | None:
         rows = self._rows("SELECT * FROM `${ds}.risk_policy_current`")

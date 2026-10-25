@@ -14,6 +14,10 @@
   vigente (Job ``voc-ml-topics-backfill``, lo lanza el delta).
 * ``aspects-backfill``: familias del histórico con el prompt vigente (Job
   ``voc-ml-aspects-backfill``); sin ``--approve`` solo estima el costo.
+* ``train``: reentrena el modelo de sentimiento en la GPU de Kaggle (Job
+  ``voc-ml-training``) y registra un candidato; no lo promueve.
+* ``upload-gold-ids``: sube una vez, desde la máquina del autor, los ids del
+  oro que el entrenamiento excluye.
 * ``drift-rates``: meses de alerta al año por serie y banco contra la línea
   base histórica (solo lee ``drift_metrics``).
 * ``rescore``: predice todo el corpus con una versión candidata en la GPU
@@ -101,6 +105,14 @@ def parser() -> argparse.ArgumentParser:
     )
     asp.add_argument(
         "--max-usd", type=float, default=None, help="tope de costo en USD"
+    )
+    trn = sub.add_parser("train", help="reentrena y registra un candidato")
+    trn.add_argument("--run", default=None, help="por defecto, la fecha y hora")
+    gold = sub.add_parser("upload-gold-ids", help="sube los ids del oro")
+    gold.add_argument(
+        "--labels",
+        type=Path,
+        default=Path("experiments/analytics/data/labels"),
     )
     res = sub.add_parser("rescore", help="re-predice con una candidata")
     res.add_argument("--model-version", required=True)
@@ -384,6 +396,41 @@ def main(argv: Sequence[str] | None = None) -> int:
         genai = make_client(settings.gcp_project_id, settings.gemini_location)
         row = run_aspects_backfill(settings, bigquery, genai, args.max_usd, now)
         return 0 if row.status.value == "succeeded" else 1
+    if args.command == "train":
+        from voc_nlp.aspects import make_client
+
+        from ml_inference.jobs import CloudRunJobs
+        from ml_inference.registry import latest_versions
+        from ml_inference.rescore import KaggleApiClient
+        from ml_inference.state import load_state
+        from ml_inference.training import new_training, run_training
+
+        job = new_training(
+            settings,
+            bigquery,
+            storage,
+            KaggleApiClient(),
+            make_client(settings.gcp_project_id, settings.gemini_location),
+            args.run or f"{now:%Y%m%d%H%M}",
+            latest_versions(bigquery, settings.dataset),
+            load_state(bigquery, settings.dataset).policy,
+            CloudRunJobs(settings.gcp_project_id, settings.gcp_region),
+        )
+        row = run_training(
+            job,
+            writer,
+            settings.training_kernel_timeout_sec,
+            lambda: datetime.now(UTC),
+        )
+        return 0 if row.status.value == "succeeded" else 1
+    if args.command == "upload-gold-ids":
+        from ml_inference.load_local import upload_gold_ids
+
+        log.info(
+            "upload-gold-ids: %d reseñas",
+            upload_gold_ids(settings, storage, args.labels),
+        )
+        return 0
     if args.command == "rescore":
         from ml_inference.registry import latest_versions
         from ml_inference.rescore import (
