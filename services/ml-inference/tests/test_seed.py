@@ -12,6 +12,7 @@ from ml_inference.seed import (
     drift_thresholds,
     seed,
 )
+from voc_common.analytics_codes import AspectFamily
 
 DOCS = Path(__file__).resolve().parents[3] / "docs" / "analytics"
 pytestmark = pytest.mark.skipif(not DOCS.exists(), reason="sin docs/")
@@ -86,9 +87,12 @@ def test_curve_has_reviews_and_minutes_per_week() -> None:
 def test_context_series_never_alert() -> None:
     thresholds = drift_thresholds()
     assert all(thresholds.z[s] is None for s in CONTEXT_SERIES)
-    assert thresholds.z["neg_share"] == 4.0
     assert thresholds.psi == {"length_distribution": 0.25}
-    assert (
-        "family_AC" in CONTEXT_SERIES and "flag_update_share" in CONTEXT_SERIES
-    )
-    assert {"topic_noise_share", "topic_unaligned_share"} <= set(CONTEXT_SERIES)
+    assert set(CONTEXT_SERIES) == {"topic_noise_share", "topic_unaligned_share"}
+
+
+def test_families_and_update_mark_alert_like_the_rest() -> None:
+    thresholds = drift_thresholds()
+    assert thresholds.z["neg_share"] == 4.0
+    assert thresholds.z["flag_update_share"] == 4.0
+    assert all(thresholds.z[f"family_{f.value}"] == 4.0 for f in AspectFamily)

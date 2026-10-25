@@ -118,8 +118,8 @@ class HitlBoost(_AnalyticsRecord):
 class DriftThresholds(_AnalyticsRecord):
     """JSON ``thresholds`` de la política: umbral por serie.
 
-    Un umbral nulo es una serie que se mide y nunca alerta (familias y
-    ``u``). Una serie usa z o PSI, no los dos.
+    Un umbral nulo es una serie que se mide y nunca alerta (ruido y
+    alineación de los tópicos). Una serie usa z o PSI, no los dos.
     """
 
     z: dict[NonEmpty, float | None] = Field(default_factory=dict)

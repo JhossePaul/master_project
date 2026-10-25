@@ -118,7 +118,7 @@ class DriftMetric(_AnalyticsRecord):
     baseline: float | None = None
     z: float | None = None
     psi: float | None = None
-    # Nulo = serie de contexto que nunca alerta (familias y ``u``).
+    # Nulo = serie de contexto que nunca alerta (los tópicos).
     threshold: float | None = None
     alert: bool
     drift_policy_version: NonEmpty
