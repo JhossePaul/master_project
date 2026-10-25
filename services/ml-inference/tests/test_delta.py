@@ -208,6 +208,88 @@ def test_known_labels_are_reused_without_calling_gemini(world: Any) -> None:
     assert set(_by_id(world, "review_aspects")) == {"a", "b"}
 
 
+def _old_label(world: Any, id_resena: str, text: str) -> None:
+    world.bq.rows("review_aspects").append(
+        {
+            "id_resena": id_resena,
+            "bank_id": "BBVA",
+            "text_key": world.text_key(text),
+            "fecha": NOW - timedelta(days=400),
+            "families": ["TR"],
+            "flag_update": False,
+            "flag_security": True,
+            "praise": False,
+            "prompt_version": "aspects_v1",
+            "llm_model": "gemini-viejo",
+            "guideline_version": "v1",
+            "sentiment_model_version": MODEL,
+            "run_id": "backfill",
+            "labeled_at": NOW - timedelta(days=400),
+        }
+    )
+
+
+def test_gemini_never_relabels_a_text_with_families_of_another_prompt(
+    world: Any,
+) -> None:
+    _old_label(world, "viejo", "la app no abre")
+    world.bq.rows("sanitized_reviews_tds").extend(
+        [
+            # La misma reseña, ya etiquetada con el prompt anterior.
+            world.tds_row("viejo", "la app no abre"),
+            # Otra reseña con el mismo texto: copia la etiqueta anterior.
+            world.tds_row("nuevo", "la app no abre"),
+        ]
+    )
+    _run(world)
+    assert world.gemini.calls == 0
+    aspects = [
+        a for a in world.bq.rows("review_aspects") if a["id_resena"] == "nuevo"
+    ]
+    assert len(aspects) == 1
+    copied = aspects[0]
+    assert copied["prompt_version"] == "aspects_v1"
+    assert copied["guideline_version"] == "v1"
+    assert copied["llm_model"] == "gemini-viejo"
+    assert copied["families"] == ["TR"] and copied["flag_security"] is True
+    assert copied["sentiment_model_version"] == MODEL
+    # La reseña ya etiquetada no gana una fila con el prompt vigente.
+    assert [
+        a["prompt_version"]
+        for a in world.bq.rows("review_aspects")
+        if a["id_resena"] == "viejo"
+    ] == ["aspects_v1"]
+
+
+def test_only_never_labeled_texts_go_to_gemini(world: Any) -> None:
+    _old_label(world, "viejo", "la app no abre")
+    world.bq.rows("sanitized_reviews_tds").extend(
+        [
+            world.tds_row("a", "la app no abre"),
+            world.tds_row("b", "app malo hoy"),
+        ]
+    )
+    sent: list[str] = []
+    generate = world.gemini.generate_content
+
+    def spy(*, model: str, contents: str, config: Any):
+        sent.extend(line.split("\t", 1)[1] for line in contents.splitlines())
+        return generate(model=model, contents=contents, config=config)
+
+    world.gemini.generate_content = spy
+    _run(world)
+    assert sent == ["app malo hoy"]
+    prompts = {
+        a["id_resena"]: a["prompt_version"]
+        for a in world.bq.rows("review_aspects")
+    }
+    assert prompts == {
+        "viejo": "aspects_v1",
+        "a": "aspects_v1",
+        "b": "aspects_v2_1",
+    }
+
+
 def test_without_gemini_client_aspects_wait(world: Any) -> None:
     world.clients.genai = None
     world.bq.rows("sanitized_reviews_tds").append(

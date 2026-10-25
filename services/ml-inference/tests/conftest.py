@@ -193,9 +193,18 @@ class FakeBigQuery:
                 : params["limit"]
             ]
         if "review_aspects` AS a" in sql:
-            return self._topic_pending(
-                "review_aspects", "prompt_version", params["prompt"]
-            )[: params["limit"]]
+            # Cualquier fila, con cualquier prompt, deja la reseña fuera.
+            labeled = {
+                (a["id_resena"], a["text_key"])
+                for a in self.rows("review_aspects")
+            }
+            return [
+                r
+                for r in self._topic_pending(
+                    "review_aspects", "prompt_version", None
+                )
+                if (r["id_resena"], r["text_key"]) not in labeled
+            ][: params["limit"]]
         if "FROM `" + DATASET + ".review_aspects`" in sql:
             latest: dict[str, dict] = {}
             for a in self.rows("review_aspects"):

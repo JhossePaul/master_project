@@ -6,8 +6,12 @@
    ``MODEL``; T de la versión; umbral de la política o de la subida del banco.
 3. **HITL:** casos ``low_confidence`` (o ``drift_boost``) con su oclusión
    precalculada, hasta el tope semanal de la política.
-4. **Familias:** negativas de dos palabras o más sin etiqueta para su
-   ``text_key``; Gemini solo para los textos nuevos.
+4. **Familias:** negativas de dos palabras o más sin ninguna fila en
+   ``review_aspects``, con cualquier prompt. Un texto que ya tiene familias
+   (de cualquier prompt) se copia con su ``prompt_version``; Gemini solo
+   etiqueta los textos que nunca etiquetó, con el prompt vigente. Un cambio
+   de prompt no re-etiqueta el histórico: eso lo hace ``aspects-backfill``,
+   solo con el costo aprobado.
 5. **Embeddings y tópicos:** MiniLM por texto, una fila por banco × mes, y
    cláusulas con el modelo de tópicos vigente.
 6. **Registro:** fila en ``inference_runs``.
@@ -414,35 +418,32 @@ class _Steps:
             JOIN `${tds}` AS t
               ON t.id_resena = p.id_resena
               AND TO_HEX(SHA256(t.texto_sanitizado)) = p.text_key
+            -- Sin ninguna fila, con cualquier prompt.
             LEFT JOIN `${ds}.review_aspects` AS a
               ON a.id_resena = p.id_resena AND a.text_key = p.text_key
-              AND a.prompt_version = @prompt
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
-            -- Las más recientes primero: al activarse una versión nueva el
-            -- histórico se re-asigna por tandas (hasta el backfill en
-            -- Kaggle).
+            -- Las más recientes primero si hay más que el tope.
             ORDER BY p.fecha DESC
             LIMIT @limit
             """,
-            prompt=gemini.PROMPT_VERSION,
             limit=self.settings.max_reviews_per_run,
         )
         if not pending:
             return
         keys = sorted({r["text_key"] for r in pending})
+        # La etiqueta más reciente de cada texto, con el prompt que tenga.
         known = {
             r["text_key"]: r
             for r in self._rows(
                 """
                 SELECT text_key, families, flag_update, flag_security,
-                  praise, llm_model
+                  praise, llm_model, prompt_version, guideline_version
                 FROM `${ds}.review_aspects`
-                WHERE prompt_version = @prompt AND text_key IN UNNEST(@keys)
+                WHERE text_key IN UNNEST(@keys)
                 QUALIFY ROW_NUMBER() OVER
                   (PARTITION BY text_key ORDER BY labeled_at DESC) = 1
                 """,
-                prompt=gemini.PROMPT_VERSION,
                 keys=keys,
             )
         }
@@ -465,6 +466,8 @@ class _Steps:
                     "flag_security": label.flag_security,
                     "praise": label.praise,
                     "llm_model": self.settings.gemini_model,
+                    "prompt_version": gemini.PROMPT_VERSION,
+                    "guideline_version": gemini.GUIDELINE_VERSION,
                 }
         counts.cost_usd += usage.cost_usd
         rows = [
@@ -477,9 +480,9 @@ class _Steps:
                 flag_update=known[r["text_key"]]["flag_update"],
                 flag_security=known[r["text_key"]]["flag_security"],
                 praise=known[r["text_key"]]["praise"],
-                prompt_version=gemini.PROMPT_VERSION,
+                prompt_version=known[r["text_key"]]["prompt_version"],
                 llm_model=known[r["text_key"]]["llm_model"],
-                guideline_version=gemini.GUIDELINE_VERSION,
+                guideline_version=known[r["text_key"]]["guideline_version"],
                 sentiment_model_version=r["model_version"],
                 run_id=self.run_id,
                 labeled_at=self.now,
