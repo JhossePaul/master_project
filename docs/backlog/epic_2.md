@@ -1,6 +1,9 @@
 # EPIC-2: Aprovisionamiento de Infraestructura Serverless y Seguridad en GCP (IaC con Pulumi)
 
-* **Estado:** IMPLEMENTADO — Features 2.1–2.10 verificadas localmente con mocks. Contrato único de estado/auditoría. Preview con proveedor y despliegue pendientes de stack/backend y credenciales reales.
+* **Estado (2026-10-25):** **Cerrada y desplegada** en el stack `dev` (cierre verificado el 2026-10-18, ver [epics.md](epics.md#cierre-de-las-épicas-1-a-4)). La nota siguiente es de cuando se implementó, antes del despliegue.
+* **Estado al implementar:** IMPLEMENTADO — Features 2.1–2.10 verificadas localmente con mocks. Contrato único de estado/auditoría. Preview con proveedor y despliegue pendientes de stack/backend y credenciales reales.
+* **Recursos de predicción reemplazados (EPIC-6, 6.2, 2026-10-23):** `delora_predictions`, `hitl_triage_audit_log`, el índice de Vertex de 768 dimensiones, el endpoint `delora-tnss-endpoint` (se borró `infra/modules/vertex_ai.py`) y el flag `enable_dedicated_vertex_endpoints` se retiraron; las variables `BQ_PREDICTIONS_TABLE` y `BQ_HITL_AUDIT_TABLE` salieron de Cloud Run. Los reemplazan las 26 tablas y 8 vistas del [contrato v3](../contracts/analytics_outputs_v3.md) (`infra/modules/analytics_bq.py`), los Jobs `voc-ml-inference-delta` y `voc-ml-monitor` con sus triggers (se crean cuando exista la imagen `ml-inference`, 6.3) y el acceso de `voc-sa-ml-backend` al bucket. Las menciones de esos recursos abajo quedan como historia.
+* **Antes (2026-10-18; actualizado 2026-10-22):** la tabla `delora_predictions` (15 columnas, agrupada por `topico`), `hitl_triage_audit_log` y el flag `enable_dedicated_vertex_endpoints` se reemplazan o amplían en [EPIC-6](epic_6.md) (feature 6.2), junto con las tablas de curaduría y el Job de inferencia, cuando se apruebe el registro de decisión de EPIC-5 (5.8); no se reescriben antes. Qué cambia y qué lo decide: [insumos de EPIC-5 en EPIC-6](../contracts/analytics_outputs_v3.md).
 * **Semanas Objetivo:** Semanas 1 - 2
 * **Paquetes / Directorios Afectados:**
   * `packages/voc-common/src/voc_common/config.py` (Ampliación de variables para Scraper Propio y Flags de Infraestructura)
@@ -135,6 +138,8 @@ config:
   bbva-voc-infra:enable_cmek: false
   bbva-voc-infra:enable_vpc_sc: false
   bbva-voc-infra:enable_dedicated_vertex_endpoints: false
+  # Solo la API aiplatform (Gemini para EPIC-5 5.3), sin endpoints ni Dataflow.
+  bbva-voc-infra:enable_vertex_ai_api: true
   bbva-voc-infra:ingestion_worker_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/ingestion-worker:latest"
   bbva-voc-infra:sanitization_job_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/sanitization-pipeline:latest"
   bbva-voc-infra:api_backend_image: "us-central1-docker.pkg.dev/bbva-voc-analyzer-dev/voc-containers-repo/api-backend:latest"
@@ -827,7 +832,7 @@ confundir mocks con validación de recuperación del scraper.
 >   aliases, fixture y pruebas específicas. No hay import de compatibilidad ni
 >   caminos de lectura alternativos; el estado inicial es el contrato actual vacío.
 > * CI ejecuta la suite completa con los umbrales vigentes. Ver
->   [guía de activación](../deployment.md): recursos primero, runtime de EPIC-3
+>   [guía de activación](../operations/deployment.md): recursos primero, runtime de EPIC-3
 >   después y habilitación explícita tras validar la imagen/entrypoint.
 > * Mocks no validan cuotas, permisos efectivos ni ejecución real de GCP. El
 >   último preview se detuvo por ausencia de stack `dev` en el backend; la
@@ -869,7 +874,7 @@ confundir mocks con validación de recuperación del scraper.
 
 * [x] Todos los archivos dentro de `infra/` tienen *type annotations* completas y pasan `uv run ruff check infra`, `uv run pyrefly check` y `uv run bandit -c pyproject.toml -r infra` con **0 errores**.
 * [x] El comando `uv run pytest infra/tests --cov=infra/modules --cov-fail-under=80` pasa todas las pruebas unitarias con cobertura $\ge 80\%$.
-* [ ] El comando `pulumi preview --stack dev` (con credenciales de GCP activas) genera el plan de ejecución completo sin errores de sintaxis, referencias circulares ni violaciones de cuota de Free Tier.
+* [x] El comando `pulumi preview --stack dev` (con credenciales de GCP activas) genera el plan de ejecución completo sin errores de sintaxis, referencias circulares ni violaciones de cuota de Free Tier. *(Verificado el 2026-10-16: 54 recursos sin cambios sobre el stack desplegado; la deriva de `scaling` del servicio se corrigió declarándolo.)*
 
 El último criterio requiere la CLI de Pulumi, backend/stack configurados y
 credenciales del proyecto GCP real. La suite con mocks verifica los recursos

@@ -1,6 +1,7 @@
 # EPIC-3: Ingesta Multibanco Reanudable desde Google Play
 
-* **Estado:** Implementada (features 3.1–3.5). Validada localmente con dobles deterministas; sin despliegue ni solicitudes reales. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
+* **Estado (2026-10-25):** **Cerrada y desplegada** en el stack `dev` (cierre verificado el 2026-10-18, ver [epics.md](epics.md#cierre-de-las-épicas-1-a-4)). La nota siguiente es de cuando se implementó, antes del despliegue.
+* **Estado al implementar:** Implementada (features 3.1–3.5). Validada localmente con dobles deterministas; sin despliegue ni solicitudes reales. Adaptador contrastado con respuestas del experimento; agotamiento y expiración de cursor aún no observados.
 * **Dependencias:** EPIC-1 y EPIC-2 implementadas: contratos y recursos de estado v2 disponibles. La activación (`INGESTION_V2_ENABLED=true`) espera la imagen publicada, el despliegue por fases de EPIC-2 y el consumidor de EPIC-4.
 * **Directorios:** `services/ingestion-worker/`, `packages/voc-common/`, `infra/`, `experiments/playstore/`.
 
@@ -12,7 +13,7 @@ recuperación verificable. El endpoint `batchexecute` es interno: no tiene contr
 público de estabilidad, filtros temporales documentados ni garantía de enumerar
 el histórico completo. El tamaño 199 fue una política conservadora inicial,
 **no un máximo demostrado**; el 2026-10-15 la política pasó a 500 tras validar una
-cadena de 10 páginas (ver `docs/full_backfill.md`). Las cifras de la ficha de la app no constituyen
+cadena de 10 páginas (ver `docs/operations/full_backfill.md`). Las cifras de la ficha de la app no constituyen
 un denominador fiable para calcular el porcentaje de reseñas recuperadas.
 
 La garantía implementable es conservar/reprocesar páginas ya aceptadas mientras
@@ -310,7 +311,7 @@ presión: aún no hay consumidor desplegado). Reducers puros nuevos en
 Configuración conservadora nueva en `IngestionExecutionConfig` (páginas,
 recuperación, anclas, backoff, circuit breaker, ventana de revisita 72 h,
 bootstrap 7 días y rotación opcional de User-Agent por ejecución).
-Evidencia usada (`evidence/`, no versionada): una corrida BBVA de 16
+Evidencia usada (`experiments/playstore/evidence/`, no versionada): una corrida BBVA de 16
 solicitudes; el replay del cursor fue idéntico a +10 s, +10 min y +30 min
 aunque la cabeza cambió; el cursor devuelto cambia en cada respuesta; la
 cabeza mostró ±2 reseñas entre solicitudes; tamaños 200 y 500 aceptados.
