@@ -368,3 +368,95 @@ def test_artifacts_are_downloaded_once(world: Any) -> None:
 
 def test_peak_memory_is_positive() -> None:
     assert peak_memory_mib() > 0
+
+
+def _historical_negative(world: Any, id_resena: str, text: str) -> None:
+    """Negativa cargada por el backfill: no la predijo una corrida del delta."""
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row(id_resena, text, fecha=NOW - timedelta(days=300))
+    )
+    world.bq.rows("review_predictions").append(
+        {
+            "id_resena": id_resena,
+            "bank_id": "BBVA",
+            "text_key": world.text_key(text),
+            "fecha": NOW - timedelta(days=300),
+            "sentiment": "NEG",
+            "palabras": len(text.split()),
+            "model_version": MODEL,
+            "run_id": "backfill-20261022",
+            "predicted_at": NOW - timedelta(days=2),
+        }
+    )
+
+
+def test_topics_only_cover_what_came_through_ingestion(world: Any) -> None:
+    _historical_negative(world, "h", "el cajero no sirve")
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row("n", "la app no abre nunca")
+    )
+    _run(world)
+    assigned = {t["id_resena"] for t in world.bq.rows("topic_assignments")}
+    assert assigned == {"n"}
+    # Una segunda corrida tampoco toca el histórico.
+    world.jobs.busy.clear()
+    world.bq.rows("sanitized_reviews_tds").append(
+        world.tds_row("m", "app malo otra vez")
+    )
+    _run(world, NOW + timedelta(days=1))
+    assigned = {t["id_resena"] for t in world.bq.rows("topic_assignments")}
+    assert assigned == {"n", "m"}
+
+
+def test_topic_backfill_is_launched_once_per_version(world: Any) -> None:
+    _historical_negative(world, "h", "el cajero no sirve")
+    _run(world)
+    assert world.jobs.executed == [
+        ("voc-ml-topics-backfill", ["topics-backfill"])
+    ]
+    # En curso: el siguiente delta no lanza otro.
+    _run(world, NOW + timedelta(hours=1))
+    assert len(world.jobs.executed) == 1
+    # Terminado y sin pendientes: tampoco.
+    world.jobs.busy.clear()
+    world.bq.rows("topic_assignments").append(
+        {
+            "id_resena": "h",
+            "bank_id": "BBVA",
+            "text_key": world.text_key("el cajero no sirve"),
+            "fecha": NOW - timedelta(days=300),
+            "segment_index": 0,
+            "topic_model_version": "topics_v1",
+            "topic_id": 3,
+        }
+    )
+    _run(world, NOW + timedelta(days=1))
+    assert len(world.jobs.executed) == 1
+
+
+def test_without_job_runner_the_backfill_waits(world: Any) -> None:
+    world.clients.jobs = None
+    _historical_negative(world, "h", "el cajero no sirve")
+    run = _run(world)
+    assert run.status.value == "succeeded"
+    assert world.jobs.executed == []
+
+
+def test_segment_vectors_are_stored_once_and_reused(world: Any) -> None:
+    text = "la app no abre nunca pero el cajero sí funciona"
+    world.bq.rows("sanitized_reviews_tds").append(world.tds_row("a", text))
+    _run(world)
+    stored = world.bq.rows("segment_embeddings")
+    assert sorted(e["segment_index"] for e in stored) == [0, 1]
+    assert {e["segmenter"] for e in stored} == {"clause_segmenter_v1"}
+    assert all(len(e["embedding"]) == 384 for e in stored)
+    calls = len(world.embedder.calls)
+    world.bq.rows("sanitized_reviews_tds").append(world.tds_row("b", text))
+    _run(world, NOW + timedelta(hours=1))
+    # Mismo texto, banco y mes: ni embeddings de texto ni de cláusulas.
+    assert len(world.embedder.calls) == calls
+    assert len(world.bq.rows("segment_embeddings")) == 2
+    topics = [
+        t for t in world.bq.rows("topic_assignments") if t["id_resena"] == "b"
+    ]
+    assert sorted(t["topic_id"] for t in topics) == [-1, 3]

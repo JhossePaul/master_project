@@ -10,6 +10,8 @@
 * ``risk-policy``: nueva versión de la ``risk_policy`` con otra cobertura.
 * ``topics-refit``: re-ajuste trimestral del modelo de tópicos (Job
   ``voc-ml-topics-refit``); la versión nueva asigna cuando se cura.
+* ``topics-backfill``: re-asigna el histórico a la versión de tópicos
+  vigente (Job ``voc-ml-topics-backfill``, lo lanza el delta).
 * ``drift-rates``: meses de alerta al año por serie y banco contra la línea
   base histórica (solo lee ``drift_metrics``).
 * ``rescore``: predice todo el corpus con una versión candidata en la GPU
@@ -88,6 +90,7 @@ def parser() -> argparse.ArgumentParser:
     top.add_argument(
         "--force", action="store_true", help="ajusta aunque no toque"
     )
+    sub.add_parser("topics-backfill", help="re-asigna el histórico de tópicos")
     res = sub.add_parser("rescore", help="re-predice con una candidata")
     res.add_argument("--model-version", required=True)
     res.add_argument("--run", default=None, help="por defecto, la fecha y hora")
@@ -250,9 +253,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         from voc_nlp.aspects import make_client
 
         from ml_inference.delta import Clients, run_delta
+        from ml_inference.jobs import CloudRunJobs
 
         genai = make_client(settings.gcp_project_id, settings.gemini_location)
-        run = run_delta(settings, Clients(bigquery, storage, genai), now)
+        jobs = CloudRunJobs(settings.gcp_project_id, settings.gcp_region)
+        run = run_delta(
+            settings, Clients(bigquery, storage, genai, jobs=jobs), now
+        )
         return 0 if run.status.value == "succeeded" else 1
     if args.command == "seed":
         from ml_inference.seed import seed
@@ -335,6 +342,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             state.policy, state.topic_model_version, now, force=args.force
         )
         return 0
+    if args.command == "topics-backfill":
+        from ml_inference.state import load_state
+        from ml_inference.topics_backfill import run_topics_backfill
+
+        version = load_state(bigquery, settings.dataset).topic_model_version
+        if version is None:
+            log.warning("topics-backfill: no hay versión de tópicos vigente")
+            return 0
+        row = run_topics_backfill(settings, bigquery, storage, version, now)
+        return 0 if row.status.value == "succeeded" else 1
     if args.command == "rescore":
         from ml_inference.registry import latest_versions
         from ml_inference.rescore import (

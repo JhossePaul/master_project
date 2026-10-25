@@ -34,6 +34,8 @@ class InferenceSettings(BaseSettings):
     quality_topic: str = "voc-model-quality-topic"
     # Tiempo máximo del kernel de Kaggle del re-scoring (el Job tiene 3 h).
     rescore_kernel_timeout_sec: int = Field(default=9000, ge=60)
+    # Job que re-asigna el histórico al activarse una versión de tópicos.
+    topics_backfill_job: str = "voc-ml-topics-backfill"
 
     @property
     def dataset(self) -> str:

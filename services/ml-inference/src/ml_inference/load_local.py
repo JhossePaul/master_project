@@ -21,6 +21,10 @@ Pasos (``load_backfill``):
 4. ``text_embeddings``: ``emb_minilm.npy`` replicado por banco × mes.
 5. ``topic_assignments``, ``topic_model_versions``, ``topic_catalog`` y
    ``curation_topics`` (la curaduría de tópicos del autor).
+   ``segment_embeddings``: los vectores de las cláusulas que guardó el
+   backfill (``topics/emb_segments_minilm.npy``, en el orden de
+   ``segment_topics_v0.parquet``); sin ese archivo, el backfill de tópicos
+   los calcula la primera vez.
 6. ``gold_labels``: el parquet sin texto de
    ``voc_analytics.labeling.export_gold_v3``.
 7. Una fila de ``inference_runs`` por carga.
@@ -262,33 +266,11 @@ class Loader:
 
     def embeddings_file(self) -> Path:
         folder = self.files.run_dir / "embeddings"
-        keys = pq.read_table(folder / "keys.parquet")["text_key"]
+        keys = pq.read_table(folder / "keys.parquet", columns=["text_key"])
         vectors = np.load(folder / "emb_minilm.npy", mmap_mode="r")
-        if len(keys) != vectors.shape[0]:
-            raise ValueError("embeddings and keys differ in length")
-        path = self.work_dir / "embeddings.parquet"
-        schema = pa.schema(
-            [("text_key", pa.string()), ("embedding", pa.list_(pa.float32()))]
+        return vectors_parquet(
+            self.work_dir / "embeddings.parquet", keys, vectors
         )
-        with pq.ParquetWriter(path, schema) as out:
-            for start in range(0, len(keys), PAGE_SIZE):
-                chunk = np.asarray(vectors[start : start + PAGE_SIZE])
-                flat = pa.array(chunk.reshape(-1), type=pa.float32())
-                offsets = pa.array(
-                    np.arange(0, chunk.size + 1, chunk.shape[1], dtype=np.int32)
-                )
-                out.write_table(
-                    pa.table(
-                        {
-                            "text_key": keys[start : start + PAGE_SIZE],
-                            "embedding": pa.ListArray.from_arrays(
-                                offsets, flat
-                            ),
-                        },
-                        schema=schema,
-                    )
-                )
-        return path
 
     def embeddings(self) -> int:
         from voc_nlp.topics import EMBEDDING_MODEL
@@ -317,6 +299,46 @@ class Loader:
                 {
                     "version": TOPIC_MODEL_VERSION,
                     "model_version": MODEL_VERSION,
+                },
+            )
+        finally:
+            self._drop(staging)
+
+    @property
+    def segment_vectors(self) -> Path:
+        return self.files.run_dir / "topics" / "emb_segments_minilm.npy"
+
+    def segment_embeddings_file(self) -> Path:
+        keys = pq.read_table(
+            self.files.run_dir / "topics" / "segment_topics_v0.parquet",
+            columns=["text_key", "orden"],
+        ).rename_columns(["text_key", "segment_index"])
+        vectors = np.load(self.segment_vectors, mmap_mode="r")
+        return vectors_parquet(
+            self.work_dir / "segment_embeddings.parquet", keys, vectors
+        )
+
+    def segment_embeddings(self) -> int:
+        from voc_nlp.topics import EMBEDDING_MODEL, SEGMENTER
+
+        if not self.segment_vectors.exists():
+            log.warning(
+                "sin %s: el backfill de tópicos calculará los vectores",
+                self.segment_vectors.name,
+            )
+            return 0
+        staging = self._staging(
+            "segment_embeddings", self.segment_embeddings_file()
+        )
+        try:
+            return run_dml(
+                self.bigquery,
+                segment_embeddings_sql(self.ds, staging),
+                {
+                    "segmenter": SEGMENTER,
+                    "model": EMBEDDING_MODEL,
+                    "run_id": self.run_id,
+                    "now": self.now,
                 },
             )
         finally:
@@ -431,6 +453,29 @@ class Loader:
                 **common,
             ),
         ]
+
+
+def vectors_parquet(path: Path, keys: pa.Table, vectors: np.ndarray) -> Path:
+    """Escribe ``keys`` con una columna ``embedding`` por fila, por páginas
+    (``vectors`` puede ser un ``np.load`` con ``mmap_mode``)."""
+    if keys.num_rows != vectors.shape[0]:
+        raise ValueError("embeddings and keys differ in length")
+    schema = keys.schema.append(pa.field("embedding", pa.list_(pa.float32())))
+    with pq.ParquetWriter(path, schema) as out:
+        for start in range(0, keys.num_rows, PAGE_SIZE):
+            chunk = np.asarray(vectors[start : start + PAGE_SIZE])
+            flat = pa.array(chunk.reshape(-1), type=pa.float32())
+            offsets = pa.array(
+                np.arange(0, chunk.size + 1, chunk.shape[1], dtype=np.int32)
+            )
+            page = keys.slice(start, PAGE_SIZE)
+            out.write_table(
+                page.append_column(
+                    schema.field("embedding"),
+                    pa.ListArray.from_arrays(offsets, flat),
+                )
+            )
+    return path
 
 
 def policy_value(policy: dict[str, Any] | None, field: str) -> Any:
@@ -616,6 +661,24 @@ def embeddings_sql(ds: str, tds: str, staging: str) -> str:
     )
 
 
+def segment_embeddings_sql(ds: str, staging: str) -> str:
+    return render(
+        """
+    MERGE `${ds}.segment_embeddings` T
+    USING (
+      SELECT text_key, segment_index, @segmenter AS segmenter,
+        @model AS embedding_model, embedding, @run_id AS run_id,
+        @now AS created_at
+      FROM `${staging}`
+    ) S
+    ON T.text_key = S.text_key AND T.segment_index = S.segment_index
+    WHEN NOT MATCHED THEN INSERT ROW
+    """,
+        ds=ds,
+        staging=staging,
+    )
+
+
 def topics_sql(ds: str, staging: str) -> str:
     return render(
         """
@@ -677,6 +740,7 @@ def load_backfill(
     counts["review_aspects"] = loader.aspects()
     counts["text_embeddings"] = loader.embeddings()
     counts["topic_assignments"] = loader.topic_assignments()
+    counts["segment_embeddings"] = loader.segment_embeddings()
     counts.update(loader.topic_tables(writer))
     counts["gold_labels"] = loader.gold(writer)
     log.info("filas nuevas: %s", counts)

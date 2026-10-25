@@ -13,7 +13,12 @@
    de prompt no re-etiqueta el histórico: eso lo hace ``aspects-backfill``,
    solo con el costo aprobado.
 5. **Embeddings y tópicos:** MiniLM por texto, una fila por banco × mes, y
-   cláusulas con el modelo de tópicos vigente.
+   cláusulas con el modelo de tópicos vigente, solo de las reseñas que
+   predijo una corrida del delta (lo que llegó por la ingesta diaria). Los
+   vectores de las cláusulas se guardan una vez en ``segment_embeddings`` y
+   se reutilizan. Si quedan negativas del histórico sin asignar a la
+   versión vigente y no hay un backfill en curso, lanza
+   ``voc-ml-topics-backfill``.
 6. **Registro:** fila en ``inference_runs``.
 
 Cada modelo se carga solo si su paso tiene trabajo y se libera antes del
@@ -49,6 +54,7 @@ from voc_common.operations_v3 import InferenceRun, ReviewExplanation
 from voc_common.predictions_v3 import (
     ReviewAspects,
     ReviewPrediction,
+    SegmentEmbedding,
     TextEmbedding,
     TopicAssignment,
 )
@@ -61,6 +67,7 @@ from ml_inference import artifacts
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
 from ml_inference.engines import EngineLoaders
+from ml_inference.jobs import JobRunner
 from ml_inference.state import ServingState, load_state
 
 log = logging.getLogger(__name__)
@@ -74,6 +81,8 @@ class Clients:
     storage: Any
     genai: Any | None = None
     engines: EngineLoaders = field(default_factory=EngineLoaders)
+    # Sin él, el backfill de tópicos no se lanza (se avisa en el log).
+    jobs: JobRunner | None = None
 
 
 @dataclass
@@ -566,8 +575,6 @@ class _Steps:
         )
 
     def topics(self, counts: _Counts) -> None:
-        from voc_nlp.topics import segment
-
         version = self.state.topic_model_version
         if version is None:
             log.warning("sin modelo de tópicos: los tópicos quedan pendientes")
@@ -585,24 +592,90 @@ class _Steps:
               AND a.topic_model_version = @version
             WHERE p.sentiment = 'NEG' AND p.palabras >= 2
               AND a.id_resena IS NULL
-            -- Las más recientes primero: al activarse una versión nueva el
-            -- histórico se re-asigna por tandas (hasta el backfill en
-            -- Kaggle).
+              -- Solo lo que llegó por la ingesta: el histórico lo re-asigna
+              -- el backfill de tópicos.
+              AND (p.run_id = @run_id OR p.run_id IN (
+                SELECT run_id FROM `${ds}.inference_runs`
+                WHERE kind = 'delta'))
             ORDER BY p.fecha DESC
             LIMIT @limit
             """,
             version=version,
+            run_id=self.run_id,
             limit=self.settings.max_reviews_per_run,
         )
-        if not pending:
-            return
-        texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
+        if pending:
+            self._assign_topics(version, pending, counts)
+        self._launch_topic_backfill(version)
+
+    def _segment_vectors(
+        self, texts: dict[str, str]
+    ) -> tuple[list[tuple[str, str]], np.ndarray]:
+        """Cláusulas de cada texto con su vector; calcula y guarda los que
+        faltan en ``segment_embeddings``."""
+        from voc_nlp.topics import EMBEDDING_MODEL, SEGMENTER, segment
+
         segments = {key: segment(text) for key, text in texts.items()}
+        stored: dict[str, dict[int, list[float]]] = {}
+        for r in self._rows(
+            """
+            SELECT text_key, segment_index, embedding
+            FROM `${ds}.segment_embeddings`
+            WHERE text_key IN UNNEST(@keys)
+            """,
+            keys=sorted(texts),
+        ):
+            stored.setdefault(r["text_key"], {})[r["segment_index"]] = r[
+                "embedding"
+            ]
+        # Un texto con otro número de cláusulas guardadas se vuelve a embeber.
+        missing = [
+            (k, i, s)
+            for k, parts in segments.items()
+            if len(stored.get(k, {})) != len(parts)
+            for i, s in enumerate(parts)
+        ]
+        if missing:
+            embedder = self._embedder()
+            vectors = embedder.embed([s for _, _, s in missing])
+            del embedder
+            gc.collect()
+            rows = []
+            for (key, i, _), vec in zip(missing, vectors, strict=True):
+                stored.setdefault(key, {})[i] = [float(x) for x in vec]
+                rows.append(
+                    SegmentEmbedding(
+                        text_key=key,
+                        segment_index=i,
+                        segmenter=SEGMENTER,
+                        embedding_model=EMBEDDING_MODEL,
+                        embedding=stored[key][i],
+                        run_id=self.run_id,
+                        created_at=self.now,
+                    )
+                )
+            self.writer.write(
+                "segment_embeddings",
+                rows,
+                ["text_key", "segment_index"],
+                self.run_id,
+            )
         flat = [(k, s) for k, parts in segments.items() for s in parts]
-        embedder = self._embedder()
-        emb = embedder.embed([s for _, s in flat])
-        del embedder
-        gc.collect()
+        emb = np.array(
+            [
+                stored[k][i]
+                for k, parts in segments.items()
+                for i in range(len(parts))
+            ],
+            dtype=np.float32,
+        )
+        return flat, emb
+
+    def _assign_topics(
+        self, version: str, pending: list[dict[str, Any]], counts: _Counts
+    ) -> None:
+        texts = {r["text_key"]: r["texto_sanitizado"] for r in pending}
+        flat, emb = self._segment_vectors(texts)
         assigner = self.clients.engines.topics(
             self._download(artifacts.TOPICS, version)
         )
@@ -630,4 +703,45 @@ class _Steps:
             rows,
             ["id_resena", "text_key", "topic_model_version", "segment_index"],
             self.run_id,
+        )
+
+    def _launch_topic_backfill(self, version: str) -> None:
+        """Lanza el backfill si quedan negativas sin asignar a ``version``."""
+        left = int(
+            self._rows(
+                """
+                SELECT COUNT(*) AS unassigned
+                FROM `${ds}.review_predictions_current` AS p
+                LEFT JOIN `${ds}.topic_assignments` AS a
+                  ON a.id_resena = p.id_resena AND a.text_key = p.text_key
+                  AND a.topic_model_version = @version
+                WHERE p.sentiment = 'NEG' AND p.palabras >= 2
+                  AND a.id_resena IS NULL
+                """,
+                version=version,
+            )[0]["unassigned"]
+        )
+        if not left:
+            return
+        job = self.settings.topics_backfill_job
+        jobs = self.clients.jobs
+        if jobs is None:
+            log.warning(
+                "%d negativas sin tópico de %s: sin lanzador de Jobs",
+                left,
+                version,
+            )
+            return
+        if jobs.running(job):
+            log.info(
+                "%d negativas sin tópico de %s: %s en curso", left, version, job
+            )
+            return
+        operation = jobs.execute(job, ["topics-backfill"])
+        log.info(
+            "%d negativas sin tópico de %s: lanzado %s (%s)",
+            left,
+            version,
+            job,
+            operation,
         )

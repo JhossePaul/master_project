@@ -157,6 +157,41 @@ def test_delta_dispatch(env: dict, monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert cli.main(["delta"]) == 1
     assert env["c"].genai == "genai"
+    assert env["c"].jobs.project == "p"
+    assert env["c"].jobs.region == "us-central1"
+
+
+@pytest.mark.parametrize(
+    ("version", "status", "code"),
+    [("topics_v2", "succeeded", 0), ("topics_v2", "failed", 1), (None, "", 0)],
+)
+def test_topics_backfill_dispatch(
+    env: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    version: str | None,
+    status: str,
+    code: int,
+) -> None:
+    import ml_inference.state as state
+    import ml_inference.topics_backfill as backfill
+
+    monkeypatch.setattr(
+        state,
+        "load_state",
+        lambda b, d: type("S", (), {"topic_model_version": version})(),
+    )
+
+    class _Run:
+        pass
+
+    _Run.status = type("S", (), {"value": status})()
+    monkeypatch.setattr(
+        backfill,
+        "run_topics_backfill",
+        lambda s, b, g, v, n: env.setdefault("v", v) and _Run(),
+    )
+    assert cli.main(["topics-backfill"]) == code
+    assert env.get("v") == version
 
 
 def test_load_local_dispatch(

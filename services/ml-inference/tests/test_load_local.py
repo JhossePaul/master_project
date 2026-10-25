@@ -164,6 +164,10 @@ def _files(tmp_path: Path) -> LocalBackfill:
         ),
         run / "topics" / "segment_topics_v0.parquet",
     )
+    np.save(
+        run / "topics" / "emb_segments_minilm.npy",
+        np.full((2, 384), 0.25, np.float32),
+    )
     (model / "umap.pkl").write_bytes(b"x")
     (model / "bertopic").write_bytes(b"x")
     (model / "model.json").write_text(
@@ -330,7 +334,7 @@ def test_uploads_artifacts_and_staging_without_text(tmp_path: Path) -> None:
 def test_merge_parameters_and_runs(tmp_path: Path) -> None:
     bq, _, runs = _run(tmp_path)
     sqls = [sql for sql, _ in bq.dml]
-    assert len(sqls) == 4
+    assert len(sqls) == 5
     preds = bq.dml[0][1]
     assert preds["t"] == pytest.approx(1.6811)
     assert preds["threshold"] is None and preds["policy_version"] is None
@@ -415,3 +419,47 @@ def test_embeddings_must_match_keys(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="differ"):
         loader.embeddings_file()
+
+
+def test_segment_embeddings_come_from_the_backfill_vectors(
+    tmp_path: Path,
+) -> None:
+    bq, _, _ = _run(tmp_path)
+    staged = next(t for n, t in bq.loaded.items() if "segment_embeddings" in n)
+    assert staged.column_names == ["text_key", "segment_index", "embedding"]
+    assert staged.column("segment_index").to_pylist() == [0, 1]
+    assert len(staged.column("embedding")[0]) == 384
+    sql, params = next(
+        (q, p) for q, p in bq.dml if ".segment_embeddings` T" in q
+    )
+    assert "T.segment_index = S.segment_index" in sql
+    assert params["segmenter"] == "clause_segmenter_v1"
+    assert params["model"].endswith("MiniLM-L12-v2")
+
+
+def test_segment_vectors_must_match_segments(tmp_path: Path) -> None:
+    files = _files(tmp_path)
+    np.save(
+        files.run_dir / "topics" / "emb_segments_minilm.npy",
+        np.ones((3, 384), np.float32),
+    )
+    loader = Loader(
+        _settings(),
+        LoadBigQuery([], _state()),
+        FakeStorage(),
+        files,
+        tmp_path,
+        ACTOR,
+        NOW,
+    )
+    with pytest.raises(ValueError, match="differ"):
+        loader.segment_embeddings_file()
+
+
+def test_without_segment_vectors_nothing_is_loaded(tmp_path: Path) -> None:
+    files = _files(tmp_path)
+    (files.run_dir / "topics" / "emb_segments_minilm.npy").unlink()
+    bq = LoadBigQuery([], _state())
+    loader = Loader(_settings(), bq, FakeStorage(), files, tmp_path, ACTOR, NOW)
+    assert loader.segment_embeddings() == 0
+    assert bq.loaded == {} and bq.dml == []

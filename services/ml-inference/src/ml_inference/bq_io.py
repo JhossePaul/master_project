@@ -8,7 +8,7 @@ una segunda corrida no inserta nada.
 
 import re
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from string import Template
@@ -140,6 +140,23 @@ def query_rows(
     )
     job = client.query(sql, job_config=config, timeout=timeout_sec)
     return [dict(row.items()) for row in job.result(timeout=timeout_sec)]
+
+
+def iter_rows(
+    client: bigquery.Client,
+    sql: str,
+    params: Mapping[str, Any] | None = None,
+    page_size: int = 10_000,
+    timeout_sec: float = 3600.0,
+) -> Iterator[dict[str, Any]]:
+    """Como ``query_rows``, pero lee el resultado por páginas, sin cargarlo
+    entero en memoria."""
+    config = bigquery.QueryJobConfig(
+        query_parameters=[_param(k, v) for k, v in (params or {}).items()]
+    )
+    job = client.query(sql, job_config=config, timeout=timeout_sec)
+    for row in job.result(timeout=timeout_sec, page_size=page_size):
+        yield dict(row.items())
 
 
 def _param(name: str, value: Any) -> Any:
