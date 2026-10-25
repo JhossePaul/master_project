@@ -5,15 +5,24 @@ config:
   bbva-voc-infra:free_tier_mode: "true"
   bbva-voc-infra:enable_cmek: "false"
   bbva-voc-infra:enable_vpc_sc: "false"
-  bbva-voc-infra:enable_dedicated_vertex_endpoints: "false"
+  # Solo la API de Vertex AI (Gemini Flash y Model Registry), sin endpoints
+  # dedicados: el índice de 768 dimensiones se retiró en EPIC-6 (P8-6).
+  bbva-voc-infra:enable_vertex_ai_api: "true"
   # Fase 1: APIs, Artifact Registry, SAs, bucket, Pub/Sub, BigQuery y DLP.
   # Pasar a true (fase 2) tras publicar imágenes con Cloud Build y fijarlas
-  # por digest; ver docs/deployment.md. Requeridas en fase 2:
+  # por digest; ver docs/operations/deployment.md. Requeridas en fase 2:
   #   bbva-voc-infra:ingestion_worker_image: "<registry>/ingestion-worker:<sha>@sha256:<digest>"
   #   bbva-voc-infra:sanitization_job_image: "<registry>/sanitization-pipeline:<sha>@sha256:<digest>"
   # Opcional (sin ella no se crea voc-api-backend):
   #   bbva-voc-infra:api_backend_image: "<registry>/api-backend:<sha>@sha256:<digest>"
-  bbva-voc-infra:deploy_workloads: "false"
+  # Opcional hasta publicar la imagen de 6.3 (sin ella no se crean los Jobs
+  # voc-ml-inference-delta y voc-ml-monitor ni sus triggers):
+  #   bbva-voc-infra:ml_inference_image: "<registry>/ml-inference:<sha>@sha256:<digest>"
+  bbva-voc-infra:deploy_workloads: "true"
+  # Correo de los avisos de deriva y de calidad del modelo, como secreto (el
+  # repositorio es público). Sin él no se crean el canal ni las políticas de
+  # Cloud Monitoring; se fija con
+  #   pulumi config set --secret bbva-voc-infra:alert_email <correo>
   # Contrato compartido con Settings; metadata no sujeta al TTL crudo.
   bbva-voc-infra:gcs_watermark_prefix: "state/watermarks"
   bbva-voc-infra:gcs_raw_staging_prefix: "raw_staging"
@@ -22,7 +31,7 @@ config:
   bbva-voc-infra:gcs_ingestion_ledgers_prefix: "state/ingestion/ledgers"
   bbva-voc-infra:gcs_processing_receipts_prefix: "state/ingestion/receipts"
   # Ingesta v2 se activa cuando imagen/entrypoint y API de EPIC-3 estén listos.
-  bbva-voc-infra:ingestion_v2_enabled: "false"
+  bbva-voc-infra:ingestion_v2_enabled: "true"
   bbva-voc-infra:ingestion_execution:
     ingestion_max_requests: 100
     ingestion_max_response_bytes: 20000000
@@ -47,5 +56,9 @@ config:
     secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
   gcp:userProjectOverride: "true"
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
+  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:932c659add8b4e396c40908a9d04da105da8939f33f2811d56d514f843ebf28b
+  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:8e797e7e0f05b40fc0f8f6aaafc561cbd9321d42@sha256:45f3addbfc572586f561f3b1c09e6e140ef45d24ecce9328d9162643818dee84
+  bbva-voc-infra:alert_email:
+    secure: v1:K8LI9TLqA8C98O9N:Cs61QbLdrmn+AC/E5DlxNS4jCbolRMzROcZjtdNQ+RwMimPmhAfKKnfQvO0=
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=

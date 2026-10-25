@@ -1,9 +1,9 @@
-"""Mide PII en las capturas crudas de `evidence/` (solo agregados).
+"""Mide PII en las capturas crudas del sondeo de Google Play (solo agregados).
 
-Respalda la política de sanitización de EPIC-4 (ver README del servicio y la
-Matriz Ethical FMEA). `evidence/` no se versiona porque contiene respuestas
-crudas con nombres de usuario; este script no imprime ni guarda texto ni
-nombres, solo conteos.
+Las capturas están en `experiments/playstore/evidence/`. Respalda la política
+de sanitización de EPIC-4 (ver README del servicio y la Matriz Ethical FMEA).
+La carpeta no se versiona porque contiene respuestas crudas con nombres de
+usuario; este script no imprime ni guarda texto ni nombres, solo conteos.
 
     uv run python experiments/pii_measurement/measure_pii.py [carpeta_evidence]
 
@@ -28,6 +28,7 @@ from sanitization_pipeline.dlp_transforms import (
 from voc_common import PLAYSTORE_BANK_APPS, BankKey
 
 BANK = BankKey.BBVA
+EVIDENCE = Path("experiments/playstore/evidence")
 RESIDUAL = {
     "digitos >= 4": re.compile(r"(?<![\w\[])\d{4,}(?!\w)"),
     "url": re.compile(r"https?://|www\.", re.IGNORECASE),
@@ -119,4 +120,4 @@ def main(folder: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1] if len(sys.argv) > 1 else "evidence"))
+    main(Path(sys.argv[1]) if len(sys.argv) > 1 else EVIDENCE)
