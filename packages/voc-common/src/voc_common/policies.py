@@ -19,7 +19,11 @@ from voc_common._analytics_base import (
     _AnalyticsRecord,
     require_together,
 )
-from voc_common.analytics_codes import BoostEndReason
+from voc_common.analytics_codes import (
+    BoostEndReason,
+    RetrainTrigger,
+    TopicRefitTrigger,
+)
 
 
 class RiskPolicy(_AnalyticsRecord):
@@ -30,6 +34,11 @@ class RiskPolicy(_AnalyticsRecord):
     deriva y la doble revisión no tienen evidencia en los experimentos: son
     nulos hasta que se configuran (sin tope, sin subida automática y sin doble
     revisión).
+
+    Los dos disparadores son nulos en las versiones sembradas antes de
+    existir: nulo equivale a ``manual`` en el reentrenamiento y a
+    ``scheduled`` en el re-ajuste de tópicos (``retrain_mode`` y
+    ``topic_refit_mode`` dan el valor efectivo).
     """
 
     policy_version: NonEmpty
@@ -55,6 +64,8 @@ class RiskPolicy(_AnalyticsRecord):
     agreement_sample_weekly: Counter
     families_exact_floor: Probability
     families_min_prevalence: Probability
+    retrain_trigger: RetrainTrigger | None = None
+    topic_refit_trigger: TopicRefitTrigger | None = None
     set_by_hash: Digest
     reason: NonEmpty
 
@@ -70,6 +81,14 @@ class RiskPolicy(_AnalyticsRecord):
             human_agreement_frequency=self.human_agreement_frequency,
         )
         return self
+
+    @property
+    def retrain_mode(self) -> RetrainTrigger:
+        return self.retrain_trigger or RetrainTrigger.MANUAL
+
+    @property
+    def topic_refit_mode(self) -> TopicRefitTrigger:
+        return self.topic_refit_trigger or TopicRefitTrigger.SCHEDULED
 
 
 class HitlBoost(_AnalyticsRecord):

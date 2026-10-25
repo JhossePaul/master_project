@@ -14,6 +14,7 @@ from voc_common._analytics_base import (
     Digest,
     MonthDate,
     NonEmpty,
+    PositiveInt,
     UtcDatetime,
     _AnalyticsRecord,
     require_together,
@@ -26,6 +27,7 @@ from voc_common.analytics_codes import (
     HitlTask,
     KpiMethod,
     ModelStatus,
+    PromotionVerdict,
     QualitySignal,
     QualityStatus,
     RunEnvironment,
@@ -289,6 +291,53 @@ class ModelQualityMessage(_AnalyticsRecord):
     @classmethod
     def from_quality(cls, row: "ModelQuality") -> "ModelQualityMessage":
         return cls.model_validate(row.model_dump(exclude={"ci_low", "ci_high"}))
+
+
+class PromotionCheckResult(_AnalyticsRecord):
+    """Fila de ``promotion_checks``: la regla de promoción de un candidato.
+
+    Diferencias pareadas candidato − vigente en el oro *dev*, ponderadas por
+    1/π, con su IC del 95 % por *bootstrap*. Se guarda al verificar el
+    *re-scoring* del candidato, para que la pantalla de promoción la muestre
+    sin recalcularla. El veredicto sigue la regla: peor si algún IC queda
+    entero bajo 0; mejor si alguno queda entero sobre 0; si no, empate.
+    """
+
+    candidate_version: NonEmpty
+    current_version: NonEmpty
+    gold_version: NonEmpty
+    n: PositiveInt
+    kappa_diff: float
+    kappa_ci_low: float
+    kappa_ci_high: float
+    macro_f1_diff: float
+    macro_f1_ci_low: float
+    macro_f1_ci_high: float
+    verdict: PromotionVerdict
+    run_id: NonEmpty
+    computed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _rule(self) -> Self:
+        if self.candidate_version == self.current_version:
+            raise ValueError("candidate must differ from the current version")
+        intervals = (
+            (self.kappa_ci_low, self.kappa_diff, self.kappa_ci_high),
+            (self.macro_f1_ci_low, self.macro_f1_diff, self.macro_f1_ci_high),
+        )
+        if any(not low <= diff <= high for low, diff, high in intervals):
+            raise ValueError("each difference must lie inside its interval")
+        if any(high < 0 for _, _, high in intervals):
+            expected = PromotionVerdict.WORSE
+        elif any(low > 0 for low, _, _ in intervals):
+            expected = PromotionVerdict.BETTER
+        else:
+            expected = PromotionVerdict.TIE
+        if self.verdict is not expected:
+            raise ValueError(
+                f"verdict must be {expected.value} for these intervals"
+            )
+        return self
 
 
 class GoldLabel(_AnalyticsRecord):

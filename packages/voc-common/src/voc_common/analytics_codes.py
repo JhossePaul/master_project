@@ -148,6 +148,11 @@ class RunKind(StrEnum):
     BACKFILL = "backfill"
     DELTA = "delta"
     RESCORING = "rescoring"
+    TRAINING = "training"
+    # Re-asignación del histórico al activarse una versión de tópicos.
+    TOPIC_BACKFILL = "topic_backfill"
+    # Familias del histórico con Gemini, solo con aprobación y tope de costo.
+    ASPECT_BACKFILL = "aspect_backfill"
 
 
 class RunEnvironment(StrEnum):
@@ -194,6 +199,30 @@ class QualityStatus(StrEnum):
     WARNING = "warning"
     RETRAIN = "retrain"
     REJECTED = "rejected"
+
+
+class PromotionVerdict(StrEnum):
+    """Regla de promoción: el candidato contra la versión vigente."""
+
+    BETTER = "better"
+    TIE = "tie"
+    WORSE = "worse"
+
+
+class RetrainTrigger(StrEnum):
+    """Quién lanza el reentrenamiento del modelo de sentimiento."""
+
+    # El monitor lo lanza al medir ``retrain``; promover sigue siendo humano.
+    AUTO = "auto"
+    MANUAL = "manual"
+
+
+class TopicRefitTrigger(StrEnum):
+    """Quién lanza el re-ajuste del modelo de tópicos."""
+
+    # Por calendario, según ``topic_refit_frequency``.
+    SCHEDULED = "scheduled"
+    MANUAL = "manual"
 
 
 class KpiMethod(StrEnum):

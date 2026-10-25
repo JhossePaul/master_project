@@ -67,13 +67,18 @@ Una fila por banco × día × tipo × rango, para el *hover* del cockpit. Se cal
 
 `text_key`, `bank_id`, `mes`, `embedding` (ARRAY<FLOAT64> de 384, MiniLM), `embedding_model`, `created_at`. Una fila por texto × banco × mes, **particionada por `mes`**: según el [experimento de búsqueda vectorial](../analytics/scale/scale_report.md), solo la partición reduce lo que factura `VECTOR_SEARCH` (con 12 meses, ~2 000 búsquedas al mes en el free tier); una fila por texto único no se puede particionar. La búsqueda va acotada por defecto a una ventana de meses configurable.
 
+### `segment_embeddings` (para re-asignar tópicos sin recalcular)
+
+`text_key`, `segment_index`, `segmenter` (`clause_segmenter_v1`), `embedding_model`, `embedding` (ARRAY<FLOAT64> de 384, MiniLM), `run_id`, `created_at`. Una fila por cláusula de un texto único, agrupada por `text_key`. El segmentador y el modelo de embeddings no cambian entre versiones de tópicos, así que cada vector se calcula una sola vez y re-asignar el histórico a una versión nueva solo los lee (~$0.02 por lectura completa). No guarda el texto de la cláusula.
+
 ## 2. Operación
 
 | Tabla | Grano | Columnas principales |
 | :--- | :--- | :--- |
 | `model_versions` | Versión | `model_version`, `registry_uri` (Vertex o GCS), `base_checkpoint`, `training_data` (plata, hash), `calibration_t`, métricas en el oro *dev* (κ, ECE, AURC), `license`, `status` (`candidate`, `promoted`, `retired`), `promoted_at`, `promoted_by_hash` |
-| `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`), `environment` (`kaggle`, `cloudrun`, `local`: los tópicos y embeddings históricos se calcularon en el Mac), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
-| `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version`. Las familias y `u` se guardan con su z como contexto y nunca alertan (umbral nulo) |
+| `promotion_checks` | Candidato × corrida de *re-scoring* | `candidate_version`, `current_version`, `gold_version`, `n`; diferencia candidato − vigente en κ y en macro-F1 en el oro *dev*, cada una con su IC del 95 % (`kappa_diff`, `kappa_ci_low`, `kappa_ci_high`, `macro_f1_diff`, `macro_f1_ci_low`, `macro_f1_ci_high`); `verdict` (`worse` si algún IC queda entero bajo 0, `better` si alguno queda entero sobre 0, si no `tie`), `run_id`, `computed_at`. Se escribe al verificar el *re-scoring*, para que la pantalla de promoción muestre la regla sin recalcularla |
+| `inference_runs` | Corrida | `run_id`, `kind` (`backfill`, `delta`, `rescoring`, `training`, `topic_backfill` para re-asignar el histórico a una versión de tópicos y `aspect_backfill` para las familias del histórico con Gemini, que solo corre con aprobación y tope de costo), `environment` (`kaggle`, `cloudrun`, `local`: los tópicos y embeddings históricos se calcularon en el Mac), `model_version`, `started_at`, `ended_at`, `reviews`, `texts`, `status`, `cost_usd` |
+| `drift_metrics` | Banco × mes × métrica | `metric` (longitud, vocabulario fuera del entrenamiento, no predecibles, proporción de `NEG`, familias, `u`, ruido y tópicos no alineados), `value`, `baseline`, `z` o `psi`, `alert`, `drift_policy_version`. Las familias, `u` y las dos series de tópicos se guardan con su z como contexto y nunca alertan (umbral nulo) |
 | `drift_alerts` | Alerta de deriva | `alert_id`, `bank_id`, `period`, `series`, `value`, `threshold`, `drift_policy_version`, `hitl_boost_id`, `created_at`. Las emite el monitor semanal con la `drift_policy` del banco. El estado vigente es el último de `drift_alert_events`. Antes `incident_alerts`: la detección de incidentes quedó fuera del alcance |
 | `drift_alert_events` | Transición de una alerta de deriva | `event_id`, `alert_id`, `status` (`open`, `confirmed`, `dismissed`), `actor_hash`, `at`, `note` (sanitizada), `ticket`. Solo inserción (las escribe la pantalla de alertas). Antes `incident_alert_events` |
 | `kpi_estimates` | Banco × periodo × métrica × corrida | `metric` (`neg`, `gap_estrellas`, `texto_peor`, `texto_mejor`, celdas de la matriz 3 × 3…), `bank_id`, `period`, `method` (`ppi` o `raw`), `estimate`, `ci_low`, `ci_high`, `n_gold`, `n_unlabeled`, `model_version`, `gold_version`, `computed_at`. Los KPI con PPI del cockpit, junto a su versión cruda; las series diarias crudas son vistas sobre `review_predictions_current` |
@@ -98,6 +103,8 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | Reacción automática a una alerta de deriva: cobertura durante la subida, duración y tope; se aplica solo al banco que alertó. Los tres nulos = sin subida automática; se configuran juntos |
 | `monitor_sample_size`, `monitor_frequency` | Muestra humana de concepto: reseñas al azar, revisadas sin ver la predicción |
 | `topic_refit_frequency` | Re-ajuste de tópicos; global porque los tópicos se ajustan con los cinco bancos juntos |
+| `retrain_trigger` | Quién lanza el reentrenamiento del modelo de sentimiento: `auto` (el monitor, al medir el κ bajo su piso; entrena y re-predice, pero promover sigue siendo humano) o `manual` (botón de MLOps o comando). Nulo = `manual` |
+| `topic_refit_trigger` | Quién lanza el re-ajuste de tópicos: `scheduled` (por calendario, según `topic_refit_frequency`) o `manual` (botón de MLOps). Nulo = `scheduled`. Los experimentos no dejaron evidencia para un umbral de re-ajuste |
 | `retrain_kappa_floor` | Reentrenamiento: pedirlo si el κ del modelo de sentimiento en la muestra trimestral (`monitor_sample_size`: 300 revisiones por trimestre) queda debajo de 0.89 |
 | `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`); no confundir con `agreement_sample_weekly`, que es el acuerdo del modelo con Gemini. Nulos = sin doble revisión; se configuran juntos |
 | `warn_correction_rate`, `warn_agreement_floor`, `agreement_sample_weekly` | Avisos, sin disparar solos: tasa de corrección de 4 semanas > 28 %; acuerdo del modelo con Gemini de 4 semanas < 94 %, con 500 textos por semana |
@@ -223,7 +230,7 @@ Revisión pantalla por pantalla (2026-10-22): cada pantalla del portal lee y esc
 
 ## 7. Implementación: tabla → modelo → módulo
 
-Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `extra="forbid"`, inmutable, fechas en UTC) que valida las reglas de este documento. `ANALYTICS_V3_TABLES` (`voc_common.bq_schema`) es el registro de las 26 tablas; `infra/modules/analytics_bq.py` las crea en `bbva_voc_tds` con partición mensual y agrupación (`TABLE_LAYOUTS`).
+Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `extra="forbid"`, inmutable, fechas en UTC) que valida las reglas de este documento. `ANALYTICS_V3_TABLES` (`voc_common.bq_schema`) es el registro de las 26 tablas (`promotion_checks` y `segment_embeddings` ya tienen modelo y entran al registro junto con su tabla en `infra/`); `infra/modules/analytics_bq.py` las crea en `bbva_voc_tds` con partición mensual y agrupación (`TABLE_LAYOUTS`).
 
 | Tabla | Modelo | Módulo | Partición (mes) | Agrupada por |
 | :--- | :--- | :--- | :--- | :--- |
@@ -243,6 +250,8 @@ Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `e
 | `review_explanations` | `ReviewExplanation` | `operations_v3` | — | — |
 | `model_quality` | `ModelQuality` | `operations_v3` | — | — |
 | `gold_labels` | `GoldLabel` | `operations_v3` | — | — |
+| `promotion_checks` | `PromotionCheckResult` | `operations_v3` | — | — |
+| `segment_embeddings` | `SegmentEmbedding` | `predictions_v3` | — | `text_key` |
 | `risk_policy` | `RiskPolicy` | `policies` | — | — |
 | `hitl_boosts` | `HitlBoost` | `policies` | — | `bank_id` |
 | `drift_policy` | `DriftPolicy` | `policies` | — | `bank_id` |
@@ -256,7 +265,7 @@ Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `e
 
 * **Mensaje de Pub/Sub:** `DriftAlertMessage` (`operations_v3`), en `voc-incident-alerts-topic`; sin campos de texto. Reemplaza a `IncidentAlertMessage`.
 * **Mensaje de Pub/Sub:** `ModelQualityMessage` (`operations_v3`), en `voc-model-quality-topic`, que llegan por correo: los avisos de `model_quality` (`warning`, `retrain`, `rejected`), sin campos de texto ni intervalo.
-* **Códigos:** `voc_common.analytics_codes` (`EligibilityCode`, `LabelSource`, `SentimentValue`, `AspectFamily`, los de HITL y los de operación). `text_key` vive en `voc_common.text_utils`: SHA-256 hexadecimal de UTF-8, igual a `TO_HEX(SHA256(texto_sanitizado))`.
+* **Códigos:** `voc_common.analytics_codes` (`EligibilityCode`, `LabelSource`, `SentimentValue`, `AspectFamily`, los de HITL y los de operación, entre ellos `PromotionVerdict`, `RetrainTrigger` y `TopicRefitTrigger`). `text_key` vive en `voc_common.text_utils`: SHA-256 hexadecimal de UTF-8, igual a `TO_HEX(SHA256(texto_sanitizado))`.
 * **Tipos de BigQuery:** `bq_schema` mapea `str` (y sus enums) → `STRING`, `int` → `INT64`, `float` → `FLOAT64`, `bool` → `BOOL`, `datetime` → `TIMESTAMP`, `date` → `DATE`, listas → `REPEATED`, submodelos y `dict` → `JSON`; `Optional` → `NULLABLE`.
 
 **Vistas** (`infra/modules/sql/`, una consulta por vista):
@@ -289,4 +298,4 @@ Aprobadas por el autor al revisar los contratos. Ninguna cambia una decisión de
 | `model_quality` | `ic95` va en `ci_low` y `ci_high`; suma `computed_at` |
 | `hitl_coverage_curves` | Suma `computed_at`; el volumen por banco va en `weekly_volume_by_bank` (JSON). Cada punto acepta el intervalo de riesgo nulo donde no se midió (cobertura 1.0) |
 | `gold_labels` | Suma `weight` (1/π) y su `id_resena` es nulo en el oro de aspectos (2026-10-24) |
-| `drift_policy.thresholds` | Series de la siembra, las que lee el monitor de deriva. Con z ≥ 4: `mean_words`, `single_word_share`, `over_60_words_share`, `not_predicted_share`, `out_of_vocabulary_share` y `neg_share`. Con PSI ≥ 0.25: `length_distribution`. Con umbral nulo: `family_<código>` de las 11 familias y `flag_update_share` |
+| `drift_policy.thresholds` | Series de la siembra, las que lee el monitor de deriva. Con z ≥ 4: `mean_words`, `single_word_share`, `over_60_words_share`, `not_predicted_share`, `out_of_vocabulary_share` y `neg_share`. Con PSI ≥ 0.25: `length_distribution`. Con umbral nulo: `family_<código>` de las 11 familias y `flag_update_share`; y, para los tópicos, `topic_noise_share` (cláusulas que ningún tópico asigna) y `topic_unaligned_share` (negativas cuyos tópicos no tienen familia en la curaduría). Si las familias y `u` llevan umbral se decide con las tasas del primer monitor en producción |

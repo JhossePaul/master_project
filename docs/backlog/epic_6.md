@@ -207,7 +207,13 @@ En orden. Hasta el paso 2 no existe ningún Job de ML en dev.
 
 **Objetivo:** reentrenar RoBERTuito y rehacer los históricos que dependen de un modelo sin pasar por la máquina de nadie y sin gastos sin aprobar. El entrenamiento y el *re-scoring* corren en Kaggle; la re-asignación de tópicos, en Cloud Run (D30); Gemini solo etiqueta textos que nunca etiquetó (D29).
 
-**Estado (2026-10-24):** detallada, con todas sus decisiones aprobadas (D25 a D34). Falta implementarla.
+**Estado (2026-10-24):** detallada, con todas sus decisiones aprobadas (D25 a D34). Se implementa por partes, una sesión por parte si el contexto lo pide:
+
+1. [x] **`voc-common`** (2026-10-24): `RunKind` (`training`, `topic_backfill`, `aspect_backfill`), `PromotionVerdict`, `RetrainTrigger` y `TopicRefitTrigger`; los dos switches en `RiskPolicy` (`retrain_mode` y `topic_refit_mode` dan el valor efectivo con nulo); los modelos `PromotionCheckResult` y `SegmentEmbedding`; el contrato v3. Las dos tablas **todavía no están en `ANALYTICS_V3_TABLES`**: entran con su tabla en `infra/` (parte 2). `risk_policy` gana dos columnas nulas: el próximo `pulumi up` las agrega, y la imagen de `ml-inference` que escriba políticas debe desplegarse después. Pruebas de `infra/` (125) y `ml-inference` (135) sin cambios.
+2. [ ] `infra/`: las dos tablas, los cuatro Jobs, IAM y el comando en el correo.
+3. [ ] `voc-nlp`: `training.py` y `fit_temperature`.
+4. [ ] `ml-inference`: delta y familias (D29), `segment_embeddings` y backfill de tópicos (D30, D32), `aspects-backfill`.
+5. [ ] `ml-inference`: entrenamiento, `promotion_checks`, switches en el monitor y el re-ajuste, `jobs.py`.
 
 #### Los tres backfills
 
@@ -232,9 +238,9 @@ Todas están en la [tabla de decisiones](#-decisiones-de-diseño-de-epic-6-autor
 
 * `analytics_codes.py`: `RunKind` suma `TRAINING = "training"`, `TOPIC_BACKFILL = "topic_backfill"` y `ASPECT_BACKFILL = "aspect_backfill"`; nuevos `RetrainTrigger` (`auto`, `manual`) y `TopicRefitTrigger` (`scheduled`, `manual`).
 * `policies.py`: `RiskPolicy.retrain_trigger: RetrainTrigger | None` (nulo = `manual`) y `RiskPolicy.topic_refit_trigger: TopicRefitTrigger | None` (nulo = `scheduled`), para que las versiones ya sembradas sigan valiendo (D34).
-* `operations_v3.py`: `PromotionCheck` (tabla `promotion_checks`): `candidate_version`, `current_version`, `gold_version`, `n`, `differences` (κ y macro-F1 con su IC, JSON), `verdict` (`better`, `tie`, `worse`), `run_id`, `computed_at`.
-* `predictions_v3.py`: `SegmentEmbedding` (tabla `segment_embeddings`, D30): `text_key`, `segment_index`, `segmenter`, `embedding_model`, `vector` (384 floats), `run_id`, `computed_at`.
-* `bq_schema.py`: las dos tablas en `ANALYTICS_V3_TABLES` (28 tablas).
+* `operations_v3.py`: `PromotionCheckResult` (tabla `promotion_checks`): `candidate_version`, `current_version`, `gold_version`, `n`, las diferencias de κ y de macro-F1 con su IC en columnas planas (`kappa_diff`, `kappa_ci_low`, `kappa_ci_high` y las tres de `macro_f1`), `verdict` (`better`, `tie`, `worse`, validado contra los IC), `run_id`, `computed_at`.
+* `predictions_v3.py`: `SegmentEmbedding` (tabla `segment_embeddings`, D30): `text_key`, `segment_index`, `segmenter`, `embedding_model`, `embedding` (384 floats), `run_id`, `created_at` (los nombres de `TextEmbedding`).
+* `bq_schema.py`: las dos tablas en `ANALYTICS_V3_TABLES` (28 tablas), en el mismo cambio que su `TABLE_LAYOUTS` de `infra/`: `analytics_bq.py` exige que el registro y las tablas coincidan.
 * [Contrato v3](../contracts/analytics_outputs_v3.md): las dos tablas, los dos switches, los tres `RunKind` y las series de contexto `topic_noise_share` y `topic_unaligned_share` de `drift_metrics`.
 
 **`packages/voc-nlp/`:**

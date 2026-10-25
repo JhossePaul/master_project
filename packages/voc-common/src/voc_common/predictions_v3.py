@@ -170,6 +170,25 @@ class TextEmbedding(_AnalyticsRecord):
     created_at: UtcDatetime
 
 
+class SegmentEmbedding(_AnalyticsRecord):
+    """Fila de ``segment_embeddings``: vector de una cláusula de un texto único.
+
+    Se calcula una sola vez por ``text_key`` (el segmentador y el modelo de
+    embeddings no cambian entre versiones de tópicos), así que re-asignar el
+    histórico a una versión nueva solo lee estos vectores.
+    """
+
+    text_key: Digest
+    segment_index: Counter
+    segmenter: NonEmpty
+    embedding_model: NonEmpty
+    embedding: list[float] = Field(
+        min_length=EMBEDDING_DIMENSIONS, max_length=EMBEDDING_DIMENSIONS
+    )
+    run_id: NonEmpty
+    created_at: UtcDatetime
+
+
 # ---------------------------------------------------------------------------
 # Tópicos
 # ---------------------------------------------------------------------------
