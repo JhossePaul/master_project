@@ -309,8 +309,9 @@ _NOT_PREDICTED_OK: Final = (
     EligibilityCode.TNSS_SINGLE_WORD.value,
 )
 
-INPUT_SQL: Final = (
-    """
+# Las columnas generadas salen de constantes validadas (``BINS`` y los
+# códigos de familia); los valores van como parámetros.
+_INPUT_TEMPLATE: Final = """
 SELECT
   bank_id,
   FORMAT_TIMESTAMP('%Y-%m', fecha) AS period,
@@ -323,17 +324,13 @@ SELECT
     AS not_predicted_share,
   SAFE_DIVIDE(COUNTIF(sentiment = 'NEG'), COUNTIF(sentiment IS NOT NULL))
     AS neg_share,
-  """
-    + _bins_sql()
-    + """
+  @@bins@@
 FROM `${ds}.review_predictions_current`
 WHERE fecha < @before
 GROUP BY bank_id, period
 """
-)
+INPUT_SQL: Final = _INPUT_TEMPLATE.replace("@@bins@@", _bins_sql())
 
-# Las columnas generadas salen de constantes validadas (``BINS`` y los
-# códigos de familia); los valores van como parámetros.
 _ASPECTS_TEMPLATE: Final = """
 SELECT
   bank_id,
