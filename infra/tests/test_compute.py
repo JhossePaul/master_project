@@ -215,6 +215,7 @@ def _check_ml_jobs(
         "voc-ml-monitor",
         "voc-ml-rescoring",
         "voc-ml-topics-refit",
+        *_MANUAL_JOBS,
     )
     triggers = {
         "voc-ml-inference-delta": "voc-trigger-ml-delta-daily",
@@ -262,6 +263,7 @@ def _check_ml_jobs(
             in monitor.dependencies[triggers[name]]
         )
     _check_rescoring(monitor, states, schedules)
+    _check_manual_jobs(monitor, states, schedules)
     refit = states["voc-ml-topics-refit"]["template"]["template"]
     assert refit["timeout"] == "3600s" and refit["maxRetries"] == 0
     container = refit["containers"][0]
@@ -273,6 +275,68 @@ def _check_ml_jobs(
         "/jobs/voc-ml-topics-refit:run"
     )
     assert states["voc-ml-topics-refit-scheduler-invoker"]["member"] == invoker
+
+
+# Job → (comando, cpu, memoria, timeout, con clave de Kaggle).
+_MANUAL_JOBS = {
+    "voc-ml-training": ("train", "2", "4Gi", "14400s", True),
+    "voc-ml-topics-backfill": ("topics-backfill", "2", "4Gi", "7200s", False),
+    "voc-ml-aspects-backfill": (
+        "aspects-backfill",
+        "1",
+        "2Gi",
+        "21600s",
+        False,
+    ),
+    "voc-ml-promote": ("promote", "1", "2Gi", "1800s", False),
+}
+# Jobs que otros Jobs de ml-inference lanzan con argumentos propios.
+_EXECUTED_BY_ML = {
+    "voc-ml-training",
+    "voc-ml-rescoring",
+    "voc-ml-topics-backfill",
+}
+
+
+def _check_manual_jobs(
+    monitor: InfrastructureMonitor,
+    states: dict[str, Any],
+    schedules: dict[str, Any],
+) -> None:
+    """Reentrenamiento, backfills y promoción: sin Scheduler ni reintentos."""
+    for name, (command, cpu, memory, timeout, kaggle) in _MANUAL_JOBS.items():
+        task = states[name]["template"]["template"]
+        assert task["timeout"] == timeout and task["maxRetries"] == 0, name
+        container = task["containers"][0]
+        assert container["image"] == ML_INFERENCE_IMAGE
+        assert container["args"] == [command]
+        assert container["resources"]["limits"] == {
+            "cpu": cpu,
+            "memory": memory,
+        }
+        envs = {e["name"] for e in container["envs"]}
+        assert ("KAGGLE_API_TOKEN" in envs) is kaggle, name
+        assert "BQ_DATASET_ID" in envs
+        assert f"{name}-scheduler-invoker" not in states
+        assert not any(name.removeprefix("voc-ml-") in s for s in schedules)
+    accessor = next(
+        r.urn
+        for r in monitor.resources.values()
+        if r.urn.endswith("::voc-kaggle-token-ml-backend-accessor")
+    )
+    assert accessor in monitor.dependencies["voc-ml-training"]
+    developers = {
+        name.removesuffix("-ml-backend-developer"): grant
+        for name, grant in states.items()
+        if grant.get("role") == "roles/run.developer"
+    }
+    assert set(developers) == _EXECUTED_BY_ML
+    for name, grant in developers.items():
+        assert grant["name"] == name
+        assert grant["member"] == (
+            "serviceAccount:voc-sa-ml-backend@"
+            "test-voc-project.iam.gserviceaccount.com"
+        )
 
 
 def _check_rescoring(

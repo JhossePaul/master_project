@@ -149,6 +149,9 @@ def test_phase_two_with_ml_inference_image(
     assert exports["ml_monitor_job_id"] == "voc-ml-monitor-id"
     assert exports["ml_rescoring_job_id"] == "voc-ml-rescoring-id"
     assert exports["ml_topics_refit_job_id"] == "voc-ml-topics-refit-id"
+    for job in ("training", "topics_backfill", "aspects_backfill", "promote"):
+        job_name = "voc-ml-" + job.replace("_", "-")
+        assert exports[f"ml_{job}_job_id"] == f"{job_name}-id"
     assert exports["kaggle_secret_id"] == KAGGLE_SECRET_ID
     assert "bq_predictions_table" not in exports
     assert "bq_hitl_audit_table" not in exports

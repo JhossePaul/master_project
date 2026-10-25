@@ -96,12 +96,13 @@ def test_every_v3_table_has_a_valid_schema(
     assert len({name for name, _, _ in schema}) == len(schema)
 
 
-def test_registry_covers_the_26_tables_of_schema_v3() -> None:
-    assert len(ANALYTICS_V3_TABLES) == 26
+def test_registry_covers_the_28_tables_of_schema_v3() -> None:
+    assert len(ANALYTICS_V3_TABLES) == 28
 
 
-def test_tables_of_retraining_derive_their_schema() -> None:
-    # Se registran en ANALYTICS_V3_TABLES junto con su tabla en infra/.
+def test_tables_of_retraining_are_registered() -> None:
+    assert ANALYTICS_V3_TABLES["promotion_checks"] is PromotionCheckResult
+    assert ANALYTICS_V3_TABLES["segment_embeddings"] is SegmentEmbedding
     assert ("verdict", "STRING", "REQUIRED") in bq_schema(PromotionCheckResult)
     assert ("embedding", "FLOAT64", "REPEATED") in bq_schema(SegmentEmbedding)
     assert {"retrain_trigger", "topic_refit_trigger"} <= {

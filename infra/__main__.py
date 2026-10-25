@@ -249,4 +249,12 @@ if cloud_run is not None:
         )
     if cloud_run.ml_rescoring_job is not None:
         pulumi.export("ml_rescoring_job_id", cloud_run.ml_rescoring_job.id)
+    for export_name, ml_job in (
+        ("ml_training_job_id", cloud_run.ml_training_job),
+        ("ml_topics_backfill_job_id", cloud_run.ml_topics_backfill_job),
+        ("ml_aspects_backfill_job_id", cloud_run.ml_aspects_backfill_job),
+        ("ml_promote_job_id", cloud_run.ml_promote_job),
+    ):
+        if ml_job is not None:
+            pulumi.export(export_name, ml_job.id)
 pulumi.export("scheduler_job_ids", [job.id for job in scheduler_jobs])

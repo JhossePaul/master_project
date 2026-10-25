@@ -94,10 +94,12 @@ def test_monthly_partitions_and_clustering(
         ("drift_metrics", "period", ["bank_id"]),
         ("hitl_items", "created_at", ["bank_id", "task"]),
         ("hitl_reviews", "submitted_at", ["task"]),
+        ("promotion_checks", None, []),
+        ("segment_embeddings", None, ["text_key"]),
     ],
 )
 def test_layout_matches_the_backlog(
-    table: str, partition: str, clustering: list[str]
+    table: str, partition: str | None, clustering: list[str]
 ) -> None:
     layout = TABLE_LAYOUTS[table]
     assert (layout.partition, list(layout.clustering)) == (

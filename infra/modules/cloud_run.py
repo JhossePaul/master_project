@@ -80,7 +80,12 @@ class CloudRunResources:
     ml_monitor_job: gcp.cloudrunv2.Job | None = None
     ml_rescoring_job: gcp.cloudrunv2.Job | None = None
     ml_topics_refit_job: gcp.cloudrunv2.Job | None = None
+    ml_training_job: gcp.cloudrunv2.Job | None = None
+    ml_topics_backfill_job: gcp.cloudrunv2.Job | None = None
+    ml_aspects_backfill_job: gcp.cloudrunv2.Job | None = None
+    ml_promote_job: gcp.cloudrunv2.Job | None = None
     ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+    ml_executors: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -97,6 +102,10 @@ class MlJobSpec:
     scheduled: bool = True
     # Variable de entorno → secreto de Secret Manager (última versión).
     secrets: tuple[tuple[str, str], ...] = ()
+    # Lo lanzan otros Jobs de ml-inference con argumentos propios: la cuenta
+    # de ML recibe roles/run.developer solo sobre él (run.invoker no deja
+    # cambiar los argumentos).
+    executed_by_ml: bool = False
 
 
 # D9: un solo Job en serie; si 2 GiB no alcanza en 6.3 se sube a 4 GiB.
@@ -127,6 +136,58 @@ ML_RESCORING_JOB = MlJobSpec(
     max_retries=0,
     scheduled=False,
     secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
+    executed_by_ml=True,
+)
+# Reentrenamiento en Kaggle desde el modelo base, a mano o desde el monitor
+# con retrain_trigger = auto:
+#   gcloud run jobs execute voc-ml-training
+# Arma el conjunto en memoria y espera al kernel (hasta 3 h); 4 h y sin
+# reintentos, como el re-scoring.
+ML_TRAINING_JOB = MlJobSpec(
+    "voc-ml-training",
+    "train",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=14400,
+    max_retries=0,
+    scheduled=False,
+    secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
+    executed_by_ml=True,
+)
+# Re-asignación del histórico de tópicos sobre segment_embeddings, en Cloud
+# Run y sin Kaggle (el texto no sale de GCP); la lanza el delta cuando la
+# versión activa no tiene su backfill. Lotes de 50 000 cláusulas: si UMAP no
+# cabe en 4 GiB se sube a 8 GiB.
+ML_TOPICS_BACKFILL_JOB = MlJobSpec(
+    "voc-ml-topics-backfill",
+    "topics-backfill",
+    memory="4Gi",
+    cpu="2",
+    timeout_sec=7200,
+    max_retries=0,
+    scheduled=False,
+    executed_by_ml=True,
+)
+# Familias con Gemini de un prompt nuevo, solo si el autor paga el costo:
+#   gcloud run jobs execute voc-ml-aspects-backfill \
+#     --args=aspects-backfill,--approve,--max-usd=<tope>
+# Sin --approve solo estima. 6 h; sin reintentos (una corrida se retoma).
+ML_ASPECTS_BACKFILL_JOB = MlJobSpec(
+    "voc-ml-aspects-backfill",
+    "aspects-backfill",
+    timeout_sec=21600,
+    max_retries=0,
+    scheduled=False,
+)
+# Promoción (o rollback) de una versión, para el botón de MLOps:
+#   gcloud run jobs execute voc-ml-promote \
+#     --args=promote,--model-version=<versión>,--actor-hash=<hash>,\
+#     --reason=<motivo>
+ML_PROMOTE_JOB = MlJobSpec(
+    "voc-ml-promote",
+    "promote",
+    max_retries=0,
+    scheduled=False,
 )
 
 
@@ -420,10 +481,21 @@ def create_cloud_run_resources(
     )
     ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
     ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
+    ml_executors: list[gcp.cloudrunv2.JobIamMember] = []
+    ml_member = security.sa_ml_and_backend.email.apply(
+        lambda email: f"serviceAccount:{email}"
+    )
     if images.ml_inference is not None:
-        specs = [ML_DELTA_JOB, ML_MONITOR_JOB, ML_TOPICS_REFIT_JOB]
+        specs = [
+            ML_DELTA_JOB,
+            ML_MONITOR_JOB,
+            ML_TOPICS_REFIT_JOB,
+            ML_TOPICS_BACKFILL_JOB,
+            ML_ASPECTS_BACKFILL_JOB,
+            ML_PROMOTE_JOB,
+        ]
         if secrets is not None:
-            specs.append(ML_RESCORING_JOB)
+            specs += [ML_RESCORING_JOB, ML_TRAINING_JOB]
         for spec in specs:
             secret_envs = [
                 {
@@ -482,6 +554,18 @@ def create_cloud_run_resources(
                 opts=job_opts,
             )
             ml_jobs[spec.command] = job
+            if spec.executed_by_ml:
+                ml_executors.append(
+                    gcp.cloudrunv2.JobIamMember(
+                        f"{spec.name}-ml-backend-developer",
+                        project=project_id,
+                        location=region,
+                        name=job.name,
+                        role="roles/run.developer",
+                        member=ml_member,
+                        opts=opts,
+                    )
+                )
             if not spec.scheduled:
                 continue
             ml_invokers.append(
@@ -508,5 +592,10 @@ def create_cloud_run_resources(
         ml_monitor_job=ml_jobs.get(ML_MONITOR_JOB.command),
         ml_rescoring_job=ml_jobs.get(ML_RESCORING_JOB.command),
         ml_topics_refit_job=ml_jobs.get(ML_TOPICS_REFIT_JOB.command),
+        ml_training_job=ml_jobs.get(ML_TRAINING_JOB.command),
+        ml_topics_backfill_job=ml_jobs.get(ML_TOPICS_BACKFILL_JOB.command),
+        ml_aspects_backfill_job=ml_jobs.get(ML_ASPECTS_BACKFILL_JOB.command),
+        ml_promote_job=ml_jobs.get(ML_PROMOTE_JOB.command),
         ml_invokers=tuple(ml_invokers),
+        ml_executors=tuple(ml_executors),
     )

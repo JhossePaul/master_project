@@ -25,6 +25,8 @@ class AlertTopic:
     subscription_id: str
     title: str
     detail: str
+    # Comandos de respaldo para actuar sin el portal (Markdown).
+    commands: str = ""
 
 
 @dataclass
@@ -49,8 +51,14 @@ ALERT_TOPICS = (
         "voc-model-quality-sub",
         "Aviso de calidad del modelo",
         "El monitor registró un warning, retrain o rejected en "
-        "model_quality. No dispara nada solo: lo revisa quien opera los "
-        "modelos.",
+        "model_quality. Con retrain_trigger en manual no dispara nada solo: "
+        "lo revisa quien opera los modelos.",
+        "Ante un retrain, el reentrenamiento se lanza con:\n\n"
+        "`gcloud run jobs execute voc-ml-training`\n\n"
+        "y, con el re-scoring del candidato verificado, se promueve con:\n\n"
+        "`gcloud run jobs execute voc-ml-promote "
+        "--args=promote,--model-version=<versión>,--actor-hash=<hash>,"
+        "--reason=<motivo>`",
     ),
 )
 
@@ -60,7 +68,7 @@ def _documentation(alert: AlertTopic) -> str:
         f"{alert.detail}\n\n"
         "El mensaje, sin texto de reseñas, se lee con:\n\n"
         f"`gcloud pubsub subscriptions pull {alert.subscription_id} "
-        "--limit=10`"
+        "--limit=10`" + (f"\n\n{alert.commands}" if alert.commands else "")
     )
 
 

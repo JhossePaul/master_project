@@ -76,6 +76,15 @@ def test_email_channel_watches_both_alert_topics(
         "voc-drift-email-policy": "voc-incident-alerts-topic",
         "voc-model-quality-email-policy": "voc-model-quality-topic",
     }
+    # El correo de calidad trae los comandos de respaldo del portal.
+    quality = policies["voc-model-quality-email-policy"]["documentation"]
+    assert "`gcloud run jobs execute voc-ml-training`" in quality["content"]
+    assert (
+        "gcloud run jobs execute voc-ml-promote --args=promote,"
+        "--model-version=" in quality["content"]
+    )
+    drift = policies["voc-drift-email-policy"]["documentation"]["content"]
+    assert "gcloud run jobs execute" not in drift
     api = next(
         r.urn
         for r in pulumi_mocks.resources.values()

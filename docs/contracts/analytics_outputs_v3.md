@@ -230,7 +230,7 @@ Revisión pantalla por pantalla (2026-10-22): cada pantalla del portal lee y esc
 
 ## 7. Implementación: tabla → modelo → módulo
 
-Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `extra="forbid"`, inmutable, fechas en UTC) que valida las reglas de este documento. `ANALYTICS_V3_TABLES` (`voc_common.bq_schema`) es el registro de las 26 tablas (`promotion_checks` y `segment_embeddings` ya tienen modelo y entran al registro junto con su tabla en `infra/`); `infra/modules/analytics_bq.py` las crea en `bbva_voc_tds` con partición mensual y agrupación (`TABLE_LAYOUTS`).
+Cada tabla es un modelo Pydantic de `voc-common` (estilo de los contratos v2: `extra="forbid"`, inmutable, fechas en UTC) que valida las reglas de este documento. `ANALYTICS_V3_TABLES` (`voc_common.bq_schema`) es el registro de las 28 tablas; `infra/modules/analytics_bq.py` las crea en `bbva_voc_tds` con partición mensual y agrupación (`TABLE_LAYOUTS`).
 
 | Tabla | Modelo | Módulo | Partición (mes) | Agrupada por |
 | :--- | :--- | :--- | :--- | :--- |
