@@ -164,6 +164,41 @@ jobs:
           id=$(docker run --rm --entrypoint id ml-inference:ci -u)
           test "$id" = "10001"
 
+  portal:
+    # Frontal del portal: lint, pruebas y construcción (Node 24).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web/portal
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: web/portal/.nvmrc
+          cache: npm
+          cache-dependency-path: web/portal/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tipos de la API al día
+        run: |
+          npm run api:types
+          git diff --exit-code -- src/api/schema.d.ts
+
+      - name: Biome
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
   api-backend-image:
     # Valida que la imagen de la API y el portal construye y arranca; la
     # publicación es del CD. Sin PyTorch: tarda lo de la imagen de ingesta.
@@ -193,6 +228,10 @@ jobs:
             sleep 1
           done
           curl -fsS localhost:8080/healthz | grep -F '"commit":"${{ github.sha }}"'
+          # El portal compilado va en la imagen: `/` y una ruta del cliente
+          # devuelven index.html.
+          curl -fsS localhost:8080/ | grep -F '<div id="root">'
+          curl -fsS localhost:8080/cockpit | grep -F '<div id="root">'
           # Sin el JWT de IAP: 401 y no un error del servidor.
           code=$(curl -s -o /dev/null -w "%{http_code}" localhost:8080/api/v1/me)
           test "$code" = "401"
