@@ -1,6 +1,6 @@
 # Paso 6. Feature 7.6: Explorador de reseñas, búsqueda semántica y explicación
 
-* **Estado (2026-10-26):** Terminado en local, con las consultas probadas contra BigQuery de dev (solo lecturas); falta desplegar `voc-ml-online` y la medición de la búsqueda con el servicio real. Detalle en "Avance".
+* **Estado (2026-10-26):** Terminado en local, con las consultas probadas contra BigQuery de dev (solo lecturas); `voc-ml-online` ya está desplegado (revisión 00001 con la imagen de `b7aa586`); falta medir la búsqueda con el servicio real. Detalle en "Avance".
 * **Nivel:** importante.
 * **Depende de:** paso 2 y la decisión B5.2 del paso 0 (explicación con dirección).
 * **Objetivo:** investigar reseñas y causas raíz (rol analista): una tabla de reseñas sanitizadas que responde a gráficas de agregados (*crossfilter*), búsqueda semántica con `VECTOR_SEARCH` sobre MiniLM y una ficha por reseña con la explicación por palabras. Es la única sección, aparte del HITL, que muestra texto, y **la única que muestra la explicación**.
@@ -131,6 +131,8 @@ FROM VECTOR_SEARCH(
 * **Sin virtualizar ni TanStack Table:** 50 filas por página no lo piden, y la API de la versión 9 de TanStack Table cambió; es una tabla simple con paginación del servidor. Se reabre si el tamaño de página crece.
 * **La consulta de la búsqueda** no va a la URL, a la caché de consultas ni al registro; la mutación no guarda resultados (`gcTime: 0`). La ficha sí va a la URL (`ficha=BANCO:id`): es un identificador, no texto.
 * **`bytes_billed`** de la búsqueda lo mide el lector (`stats`), no una consulta aparte.
+
+* **Revisión del autor en dev (2026-10-26): la explicación resaltaba de amarillo y listaba palabras sin efecto.** Dos defectos: las palabras sin intensidad suficiente no tenían fondo y el navegador pinta de amarillo un `<mark>` sin estilo (ahora `bg-transparent`); y con una predicción segura (99 %) quitar una palabra mueve las probabilidades casi nada, así que el signo de una diferencia de 0.001 decidía en qué lista caía una palabra. El portal mide ahora el empuje en log-odds de `POS` contra `NEG` con y sin la palabra (las probabilidades sin ella salen de las del texto y los cambios guardados, `p − d`; no cambia el contrato), pinta solo las palabras que llegan al 15 % del mayor efecto del texto (mínimo 0.05) con intensidad relativa a ese máximo, y las listas "más empujan" usan solo esas. Si ninguna palabra llega, lo dice. La explicación de un texto a 99 % sigue siendo la menos informativa: es lo esperado, no un error.
 
 ## Avance
 
