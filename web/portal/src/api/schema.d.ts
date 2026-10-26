@@ -686,8 +686,7 @@ export interface components {
         ReviewFlag: "menciona_falla" | "duda" | "no_evaluable" | "nombre_persona";
         /** ReviewOut */
         ReviewOut: {
-            /** Next Available */
-            next_available: boolean;
+            next: components["schemas"]["HitlCase"] | null;
             /** Review Id */
             review_id: string;
         };
@@ -754,8 +753,6 @@ export interface components {
              * Format: uuid
              */
             review_id: string;
-            /** Ticket */
-            ticket?: string | null;
             /** Validated Label */
             validated_label: ("NEG" | "NEU" | "POS") | null;
         };

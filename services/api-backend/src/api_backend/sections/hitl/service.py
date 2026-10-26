@@ -1,6 +1,7 @@
 """Reglas de la cola de revisión: tomar, saltar, soltar y guardar."""
 
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from voc_common import (
     DisplayMode,
     Guideline,
     HitlEvent,
+    HitlReason,
     HitlReview,
     HitlStatus,
     HitlTask,
@@ -41,6 +43,8 @@ from api_backend.sections.hitl.schemas import (
 IMPLEMENTED_TASKS = (HitlTask.SENTIMENT,)
 LOCK = timedelta(minutes=15)
 MAX_TRIES = 25
+# Textos que se traen de una vez: los del caso y los que siguen.
+PREFETCH = 20
 CONFLICT_MESSAGE = "El caso volvió a la cola; pide el siguiente"
 PREDICTION_KEYS = ("label", "p_neg", "p_neu", "p_pos")
 
@@ -135,6 +139,9 @@ def take_next(
             e.item.item_id,
         ),
     )
+    repo.prefetch_texts(
+        [(e.item.bank_id, e.item.id_resena) for e in candidates[:PREFETCH]]
+    )
     for entry in candidates[:MAX_TRIES]:
         item = entry.item
         text = repo.review_text(item.bank_id, item.id_resena)
@@ -154,6 +161,13 @@ def take_next(
                 or mine.status_at is None
             ):
                 continue  # otro revisor lo tomó al mismo tiempo
+            if _already_reviewed(mine, actor):
+                # La memoria iba atrasada: ya lo habían revisado. Se cierra de
+                # nuevo para que el bloqueo vencido no lo devuelva a la cola.
+                repo.add_event(
+                    _event(item.item_id, HitlStatus.SUBMITTED, None, now)
+                )
+                continue
             opened = mine.status_at
         return HitlCase(
             item_id=public_id(item.item_id),
@@ -166,6 +180,12 @@ def take_next(
             review_round=min(len(entry.reviewers) + 1, 2),  # type: ignore[arg-type]
         )
     return None
+
+
+def _already_reviewed(entry: QueueEntry, actor: str) -> bool:
+    if entry.item.reason is HitlReason.AGREEMENT_SAMPLE:
+        return actor in entry.reviewers or len(entry.reviewers) >= 2  # noqa: PLR2004
+    return bool(entry.reviewers)
 
 
 def _own_entry(
@@ -216,18 +236,20 @@ def save_review(  # noqa: PLR0913
     body: SentimentReviewIn,
     now: datetime,
 ) -> ReviewOut:
-    entry = _own_entry(repo, principal, item_id, now)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        guidelines = pool.submit(repo.guidelines, HitlTask.SENTIMENT)
+        entry = _own_entry(repo, principal, item_id, now)
+        known = guidelines.result()
     review_id = str(body.review_id)
     if not _holds(entry, principal):
         if repo.has_review(review_id):  # reintento de un guardado exitoso
             return ReviewOut(
-                review_id=review_id,
-                next_available=_has_next(repo, principal, entry, now),
+                review_id=review_id, next=_next_after(repo, principal, now)
             )
         raise ApiError(ErrorCode.CONFLICT, CONFLICT_MESSAGE)
     item = entry.item
     task = item.task
-    versions = {g.guideline_version for g in repo.guidelines(task)}
+    versions = {g.guideline_version for g in known}
     if body.guideline_version not in versions:
         raise ApiError(ErrorCode.INVALID, "La versión de la guía no existe")
     predicted = _predicted_label(entry)
@@ -259,34 +281,39 @@ def save_review(  # noqa: PLR0913
             submitted_at=now,
             seconds_spent=max(0, int((now - entry.status_at).total_seconds())),
             comment=sanitized,
-            ticket=(body.ticket or "").strip() or None,
         )
     except ValidationError as exc:
         raise ApiError(ErrorCode.INVALID, "Revisión no válida") from exc
-    repo.add_review(review)
-    # Id fijo: un reintento con el mismo ``review_id`` no duplica el evento.
-    repo.add_event(
-        HitlEvent(
-            event_id=f"{review_id}:submitted",
-            item_id=item.item_id,
-            status=HitlStatus.SUBMITTED,
-            actor_hash=principal.actor_hash,
-            at=now,
-        )
+    submitted = HitlEvent(
+        # Id fijo: un reintento con el mismo ``review_id`` no duplica el evento.
+        event_id=f"{review_id}:submitted",
+        item_id=item.item_id,
+        status=HitlStatus.SUBMITTED,
+        actor_hash=principal.actor_hash,
+        at=now,
     )
+    # Independientes y con clave propia: si una falla, el reintento completa.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        written = [
+            pool.submit(repo.add_review, review),
+            pool.submit(repo.add_event, submitted),
+        ]
+        for future in written:
+            future.result()
     return ReviewOut(
-        review_id=review_id,
-        next_available=_has_next(repo, principal, entry, now),
+        review_id=review_id, next=_next_after(repo, principal, now)
     )
 
 
-def _has_next(
-    repo: HitlRepository, principal: Principal, entry: QueueEntry, now: datetime
-) -> bool:
-    return any(
-        is_available(e, principal.actor_hash, now)
-        for e in repo.entries(entry.item.task, now)
-    )
+def _next_after(
+    repo: HitlRepository, principal: Principal, now: datetime
+) -> HitlCase | None:
+    """El siguiente caso, si se puede; el guardado ya ocurrió y no se pierde."""
+    try:
+        return take_next(repo, principal, HitlTask.SENTIMENT, now)
+    except ApiError:
+        log_event("WARNING", "no se pudo tomar el siguiente tras guardar")
+        return None
 
 
 def summary(

@@ -80,3 +80,6 @@ def test_hitl_consultas_de_lectura() -> None:
     assert summary.pending >= len(entries) or len(entries) == 500
     text = repo.review_text(first.item.bank_id, first.item.id_resena)
     assert text is None or isinstance(text, str)
+    pairs = [(e.item.bank_id, e.item.id_resena) for e in entries[:10]]
+    batch = repo.review_texts(pairs)
+    assert set(batch) <= set(pairs) and batch

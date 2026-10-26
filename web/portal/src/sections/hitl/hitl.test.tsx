@@ -8,6 +8,8 @@ import { server } from "@/test/server";
 
 type Body = Record<string, unknown>;
 
+const nextCalls = { count: 0 };
+
 /** Cola de un solo caso; cada guardado queda en `saved`. */
 function serve(
   cases: ReturnType<typeof syntheticHitlCase>[],
@@ -17,6 +19,7 @@ function serve(
   const queue = [...cases];
   server.use(
     http.post("*/api/v1/hitl/next", () => {
+      nextCalls.count += 1;
       const next = queue.shift();
       return next
         ? HttpResponse.json(next)
@@ -28,7 +31,7 @@ function serve(
       saved.push(body);
       return HttpResponse.json({
         review_id: body.review_id,
-        next_available: true,
+        next: queue.shift() ?? null,
       });
     }),
     http.post(
@@ -124,13 +127,36 @@ describe("revisión de sentimiento", () => {
       flags: ["menciona_falla", "nombre_persona"],
       guideline_version: "v2.2",
       comment: null,
-      ticket: null,
     });
     expect(typeof saved[0]?.review_id).toBe("string");
     // Pasa al siguiente caso.
     expect(
       await screen.findByText(/Caso 2 de esta sesión/),
     ).toBeInTheDocument();
+  });
+
+  it("guardar muestra el siguiente caso sin pedirlo otra vez", async () => {
+    nextCalls.count = 0;
+    serve([blind(), blind()]);
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText(/Caso 2 de esta sesión/),
+    ).toBeInTheDocument();
+    expect(nextCalls.count).toBe(1); // solo la primera apertura
+  });
+
+  it("no ofrece el campo ticket", async () => {
+    serve([blind()]);
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/modo a ciegas/);
+
+    expect(screen.queryByLabelText(/ticket/i)).not.toBeInTheDocument();
   });
 
   it("G oculta y muestra la guía", async () => {

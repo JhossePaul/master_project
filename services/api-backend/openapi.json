@@ -996,9 +996,15 @@
       },
       "ReviewOut": {
         "properties": {
-          "next_available": {
-            "title": "Next Available",
-            "type": "boolean"
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HitlCase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "review_id": {
             "title": "Review Id",
@@ -1007,7 +1013,7 @@
         },
         "required": [
           "review_id",
-          "next_available"
+          "next"
         ],
         "title": "ReviewOut",
         "type": "object"
@@ -1158,18 +1164,6 @@
             "format": "uuid",
             "title": "Review Id",
             "type": "string"
-          },
-          "ticket": {
-            "anyOf": [
-              {
-                "maxLength": 100,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ticket"
           },
           "validated_label": {
             "anyOf": [

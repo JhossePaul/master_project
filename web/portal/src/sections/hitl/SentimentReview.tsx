@@ -98,12 +98,22 @@ export default function SentimentReview() {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [flags, setFlags] = useState<ReadonlySet<Flag>>(new Set());
   const [comment, setComment] = useState("");
-  const [ticket, setTicket] = useState("");
   const [reviewId, setReviewId] = useState("");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(true);
   const openItem = useRef<string | null>(null);
+
+  const show = useCallback((item: HitlCase) => {
+    openItem.current = item.item_id;
+    setChoice(item.proposal ? item.proposal.label : null);
+    setFlags(new Set());
+    setComment("");
+    setReviewId(crypto.randomUUID());
+    setSeen((n) => n + 1);
+    setFormError(null);
+    setPhase({ kind: "case", item });
+  }, []);
 
   const load = useCallback(async () => {
     openItem.current = null;
@@ -111,22 +121,12 @@ export default function SentimentReview() {
     setFormError(null);
     try {
       const item = await nextCase();
-      if (!item) {
-        setPhase({ kind: "empty" });
-        return;
-      }
-      openItem.current = item.item_id;
-      setChoice(item.proposal ? item.proposal.label : null);
-      setFlags(new Set());
-      setComment("");
-      setTicket("");
-      setReviewId(crypto.randomUUID());
-      setSeen((n) => n + 1);
-      setPhase({ kind: "case", item });
+      if (item) show(item);
+      else setPhase({ kind: "empty" });
     } catch (error) {
       setPhase({ kind: "error", error });
     }
-  }, []);
+  }, [show]);
 
   useEffect(() => {
     void load();
@@ -171,23 +171,24 @@ export default function SentimentReview() {
     setBusy(true);
     setFormError(null);
     try {
-      await saveReview(phase.item.item_id, {
+      const saved = await saveReview(phase.item.item_id, {
         review_id: reviewId,
         validated_label: noEvaluable ? null : choice,
         flags: [...flags, ...(noEvaluable ? ["no_evaluable" as const] : [])],
         comment: comment.trim() || null,
-        ticket: ticket.trim() || null,
         guideline_version: phase.item.guideline_version,
       });
       openItem.current = null;
       toast.success("Guardado");
       setBusy(false);
-      await load();
+      // La respuesta ya trae el siguiente caso; sin él se pregunta a la cola.
+      if (saved.next) show(saved.next);
+      else await load();
     } catch (error) {
       setBusy(false);
       fail(error);
     }
-  }, [phase, busy, choice, flags, comment, ticket, reviewId, load, fail]);
+  }, [phase, busy, choice, flags, comment, reviewId, load, show, fail]);
 
   const skip = useCallback(async () => {
     if (phase.kind !== "case" || busy) return;
@@ -399,16 +400,6 @@ export default function SentimentReview() {
                 No copies el texto de la reseña; los nombres y datos personales
                 se reemplazan antes de guardar.
               </p>
-            </div>
-            <div className="grid max-w-sm gap-1">
-              <Label htmlFor="ticket">Ticket (opcional)</Label>
-              <input
-                id="ticket"
-                value={ticket}
-                maxLength={100}
-                onChange={(event) => setTicket(event.target.value)}
-                className="h-9 w-full rounded-sm border border-border-strong bg-surface px-3 text-sm"
-              />
             </div>
             {formError ? (
               <div
