@@ -21,37 +21,37 @@ describe("navegación por rol", () => {
   it("lector", async () =>
     expect(await menuFor(["lector"])).toEqual([
       "Inicio",
-      "Reporte",
       "Cockpit",
+      "Reporte",
     ]));
 
   it("analista", async () =>
     expect(await menuFor(["lector", "analista"])).toEqual([
       "Inicio",
-      "Reporte",
       "Cockpit",
       "Explorador",
       "Alertas",
       "MLOps y AIOps",
+      "Reporte",
     ]));
 
   it("revisor", async () =>
     expect(await menuFor(["lector", "revisor"])).toEqual([
       "Inicio",
-      "Reporte",
       "Cockpit",
       "Revisión",
+      "Reporte",
     ]));
 
   it("administrador ve todo, incluido lo del analista", async () =>
     expect(await menuFor(["lector", "administrador"])).toEqual([
       "Inicio",
-      "Reporte",
       "Cockpit",
       "Explorador",
       "Alertas",
       "MLOps y AIOps",
       "Administración",
+      "Reporte",
     ]));
 
   it("conserva los filtros al navegar", async () => {

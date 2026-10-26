@@ -23,7 +23,12 @@ export const routes: RouteObject[] = [
         }),
       },
       { path: "reporte/*", element: guarded("lector", "Reporte de la tesis") },
-      { path: "cockpit", element: guarded("lector", "Cockpit") },
+      {
+        path: "cockpit",
+        lazy: async () => ({
+          Component: (await import("@/sections/cockpit/Cockpit")).default,
+        }),
+      },
       { path: "explorador", element: guarded("analista", "Explorador") },
       { path: "alertas", element: guarded("analista", "Alertas de deriva") },
       {

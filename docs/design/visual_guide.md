@@ -212,11 +212,12 @@ Es el principio "cada número con su procedencia" hecho componente. Toda cifra y
 
 * **Encabezado** (56 px, fondo `green-900`): marca o nombre del portal a la izquierda; a la derecha, la insignia del ambiente (`dev`), el enlace a gobernanza y el menú de usuario (correo y roles).
 * **Navegación lateral** (240 px, plegable a 64 px con solo íconos), agrupada:
-  * **Consultar:** Inicio, Reporte, Cockpit.
+  * **Consultar:** Inicio, Cockpit.
   * **Investigar:** Explorador, Alertas.
   * **Revisar:** Revisión (HITL).
   * **Operar:** MLOps y AIOps.
   * **Configurar:** Administración.
+  * **Documentación:** Reporte de la tesis, al final: lo consulta quien busca el trasfondo académico (decisión del autor, 2026-10-26).
   * Solo aparecen las secciones que permite el rol; la activa lleva una barra de 3 px en `green-600` y fondo `green-50`.
 * **Barra de filtros globales** (fija bajo el encabezado, fondo `neutral-50`), en las secciones que la usan: bancos (selección múltiple), periodo (atajos y rango) y "Restablecer". Los filtros viven en la URL, así que se conservan al cambiar de sección y se pueden compartir.
 * **Contenido:** ancho máximo de 1 440 px, márgenes de 32 px (24 px en pantallas medianas), rejilla de 12 columnas con 24 px de separación.
