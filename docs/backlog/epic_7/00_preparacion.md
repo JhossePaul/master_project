@@ -20,7 +20,7 @@
 
 **Lo que deja pendiente EPIC-6 y a qué afecta:**
 
-* **Paso 14 de 6.6 (primer reentrenamiento):** sin él no hay un candidato real en `model_versions` ni una fila en `promotion_checks`. Solo afecta a la prueba en dev del botón de promover (paso 8); el desarrollo y sus pruebas usan datos sintéticos.
+* **Paso 14 de 6.6 (primer reentrenamiento):** terminó el 2026-10-26. `robertuito_sentiment_v2` está registrado como candidato, con su *re-scoring* y una fila en `promotion_checks` (`better`); no se ha promovido. La prueba en dev del botón de promover (paso 8) puede usar ese candidato; el desarrollo y sus pruebas usan datos sintéticos.
 * **Corrida programada sin intervención:** no afecta; la landing muestra la frescura que haya.
 
 ## 2. Bloqueantes
@@ -104,7 +104,7 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 * [x] B1 y B2 tienen su resultado anotado y la ruta de IAP elegida (2026-10-25: IAP directo en Cloud Run con cliente de OAuth External).
 * [x] B3: el autor decidió desplegar solo con su cuenta al principio (2026-10-25); el paso 1 la pone en `portal_users` cifrada.
 * [x] B4: las preguntas "antes de 2" tienen respuesta (2026-10-25).
-* [ ] B5: cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
+* [ ] B5 (la #4 está aprobada, 2026-10-25): cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
 * [x] Las verificaciones de la sección 4 están marcadas (2026-10-25, resultados en "Avance").
 
 ## Avance
@@ -131,3 +131,10 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 * **Línea base:** `uv sync --all-packages --locked`, Ruff (lint y formato), Pyrefly (0 errores) y Bandit sin hallazgos; las siete suites de CI en verde con su umbral de cobertura (voc-common 344 pruebas, 99.9 %; infra 128, 100 %; ingestion-worker 196, 96 %; sanitization-pipeline 130, 100 %; tools 50, 97 %; voc-nlp 139, 99 %; ml-inference 214, 98 %).
 * **Node:** 26.12.1 en local; Node 24.22.1 se obtiene con `npx node@24`. npm 11.20 y el registro responden (`vite` 8.3.5).
 * **BigQuery:** la consulta de `review_predictions_current` desde 2026-07-01 procesa como máximo 266 768 144 bytes (≈ 0.27 GB), bajo el límite de 1 GB. El paso 3 puede consultar la vista sin materializar los agregados diarios, y se revisa si crece el rango.
+
+### B5.4. Hash del actor sembrado (2026-10-25)
+
+* **Aprobada** por el autor la regla `actor_hash = hash_username_pii(correo, USER_HASH_SALT)`.
+* **Corroborado contra BigQuery:** `inference_runs.actor_hash` y `risk_policy.set_by_hash` tienen un único valor, `ab498e0e…4611`, y es exactamente el SHA-256 del correo del autor en minúsculas **sin sal** (`sha256("traslasnovenas@gmail.com")`). No coincide con la regla aprobada, que antepone la sal.
+* **Migrado (2026-10-25, con aprobación del autor):** se hizo una excepción puntual a la regla de solo agregar. Se reemplazó el hash sin sal por el hash con sal en las 58 filas que lo llevaban: `curation_topics` 35, `drift_policy` 10, `inference_runs` 7, `drift_policy_template` 2, `guidelines` 2, `model_versions` 1 y `risk_policy` 1. Los totales de cada tabla no cambiaron y no queda ninguna fila con el hash viejo. El origen del hash era solo el argumento `--actor-hash` de `seed`, `load-local`, `train` y `rescore`: no está en los JSON de `docs/analytics/`, en los cuerpos de los Schedulers ni en `ml_artifacts/`. El *time travel* del dataset (168 h) permite revertir hasta el 2026-11-01.
+* **Pendiente de seguir la regla:** los próximos `seed`, `load-local`, `train`, `rescore` y `promote` deben recibir el hash con sal (`tools/actor_hash.py`, paso 1), no el SHA-256 del correo.
