@@ -17,7 +17,7 @@ reportan como cobertura.
 import re
 from collections.abc import Mapping
 
-MIN_NEG_PER_VERSION = 50
+MIN_ROWS_PER_VERSION = 50
 OTHER = "OTRAS"
 
 _MIN_API = re.compile(r"-minApi\d+$")
@@ -48,10 +48,10 @@ def normalize(bank_id: str, version_app: str | None) -> str | None:
 
 
 def group_small(
-    negatives: Mapping[str, int], n_min: int = MIN_NEG_PER_VERSION
+    counts: Mapping[str, int], n_min: int = MIN_ROWS_PER_VERSION
 ) -> dict[str, str]:
-    """Etiqueta final de cada versión: ``OTRAS`` si tiene menos de ``n_min``."""
+    """``OTRAS`` si la versión tiene menos de ``n_min`` reseñas."""
     return {
         release: OTHER if n < n_min else release
-        for release, n in negatives.items()
+        for release, n in counts.items()
     }

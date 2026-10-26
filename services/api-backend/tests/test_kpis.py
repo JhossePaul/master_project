@@ -405,7 +405,7 @@ def test_normalize_reproduce_los_ejemplos_del_original(
     assert normalize(bank, raw) == expected
 
 
-def test_group_small_manda_a_otras_las_de_menos_de_50_negativas() -> None:
+def test_group_small_manda_a_otras_las_de_menos_de_50_resenas() -> None:
     assert group_small({"1.0": 49, "2.0": 50}) == {"1.0": "OTRAS", "2.0": "2.0"}
 
 
@@ -421,7 +421,7 @@ def test_wilson_contra_valores_de_referencia() -> None:
 
 def vt(version: str | None, filas: int, neg: int, u: int = 0) -> VersionTotals:
     return VersionTotals(
-        version, filas, neg, u, date(2026, 1, 1), date(2026, 2, 1)
+        version, filas, neg, neg, u, date(2026, 1, 1), date(2026, 2, 1)
     )
 
 
@@ -431,8 +431,8 @@ def test_versions_agrupa_normaliza_y_reporta_la_cobertura() -> None:
             "BBVA": [
                 vt("11.33.210429", 600, 200, 40),
                 vt("11.33.210501", 400, 100, 20),  # misma release 11.33
-                vt("10.90", 100, 10, 1),  # menos de 50: OTRAS
-                vt("10.80", 50, 5, 1),  # también OTRAS
+                vt("10.90", 40, 10, 1),  # menos de 50 reseñas: OTRAS
+                vt("10.80", 30, 5, 1),  # también OTRAS
                 vt("UNKNOWN", 150, 30),  # sin versión
                 vt("2.6 BETA", 100, 20),
             ]
@@ -463,9 +463,10 @@ def test_versions_agrupa_normaliza_y_reporta_la_cobertura() -> None:
     assert rows["11.33"]["u_share"] == pytest.approx(60 / 300)
     assert list(rows["11.33"]["families"]) == ["FA", "AC"]
     assert rows["11.33"]["families"]["FA"] == 0.5
-    assert rows["OTRAS"]["filas"] == 150 and rows["OTRAS"]["neg"] == 15
-    assert body["coverage"] == pytest.approx(1150 / 1400)
-    assert body["median_neg_share"] is not None
+    assert rows["OTRAS"]["filas"] == 70 and rows["OTRAS"]["neg"] == 15
+    assert body["coverage"] == pytest.approx(1070 / 1320)
+    # La mediana deja fuera a OTRAS: solo queda 11.33.
+    assert body["median_neg_share"] == 0.3
 
 
 def test_versions_de_un_banco_sin_datos() -> None:
@@ -651,6 +652,7 @@ def test_bigquery_topicos_versiones_y_modelo() -> None:
                 "version_app": "1.0",
                 "filas": 10,
                 "neg": 2,
+                "neg_labeled": 2,
                 "neg_u": 1,
                 "first_seen": date(2026, 1, 1),
                 "last_seen": date(2026, 1, 2),

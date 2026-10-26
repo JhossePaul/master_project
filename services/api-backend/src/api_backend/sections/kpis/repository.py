@@ -110,6 +110,7 @@ class VersionTotals:
     version_app: str | None
     filas: int
     neg: int
+    neg_labeled: int
     neg_u: int
     first_seen: date
     last_seen: date
@@ -274,14 +275,14 @@ class BigQueryKpisRepository:
             f"aspects AS ({self._aspects()}), "
             "joined AS (SELECT n.bank_id, n.period, a.families, a.flag_update "
             "FROM neg AS n JOIN aspects AS a USING (id_resena)), "
-            "base AS (SELECT bank_id, period, COUNT(*) AS base, "
+            "totals AS (SELECT bank_id, period, COUNT(*) AS base, "
             "COUNTIF(flag_update) AS u FROM joined GROUP BY bank_id, period), "
             "fam AS (SELECT bank_id, period, family, COUNT(*) AS n "
             "FROM joined, UNNEST(families) AS family "
             "GROUP BY bank_id, period, family) "
             "SELECT f.bank_id, f.period, f.family, f.n AS neg_count, b.base "
-            "FROM fam AS f JOIN base AS b USING (bank_id, period) "
-            "UNION ALL SELECT bank_id, period, 'u', u, base FROM base"
+            "FROM fam AS f JOIN totals AS b USING (bank_id, period) "
+            "UNION ALL SELECT bank_id, period, 'u', u, base FROM totals"
         )
         rows = self._rows(
             sql,
@@ -357,7 +358,10 @@ class BigQueryKpisRepository:
             "SELECT p.version_app, "  # nosec B608
             "COUNTIF(p.sentiment IN ('NEG', 'NEU', 'POS')) AS filas, "
             "COUNTIF(p.sentiment = 'NEG') AS neg, "
-            "COUNTIF(p.sentiment = 'NEG' AND a.flag_update) AS neg_u, "
+            "COUNTIF(p.sentiment = 'NEG' AND p.palabras >= 2 "
+            "AND a.flag_update IS NOT NULL) AS neg_labeled, "
+            "COUNTIF(p.sentiment = 'NEG' AND p.palabras >= 2 "
+            "AND a.flag_update) AS neg_u, "
             "MIN(DATE(p.fecha)) AS first_seen, "
             "MAX(DATE(p.fecha)) AS last_seen "
             f"FROM {self._table('review_predictions_current')} AS p "
@@ -376,6 +380,7 @@ class BigQueryKpisRepository:
             f"JOIN ({self._aspects()}) AS a USING (id_resena), "
             "UNNEST(a.families) AS family "
             "WHERE p.bank_id = @bank AND p.sentiment = 'NEG' "
+            "AND p.palabras >= 2 "
             "GROUP BY p.version_app, family"
         )
         rows = self._rows(
@@ -471,7 +476,7 @@ def sample_repository(now: datetime | None = None) -> InMemoryKpisRepository:
     """Datos sintéticos (sin texto de reseñas) relativos a la fecha actual."""
     now = now or datetime.now(UTC)
     today = now.date()
-    rng = random.Random(7)  # noqa: S311 - datos de muestra
+    rng = random.Random(7)  # noqa: S311  # nosec B311
     repo = InMemoryKpisRepository(alerts={"AZTECA": 1, "NUBANK": 2})
     months = _months_back(today, 14)
     levels = {b: 0.12 + 0.03 * i for i, b in enumerate(BANK_IDS)}
@@ -706,6 +711,7 @@ def _sample_versions(
                 release,
                 filas,
                 neg,
+                neg,
                 round(neg * 0.18),
                 first,
                 first + timedelta(days=28),
@@ -719,6 +725,7 @@ def _sample_versions(
             "5.0.9",
             120,
             20,
+            20,
             3,
             today - timedelta(days=300),
             today - timedelta(days=290),
@@ -729,6 +736,7 @@ def _sample_versions(
             None,
             150,
             30,
+            30,
             5,
             today - timedelta(days=200),
             today - timedelta(days=10),
@@ -738,6 +746,7 @@ def _sample_versions(
         VersionTotals(
             "2.6.2 - BETA",
             30,
+            5,
             5,
             1,
             today - timedelta(days=100),

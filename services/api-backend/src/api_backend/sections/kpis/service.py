@@ -25,7 +25,7 @@ from api_backend.sections.kpis.schemas import (
     VersionsResponse,
 )
 from api_backend.sections.kpis.stats import wilson
-from api_backend.sections.kpis.versions import group_small, normalize
+from api_backend.sections.kpis.versions import OTHER, group_small, normalize
 from api_backend.sections.landing.schemas import Estimate
 
 CARD_METRICS = ("neg", "gap_estrellas", "estrellas_POS_texto_NEG")
@@ -290,18 +290,18 @@ def topics(repo: KpisRepository, banks: Sequence[str]) -> list[TopicMonth]:
 
 
 def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
-    """Por ``release``; las de menos de 50 negativas van en ``OTRAS``."""
+    """Por ``release``; las de menos de 50 reseñas van en ``OTRAS``."""
     totals = repo.version_totals(bank)
     rec = {t.version_app: normalize(bank, t.version_app) for t in totals}
     all_filas = sum(t.filas for t in totals)
     known_filas = sum(t.filas for t in totals if rec[t.version_app])
 
-    neg_by_release: dict[str, int] = {}
+    rows_by_release: dict[str, int] = {}
     for t in totals:
         release = rec[t.version_app]
         if release:
-            neg_by_release[release] = neg_by_release.get(release, 0) + t.neg
-    label = group_small(neg_by_release)
+            rows_by_release[release] = rows_by_release.get(release, 0) + t.filas
+    label = group_small(rows_by_release)
 
     def final(version_app: str | None) -> str | None:
         release = rec.get(version_app)
@@ -317,6 +317,7 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
             {
                 "filas": 0,
                 "neg": 0,
+                "lab": 0,
                 "u": 0,
                 "first": t.first_seen,
                 "last": t.last_seen,
@@ -324,6 +325,7 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
         )
         a["filas"] += t.filas  # type: ignore[operator]
         a["neg"] += t.neg  # type: ignore[operator]
+        a["lab"] += t.neg_labeled  # type: ignore[operator]
         a["u"] += t.neg_u  # type: ignore[operator]
         a["first"] = min(a["first"], t.first_seen)  # type: ignore[type-var]
         a["last"] = max(a["last"], t.last_seen)  # type: ignore[type-var]
@@ -336,7 +338,8 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
 
     rows = []
     for name, a in agg.items():
-        filas, neg, u = int(a["filas"]), int(a["neg"]), int(a["u"])  # type: ignore[call-overload]
+        filas, neg = int(a["filas"]), int(a["neg"])  # type: ignore[call-overload]
+        lab, u = int(a["lab"]), int(a["u"])  # type: ignore[call-overload]
         low, high = wilson(neg, filas)
         rows.append(
             VersionRow(
@@ -348,22 +351,23 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
                 neg_share=neg / filas if filas else 0.0,
                 neg_ci_low=low,
                 neg_ci_high=high,
-                u_share=u / neg if neg else 0.0,
+                u_share=u / lab if lab else 0.0,
                 families={
-                    code: n / neg
+                    code: n / lab
                     for code, n in sorted(
                         fam.get(name, {}).items(), key=lambda kv: -kv[1]
                     )
                 }
-                if neg
+                if lab
                 else {},
             )
         )
     rows.sort(key=lambda r: (r.release == "OTRAS", r.first_seen))
+    named = [r for r in rows if r.release != OTHER]
     return VersionsResponse(
         bank_id=bank,
         rows=rows,
         coverage=known_filas / all_filas if all_filas else 0.0,
-        median_neg_share=median(r.neg_share for r in rows) if rows else None,
-        median_u_share=median(r.u_share for r in rows) if rows else None,
+        median_neg_share=median(r.neg_share for r in named) if named else None,
+        median_u_share=median(r.u_share for r in named) if named else None,
     )
