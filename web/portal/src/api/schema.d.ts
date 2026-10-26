@@ -4,6 +4,117 @@
  */
 
 export interface paths {
+    "/api/v1/hitl/guidelines/{task}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guideline */
+        get: operations["guideline_api_v1_hitl_guidelines__task__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/items/{item_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Release
+         * @description El portal lo llama al salir de la pantalla (``sendBeacon``).
+         */
+        post: operations["release_api_v1_hitl_items__item_id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/items/{item_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review */
+        post: operations["review_api_v1_hitl_items__item_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/items/{item_id}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip */
+        post: operations["skip_api_v1_hitl_items__item_id__skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Next Case
+         * @description Toma el siguiente caso: lo bloquea 15 minutos para el revisor.
+         */
+        post: operations["next_case_api_v1_hitl_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summary
+         * @description Por cola permitida: solo conteos.
+         */
+        get: operations["summary_api_v1_hitl_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/kpis/cards": {
         parameters: {
             query?: never;
@@ -422,10 +533,58 @@ export interface components {
             /** Last Monitor At */
             last_monitor_at: string | null;
         };
+        /** GuidelineOut */
+        GuidelineOut: {
+            /** Content */
+            content: string;
+            /** Guideline Version */
+            guideline_version: string;
+            task: components["schemas"]["HitlTask"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HitlCase */
+        HitlCase: {
+            /**
+             * Display Mode
+             * @enum {string}
+             */
+            display_mode: "blind" | "assisted";
+            /** Guideline Version */
+            guideline_version: string;
+            /** Item Id */
+            item_id: string;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            proposal: components["schemas"]["SentimentProposal"] | null;
+            /**
+             * Review Round
+             * @enum {integer}
+             */
+            review_round: 1 | 2;
+            /**
+             * Task
+             * @constant
+             */
+            task: "sentiment";
+            /** Text */
+            text: string;
+        };
+        /** HitlSummary */
+        HitlSummary: {
+            /** Tasks */
+            tasks: components["schemas"]["TaskSummary"][];
         };
         /**
          * HitlTask
@@ -501,6 +660,14 @@ export interface components {
             ppi: components["schemas"]["Estimate"] | null;
             raw: components["schemas"]["Estimate"] | null;
         };
+        /** NextIn */
+        NextIn: {
+            /**
+             * Task
+             * @constant
+             */
+            task: "sentiment";
+        };
         /** PromptChange */
         PromptChange: {
             /**
@@ -510,6 +677,19 @@ export interface components {
             first_labeled_at: string;
             /** Prompt Version */
             prompt_version: string;
+        };
+        /**
+         * ReviewFlag
+         * @description Marcas del revisor de sentimiento (guía ``v2.2``).
+         * @enum {string}
+         */
+        ReviewFlag: "menciona_falla" | "duda" | "no_evaluable" | "nombre_persona";
+        /** ReviewOut */
+        ReviewOut: {
+            /** Next Available */
+            next_available: boolean;
+            /** Review Id */
+            review_id: string;
         };
         /**
          * Role
@@ -546,6 +726,54 @@ export interface components {
              */
             started_at: string;
             status: components["schemas"]["RunStatus"];
+        };
+        /** SentimentProposal */
+        SentimentProposal: {
+            /**
+             * Label
+             * @enum {string}
+             */
+            label: "NEG" | "NEU" | "POS";
+            /** P Neg */
+            p_neg: number;
+            /** P Neu */
+            p_neu: number;
+            /** P Pos */
+            p_pos: number;
+        };
+        /** SentimentReviewIn */
+        SentimentReviewIn: {
+            /** Comment */
+            comment?: string | null;
+            /** Flags */
+            flags: components["schemas"]["ReviewFlag"][];
+            /** Guideline Version */
+            guideline_version: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+            /** Ticket */
+            ticket?: string | null;
+            /** Validated Label */
+            validated_label: ("NEG" | "NEU" | "POS") | null;
+        };
+        /** TaskSummary */
+        TaskSummary: {
+            /** Median Seconds */
+            median_seconds: number | null;
+            /** Mine This Week */
+            mine_this_week: number;
+            /** Monitor Done */
+            monitor_done: number;
+            /** Monitor Target */
+            monitor_target: number;
+            /** Pending */
+            pending: number;
+            task: components["schemas"]["HitlTask"];
+            /** Team This Week */
+            team_this_week: number;
         };
         /** TopicMonth */
         TopicMonth: {
@@ -674,6 +902,190 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    guideline_api_v1_hitl_guidelines__task__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task: components["schemas"]["HitlTask"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidelineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_api_v1_hitl_items__item_id__release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_api_v1_hitl_items__item_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SentimentReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skip_api_v1_hitl_items__item_id__skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    next_case_api_v1_hitl_next_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NextIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HitlCase"];
+                };
+            };
+            /** @description No hay casos pendientes */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_api_v1_hitl_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HitlSummary"];
+                };
+            };
+        };
+    };
     cards_api_v1_kpis_cards_get: {
         parameters: {
             query?: {

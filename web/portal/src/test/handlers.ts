@@ -62,6 +62,39 @@ export function syntheticLanding(overrides: Partial<Landing> = {}): Landing {
   };
 }
 
+type HitlCase = components["schemas"]["HitlCase"];
+type HitlSummary = components["schemas"]["HitlSummary"];
+
+export function syntheticHitlCase(overrides: Partial<HitlCase> = {}): HitlCase {
+  return {
+    item_id: "a".repeat(32),
+    task: "sentiment",
+    text: "No puedo entrar a la app desde ayer.\nSale un error.",
+    display_mode: "assisted",
+    proposal: { label: "NEG", p_neg: 0.62, p_neu: 0.25, p_pos: 0.13 },
+    guideline_version: "v2.2",
+    opened_at: "2026-10-26T12:00:00Z",
+    review_round: 1,
+    ...overrides,
+  };
+}
+
+export function syntheticHitlSummary(): HitlSummary {
+  return {
+    tasks: [
+      {
+        task: "sentiment",
+        pending: 197,
+        mine_this_week: 12,
+        team_this_week: 30,
+        median_seconds: 42,
+        monitor_done: 0,
+        monitor_target: 300,
+      },
+    ],
+  };
+}
+
 type Estimate = components["schemas"]["Estimate"];
 type Card = components["schemas"]["BankCard"];
 
@@ -303,6 +336,22 @@ export const handlers = [
     HttpResponse.json([
       { model_version: "sintetico_v1", promoted_at: "2026-10-11T00:00:00Z" },
     ]),
+  ),
+  http.get("*/api/v1/hitl/summary", () =>
+    HttpResponse.json(syntheticHitlSummary()),
+  ),
+  http.get("*/api/v1/hitl/guidelines/:task", () =>
+    HttpResponse.json({
+      task: "sentiment",
+      guideline_version: "v2.2",
+      valid_from: "2026-10-01T00:00:00Z",
+      content:
+        "# Guía de sentimiento\n\n| Etiqueta | Cuándo |\n| :-- | :-- |\n| NEG | Queja |",
+    }),
+  ),
+  http.post(
+    "*/api/v1/hitl/items/:id/release",
+    () => new HttpResponse(null, { status: 204 }),
   ),
   http.get("*/api/v1/me", () => HttpResponse.json(syntheticMe())),
   http.get("*/api/v1/landing", () => HttpResponse.json(syntheticLanding())),
