@@ -64,6 +64,7 @@ exclude = ["**/*.md"]
 minversion = "8.0"
 addopts = "-ra -q --import-mode=importlib --cov-report=term-missing"
 testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
+markers = ["bigquery: consulta BigQuery de dev (fuera de CI, RUN_BIGQUERY_TESTS=1)"]
 
 [tool.bandit]
 # experiments/ no es código de producción: experiments/analytics es un proyecto

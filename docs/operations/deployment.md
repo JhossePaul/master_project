@@ -230,7 +230,8 @@ imagen existente, y el registro donde se publica la imagen lo crea este mismo
 stack. En fase 2 las imágenes son obligatorias y deben ir fijadas por digest
 (`<registry>/<servicio>:<sha>@sha256:<64 hex>`); un tag mutable como `:latest`
 se rechaza porque no cambia el plan de Pulumi y no dispara un redeploy.
-`api_backend_image` es opcional: sin ella no se crea `voc-api-backend`.
+`api_backend_image` es opcional: sin ella no se crea `voc-api-backend`, que
+lleva IAP y su propia cuenta (ver [Portal y API](#portal-y-api)).
 `historical_job_image` sigue siendo opcional y por defecto usa la del worker.
 
 ```bash
@@ -266,9 +267,10 @@ una Mac). El flujo es GitHub → Cloud Build → Artifact Registry:
   `packages/`, lock o pipeline) o con `workflow_dispatch`, siempre desde `main`.
   No tiene disparador `pull_request`, así que las credenciales nunca llegan a
   código no revisado. Omite servicios con Dockerfile vacío: construye
-  `ingestion-worker` (feature 3.5) y `sanitization-pipeline` (feature 4.4);
-  `api-backend` entra cuando tenga Dockerfile. `develop` no publica imágenes:
-  se publican al integrar en `main` por PR.
+  `ingestion-worker` (feature 3.5), `sanitization-pipeline` (feature 4.4),
+  `ml-inference` (EPIC-6) y `api-backend` (EPIC-7; también con cambios en
+  `web/**`). `develop` no publica imágenes: se publican al integrar en `main`
+  por PR.
 - Solo se sube a Cloud Build lo que permite [`.gcloudignore`](../../.gcloudignore)
   (nunca `.env` ni `evidence/`), y el contexto Docker lo restringe
   [`.dockerignore`](../../.dockerignore); el build usa BuildKit
@@ -595,9 +597,10 @@ página en lugar de un recibo por evento.
 
 ## Desplegar nuevas imágenes de los workers
 
-Las dos imágenes (`ingestion-worker` y `sanitization-pipeline`) comparten
-código (`ingestion_worker` va dentro de la de sanitización), así que **siempre
-se despliegan juntas y con el mismo SHA**. El 2026-10-16 se actualizó solo la de
+Las imágenes (`ingestion-worker`, `sanitization-pipeline`, `ml-inference` y
+`api-backend`) comparten código (`ingestion_worker` va dentro de la de
+sanitización, y `voc-common` en todas), así que **siempre se despliegan juntas
+y con el mismo SHA**. El 2026-10-16 se actualizó solo la de
 ingesta y las páginas finales de los cinco bancos se cerraron con hueco (F-08).
 `tools/deploy_images.py` lo hace en un paso y se niega a mezclar versiones:
 
@@ -607,10 +610,11 @@ uv run python tools/deploy_images.py --project <proyecto> --apply    # + pulumi 
 uv run python tools/deploy_images.py --project <proyecto> --sha <40 hex>
 ```
 
-1. Lee en Artifact Registry las dos imágenes y elige el SHA más reciente que
+1. Lee en Artifact Registry las cuatro imágenes y elige el SHA más reciente que
    existe en **ambas** (o el de `--sha`; falla si falta en alguna). Solo cuentan
    digests `sha256:` y tags de 40 hex; `latest` se ignora.
-2. Fija `ingestion_worker_image` y `sanitization_job_image` con
+2. Fija `ingestion_worker_image`, `sanitization_job_image`,
+   `ml_inference_image` y `api_backend_image` con
    `<registro>/<imagen>:<sha>@<digest>` (`pulumi config set`; esto modifica
    `infra/Pulumi.dev.yaml` aunque no uses `--apply`).
 3. Muestra `pulumi preview --diff`. Con `--apply` ejecuta `pulumi up` solo si el
@@ -622,6 +626,65 @@ Se fija por digest y no por `latest` porque Pulumi despliega por diferencias:
 un tag mutable no cambia en el texto y no dispara una revisión nueva (el código
 de `infra/modules/cloud_run.py` lo rechaza), y el digest deja trazable qué
 código produjo cada dato.
+
+## Portal y API
+
+`voc-api-backend` sirve la API y el portal (EPIC-7) con la cuenta
+`voc-sa-portal-api`: lee todo el dataset `bbva_voc_tds` y solo escribe en diez
+tablas de curaduría y HITL (permiso `dataEditor` por tabla). Corre detrás de
+IAP directo en Cloud Run, sin balanceador ni dominio propio.
+
+**Alta de personas.** Los roles viven en el secreto `voc-portal-roles`, que
+Pulumi arma desde la configuración cifrada `portal_users` (correo → roles y,
+para revisores, `reviewer_tasks`). Los roles son `lector`, `analista`,
+`revisor` y `administrador`; un rol incluye al lector y el administrador al
+analista. Cada correo recibe además `roles/iap.httpsResourceAccessor` sobre el
+servicio:
+
+```bash
+cd infra
+pulumi config set --secret bbva-voc-infra:portal_users \
+  '{"<correo>": {"roles": ["administrador"]}, "<otro>": {"roles": ["revisor"], "reviewer_tasks": ["sentiment"]}}'
+pulumi config set bbva-voc-infra:portal_users_version 2   # súbela con cada cambio
+pulumi preview --stack dev
+```
+
+Quien tenga permiso de IAP pero no aparezca en el mapa recibe 403 en `/api/*`;
+el mapa es la segunda barrera. Los correos nunca van en el nombre de un
+recurso ni en el repositorio.
+
+**IAP con cuentas externas.** El cliente de OAuth que gestiona Google solo
+admite identidades de la organización. Para admitir Gmail, `up.edu.mx` o
+`bbva.com` hace falta un cliente propio con audiencia **External**, creado en
+la consola (Pulumi no crea clientes de OAuth) y aplicado al proyecto con
+`gcloud iap settings set`. Está hecho en dev (2026-10-25). Una cuenta de
+`bbva.com` no entra mientras el administrador de su Workspace bloquee las
+aplicaciones de terceros.
+
+**Hash del actor.** Todo cambio de configuración y toda revisión registran
+quién fue como hash, nunca como correo:
+`sha256("<USER_HASH_SALT>:<correo en minúsculas>")`. Para los argumentos
+`--actor-hash` de los comandos de `ml-inference`:
+
+```bash
+USER_HASH_SALT="$(pulumi config get user_hash_salt --stack dev)" \
+  uv run python tools/actor_hash.py <correo>
+```
+
+**Probar sin GCP.** `PORTAL_AUTH_MODE=local` (solo con `ENVIRONMENT=local`) y
+`PORTAL_DATA=fixtures` levantan la API con un solo usuario y datos sintéticos:
+
+```bash
+ENVIRONMENT=local PORTAL_AUTH_MODE=local PORTAL_LOCAL_USER=yo@example.com \
+  PORTAL_LOCAL_ROLES=administrador PORTAL_DATA=fixtures \
+  uv run uvicorn api_backend.main:app --port 8080
+```
+
+**Orden del primer despliegue.** (1) `portal_users` con tu correo; (2) el CD
+publica `api-backend` al integrar en `main`; (3) `deploy_images.py --apply`
+fija las cuatro imágenes; (4) abrir la URL de `api_backend_uri` con una cuenta
+del mapa y comprobar `/api/v1/me`. Una cuenta sin permiso de IAP no debe llegar
+a la API, y una con permiso pero fuera del mapa debe recibir 403.
 
 ## Validación de la operación diaria (2026-10-18)
 

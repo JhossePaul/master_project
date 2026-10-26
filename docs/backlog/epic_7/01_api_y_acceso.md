@@ -1,6 +1,6 @@
 # Paso 1. Features 7.1 (API, base) y 7.2 (Seguridad y acceso)
 
-* **Estado (2026-10-25):** En curso: secciones 1 (paquete y workspace), 2 (configuración), 3 (identidad y roles, con `actor_hash`) 4 (BigQuery) 5 (aplicación base) y 6.1 y 6.2 (imagen, CI y CD) hechas; siguen la 6.3 (infraestructura), la 7 (revisión de pruebas) y la 8 (documentación).
+* **Estado (2026-10-25):** Código, imagen, CI/CD y la base de infraestructura en dev listos; falta que el CD publique la imagen (merge a `main`), fijarla con `deploy_images.py` y comprobar el acceso. Detalle en "Avance".
 * **Nivel:** imprescindible.
 * **Depende de:** paso 0. En local no depende de nada: se trabaja con `PORTAL_AUTH_MODE=local` y `PORTAL_DATA=fixtures`. El despliegue en dev espera a B1, B2 y B3.
 * **Objetivo:** el esqueleto de `services/api-backend/` que usarán todas las secciones: configuración, identidad con IAP, roles, acceso a BigQuery con costo acotado, escritura de solo inserción, errores, registros, archivos del portal, imagen, CI y CD, y la infraestructura del servicio privado. **No implementa las rutas de cada sección:** cada paso agrega las suyas.
@@ -277,8 +277,8 @@ Una prueba de integración opcional, marcada `@pytest.mark.bigquery` y fuera de 
 
 ## Terminado cuando
 
-* [ ] La API arranca en local con datos sintéticos (`PORTAL_DATA=fixtures`, `PORTAL_AUTH_MODE=local`) y `/api/v1/me` responde.
-* [ ] Las pruebas de la sección 7 pasan con cobertura ≥ 85 %, y la del centinela está lista para que cada paso la extienda.
+* [x] La API arranca en local con datos sintéticos (`PORTAL_DATA=fixtures`, `PORTAL_AUTH_MODE=local`) y `/api/v1/me` responde.
+* [x] Las pruebas de la sección 7 pasan con cobertura ≥ 85 %, y la del centinela está lista para que cada paso la extienda.
 * [ ] La imagen se construye y pasa su prueba de humo en CI.
 * [ ] En dev (con B1 a B3 resueltos y `pulumi up` aprobado): `voc-api-backend` corre con `voc-sa-portal-api` detrás de IAP; una cuenta del mapa entra a `/api/v1/me`; una cuenta sin permiso de IAP no llega a la API; una cuenta con permiso de IAP pero sin entrada en el mapa recibe 403.
 * [ ] `pulumi preview` queda sin cambios después del `up`.
@@ -339,3 +339,9 @@ _(Se llena al ejecutar.)_
   * Quedan para el paso 8 los permisos `run.jobsExecutorWithOverrides` sobre los Jobs de ML y `storage.objectViewer` de `ml_artifacts/`.
 * **Antes del `pulumi up` (con aprobación del autor):** (1) `pulumi config set --secret bbva-voc-infra:portal_users '{"<correo>": {"roles": ["administrador"]}}'`; (2) que el CD publique la imagen de la API y `deploy_images.py` la fije; (3) el cliente de OAuth externo y `gcloud iap settings set` ya están aplicados (B1); (4) `iap_enabled` no lleva `launch_stage` porque IAP en Cloud Run es GA; si el proveedor la exigiera, el `up` lo dirá y se agrega `BETA`.
 * **Corrección en las pruebas de la API:** el CI exporta `ENVIRONMENT=test`, `GCP_PROJECT_ID` y `USER_HASH_SALT`, y las pruebas de `reader` y `writer` construían la configuración al importar el archivo, así que fallaban en CI. Ahora la construyen al usarla y un `conftest` limpia esas variables.
+* **Sección 7 y 8 (2026-10-25):**
+  * Se agregó `test_sentinel.py` (recorre `ROUTE_ROLES`, exige `SAMPLE_PARAMS` por cada ruta de lector y comprueba que una ruta que filtra el centinela se detecta) y la prueba opcional `test_bigquery_integration.py` (`@pytest.mark.bigquery`, con `RUN_BIGQUERY_TESTS=1` y `BQ_TEST_PROJECT`). Corrida contra dev: las 40 tablas y vistas permitidas existen. Un `SELECT *` leería, entre otras, `review_predictions_current` 1.68 GB, `text_embeddings` 5.9 GB y `segment_embeddings` 3.4 GB: ninguna consulta de un repositorio debe leer esas tablas sin filtro (el tope de 2 GB las rechazaría).
+  * El paquete tiene 108 pruebas (más 40 de integración omitidas), 99.8 % de cobertura.
+  * Documentación: sección "Portal y API" en `docs/operations/deployment.md` (alta de personas, IAP con cuentas externas, hash del actor, modo local y orden del primer despliegue), `README.md`, la fila de seguridad del contrato v3, y las imágenes de `deploy_images.py` en el runbook.
+* **Base aplicada en dev (2026-10-25, autor):** `portal_users` cargado (una persona: el autor, con `administrador` y `revisor` y las tres colas de revisión). `pulumi up`: 18 recursos creados (cuenta `voc-sa-portal-api`, permisos, secreto `voc-portal-roles` con su versión 1, API de IAP, permisos por tabla) y 1 actualizado (`voc-ingestion-worker`, valores por defecto del proveedor 8); el `preview` siguiente da 138 sin cambios. La versión 1 del secreto cumple la forma de `RoleMap` de la API (1 persona, roles y colas correctos). Falta el servicio: `voc-api-backend`, el agente de IAP y el acceso por correo se crean cuando `api_backend_image` exista.
+* **Sal del hash:** las pruebas usan sales falsas de 16 caracteres; la migración del hash y la API usan la sal del stack de Pulumi (`user_hash_salt`, cifrada con KMS), no la del archivo `.env`.

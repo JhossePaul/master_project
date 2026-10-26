@@ -47,9 +47,9 @@ bbva-voc-analyzer/
 │   ├── ingestion-worker/   # Servicio de extracción de reseñas (Google Play/App Store)
 │   ├── sanitization-pipeline/ # Job de Dataflow para limpieza y Cloud DLP
 │   ├── ml-inference/       # Jobs de inferencia batch, cargas y siembra (EPIC-6)
-│   └── api-backend/        # API RESTful (FastAPI) de consulta y ruteo
+│   └── api-backend/        # API y portal (FastAPI): IAP, roles y BigQuery (EPIC-7, en curso)
 └── web/
-    └── portal/             # Portal web (React + Vite): cockpit, explorador, HITL y administración
+    └── portal/             # Frontal (React + Vite) del portal; se construye en EPIC-7, paso 2
 ```
 
 ## 🛠 Stack Tecnológico
