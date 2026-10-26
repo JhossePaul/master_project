@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 # (método, ruta registrada) -> parámetros de consulta con los que se llama.
 SAMPLE_PARAMS: dict[tuple[str, str], dict[str, str]] = {
     ("GET", "/api/v1/me"): {},
+    ("GET", "/api/v1/landing"): {},
 }
 
 
