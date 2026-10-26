@@ -110,7 +110,7 @@ Se usa solo dentro de gráficas, tablas de datos y la explicación por palabras.
 
 ### 4.1 Bancos
 
-Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos están pendientes (cuestionario, pregunta `D-03`). El mapa vive en un solo archivo (`web/portal/src/config/banks.ts`), indexado por `bank_id`.
+Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos se eligieron por color (cuestionario, pregunta `D-03`): Banco Índigo (BBVA), Banco Jade (AZTECA), Banco Carmín (SANTANDER), Banco Violeta (NUBANK) y Banco Ónix (BANORTE). El mapa vive en un solo archivo (`web/portal/src/config/banks.ts`), indexado por `bank_id`.
 
 | `bank_id` | Color | Hex | Contraste | Trazo de respaldo |
 | :--- | :--- | :--- | :---: | :--- |

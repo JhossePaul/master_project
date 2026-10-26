@@ -1,6 +1,6 @@
 # Paso 2. Feature 7.3: Portal base, navegación y landing
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** En curso: código, pruebas e imagen listos; falta el despliegue en dev (`main`) y el logotipo oficial (`B-01`).
 * **Nivel:** imprescindible.
 * **Depende de:** paso 1 y las preguntas del [cuestionario](design_questions.md) marcadas **"antes de 2"**.
 * **Objetivo:** el proyecto `web/portal/` con la guía visual hecha código (tokens, tipografías, componentes base, primitivas de gráficas), la estructura de la aplicación (encabezado, navegación por rol, filtros globales en la URL) y la primera pantalla real: la landing.
@@ -157,15 +157,30 @@ class LandingResponse(BaseModel):
 
 ## Terminado cuando
 
-* [ ] `npm run check`, `npm test` y `npm run build` pasan; `dist/` pesa menos de 400 KB comprimido sin las secciones perezosas.
-* [ ] La imagen de la API incluye el portal y en dev se ve la landing con datos reales detrás de IAP.
-* [ ] Los filtros se conservan al navegar y se pueden compartir por URL.
-* [ ] Ningún hex, nombre real de banco ni tipo de respuesta está escrito a mano fuera de `tokens.css`, `banks.ts` y `schema.d.ts` (lo revisa `grep` en la prueba de `banks`).
+* [x] `npm run check`, `npm test` y `npm run build` pasan; `dist/` pesa menos de 400 KB comprimido sin las secciones perezosas.
+* [ ] La imagen de la API incluye el portal (comprobado en local con Docker) y en dev se ve la landing con datos reales detrás de IAP (falta el despliegue).
+* [x] Los filtros se conservan al navegar y se pueden compartir por URL.
+* [x] Ningún hex, nombre real de banco ni tipo de respuesta está escrito a mano fuera de `tokens.css`, `banks.ts` y `schema.d.ts` (lo revisa `grep` en la prueba de `banks`).
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **Versiones (instaladas el 2026-10-26):** React 19.3, React Router 8.5, TanStack Query 5.104, TanStack Table 9.3 (aún sin uso), Vite 8, Vitest 5, Tailwind 4.3 y Zod 4. **TypeScript queda en `~5.9`**: `openapi-typescript` 7.13 declara `typescript@^5` como dependencia de pares y `npm` no resuelve con la 7.0.
+* **shadcn/ui a mano.** No se corrió `npx shadcn init`: los componentes (`button`, `card`, `dialog`, `dropdown-menu`, `popover`, `select`, `tabs`, `tooltip`, `badge`, `checkbox`, `radio-group`, `textarea`, `input`, `label`, `separator`, `skeleton`, `sonner`, `table`) se escribieron en `src/components/ui/` con el mismo patrón (Radix + `cva` + `cn`) y los tokens de la guía, sin `components.json`. Los que aún no usa ninguna pantalla (`select`, `radio-group`, `tabs`, `table` fuera de `ChartFrame`) llegan con su primera sección.
+* **Seudónimos:** `D-03` ya está respondida (por color), así que `banks.ts` usa Banco Índigo, Jade, Carmín, Violeta y Ónix, no "Banco A" a "Banco E".
+* **Tipografías solo en latino.** Con el CSS de Fontsource completo, `dist/` pesaba 645 KB comprimido (19 archivos de tipografía de alfabetos que nadie usa); con `@font-face` solo del subconjunto latino, 285 KB.
+* **Cliente de la API.** `createClient` usa `location.origin` como base (no `""`) y resuelve `fetch` al llamar: el `fetch` de Node no acepta rutas relativas y MSW sustituye `fetch` después de importar el módulo.
+* **Repositorio de la landing.** Cada sección tiene su `Protocol`, su repositorio de BigQuery y uno en memoria; el router toma el de `app.state.landing_repository` si existe (pruebas), el de muestra con `PORTAL_DATA=fixtures` y el de BigQuery si no. `bq/deps.py` crea un solo `BigQueryReader` por proceso. Los datos de muestra de la landing son sintéticos y relativos a la fecha actual.
+* **KPI de la tarjeta.** Por banco se toma el mes cerrado más reciente que tenga *ambas* métricas (`neg` y `gap_estrellas`) con PPI; el mes en curso no cuenta. Un banco sin ninguno muestra "Sin estimación con PPI" en vez de desaparecer.
+* **Frescura.** `ok` si ocurrió en las últimas 36 horas (ingesta y delta) u 8 días (monitor); un delta fallido es `aviso` aunque sea reciente.
+* **`hitl_pending`** cuenta los casos sin evento o en `queued` de las tareas del revisor; un administrador que no es revisor recibe `null` (decisión `S-02`).
+* **Barra de filtros.** Aparece solo en `/cockpit`, `/explorador` y `/alertas` (`FILTER_PATHS`); la landing no la usa. Los valores por defecto (cinco bancos y 90 días) no se escriben en la URL.
+* **Sin `Skeleton` propio ni `KeyboardHint`/`DataTable`:** el primero es el de shadcn; los otros dos llegan con los pasos 4 y 6, como dice el paso.
+* **Logotipo oficial (`B-01`):** no se descargó el paquete de la UP porque la descarga necesita la aprobación del autor; el encabezado lleva el nombre del portal en serif, que es el sustituto previsto.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **API (2026-10-26):** `GET /api/v1/landing` (`sections/landing/`: `schemas`, `repository`, `service`, `router`), `bq/deps.py` y `openapi.json` regenerado. 11 pruebas nuevas en `test_landing.py` (la última corrida gana, el mes anterior como respaldo, el mes en curso no cuenta, `hitl_pending` solo para revisores, SQL de BigQuery con un lector falso) y la ruta en `SAMPLE_PARAMS` del centinela. `pytest services/api-backend`: 99 % de cobertura; `ruff`, `pyrefly` y `bandit` en verde.
+* **Portal (2026-10-26):** proyecto Vite en `web/portal/` con tokens, tipografías, `banks.ts`, `format.ts`, glosario (27 términos), navegación por rol, filtros en la URL, `AppShell`, 13 componentes base, primitivas de D3 y `TimeSeries` (dygraphs), cliente tipado y la landing. `npm run check`, `npm test` (66 pruebas en 11 archivos, con `axe` sobre la landing y el *shell*) y `npm run build` pasan; `dist/` pesa 285 KB comprimido (el *bundle* principal, 187 KB; la landing perezosa, 5 KB).
+* **Imagen y CI:** `Dockerfile` con `WEB_SOURCE=web-build` por defecto; construida en local (`docker build`), `/` y `/cockpit` devuelven `index.html`, `/api/v1/landing` sin JWT da 401. El CI suma el trabajo `portal` (Node 24, tipos de la API al día, Biome, pruebas y construcción) y la prueba de humo comprueba `/` y `/cockpit`. Sin ejecutarse aún en GitHub.
+* **Vista previa local** (`PORTAL_DATA=fixtures`, modo local): hero con tahalí, frescura, cinco tarjetas con su color, alertas y accesos.
+* **Pendiente:** commits (propuestos al autor), merge a `main` para que el CD publique la imagen y comprobar la landing en dev con datos reales (`deploy_images.py --apply`, con aprobación), y el logotipo oficial de Posgrados (`B-01`).
