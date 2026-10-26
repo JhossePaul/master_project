@@ -69,7 +69,7 @@ export function TimeSeries({
       // encima del eje.
       labelsDiv: legend.current ?? undefined,
       labelsSeparateLines: false,
-      legend: "always",
+      legend: "onmouseover",
       height,
       strokeWidth: 1.5,
       axisLabelFontSize: 12,
@@ -125,10 +125,37 @@ export function TimeSeries({
 
   return (
     <div>
+      <ul
+        aria-hidden="true"
+        className="mb-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold"
+      >
+        {series
+          .filter((s) => !s.faint)
+          .map((s) => (
+            <li
+              key={s.id}
+              className="flex items-center gap-2"
+              style={{ color: `var(${s.colorVar})` }}
+            >
+              <svg width="28" height="8" aria-hidden="true">
+                <line
+                  x1="0"
+                  x2="28"
+                  y1="4"
+                  y2="4"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray={s.dash?.join(" ") || undefined}
+                />
+              </svg>
+              {s.label}
+            </li>
+          ))}
+      </ul>
       <div
         ref={legend}
         aria-hidden="true"
-        className="tabular mb-1 min-h-6 rounded-sm bg-surface-muted px-2 py-1 text-sm"
+        className="tabular mb-1 min-h-7 rounded-sm bg-surface-muted px-2 py-1 text-sm empty:before:text-text-muted empty:before:content-['Pasa_el_cursor_sobre_la_gráfica_para_ver_los_valores']"
       />
       <div
         ref={ref}

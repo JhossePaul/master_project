@@ -1,10 +1,4 @@
-import {
-  act,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
@@ -55,13 +49,11 @@ describe("cockpit, pestaña Diario", () => {
     expect(within(card).getByText("entre −0.35 y −0.25")).toBeInTheDocument();
     expect(within(card).getAllByText(/frente a sep 2025/)).toHaveLength(3);
     expect(within(card).getByText(/Modelo sintetico_v1/)).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(
-      5,
-    );
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(5);
   });
 
   it("la serie diaria se marca como cruda", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const frame = (await screen.findByText("Serie diaria")).closest("div")
       ?.parentElement?.parentElement as HTMLElement;
     expect(within(frame).getByText("Solo modelo")).toBeInTheDocument();
@@ -69,7 +61,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("elegir un día abre el panel con las dos listas y el aviso", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -101,7 +93,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("arrastrar un rango cambia desde y hasta en la URL", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -123,7 +115,7 @@ describe("cockpit, pestaña Diario", () => {
         return HttpResponse.json(syntheticFamilies());
       }),
     );
-    renderApp("/cockpit");
+    renderApp("/topicos");
     expect(
       await screen.findByRole("img", { name: "Negativas por familia y mes" }),
     ).toBeInTheDocument();
@@ -140,7 +132,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("pulsar una familia escribe ?familia= en la URL", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/topicos");
     const group = await screen.findByRole("group", {
       name: "Familia resaltada",
     });
@@ -154,20 +146,22 @@ describe("cockpit, pestaña Diario", () => {
 
   it("Abrir en el Explorador arma la URL con los filtros", async () => {
     renderApp(
-      "/cockpit?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30&familia=AC",
+      "/topicos?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30&familia=AC",
     );
 
+    await screen.findByRole("img", { name: "Negativas por familia y mes" });
     await waitFor(() =>
       expect(
         screen.getAllByRole("link", { name: /Abrir en el Explorador/ }).length,
-      ).toBeGreaterThanOrEqual(5),
+      ).toBeGreaterThanOrEqual(2),
     );
-    const links = screen.getAllByRole("link", {
-      name: /Abrir en el Explorador/,
-    });
-    const href = links[0]?.getAttribute("href") ?? "";
+    const href =
+      screen
+        .getAllByRole("link", { name: /Abrir en el Explorador/ })[0]
+        ?.getAttribute("href") ?? "";
     const params = new URL(href, "http://x").searchParams;
-    expect(params.get("bancos")).toBe("BBVA,AZTECA");
+
+    expect(params.get("bancos")).toBe("BBVA");
     expect(params.get("desde")).toBe("2026-08-01");
     expect(params.get("hasta")).toBe("2026-09-30");
     expect(params.get("familia")).toBe("AC");
@@ -205,18 +199,34 @@ describe("cockpit, pestaña Diario", () => {
     expect(within(table).getByText("4–5 ★")).toBeInTheDocument();
   });
 
-  it("no tiene violaciones de axe", async () => {
+  it("Cockpit no tiene violaciones de axe", async () => {
     const { container } = renderApp("/cockpit");
     await screen.findByRole("table", { name: /Proporción de reseñas/ });
+    await screen.findByRole("heading", { name: "Banco Azul" });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("Tópicos no tiene violaciones de axe", async () => {
+    const { container } = renderApp("/topicos");
     await screen.findByRole("img", { name: "Negativas por familia y mes" });
     await screen.findByText("Inicio de sesión que falla");
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("Evolución no tiene violaciones de axe", async () => {
+    const { container } = renderApp("/evolucion");
+    await screen.findByRole("img", {
+      name: "Reseñas por día y versión de la app",
+    });
+    await screen.findByText("Reseñas negativas por mes");
+    await screen.findByText("11.33", { selector: "td" });
     expect(await axe(container)).toHaveNoViolations();
   });
 });
 
 describe("cockpit, pestaña Por versión", () => {
   it("el aviso va antes que los filtros de banco y trae la cobertura", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
 
     const notice = await screen.findByText(
       /no hay pruebas de cambio de nivel entre versiones/,
@@ -232,7 +242,7 @@ describe("cockpit, pestaña Por versión", () => {
   });
 
   it("muestra las versiones por día con su leyenda y la tabla del banco", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
 
     expect(
       await screen.findByRole("img", {
@@ -260,7 +270,7 @@ describe("cockpit, pestaña Por versión", () => {
         return HttpResponse.json(syntheticVersionDaily());
       }),
     );
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -279,7 +289,7 @@ describe("cockpit, pestaña Por versión", () => {
         return HttpResponse.json(syntheticVersionDaily());
       }),
     );
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -289,17 +299,8 @@ describe("cockpit, pestaña Por versión", () => {
     await waitFor(() => expect(seen).toContain("AZTECA"));
   });
 
-  it("cambiar de pestaña escribe vista en la URL", async () => {
-    const { router } = renderApp("/cockpit");
-    await userEvent.click(
-      await screen.findByRole("tab", { name: "Por versión" }),
-    );
-    expect(router.state.location.search).toContain("vista=version");
-    fireEvent.click(screen.getByRole("tab", { name: "Diario" }));
-  });
-
   it("no tiene violaciones de axe", async () => {
-    const { container } = renderApp("/cockpit?vista=version");
+    const { container } = renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -321,7 +322,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
         return HttpResponse.json(syntheticDaily());
       }),
     );
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const seven = await screen.findByRole("button", { name: "7 días" });
     expect(seven).toHaveAttribute("aria-pressed", "true");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
@@ -345,7 +346,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
         return HttpResponse.json(syntheticDaily());
       }),
     );
-    renderApp("/cockpit?desde=2026-09-28&hasta=2026-10-26");
+    renderApp("/evolucion?desde=2026-09-28&hasta=2026-10-26");
 
     await waitFor(() => expect(seen).toHaveLength(1));
 
@@ -353,7 +354,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
   });
 
   it("con un banco deja el dato diario como línea de fondo", async () => {
-    renderApp("/cockpit?bancos=BBVA");
+    renderApp("/evolucion?bancos=BBVA");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     const labels = lastOptions().labels as unknown as string[];
@@ -362,18 +363,18 @@ describe("cockpit, suavizado de la serie diaria", () => {
   });
 
   it("con cinco bancos solo hay una línea por banco y una franja de leyenda", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     const options = lastOptions();
 
     expect((options.labels as unknown as string[]).length).toBe(6);
-    expect(options.legend).toBe("always");
+    expect(options.legend).toBe("onmouseover");
     expect(options.labelsDiv).toBeInstanceOf(HTMLElement);
   });
 
   it("el panel aclara que el día no es el promedio", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -440,52 +441,6 @@ describe("cockpit, barra fija y secciones", () => {
       "false",
     );
   });
-
-  it("el menú sigue la sección que está a la vista al hacer scroll", async () => {
-    renderApp("/cockpit");
-    const menu = await screen.findByRole("button", { name: /Sección:/ });
-    const tops: Record<string, number> = {
-      resumen: -900,
-      serie: -600,
-      mensual: -300,
-      familias: 120,
-      topicos: 700,
-    };
-    const spy = vi
-      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function (this: HTMLElement) {
-        return { top: tops[this.id] ?? 2000 } as DOMRect;
-      });
-
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
-
-    await waitFor(() => expect(menu).toHaveTextContent("Familias"));
-    spy.mockRestore();
-  });
-
-  it("la barra es fija y trae el menú de secciones", async () => {
-    renderApp("/cockpit");
-
-    const menu = await screen.findByRole("button", { name: /Sección:/ });
-    const bar = menu.closest("search") as HTMLElement;
-    expect(bar.className).toContain("sticky");
-    expect(menu).toHaveTextContent("Último mes por banco");
-
-    await userEvent.click(menu);
-
-    for (const name of [
-      "Serie diaria",
-      "Gráficas mensuales",
-      "Familias",
-      "Tópicos",
-      "Estrellas × texto",
-      "Comparación entre bancos",
-    ]) {
-      expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
-    }
-  });
 });
 
 describe("cockpit, ajustes de la primera pasada", () => {
@@ -500,7 +455,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
   });
 
   it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
-    renderApp("/cockpit");
+    renderApp("/topicos");
 
     const item = (
       await screen.findByText("Inicio de sesión que falla")
@@ -521,7 +476,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
         ),
       ),
     );
-    renderApp("/cockpit");
+    renderApp("/topicos");
 
     expect(
       (await screen.findAllByText("sin familia asociada")).length,
@@ -529,7 +484,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
   });
 
   it("la anomalía de familias muestra el z de cada mes", async () => {
-    const { container } = renderApp("/cockpit");
+    const { container } = renderApp("/topicos");
     await userEvent.click(
       await screen.findByRole("button", { name: "Anomalía" }),
     );
@@ -541,7 +496,9 @@ describe("cockpit, ajustes de la primera pasada", () => {
     expect(titles.some((t) => t?.includes("z = 4.6"))).toBe(true);
     expect(screen.getByText(/menos de lo habitual/)).toBeInTheDocument();
     expect(
-      screen.getByText("Habla de una actualización (u)"),
+      screen.getAllByText(
+        "Relacionada con una actualización",
+      )[0] as HTMLElement,
     ).toBeInTheDocument();
   });
 
@@ -561,7 +518,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
         ),
       ),
     );
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const frame = (
       await screen.findByText("Reseñas negativas por mes")
     ).closest("div")?.parentElement?.parentElement as HTMLElement;
@@ -581,7 +538,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
   });
 
   it("los encabezados de las tablas se quedan fijos", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     const table = await screen.findByRole("table");
 
     expect(within(table).getAllByRole("columnheader")[0]?.className).toContain(

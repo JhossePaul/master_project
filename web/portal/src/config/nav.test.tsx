@@ -22,6 +22,8 @@ describe("navegación por rol", () => {
     expect(await menuFor(["lector"])).toEqual([
       "Inicio",
       "Cockpit",
+      "Evolución",
+      "Tópicos",
       "Reporte",
       "Gobernanza",
     ]));
@@ -30,6 +32,8 @@ describe("navegación por rol", () => {
     expect(await menuFor(["lector", "analista"])).toEqual([
       "Inicio",
       "Cockpit",
+      "Evolución",
+      "Tópicos",
       "Explorador",
       "Alertas",
       "MLOps y AIOps",
@@ -41,6 +45,8 @@ describe("navegación por rol", () => {
     expect(await menuFor(["lector", "revisor"])).toEqual([
       "Inicio",
       "Cockpit",
+      "Evolución",
+      "Tópicos",
       "Revisión",
       "Reporte",
       "Gobernanza",
@@ -50,6 +56,8 @@ describe("navegación por rol", () => {
     expect(await menuFor(["lector", "administrador"])).toEqual([
       "Inicio",
       "Cockpit",
+      "Evolución",
+      "Tópicos",
       "Explorador",
       "Alertas",
       "MLOps y AIOps",

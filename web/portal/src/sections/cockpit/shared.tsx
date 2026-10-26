@@ -1,8 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { MonthlyKpi } from "@/api/kpis";
-import { useChartSize } from "@/charts/useChartSize";
 import { Button } from "@/components/ui/button";
 import { BANK_IDS, BANKS, type BankId, bankLabel } from "@/config/banks";
 
@@ -146,9 +145,23 @@ export function LoadingBlock() {
 
 const FALLBACK_WIDTH = 640;
 
-/** Ancho del contenedor para gráficas SVG a tamaño natural. */
+/**
+ * Ancho del contenedor para gráficas SVG a tamaño natural. Usa una referencia
+ * por función: el contenedor suele aparecer cuando ya llegaron los datos, y
+ * una referencia normal solo se mediría al montar el componente.
+ */
 export function useWidth() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { width } = useChartSize(ref);
-  return { ref, width: width > 0 ? width : FALLBACK_WIDTH };
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!element) return;
+    setWidth(element.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setWidth(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
+  return { ref: setElement, width: width > 0 ? width : FALLBACK_WIDTH };
 }

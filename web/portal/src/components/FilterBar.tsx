@@ -1,5 +1,4 @@
 import { RotateCcw } from "lucide-react";
-import { SectionMenu } from "@/components/SectionNav";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -124,7 +123,6 @@ export function FilterBar() {
         <RotateCcw aria-hidden="true" />
         Restablecer
       </Button>
-      <SectionMenu />
     </search>
   );
 }
