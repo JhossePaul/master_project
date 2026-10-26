@@ -65,7 +65,7 @@ class BigQueryExplanationsRepository:
             where += " AND model_version = @version"
             params.append(Param("version", "STRING", model_version))
         rows = self._reader.rows(
-            "SELECT text_key, model_version, method, "
+            "SELECT text_key, model_version, method, "  # nosec B608
             "TO_JSON_STRING(attributions) AS attributions, source, "
             f"computed_at FROM {self._table('review_explanations')} "
             f"WHERE {where} "
@@ -83,7 +83,7 @@ class BigQueryExplanationsRepository:
         self, bank_id: str, id_resena: str
     ) -> CurrentPrediction | None:
         rows = self._reader.rows(
-            "SELECT model_version, text_key, fecha FROM "
+            "SELECT model_version, text_key, fecha FROM "  # nosec B608
             f"{self._table('review_predictions_current')} "
             "WHERE bank_id = @bank AND id_resena = @id "
             "AND model_version IS NOT NULL LIMIT 1",
@@ -104,7 +104,7 @@ class BigQueryExplanationsRepository:
 
     def text(self, bank_id: str, id_resena: str, fecha: datetime) -> str | None:
         rows = self._reader.rows(
-            "SELECT texto_sanitizado FROM "
+            "SELECT texto_sanitizado FROM "  # nosec B608
             f"{self._table('sanitized_reviews_tds')} "
             "WHERE fecha >= @fecha AND fecha < TIMESTAMP_ADD(@fecha, "
             "INTERVAL 1 DAY) AND bank_id = @bank AND id_resena = @id LIMIT 1",

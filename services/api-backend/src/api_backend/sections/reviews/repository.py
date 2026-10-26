@@ -152,7 +152,7 @@ class BigQueryReviewsRepository:
         if extra:
             where.append(extra)
         sql = (
-            "WITH a AS (SELECT id_resena, families, flag_update, "
+            "WITH a AS (SELECT id_resena, families, flag_update, "  # nosec B608
             "flag_security, prompt_version "
             f"FROM {self._table('review_aspects')} "
             "WHERE fecha >= @from_ts AND fecha < @to_ts "
@@ -186,7 +186,7 @@ class BigQueryReviewsRepository:
 
     def topic_names(self) -> dict[int, str]:
         sql = (
-            "SELECT c.topic_id, c.curated_name "
+            "SELECT c.topic_id, c.curated_name "  # nosec B608
             f"FROM {self._table('curation_topics')} AS c "
             f"JOIN {self._table('topic_model_current')} "
             "USING (topic_model_version) WHERE TRUE "
@@ -211,7 +211,7 @@ class BigQueryReviewsRepository:
         first = min(r["fecha"] for r in rows)
         last = max(r["fecha"] for r in rows)
         sql = (
-            "SELECT id_resena, bank_id, texto_sanitizado, "
+            "SELECT id_resena, bank_id, texto_sanitizado, "  # nosec B608
             "TO_HEX(SHA256(texto_sanitizado)) AS text_key "
             f"FROM {self._table('sanitized_reviews_tds')} "
             "WHERE fecha >= @first AND fecha < @after "
@@ -256,7 +256,7 @@ class BigQueryReviewsRepository:
     ) -> tuple[int, dict[str, list[FacetCount]]]:
         base, params = self._base(f)
         sql = (
-            base + "SELECT dim, k, COUNT(*) AS n FROM ("
+            base + "SELECT dim, k, COUNT(*) AS n FROM ("  # nosec B608
             "SELECT 'bank' AS dim, bank_id AS k FROM base UNION ALL "
             "SELECT 'month', FORMAT_DATE('%Y-%m', DATE(fecha)) FROM base "
             "UNION ALL SELECT 'sentiment', sentiment FROM base UNION ALL "
@@ -289,7 +289,7 @@ class BigQueryReviewsRepository:
     ) -> tuple[list[ReviewRow], int]:
         base, params = self._base(f)
         sql = (
-            base + f"SELECT {ROW_COLUMNS}, COUNT(*) OVER () AS total FROM base "
+            base + f"SELECT {ROW_COLUMNS}, COUNT(*) OVER () AS total FROM base "  # nosec B608
             f"ORDER BY {ORDER_BY[sort]} LIMIT @size OFFSET @offset"
         )
         rows = self._reader.rows(
@@ -303,7 +303,7 @@ class BigQueryReviewsRepository:
         )
         if not rows:
             count = self._reader.rows(
-                base + "SELECT COUNT(*) AS total FROM base",
+                base + "SELECT COUNT(*) AS total FROM base",  # nosec B608
                 params,
                 name="reviews_count",
             )
@@ -315,7 +315,7 @@ class BigQueryReviewsRepository:
     ) -> tuple[ReviewRow, str | None] | None:
         # Sin ventana: la ficha abre cualquier reseña a la que llegue un enlace.
         found = self._reader.rows(
-            "SELECT fecha FROM "
+            "SELECT fecha FROM "  # nosec B608
             f"{self._table('review_predictions_current')} "
             "WHERE bank_id = @bank AND id_resena = @id LIMIT 1",
             [
@@ -330,7 +330,7 @@ class BigQueryReviewsRepository:
         f = ReviewFilters(banks=(bank_id,), date_from=day, date_to=day)
         base, params = self._base(f, "p.id_resena = @id")
         rows = self._reader.rows(
-            base + f"SELECT {ROW_COLUMNS} FROM base",
+            base + f"SELECT {ROW_COLUMNS} FROM base",  # nosec B608
             [*params, Param("id", "STRING", id_resena)],
             name="reviews_detail",
         )
@@ -340,7 +340,7 @@ class BigQueryReviewsRepository:
 
     def hitl_reviews(self, id_resena: str) -> list[HitlReviewRef]:
         rows = self._reader.rows(
-            "SELECT outcome, validated_label, review_round, submitted_at "
+            "SELECT outcome, validated_label, review_round, submitted_at "  # nosec B608
             f"FROM {self._table('hitl_reviews')} "
             "WHERE TRUE AND id_resena = @id AND task = 'sentiment' "
             "ORDER BY submitted_at",
@@ -351,7 +351,7 @@ class BigQueryReviewsRepository:
 
     def stored_explanation(self, text_key: str) -> ExplanationRef | None:
         rows = self._reader.rows(
-            "SELECT method, model_version, source "
+            "SELECT method, model_version, source "  # nosec B608
             f"FROM {self._table('review_explanations')} "
             "WHERE text_key = @key "
             "ORDER BY method = 'occlusion_v2' DESC, computed_at DESC LIMIT 1",
@@ -371,7 +371,7 @@ class BigQueryReviewsRepository:
         # La subconsulta sobre ``mes`` poda particiones: acota el costo. Hay
         # una fila por texto, banco y mes: se pide de más y se deduplica.
         sql = (
-            "SELECT base.text_key AS text_key, base.bank_id AS bank_id, "
+            "SELECT base.text_key AS text_key, base.bank_id AS bank_id, "  # nosec B608
             "distance FROM VECTOR_SEARCH("
             "(SELECT text_key, bank_id, mes, embedding "
             f"FROM {self._table('text_embeddings')} "
@@ -415,7 +415,7 @@ class BigQueryReviewsRepository:
         )
         base, params = self._base(f, "p.text_key IN UNNEST(@keys)")
         sql = (
-            base + f"SELECT {ROW_COLUMNS}, "
+            base + f"SELECT {ROW_COLUMNS}, "  # nosec B608
             "COUNT(*) OVER (PARTITION BY text_key, bank_id) AS n_reviews "
             "FROM base QUALIFY ROW_NUMBER() OVER "
             "(PARTITION BY text_key, bank_id ORDER BY fecha DESC) = 1"

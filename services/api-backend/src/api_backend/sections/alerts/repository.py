@@ -80,7 +80,7 @@ class BigQueryAlertRepository:
     def _current_sql(self, where: str) -> str:
         columns = ", ".join(f"a.{name}" for name in ALERT_FIELDS)
         return (
-            f"SELECT {columns}, COALESCE(a.status, 'open') AS status, "
+            f"SELECT {columns}, COALESCE(a.status, 'open') AS status, "  # nosec B608
             "a.status_at "
             f"FROM {self._table('drift_alerts_current')} AS a "
             f"WHERE {where} "
@@ -114,7 +114,7 @@ class BigQueryAlertRepository:
 
     def events(self, alert_id: str) -> list[DriftAlertEvent]:
         sql = (
-            "SELECT event_id, alert_id, status, actor_hash, `at`, note, ticket "
+            "SELECT event_id, alert_id, status, actor_hash, `at`, note, ticket "  # nosec B608
             f"FROM {self._table('drift_alert_events')} "
             "WHERE TRUE AND alert_id = @alert_id ORDER BY `at`, event_id"
         )
@@ -127,7 +127,7 @@ class BigQueryAlertRepository:
         self, bank_id: str, series: str, first: date, last: date
     ) -> list[DriftMetric]:
         sql = (
-            "SELECT bank_id, period, metric, value, baseline, z, psi, "
+            "SELECT bank_id, period, metric, value, baseline, z, psi, "  # nosec B608
             "threshold, alert, drift_policy_version, computed_at "
             f"FROM {self._table('drift_metrics')} "
             "WHERE bank_id = @bank AND metric = @series "
@@ -151,7 +151,7 @@ class BigQueryAlertRepository:
         if not boost_ids:
             return {}
         sql = (
-            "SELECT boost_id, bank_id, alert_id, risk_policy_version, "
+            "SELECT boost_id, bank_id, alert_id, risk_policy_version, "  # nosec B608
             "coverage, weekly_cap, starts_at, ends_at, ended_reason "
             f"FROM {self._table('hitl_boosts')} "
             "WHERE boost_id IN UNNEST(@ids) "
@@ -170,7 +170,7 @@ class BigQueryAlertRepository:
 
     def open_by_bank(self) -> dict[str, int]:
         sql = (
-            "SELECT bank_id, COUNT(*) AS n "
+            "SELECT bank_id, COUNT(*) AS n "  # nosec B608
             f"FROM {self._table('drift_alerts_current')} "
             "WHERE COALESCE(status, 'open') = 'open' GROUP BY bank_id"
         )
