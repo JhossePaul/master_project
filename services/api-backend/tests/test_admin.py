@@ -290,11 +290,12 @@ def test_la_politica_de_deriva_rechaza_campos_ajenos() -> None:
     [
         ("drift_policy_v1_BBVA", "drift_policy_v2_BBVA"),
         ("drift_policy_v9_BBVA", "drift_policy_v10_BBVA"),
-        ("raro_BBVA", "raro_v2_BBVA"),
+        ("drift_policy_v2_nubank", "drift_policy_v3_nubank"),
+        ("raro", "raro_v2"),
     ],
 )
 def test_siguiente_version_de_deriva(current: str, expected: str) -> None:
-    assert next_drift_version(current, "BBVA") == expected
+    assert next_drift_version(current) == expected
 
 
 # -- Oro ---------------------------------------------------------------------

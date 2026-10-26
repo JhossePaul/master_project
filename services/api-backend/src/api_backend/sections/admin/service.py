@@ -5,6 +5,7 @@ por qué. El umbral de la ``risk_policy`` sale de la curva del modelo promovido
 (``voc_nlp.policy``), no de lo que mande el portal.
 """
 
+import re
 from collections import Counter
 from collections.abc import Mapping
 from datetime import datetime
@@ -393,7 +394,7 @@ def save_drift(
                 **current.model_dump(),
                 **changes,
                 "drift_policy_version": next_drift_version(
-                    current.drift_policy_version, bank
+                    current.drift_policy_version
                 ),
                 "valid_from": now,
                 "set_by_hash": principal.actor_hash,
@@ -411,14 +412,16 @@ def save_drift(
     return proposed
 
 
-def next_drift_version(current: str, bank: str) -> str:
-    """``drift_policy_v1_BBVA`` → ``drift_policy_v2_BBVA``."""
-    suffix = f"_{bank}"
-    stem = current.removesuffix(suffix)
-    head, _, number = stem.rpartition("_v")
-    if not number.isdigit():
-        return f"{stem}_v2{suffix}"
-    return f"{head}_v{int(number) + 1}{suffix}"
+def next_drift_version(current: str) -> str:
+    """``drift_policy_v1_BBVA`` → ``drift_policy_v2_BBVA``.
+
+    Conserva el resto del id tal cual (en dev el banco va en minúscula:
+    ``drift_policy_v2_nubank``).
+    """
+    match = re.fullmatch(r"(.*_v)(\d+)(_.*)?", current)
+    if match is None:
+        return f"{current}_v2"
+    return f"{match[1]}{int(match[2]) + 1}{match[3] or ''}"
 
 
 # -- Oro ---------------------------------------------------------------------
