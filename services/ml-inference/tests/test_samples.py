@@ -40,7 +40,7 @@ def candidates(n: int) -> list[Candidate]:
     ]
 
 
-def risk(agreement: tuple[int, str] | None = None, freq: str = "quarterly"):
+def risk(agreement: tuple[int, str] | None = None, freq: str = "quarterly"):  # noqa: E501
     extra: dict[str, Any] = (
         {
             "human_agreement_sample_size": agreement[0],
@@ -179,6 +179,15 @@ def test_job_skips_existing_periods_and_unknown_frequencies(
         "agreement_sample": 0,
     }
     sample, _ = job(fake_bq, set())
-    out = sample.run(risk((3, "weekly"), freq="yearly"), "m1", NOW)
+    # Filas anteriores a la validación pueden traer otra frecuencia: el Job las
+    # sigue sorteando sin romperse (``model_copy`` no revalida).
+    legacy = risk().model_copy(
+        update={
+            "human_agreement_sample_size": 3,
+            "human_agreement_frequency": "weekly",
+            "monitor_frequency": "yearly",
+        }
+    )
+    out = sample.run(legacy, "m1", NOW)
     assert out == {"monitor_sample": 0, "agreement_sample": 0}
     assert sample.run(None, "m1", NOW)["monitor_sample"] == 0

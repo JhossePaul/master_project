@@ -145,6 +145,13 @@ Pestañas: **Apetito de riesgo**, **Deriva por banco**, **Historial**, **Oro** (
 
 * **Tasas contra `drift-rates` (2026-10-26, dev, solo lectura):** el servicio de administración, con los umbrales vigentes de cada banco, y `python -m ml_inference drift-rates` dan los mismos meses y alertas en las 35 series por banco (0 diferencias; ninguna fuera de tolerancia). La comparación destapó que `next_drift_version` esperaba el banco en mayúscula y en dev va en minúscula; se corrigió y se probó con `drift_policy_v2_nubank`.
 
+* **Revisión del autor en dev (2026-10-26).** Se probó un cambio real de cobertura (0.90 → 0.89, versión nueva con su hash en el historial). Comentarios y respuesta:
+  * **Formularios compactos:** cada grupo cabe en una fila (cuatro o cinco campos), con la ayuda en el icono; las unidades van dentro del campo como un grupo de entrada (`InputGroup`: "días", "casos/semana", "%", "κ"), asociadas al campo para los lectores de pantalla. También en las cuatro entradas de la política de deriva.
+  * **Porcentajes como porcentaje:** la cobertura y los demás parámetros en `%` se muestran y se escriben como 90 (no 0.90) y se guardan como fracción; el diff de la vista previa dice "90 % → 85 %".
+  * **Frecuencias como listas, no texto libre.** Un valor libre no fallaba: el monitor registraba "no soportada" y no hacía nada, y el re-ajuste de tópicos se apagaba sin aviso. Solo existen las que los Jobs ejecutan: `monitor_frequency` y `topic_refit_frequency` son `quarterly` (una sola opción, Trimestral); `human_agreement_frequency`, `monthly` o `quarterly`. Se exige en el contrato (`RiskPolicy`) y, por tanto, en la API (error 422 al guardar y `errors` en la vista previa), no solo en la lista. Las versiones de dev ya traían `quarterly`; los Jobs conservan su defensa ante filas anteriores.
+  * **Parámetros sin evidencia, fijados por el autor:** `hitl_weekly_cap`, `drift_boost_*` y `human_agreement_*` se quedan **nulos** (sin tope, sin subida automática y sin doble revisión), con el motivo "sin evidencia en los experimentos; se revisa con la primera alerta real de deriva (EPIC-8, pendiente 13) y con el volumen real de la cola".
+  * **Prueba de la política:** la versión con 0.89 se deja hasta que el delta programado (09:30 CDMX) escriba predicciones con ella; después se devuelve a 0.90 (otra versión). Se verifica con una consulta de solo lectura a `review_predictions`.
+
 ## Pendiente
 
 * Probar en dev con el autor: mezclar, desplegar y cambiar la cobertura (0.89 y de vuelta a 0.90, motivo "prueba de la pantalla de administración") para ver la `risk_policy_version` nueva en el siguiente delta. No se hizo: necesita la aprobación del autor.

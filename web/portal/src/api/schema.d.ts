@@ -1695,13 +1695,16 @@ export interface components {
             /** Hitl Weekly Cap */
             hitl_weekly_cap?: number | null;
             /** Human Agreement Frequency */
-            human_agreement_frequency?: string | null;
+            human_agreement_frequency?: ("monthly" | "quarterly") | null;
             /** Human Agreement Sample Size */
             human_agreement_sample_size?: number | null;
             /** Model Version */
             model_version: string;
-            /** Monitor Frequency */
-            monitor_frequency: string;
+            /**
+             * Monitor Frequency
+             * @constant
+             */
+            monitor_frequency: "quarterly";
             /** Monitor Sample Size */
             monitor_sample_size: number;
             /** Policy Version */
@@ -1713,8 +1716,11 @@ export interface components {
             retrain_trigger?: components["schemas"]["RetrainTrigger"] | null;
             /** Set By Hash */
             set_by_hash: string;
-            /** Topic Refit Frequency */
-            topic_refit_frequency: string;
+            /**
+             * Topic Refit Frequency
+             * @constant
+             */
+            topic_refit_frequency: "quarterly";
             topic_refit_trigger?: components["schemas"]["TopicRefitTrigger"] | null;
             /**
              * Valid From

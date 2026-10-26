@@ -135,6 +135,52 @@ def test_un_grupo_incompleto_es_error_y_422_al_guardar() -> None:
     assert repo.writes == []
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"monitor_frequency": "monthly"},
+        {"monitor_frequency": "Trimestral"},
+        {"topic_refit_frequency": "weekly"},
+        {
+            "human_agreement_sample_size": 100,
+            "human_agreement_frequency": "semanal",
+        },
+    ],
+)
+def test_una_frecuencia_que_los_jobs_no_ejecutan_no_se_guarda(
+    changes: dict[str, object],
+) -> None:
+    client, repo = kit()
+    preview = client.post(
+        "/api/v1/admin/risk-policy/preview", json=risk_body(changes)
+    ).json()
+    assert preview["proposed"] is None and preview["errors"]
+
+    response = client.post(
+        "/api/v1/admin/risk-policy",
+        json=risk_body(changes, reason="frecuencia inventada"),
+    )
+
+    assert response.status_code == 422
+    assert repo.writes == []
+
+
+def test_las_frecuencias_validas_se_guardan() -> None:
+    client, repo = kit()
+    changes = {
+        "human_agreement_sample_size": 100,
+        "human_agreement_frequency": "monthly",
+    }
+
+    response = client.post(
+        "/api/v1/admin/risk-policy",
+        json=risk_body(changes, reason="doble revisión mensual"),
+    )
+
+    assert response.status_code == 201
+    assert len(repo.writes) == 1
+
+
 def test_el_grupo_completo_se_guarda() -> None:
     client, _ = kit()
     response = client.post(

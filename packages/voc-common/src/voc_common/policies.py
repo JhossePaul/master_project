@@ -25,6 +25,13 @@ from voc_common.analytics_codes import (
     TopicRefitTrigger,
 )
 
+# Lo único que los Jobs saben ejecutar. El monitor y el re-ajuste de tópicos
+# corren por trimestre; la doble revisión puede ser mensual o trimestral. Un
+# valor distinto no fallaba: el monitor lo registraba y no hacía nada.
+MonitorFrequency = Literal["quarterly"]
+TopicRefitFrequency = Literal["quarterly"]
+AgreementFrequency = Literal["monthly", "quarterly"]
+
 
 class RiskPolicy(_AnalyticsRecord):
     """Fila de ``risk_policy`` (global): el apetito de riesgo.
@@ -54,11 +61,11 @@ class RiskPolicy(_AnalyticsRecord):
     drift_boost_days: PositiveInt | None = None
     drift_boost_weekly_cap: PositiveInt | None = None
     monitor_sample_size: PositiveInt
-    monitor_frequency: NonEmpty
-    topic_refit_frequency: NonEmpty
+    monitor_frequency: MonitorFrequency
+    topic_refit_frequency: TopicRefitFrequency
     retrain_kappa_floor: Probability
     human_agreement_sample_size: Counter | None = None
-    human_agreement_frequency: NonEmpty | None = None
+    human_agreement_frequency: AgreementFrequency | None = None
     warn_correction_rate: Probability
     warn_agreement_floor: Probability
     agreement_sample_weekly: Counter

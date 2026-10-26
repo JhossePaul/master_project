@@ -101,12 +101,12 @@ Son dos políticas distintas (decisión del autor, 2026-10-22):
 | `hitl_signal`, `hitl_target_coverage`, `hitl_threshold` | `prob_max`, 0.90 y el umbral equivalente para `model_version` ([calibración](../analytics/calibration/calibration_report.md)) |
 | `hitl_weekly_cap` | Tope de revisiones por semana. Nulo = sin tope |
 | `drift_boost_coverage`, `drift_boost_days`, `drift_boost_weekly_cap` | Reacción automática a una alerta de deriva: cobertura durante la subida, duración y tope; se aplica solo al banco que alertó. Los tres nulos = sin subida automática; se configuran juntos |
-| `monitor_sample_size`, `monitor_frequency` | Muestra humana de concepto: reseñas al azar, revisadas sin ver la predicción |
-| `topic_refit_frequency` | Re-ajuste de tópicos; global porque los tópicos se ajustan con los cinco bancos juntos |
+| `monitor_sample_size`, `monitor_frequency` | Muestra humana de concepto: reseñas al azar, revisadas sin ver la predicción. `monitor_frequency` solo admite `quarterly`, lo único que el monitor ejecuta |
+| `topic_refit_frequency` | Re-ajuste de tópicos; global porque los tópicos se ajustan con los cinco bancos juntos. Solo admite `quarterly` |
 | `retrain_trigger` | Quién lanza el reentrenamiento del modelo de sentimiento: `auto` (el monitor, al medir el κ bajo su piso; entrena y re-predice, pero promover sigue siendo humano) o `manual` (botón de MLOps o comando). Nulo = `manual` |
 | `topic_refit_trigger` | Quién lanza el re-ajuste de tópicos: `scheduled` (por calendario, según `topic_refit_frequency`) o `manual` (botón de MLOps). Nulo = `scheduled`. Los experimentos no dejaron evidencia para un umbral de re-ajuste |
 | `retrain_kappa_floor` | Reentrenamiento: pedirlo si el κ del modelo de sentimiento en la muestra trimestral (`monitor_sample_size`: 300 revisiones por trimestre) queda debajo de 0.89 |
-| `human_agreement_sample_size`, `human_agreement_frequency` | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`); no confundir con `agreement_sample_weekly`, que es el acuerdo del modelo con Gemini. Nulos = sin doble revisión; se configuran juntos |
+| `human_agreement_sample_size`, `human_agreement_frequency` (`monthly` o `quarterly`) | Doble revisión entre personas (`hitl_items.reason = 'agreement_sample'`); no confundir con `agreement_sample_weekly`, que es el acuerdo del modelo con Gemini. Nulos = sin doble revisión; se configuran juntos |
 | `warn_correction_rate`, `warn_agreement_floor`, `agreement_sample_weekly` | Avisos, sin disparar solos: tasa de corrección de 4 semanas > 28 %; acuerdo del modelo con Gemini de 4 semanas < 94 %, con 500 textos por semana |
 | `families_exact_floor`, `families_min_prevalence` | Revalidación de las familias al cambiar el modelo o el prompt de Gemini ([escala](../analytics/scale/scale_report.md)): acuerdo exacto ≥ 53 % en `aspects_gold_v2_1` (300 reseñas anotadas por el autor) y ninguna familia con prevalencia ≥ 5 % bajo el límite inferior de su IC |
 | `set_by_hash`, `reason` | Revisor y dueño de negocio que la fijaron, y por qué |
