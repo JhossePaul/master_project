@@ -6,7 +6,7 @@
   * acotada el mismo día al acotar 5.9 a lo descriptivo: 7.8 pasa a alertas de deriva y el cockpit muestra el top 5 diario de temas;
   * planificada el 2026-10-25: feature 7.0, [guía visual](../design/visual_guide.md), [stack y arquitectura](../design/frontend_stack.md), [cuestionario de diseño](epic_7/design_questions.md) y la tesis al final con prioridad mínima.
 * **Dependencias:**
-  * [EPIC-6](epic_6.md): tablas de salida, políticas, curadurías, alertas y monitoreo, según el [esquema v3](../contracts/analytics_outputs_v3.md); todo cargado en dev (6.6, pasos 1 a 13 y 15);
+  * [EPIC-6](epic_6.md): tablas de salida, políticas, curadurías, alertas y monitoreo, según el [esquema v3](../contracts/analytics_outputs_v3.md); todo cargado y validado en dev, con el delta y el monitor corriendo solos (6.6, cerrada el 2026-10-26);
   * EPIC-4: `sanitized_reviews_tds` e `ingestion_runs_log_v2`;
   * 5.9: el top 5 diario de temas (`daily_topic_labels`) y la vista por versión;
   * el [registro de decisión de 5.8](../analytics/decision_record.md), aprobado el 2026-10-22. Las decisiones que la condicionan son P8-6 (búsqueda), P8-8 (explicabilidad), P8-9 (*gap* en estrellas), P8-10 (estimaciones), P8-11 (HITL) y P8-12 (alcance), todas en el [registro de decisiones](epic_5.md#decisiones-pendientes).

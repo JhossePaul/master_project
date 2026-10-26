@@ -142,10 +142,18 @@ class HitlReview(_AnalyticsRecord):
         )
         if any(aspects) or any(flag is not None for flag in flags):
             raise ValueError("sentiment reviews carry no aspects")
-        if self.predicted_label is None or self.validated_label is None:
-            raise ValueError(
-                "sentiment reviews require predicted and validated label"
-            )
+        if self.predicted_label is None:
+            raise ValueError("sentiment reviews require a predicted label")
+        if self.validated_label is None:
+            # "No evaluable": sin etiqueta y siempre una corrección.
+            if ReviewFlag.NO_EVALUABLE not in self.flags:
+                raise ValueError(
+                    "sentiment reviews require a validated label "
+                    "unless flagged no_evaluable"
+                )
+            return self.predicted_label, None
+        if ReviewFlag.NO_EVALUABLE in self.flags:
+            raise ValueError("no_evaluable reviews carry no validated label")
         return self.predicted_label, self.validated_label
 
     def _aspects(self) -> tuple[object, object]:

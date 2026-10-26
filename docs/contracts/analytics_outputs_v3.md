@@ -160,7 +160,7 @@ El estado de cada caso es la **última transición** de su historia, así que na
 | :--- | :--- |
 | `review_id`, `item_id`, `id_resena`, `task` | |
 | `predicted_label`, `validated_label` | Sentimiento; o `predicted_families` y `validated_families` con las marcas `u` y `s` |
-| `outcome` | `confirmed` o `corrected` |
+| `outcome` | `confirmed` o `corrected`. Con la marca `no_evaluable`, `validated_label` es nulo y el resultado siempre es `corrected` |
 | `display_mode`, `review_round` | Modo en que se revisó (copiado del caso) y número de revisión (1, o 2 en la doble revisión) |
 | `flags` | `menciona_falla`, `duda`, `no_evaluable`, `nombre_persona` (guía `v2.2`) |
 | `guideline_version`, `model_version`, `risk_policy_version` | `guideline_version` apunta a `guidelines` |
