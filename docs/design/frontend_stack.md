@@ -43,9 +43,9 @@ flowchart LR
 | :--- | :--- | :--- |
 | Runtime de construcción | Node 24 LTS (`.nvmrc`, `engines` y la imagen `node:24-bookworm-slim`) y npm. La máquina del autor tiene Node 26.12, que todavía no es LTS y construye igual | npm viene con Node; un gestor más no aporta a un proyecto de este tamaño. La versión LTS es la que tiene soporte largo en CI y en la imagen |
 | Empaquetador | **Vite** | El sucesor natural de webpack: arranque instantáneo en desarrollo, construcción con Rollup, configuración mínima |
-| Lenguaje | **TypeScript** en modo estricto | Los errores de tipos salen al construir (`npm run build` corre `tsc -b` antes de `vite build`) |
+| Lenguaje | **TypeScript 5.9** en modo estricto (`~5.9`: `openapi-typescript` 7 aún no admite la 7.x) | Los errores de tipos salen al construir (`npm run build` corre `tsc -b` antes de `vite build`) |
 | Interfaz | **React 19** | Frente a Vue y Angular: el ecosistema más grande para gráficas, tablas y componentes accesibles, y el que mejor dominan los modelos que van a escribir el código. Angular es más pesado de aprender; Vue sería válido, con menos bibliotecas para este caso |
-| Rutas | **React Router 7** (modo de datos, como SPA, sin servidor) | El estándar; los filtros globales viven en los parámetros de la URL |
+| Rutas | **React Router 8** (modo de datos, como SPA, sin servidor) | El estándar; los filtros globales viven en los parámetros de la URL |
 | Datos del servidor | **TanStack Query 5** | Caché, reintentos, estados de carga y error; evita un *store* global |
 | Cliente de la API | **openapi-typescript** + **openapi-fetch** | Los tipos salen del OpenAPI de FastAPI (`npm run api:types`); si la API cambia, el portal no compila hasta ajustarse |
 | Estilos | **Tailwind CSS 4** con los *tokens* de la guía en `@theme` | Utilidades en el marcado; los colores y tamaños son variables CSS con los nombres de la guía, así que no se inventan valores |
@@ -59,7 +59,7 @@ flowchart LR
 | Diagramas | **Mermaid 11**, cargado solo en las páginas que lo usan | Decisión del autor. Pesa más de 1 MB; se importa de forma perezosa |
 | Texto de la tesis y de la ayuda | **MDX** (`@mdx-js/rollup`) con `remark-gfm`, `remark-math` y `rehype-slug` | Markdown que puede incluir componentes (`<Figure id="…" />`). No hace falta exportar a PDF (decisión del autor, 2026-10-25) |
 | Fechas | `date-fns` + `Intl` | Formatos de `es-MX` |
-| Tipografías | `@fontsource-variable/source-serif-4`, `@fontsource-variable/source-sans-3`, `@fontsource/source-code-pro` | Servidas por el portal; IAP no deja pasar a un CDN sin sesión y así no salen datos de navegación |
+| Tipografías | `@fontsource-variable/source-serif-4`, `@fontsource-variable/source-sans-3`, `@fontsource/source-code-pro`, solo el subconjunto latino (`@font-face` en `index.css`) | Servidas por el portal; IAP no deja pasar a un CDN sin sesión y así no salen datos de navegación |
 | Lint y formato | **Biome** | Una sola herramienta rápida, como `ruff` en Python |
 | Pruebas | **Vitest** + **Testing Library** + **MSW** (dobles de la API) + **vitest-axe** | Corren sin red ni navegador real; `axe` revisa la accesibilidad |
 | Prueba de punta a punta | Playwright, deseable | Un recorrido por sección contra la API con dobles |

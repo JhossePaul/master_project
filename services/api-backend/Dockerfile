@@ -2,15 +2,15 @@
 # Imagen de la API y el portal (EPIC-7): FastAPI + `dist/` del frontal.
 # Construir desde la raíz del workspace:
 #   docker build -f services/api-backend/Dockerfile .
-# Con el frontal compilado (desde el paso 2 de EPIC-7):
+# Solo la API, con `dist/` vacío (`/` responde 404):
 #   docker build -f services/api-backend/Dockerfile \
-#     --build-arg WEB_SOURCE=web-build .
+#     --build-arg WEB_SOURCE=web-empty .
 ARG PYTHON_IMAGE=python:3.11-slim-bookworm
 ARG NODE_IMAGE=node:24-bookworm-slim
 ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.13.1
-# `web-build` compila web/portal; `web-empty` deja dist/ vacío mientras el
-# frontal no exista (la API responde 404 en `/`).
-ARG WEB_SOURCE=web-empty
+# `web-build` compila web/portal; `web-empty` deja dist/ vacío (la API
+# responde 404 en `/`) para construir solo la API.
+ARG WEB_SOURCE=web-build
 
 FROM ${UV_IMAGE} AS uv
 

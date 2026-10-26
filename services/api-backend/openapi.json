@@ -1,6 +1,177 @@
 {
   "components": {
     "schemas": {
+      "BankHeadline": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "gap_estrellas": {
+            "$ref": "#/components/schemas/Estimate"
+          },
+          "gold_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gold Version"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "neg": {
+            "$ref": "#/components/schemas/Estimate"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "neg",
+          "gap_estrellas",
+          "model_version",
+          "gold_version"
+        ],
+        "title": "BankHeadline",
+        "type": "object"
+      },
+      "Estimate": {
+        "properties": {
+          "ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci High"
+          },
+          "ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Low"
+          },
+          "estimate": {
+            "title": "Estimate",
+            "type": "number"
+          },
+          "method": {
+            "enum": [
+              "ppi",
+              "raw"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "n_gold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Gold"
+          },
+          "n_unlabeled": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Unlabeled"
+          }
+        },
+        "required": [
+          "estimate",
+          "ci_low",
+          "ci_high",
+          "method",
+          "n_gold",
+          "n_unlabeled"
+        ],
+        "title": "Estimate",
+        "type": "object"
+      },
+      "Freshness": {
+        "properties": {
+          "data_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Until"
+          },
+          "last_delta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_ingestion_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingestion At"
+          },
+          "last_monitor_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Monitor At"
+          }
+        },
+        "required": [
+          "last_ingestion_at",
+          "last_delta",
+          "last_monitor_at",
+          "data_until"
+        ],
+        "title": "Freshness",
+        "type": "object"
+      },
       "HitlTask": {
         "enum": [
           "sentiment",
@@ -9,6 +180,46 @@
         ],
         "title": "HitlTask",
         "type": "string"
+      },
+      "LandingResponse": {
+        "properties": {
+          "banks": {
+            "items": {
+              "$ref": "#/components/schemas/BankHeadline"
+            },
+            "title": "Banks",
+            "type": "array"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "hitl_pending": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hitl Pending"
+          },
+          "open_alerts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Open Alerts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "freshness",
+          "open_alerts",
+          "banks",
+          "hitl_pending"
+        ],
+        "title": "LandingResponse",
+        "type": "object"
       },
       "MeResponse": {
         "properties": {
@@ -63,6 +274,80 @@
         ],
         "title": "Role",
         "type": "string"
+      },
+      "RunKind": {
+        "enum": [
+          "backfill",
+          "delta",
+          "rescoring",
+          "training",
+          "topic_backfill",
+          "aspect_backfill"
+        ],
+        "title": "RunKind",
+        "type": "string"
+      },
+      "RunStatus": {
+        "description": "Estado de una corrida (solo inserción).\n\nLas corridas largas escriben una fila ``running`` al empezar y otra con\nsu estado final al terminar, con el mismo ``run_id``; las demás, solo la\nfinal. La vista ``inference_runs_current`` da el estado vigente.",
+        "enum": [
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "RunStatus",
+        "type": "string"
+      },
+      "RunSummary": {
+        "properties": {
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RunKind"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "status",
+          "started_at",
+          "ended_at",
+          "model_version"
+        ],
+        "title": "RunSummary",
+        "type": "object"
       }
     }
   },
@@ -72,6 +357,28 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/landing": {
+      "get": {
+        "description": "Frescura, KPI con PPI por banco, alertas abiertas y casos pendientes.",
+        "operationId": "landing_api_v1_landing_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Landing",
+        "tags": [
+          "landing"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "description": "Cualquier cuenta con rol (todos incluyen al lector).",

@@ -1,6 +1,6 @@
 # Paso 1. Features 7.1 (API, base) y 7.2 (Seguridad y acceso)
 
-* **Estado (2026-10-25):** Código, imagen, CI/CD y la base de infraestructura en dev listos; falta que el CD publique la imagen (merge a `main`), fijarla con `deploy_images.py` y comprobar el acceso. Detalle en "Avance".
+* **Estado (2026-10-26):** Terminado en dev, salvo la comprobación real del 403 para una cuenta con IAP pero fuera del mapa. Detalle en "Avance".
 * **Nivel:** imprescindible.
 * **Depende de:** paso 0. En local no depende de nada: se trabaja con `PORTAL_AUTH_MODE=local` y `PORTAL_DATA=fixtures`. El despliegue en dev espera a B1, B2 y B3.
 * **Objetivo:** el esqueleto de `services/api-backend/` que usarán todas las secciones: configuración, identidad con IAP, roles, acceso a BigQuery con costo acotado, escritura de solo inserción, errores, registros, archivos del portal, imagen, CI y CD, y la infraestructura del servicio privado. **No implementa las rutas de cada sección:** cada paso agrega las suyas.
@@ -279,9 +279,25 @@ Una prueba de integración opcional, marcada `@pytest.mark.bigquery` y fuera de 
 
 * [x] La API arranca en local con datos sintéticos (`PORTAL_DATA=fixtures`, `PORTAL_AUTH_MODE=local`) y `/api/v1/me` responde.
 * [x] Las pruebas de la sección 7 pasan con cobertura ≥ 85 %, y la del centinela está lista para que cada paso la extienda.
-* [ ] La imagen se construye y pasa su prueba de humo en CI.
+* [x] La imagen se construye y pasa su prueba de humo en CI (`api-backend-image` en verde en `main`, 2026-10-26).
 * [ ] En dev (con B1 a B3 resueltos y `pulumi up` aprobado): `voc-api-backend` corre con `voc-sa-portal-api` detrás de IAP; una cuenta del mapa entra a `/api/v1/me`; una cuenta sin permiso de IAP no llega a la API; una cuenta con permiso de IAP pero sin entrada en el mapa recibe 403.
-* [ ] `pulumi preview` queda sin cambios después del `up`.
+* [x] `pulumi preview` queda sin cambios después del `up` (142 sin cambios, 2026-10-26).
+
+## Pendientes (2026-10-26)
+
+No bloquean el paso 2.
+
+| # | Pendiente | Qué hacer | Cuándo |
+| :-: | :--- | :--- | :--- |
+| 1 | **403 real.** Una cuenta con permiso de IAP pero fuera del mapa de roles debe recibir 403 del servicio desplegado; hoy solo lo cubren `test_me.py` y `test_roles.py`. La segunda Gmail del autor ya se probó sin permiso de IAP (no entra) | Dar a una segunda cuenta `roles/iap.httpsResourceAccessor` sobre `voc-api-backend` con `gcloud`, comprobar el 403 en `/api/v1/me` y quitar el permiso. Es un cambio temporal fuera de Pulumi: anotarlo | Al probar la primera ruta de roles del paso 2, o cuando haya una cuenta de prueba |
+| 2 | **Nombre del recurso de acceso.** `voc-portal-iap-<10 hex>` usa los primeros 10 caracteres del SHA-256 del correo sin sal: no expone el correo, pero se puede adivinar por diccionario (aparece en el estado de Pulumi y en los `preview`) | Cambiar la derivación a un identificador no adivinable (por ejemplo, HMAC con una clave propia de Pulumi) o a un índice estable. Cambiar el nombre recrea el permiso de IAP de cada persona: hacerlo con una ventana corta | Antes de agregar más personas a `portal_users` |
+| 3 | **`/healthz` público.** Cloud Run lo reserva en `*.run.app` y la URL pública responde 404 con la página de Google. Dentro del contenedor funciona (prueba de humo del CI) | Si se necesita una sonda externa o una sonda de arranque HTTP, renombrar la ruta (por ejemplo `/livez`) y ajustar el CI y `deployment.md` | Solo si se necesita; hoy IAP ya protege el servicio |
+| 4 | **Imagen sin frontal.** `ARG WEB_SOURCE=web-empty`: la imagen lleva `dist/` vacío y `/` da 404 | En el paso 2, poner `web-build` por defecto y sumar el trabajo `portal` (Node 24: `npm ci`, `npm run check`, `npm test`, `npm run build` y `schema.d.ts` al día con `openapi.json`) al CI | Paso 2 |
+| 5 | **Decisiones de contrato B5 #1, #2, #3 y #5** (revisión `no_evaluable`, `occlusion_v2`, `RunKind.TOPIC_REFIT`, cola de aspectos). La #4 (hash del actor) está aprobada y aplicada | Se aplican con su recomendación al llegar a su paso (4, 6, 8 y 9), con aviso. Detalle en `00_preparacion.md` | Pasos 4, 6, 8 y 9 |
+| 6 | **Permisos de los pasos 6 y 8.** `run.jobsExecutorWithOverrides` sobre los Jobs de ML y `storage.objectViewer` de `ml_artifacts/` no se crearon | Se agregan en el paso que los usa, con su `pulumi preview` | Pasos 6 y 8 |
+| 7 | **BBVA.** El Workspace de BBVA bloquea el inicio de sesión en aplicaciones externas | Pedir la excepción al administrador del Workspace; mientras tanto esas personas entran con una cuenta Gmail (`S-03`) | Antes de la presentación |
+
+**Convenciones para seguir:** cada cambio de personas exige subir `portal_users_version`; un `pulumi preview --config k=v` persiste los valores en `Pulumi.dev.yaml`, así que no se usa con valores de marcador (se prueban con los mocks de `infra/tests/`); las consultas de los repositorios nunca leen `text_embeddings`, `segment_embeddings` ni `review_predictions` sin filtro (el tope de 2 GB las rechaza).
 
 ## Decisiones al implementar
 
@@ -345,3 +361,6 @@ _(Se llena al ejecutar.)_
   * Documentación: sección "Portal y API" en `docs/operations/deployment.md` (alta de personas, IAP con cuentas externas, hash del actor, modo local y orden del primer despliegue), `README.md`, la fila de seguridad del contrato v3, y las imágenes de `deploy_images.py` en el runbook.
 * **Base aplicada en dev (2026-10-25, autor):** `portal_users` cargado (una persona: el autor, con `administrador` y `revisor` y las tres colas de revisión). `pulumi up`: 18 recursos creados (cuenta `voc-sa-portal-api`, permisos, secreto `voc-portal-roles` con su versión 1, API de IAP, permisos por tabla) y 1 actualizado (`voc-ingestion-worker`, valores por defecto del proveedor 8); el `preview` siguiente da 138 sin cambios. La versión 1 del secreto cumple la forma de `RoleMap` de la API (1 persona, roles y colas correctos). Falta el servicio: `voc-api-backend`, el agente de IAP y el acceso por correo se crean cuando `api_backend_image` exista.
 * **Sal del hash:** las pruebas usan sales falsas de 16 caracteres; la migración del hash y la API usan la sal del stack de Pulumi (`user_hash_salt`, cifrada con KMS), no la del archivo `.env`.
+* **Despliegue en dev (2026-10-26):** la PR 16 se mezcló y el CD publicó las cuatro imágenes con el SHA `a382276`. `deploy_images.py --apply`: 4 recursos creados (`voc-api-backend`, agente de IAP, permiso de invocación y acceso del autor) y 11 actualizados; el `up` aceptó `iap_enabled` sin `launch_stage`. Sin credenciales, `/api/v1/me` y `/` redirigen al login de Google (cliente de OAuth externo). Con la cuenta del autor, `/api/v1/me` respondió 200 con `administrador`, `revisor` y las tres colas, el commit desplegado y un `actor_hash` igual al que se migró en las 58 filas de BigQuery (misma sal, la del stack).
+* **Comprobado con una segunda cuenta Gmail (2026-10-26):** sin permiso de IAP no entra, como se esperaba. Una ruta inexistente de `/api/*` con la cuenta del autor devuelve el JSON de error `not_found`. **Sin comprobar contra el servicio real:** una cuenta con permiso de IAP pero fuera del mapa (403); lo cubren `test_me.py` y `test_roles.py`.
+* **Hallazgo:** `/healthz` responde 404 con la página de Google desde la URL pública (comprobado en el navegador) porque Cloud Run la reserva en `*.run.app`; dentro del contenedor funciona (la prueba de humo del CI). Si se necesita una sonda externa, se agrega otra ruta (por ejemplo `/livez`).
