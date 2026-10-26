@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 SAMPLE_PARAMS: dict[tuple[str, str], dict[str, str]] = {
     ("GET", "/api/v1/me"): {},
     ("GET", "/api/v1/landing"): {},
+    ("GET", "/api/v1/alerts/summary"): {},
     ("GET", "/api/v1/kpis/cards"): {},
     ("GET", "/api/v1/kpis/daily"): {},
     ("GET", "/api/v1/kpis/daily-topics"): {"bank": "BBVA", "day": "2026-10-01"},

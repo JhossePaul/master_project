@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export const MIN_REASON = 10;
+export const MAX_REASON = 500;
+export const MAX_TICKET = 100;
 
 export interface ConfirmWithReasonProps {
   title: string;
@@ -22,7 +24,9 @@ export interface ConfirmWithReasonProps {
   confirmLabel: string;
   /** Palabra que hay que escribir para los cambios grandes. */
   requireWord?: string;
-  onConfirm: (reason: string) => void;
+  /** Agrega un campo opcional de ticket y lo entrega como segundo argumento. */
+  withTicket?: boolean;
+  onConfirm: (reason: string, ticket?: string) => void;
   trigger: ReactNode;
 }
 
@@ -31,21 +35,25 @@ export function ConfirmWithReason({
   description,
   confirmLabel,
   requireWord,
+  withTicket = false,
   onConfirm,
   trigger,
 }: ConfirmWithReasonProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [word, setWord] = useState("");
+  const [ticket, setTicket] = useState("");
   const valid =
     reason.trim().length >= MIN_REASON &&
     (!requireWord || word === requireWord);
 
   function submit() {
-    onConfirm(reason.trim());
+    if (withTicket) onConfirm(reason.trim(), ticket.trim());
+    else onConfirm(reason.trim());
     setOpen(false);
     setReason("");
     setWord("");
+    setTicket("");
   }
 
   return (
@@ -63,9 +71,22 @@ export function ConfirmWithReason({
           <Textarea
             id="confirm-reason"
             value={reason}
+            maxLength={MAX_REASON}
             onChange={(e) => setReason(e.target.value)}
           />
         </div>
+        {withTicket ? (
+          <div className="grid gap-2">
+            <Label htmlFor="confirm-ticket">Ticket (opcional)</Label>
+            <Input
+              id="confirm-ticket"
+              value={ticket}
+              maxLength={MAX_TICKET}
+              onChange={(e) => setTicket(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+        ) : null}
         {requireWord ? (
           <div className="grid gap-2">
             <Label htmlFor="confirm-word">

@@ -1,6 +1,235 @@
 {
   "components": {
     "schemas": {
+      "AlertDetail": {
+        "properties": {
+          "alert": {
+            "$ref": "#/components/schemas/AlertRow"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AlertEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "explorer": {
+            "$ref": "#/components/schemas/ExplorerHint"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesPoint"
+            },
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "alert",
+          "events",
+          "series",
+          "explorer"
+        ],
+        "title": "AlertDetail",
+        "type": "object"
+      },
+      "AlertEventIn": {
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 500,
+            "title": "Note",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket"
+          }
+        },
+        "required": [
+          "event_id",
+          "status",
+          "note"
+        ],
+        "title": "AlertEventIn",
+        "type": "object"
+      },
+      "AlertEventOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket"
+          }
+        },
+        "required": [
+          "event_id",
+          "status",
+          "at",
+          "actor",
+          "note",
+          "ticket"
+        ],
+        "title": "AlertEventOut",
+        "type": "object"
+      },
+      "AlertRow": {
+        "properties": {
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "boost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoostOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "drift_policy_version": {
+            "title": "Drift Policy Version",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "series": {
+            "title": "Series",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "status_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status At"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "alert_id",
+          "bank_id",
+          "period",
+          "series",
+          "value",
+          "threshold",
+          "status",
+          "status_at",
+          "drift_policy_version",
+          "created_at",
+          "boost"
+        ],
+        "title": "AlertRow",
+        "type": "object"
+      },
+      "AlertStatus": {
+        "enum": [
+          "open",
+          "confirmed",
+          "dismissed"
+        ],
+        "title": "AlertStatus",
+        "type": "string"
+      },
+      "AlertSummary": {
+        "properties": {
+          "open_by_bank": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Open By Bank",
+            "type": "object"
+          }
+        },
+        "required": [
+          "open_by_bank"
+        ],
+        "title": "AlertSummary",
+        "type": "object"
+      },
       "Attribution": {
         "description": "Posiciones en ``texto_sanitizado``; sin copiar texto.",
         "properties": {
@@ -214,6 +443,62 @@
           "gold_version"
         ],
         "title": "BankHeadline",
+        "type": "object"
+      },
+      "BoostEndReason": {
+        "enum": [
+          "expired",
+          "alert_closed",
+          "manual"
+        ],
+        "title": "BoostEndReason",
+        "type": "string"
+      },
+      "BoostOut": {
+        "description": "Subida de revisión que disparó la alerta.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "boost_id": {
+            "title": "Boost Id",
+            "type": "string"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "ended_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoostEndReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "boost_id",
+          "active",
+          "coverage",
+          "starts_at",
+          "ends_at",
+          "ended_reason"
+        ],
+        "title": "BoostOut",
         "type": "object"
       },
       "CardValues": {
@@ -600,6 +885,32 @@
           "source"
         ],
         "title": "ExplanationRef",
+        "type": "object"
+      },
+      "ExplorerHint": {
+        "description": "Banco y mes de la alerta, para abrir el Explorador.",
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "start",
+          "end"
+        ],
+        "title": "ExplorerHint",
         "type": "object"
       },
       "FacetCount": {
@@ -1850,6 +2161,77 @@
         "title": "SentimentReviewIn",
         "type": "object"
       },
+      "SeriesPoint": {
+        "properties": {
+          "alert": {
+            "title": "Alert",
+            "type": "boolean"
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
+          }
+        },
+        "required": [
+          "period",
+          "value",
+          "baseline",
+          "z",
+          "psi",
+          "threshold",
+          "alert"
+        ],
+        "title": "SeriesPoint",
+        "type": "object"
+      },
       "TaskSummary": {
         "properties": {
           "median_seconds": {
@@ -2262,6 +2644,196 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/alerts": {
+      "get": {
+        "description": "Las alertas con su estado vigente, de la más reciente a la más vieja.",
+        "operationId": "list_alerts_api_v1_alerts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bank",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bank"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertRow"
+                  },
+                  "title": "Response List Alerts Api V1 Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Alerts",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/api/v1/alerts/summary": {
+      "get": {
+        "description": "Solo conteos por banco: la usa la landing.",
+        "operationId": "summary_api_v1_alerts_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Summary",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}": {
+      "get": {
+        "operationId": "alert_detail_api_v1_alerts__alert_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Alert Detail",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}/events": {
+      "post": {
+        "description": "Confirma, descarta o reabre; 409 si el estado ya cambió.",
+        "operationId": "add_event_api_v1_alerts__alert_id__events_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Event",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
     "/api/v1/explanations/{text_key}": {
       "get": {
         "description": "La explicación guardada (``occlusion_v2`` si existe), o 404.",

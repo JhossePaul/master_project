@@ -16,13 +16,15 @@ function guarded(role: Role, title: string): RouteObject["element"] {
 
 const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
 const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
+const AlertsInbox = lazy(() => import("@/sections/alerts/AlertsInbox"));
+const AlertDetail = lazy(() => import("@/sections/alerts/AlertDetail"));
 const REVIEWER: Role = "revisor";
 const ANALYST: Role = "analista";
 const ExplorerView = lazy(() => import("@/sections/explorer/ExplorerView"));
 
-function ReviewerOnly({ children }: { children: ReactNode }) {
+function AnalystOnly({ children }: { children: ReactNode }) {
   return (
-    <RequireRole role={REVIEWER}>
+    <RequireRole role={ANALYST}>
       <Suspense fallback={<Skeleton className="h-32 w-full" />}>
         {children}
       </Suspense>
@@ -30,9 +32,9 @@ function ReviewerOnly({ children }: { children: ReactNode }) {
   );
 }
 
-function AnalystOnly({ children }: { children: ReactNode }) {
+function ReviewerOnly({ children }: { children: ReactNode }) {
   return (
-    <RequireRole role={ANALYST}>
+    <RequireRole role={REVIEWER}>
       <Suspense fallback={<Skeleton className="h-32 w-full" />}>
         {children}
       </Suspense>
@@ -77,10 +79,21 @@ export const routes: RouteObject[] = [
           </AnalystOnly>
         ),
       },
-      { path: "alertas", element: guarded("analista", "Alertas de deriva") },
+      {
+        path: "alertas",
+        element: (
+          <AnalystOnly>
+            <AlertsInbox />
+          </AnalystOnly>
+        ),
+      },
       {
         path: "alertas/:alertId",
-        element: guarded("analista", "Alerta de deriva"),
+        element: (
+          <AnalystOnly>
+            <AlertDetail />
+          </AnalystOnly>
+        ),
       },
       {
         path: "hitl",
