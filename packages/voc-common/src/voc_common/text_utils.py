@@ -58,3 +58,12 @@ def hash_username_pii(username: str, salt: str) -> str:
     """Genera un digest SHA-256 irreversible a partir del userName y la sal."""
     normalized = f"{salt}:{username.strip().lower()}".encode()
     return hashlib.sha256(normalized).hexdigest()
+
+
+def actor_hash(email: str, salt: str) -> str:
+    """Hash del actor de una acción del portal (cambios y revisiones).
+
+    Es la misma regla que ``hash_username_pii``: el correo en minúsculas y
+    sin espacios, con la sal del despliegue. El correo nunca se guarda.
+    """
+    return hash_username_pii(email, salt)

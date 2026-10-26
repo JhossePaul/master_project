@@ -1,0 +1,32 @@
+[project]
+name = "api-backend"
+version = "0.1.0"
+description = "API y portal de consumo, HITL y gobernanza de BBVA VoC Analyzer (EPIC-7)"
+requires-python = ">=3.11"
+# Nunca ml-inference ni sanitization-pipeline: arrastran PyTorch, Gemini y
+# Apache Beam. Lo que necesita PyTorch corre en un servicio aparte.
+dependencies = [
+    "voc-common",
+    "voc-nlp",
+    "fastapi>=0.143,<1",
+    "uvicorn[standard]>=0.54,<1",
+    "pydantic-settings>=2.16,<3",
+    "google-cloud-bigquery>=3.46,<4",
+    "google-cloud-secret-manager>=2.20,<3",
+    "google-cloud-dlp>=3.40,<4",
+    "google-auth>=2.62,<3",
+    "requests>=2.34,<3",
+    "cachetools>=5,<7",
+    "cryptography>=44",
+]
+
+[tool.uv.sources]
+voc-common = { workspace = true }
+voc-nlp = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/api_backend"]

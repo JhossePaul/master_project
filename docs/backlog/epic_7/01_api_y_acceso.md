@@ -1,6 +1,6 @@
 # Paso 1. Features 7.1 (API, base) y 7.2 (Seguridad y acceso)
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-25):** En curso: secciones 1 (paquete y workspace), 2 (configuración), 3 (identidad y roles, con `actor_hash`) 4 (BigQuery) 5 (aplicación base) y 6.1 y 6.2 (imagen, CI y CD) hechas; siguen la 6.3 (infraestructura), la 7 (revisión de pruebas) y la 8 (documentación).
 * **Nivel:** imprescindible.
 * **Depende de:** paso 0. En local no depende de nada: se trabaja con `PORTAL_AUTH_MODE=local` y `PORTAL_DATA=fixtures`. El despliegue en dev espera a B1, B2 y B3.
 * **Objetivo:** el esqueleto de `services/api-backend/` que usarán todas las secciones: configuración, identidad con IAP, roles, acceso a BigQuery con costo acotado, escritura de solo inserción, errores, registros, archivos del portal, imagen, CI y CD, y la infraestructura del servicio privado. **No implementa las rutas de cada sección:** cada paso agrega las suyas.
@@ -289,4 +289,40 @@ _(Se llena al ejecutar.)_
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **Sección 1 (2026-10-25):** `services/api-backend/` ya es miembro del workspace (se quitó el `exclude` temporal) con su `pyproject.toml` (sin `ml-inference` ni `sanitization-pipeline`); `uv lock` sumó `cachetools` y `google-cloud-secret-manager`, más `httptools`, `uvloop` y `watchfiles` de `uvicorn[standard]`. Los archivos vacíos (`main.py`, `routes.py`, `services.py`, `tests/test_api.py`) se borraron: `main.py` vuelve en la sección 5 y el `Dockerfile`, vacío, en la 6.
+* **Hash del actor (sección 3.3):** `voc_common.actor_hash` (reexportada) y `tools/actor_hash.py`, con pruebas; usa la sal de `USER_HASH_SALT` y no imprime la sal. Puertas de calidad en verde (voc-common 345 pruebas, tools 56, voc-nlp 139, ml-inference 214).
+* **Sección 2 (2026-10-25):** `api_backend.settings.ApiSettings` y `get_settings()` con las variables de la tabla y 13 pruebas (100 % de cobertura). Validaciones al arrancar: `PORTAL_AUTH_MODE=local` solo con `ENVIRONMENT=local` y con `PORTAL_LOCAL_USER`; `IAP_AUDIENCE` obligatoria con IAP; `GCP_PROJECT_ID` obligatorio con `PORTAL_DATA=bigquery`; sal de al menos 16 caracteres y la de desarrollo no vale en `prod`.
+* **Decisiones al implementar la sección 2:** `USER_HASH_SALT` toma por defecto la sal de desarrollo de `voc_common.config` (la tabla decía "—"), para poder correr en local sin configurarla; `prod` la rechaza. `PORTAL_LOCAL_ROLES` se lee como lista separada por comas de texto: el cargador de roles (sección 3) valida que sean `Role`.
+* **Sección 3 (2026-10-25):** `auth/iap.py` (`verify_iap_jwt`), `auth/roles.py` (`Role`, `PortalUser`, `RoleMap`, fuentes local y de Secret Manager, caché de 5 minutos) y `auth/deps.py` (`Principal`, `current_principal`, `require`, `require_reviewer`, `ROUTE_ROLES`), con 28 pruebas nuevas (41 en el paquete, 100 % de cobertura).
+* **Decisiones al implementar la sección 3:**
+  * `errors.py` nace aquí con `ApiError` y sus códigos (lo necesita el 401); el manejador que da el formato de respuesta llega en la sección 5.
+  * `verify_iap_jwt` recibe el transporte de Google como `transport`, no `request`, para no confundirlo con la petición de FastAPI. Las pruebas firman con una llave ES256 propia y sustituyen la descarga de claves.
+  * `cryptography` pasa a ser dependencia declarada del paquete (la verificación ES256 la necesita).
+  * Las ayudas de prueba (`FakeTransport`, `IapKit`, `role_map`) viven en `api_backend/testing.py` y no en `tests/`, porque Pyrefly no resuelve imports entre archivos de `tests/`.
+  * Un fallo al leer el secreto de roles da 502 `upstream`; la caché conserva el último mapa bueno mientras no venza.
+* **Sección 4 (2026-10-25):** `bq/names.py` (lista cerrada de 28 tablas, 10 vistas y 2 del TDS), `bq/reader.py` (`BigQueryReader`, `Param`), `bq/writer.py` (`BigQueryWriter`, `insert_statement`) y `fixtures.py` con el centinela. 27 pruebas nuevas (68 en el paquete, 100 % de cobertura). La prueba de nombres compara las vistas con los archivos de `infra/modules/sql/`.
+* **Decisiones al implementar la sección 4:**
+  * `qualified(name, project, dataset)` recibe el proyecto y el dataset en vez de leerlos de un estado global.
+  * `BigQueryReader.rows` acepta además `name` (el nombre de la consulta que va al registro, con bytes facturados y segundos, nunca con valores). Un `BadRequest` con `bytesBilledLimitExceeded` da 503 `query_too_expensive`; cualquier otro error de BigQuery, 502 `upstream`.
+  * Las columnas `JSON` viajan como texto con `PARSE_JSON(@c)`; las `ARRAY<JSON>` (por ejemplo `review_explanations.attributions`) como arreglo de texto con `ARRAY(SELECT PARSE_JSON(v) FROM UNNEST(@c) AS v)`, porque BigQuery no admite parámetros de tipo `ARRAY<JSON>`.
+  * Una clave que admite nulos se compara con `IS NULL` (como el `MERGE` de `ml-inference`).
+  * La idempotencia es la de `NOT EXISTS`: dos peticiones simultáneas con la misma clave podrían insertar dos filas, porque BigQuery no tiene restricciones de unicidad. Basta para el reintento de un formulario, y los pasos con cola (4) toman el caso con bloqueo antes.
+  * Los datos sintéticos viven en `api_backend/sample_data/` (dentro del paquete) y no en `tests/fixtures/`, para que `PORTAL_DATA=fixtures` funcione también fuera de las pruebas. Aún no hay repositorios en memoria: cada paso los escribe junto con su `Protocol`.
+  * La prueba de integración opcional (`@pytest.mark.bigquery`, `dry_run` contra dev) queda para cuando existan los repositorios con SQL.
+* **Sección 5 (2026-10-25):** `main.create_app`, `errors.py` con el manejador, `middleware.py` (ASGI), `static.py`, `openapi.py` (más `openapi.json` generado) y la sección `me` (`GET /api/v1/me`, `GET /healthz`). 33 pruebas nuevas (101 en el paquete, 100 % de cobertura). Se arrancó con `uvicorn api_backend.main:app` en modo local y datos sintéticos: `/api/v1/me` responde con roles, `actor_hash` y encabezados de seguridad, y una ruta `/api/*` inexistente da 404 en JSON.
+* **Decisiones al implementar la sección 5:**
+  * Se sumó el código `internal` (500) a los de la lista: un error no controlado necesita respuesta con `request_id` y sin detalles, y ninguno de los siete servía.
+  * El *middleware* es ASGI puro y atrapa los errores no controlados, para que hasta un 500 lleve `X-Request-Id` y los encabezados de seguridad. Si la respuesta ya había empezado, el error se propaga.
+  * `app` se crea al pedirla (`__getattr__` del módulo): `uvicorn api_backend.main:app` funciona y las pruebas pueden importar `main` sin configuración.
+  * `openapi_url` también se apaga fuera de `local`, además de `docs_url` y `redoc_url`.
+  * El registro de cada petición lleva `severity`, `request_id`, `route` (la plantilla, no el id), `status`, `latency_ms` y `actor_hash`; `current_principal` deja el hash en `request.state`.
+  * Los campos `roles` y `reviewer_tasks` de `/me` salen en el orden de sus enums, no alfabético.
+  * `testing.py` suma `StaticRoleSource` y `local_app`.
+* **Secciones 6.1 y 6.2 (2026-10-25):**
+  * `services/api-backend/Dockerfile` multi-stage (sin PyTorch ni Beam, usuario 10001, 330 MB), `.dockerignore` con las rutas de la API y del portal, `.gcloudignore` sin excluir `web/portal/`, `web/portal/Dockerfile` borrado, `cloudbuild.yaml` con `BUILD_COMMIT`, y el CD también con `web/**`.
+  * `tools/deploy_images.py` suma `api-backend` a las imágenes que deben compartir SHA (y su prueba); el mensaje ya no dice "las dos imágenes".
+  * `ci.yaml`: pruebas de `services/api-backend` con 85 % de cobertura en `quality` y el trabajo `api-backend-image`. Está sin ejecutarse en GitHub; la misma construcción y la misma prueba de humo se corrieron en local con Docker: uid 10001, `/healthz` con el commit, `/api/v1/me` sin JWT da 401, sin `torch` ni `apache_beam`.
+  * Falta del CI el trabajo `portal` (Node 24), que llega con el paso 2.
+* **Decisiones al implementar 6.1 y 6.2:**
+  * En vez de `ARG BUILD_WEB=0`, el Dockerfile usa `ARG WEB_SOURCE=web-empty` (o `web-build`) para elegir la etapa del frontal: con `web-empty` la imagen lleva `dist/` vacío y `/` da 404. El paso 2 cambia el valor por defecto a `web-build`.
+  * La prueba de humo local encontró un error: `/api/v1/me` sin JWT daba 500 y tardaba 9 s, porque la dependencia armaba el cliente de Secret Manager (que busca credenciales) antes de autenticar. Ahora `current_principal` autentica primero y arma la fuente de roles después, y `SecretManagerRoleSource` crea su cliente al usarse; con pruebas.

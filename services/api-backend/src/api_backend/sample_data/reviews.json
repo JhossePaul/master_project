@@ -1,0 +1,26 @@
+[
+  {
+    "id_resena": "syn-0001",
+    "bank_id": "BANCO_A",
+    "fecha": "2026-09-01",
+    "estrellas": 1,
+    "texto_sanitizado": "CENTINELA: este texto nunca debe llegar a un lector",
+    "sentiment": "NEG"
+  },
+  {
+    "id_resena": "syn-0002",
+    "bank_id": "BANCO_B",
+    "fecha": "2026-09-02",
+    "estrellas": 5,
+    "texto_sanitizado": "Todo bien con la app, muy rápida.",
+    "sentiment": "POS"
+  },
+  {
+    "id_resena": "syn-0003",
+    "bank_id": "BANCO_A",
+    "fecha": "2026-09-03",
+    "estrellas": 3,
+    "texto_sanitizado": "No puedo entrar desde ayer.",
+    "sentiment": "NEG"
+  }
+]
