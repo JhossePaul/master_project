@@ -120,14 +120,22 @@ def test_watermark_storage_lifecycle_iam_and_consumers(
         "voc-datalake-ingestion-objects",
         "voc-datalake-sanitization-objects",
         "voc-datalake-ml-backend-objects",
+        "voc-datalake-ml-online-artifacts",
     }
     assert {r.state["member"] for r in grants.values()} == {
         f"serviceAccount:voc-sa-{actor}@test-voc-project.iam.gserviceaccount.com"
-        for actor in ("ingestion", "sanitization", "ml-backend")
+        for actor in ("ingestion", "sanitization", "ml-backend", "ml-online")
     }
     for name, grant in grants.items():
         assert grant.state["bucket"] == bucket.state["name"]
-        assert grant.state["role"] == "roles/storage.objectUser"
+        # El servicio en línea solo ve los pesos, y solo los lee.
+        online = name == "voc-datalake-ml-online-artifacts"
+        assert grant.state["role"] == (
+            "roles/storage.objectViewer"
+            if online
+            else "roles/storage.objectUser"
+        )
+        assert ("condition" in grant.state) == online
         assert bucket.urn in pulumi_mocks.dependencies[name]
     project_iam = resources(pulumi_mocks, "gcp:projects/iAMMember:IAMMember")
     assert project_iam  # No confundir un filtro vacío con ausencia de grants.

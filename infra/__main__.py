@@ -12,6 +12,7 @@ from voc_common.config import (
 from infra.modules.alerting import create_alerting_resources
 from infra.modules.analytics_bq import (
     create_analytics_bq,
+    create_ml_online_data_access,
     create_portal_data_access,
 )
 from infra.modules.apis import enable_project_apis
@@ -124,6 +125,13 @@ portal_data_access = create_portal_data_access(
     storage_bq.dataset,
     analytics_bq,
     security.sa_portal_api,
+    deps=list(project_apis.values()),
+)
+ml_online_data_access = create_ml_online_data_access(
+    project_id,
+    storage_bq.dataset,
+    analytics_bq,
+    security.sa_ml_online,
     deps=list(project_apis.values()),
 )
 storage_access = create_datalake_access(
@@ -256,6 +264,8 @@ if cloud_run is not None:
     pulumi.export("ingestion_worker_uri", cloud_run.ingestion_worker.uri)
     if cloud_run.api_backend is not None:
         pulumi.export("api_backend_uri", cloud_run.api_backend.uri)
+    if cloud_run.ml_online is not None:
+        pulumi.export("ml_online_uri", cloud_run.ml_online.uri)
     pulumi.export("sanitization_job_id", cloud_run.sanitization_job.id)
     pulumi.export("ingestion_history_job_id", cloud_run.historical_job.id)
     pulumi.export("ingestion_history_job_name", cloud_run.historical_job_name)

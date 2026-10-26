@@ -4,6 +4,261 @@
  */
 
 export interface paths {
+    "/api/v1/admin/coverage-curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage Curve
+         * @description Curva del modelo promovido, su punto vigente y el tiempo medido.
+         */
+        get: operations["coverage_curve_api_v1_admin_coverage_curve_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/drift-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drift Policy */
+        get: operations["drift_policy_api_v1_admin_drift_policy_get"];
+        put?: never;
+        /** Save Drift Policy */
+        post: operations["save_drift_policy_api_v1_admin_drift_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/drift-policy/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Drift Rates
+         * @description Meses de alerta al año con los umbrales propuestos y con los vigentes.
+         */
+        post: operations["drift_rates_api_v1_admin_drift_policy_rates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Versions */
+        get: operations["gold_versions_api_v1_admin_gold_versions_get"];
+        put?: never;
+        /** Create Gold */
+        post: operations["create_gold_api_v1_admin_gold_versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Gold */
+        post: operations["preview_gold_api_v1_admin_gold_versions_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions/{gold_version}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Items */
+        get: operations["gold_items_api_v1_admin_gold_versions__gold_version__items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/risk-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Risk Policy
+         * @description La versión vigente y la tabla completa, por ``valid_from``.
+         */
+        get: operations["risk_policy_api_v1_admin_risk_policy_get"];
+        put?: never;
+        /**
+         * Save Risk Policy
+         * @description Crea la versión siguiente (solo inserta).
+         */
+        post: operations["save_risk_policy_api_v1_admin_risk_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/risk-policy/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Risk Policy
+         * @description La versión propuesta y su diferencia, sin guardar nada.
+         */
+        post: operations["preview_risk_policy_api_v1_admin_risk_policy_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Alerts
+         * @description Las alertas con su estado vigente, de la más reciente a la más vieja.
+         */
+        get: operations["list_alerts_api_v1_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summary
+         * @description Solo conteos por banco: la usa la landing.
+         */
+        get: operations["summary_api_v1_alerts_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alert Detail */
+        get: operations["alert_detail_api_v1_alerts__alert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Event
+         * @description Confirma, descarta o reabre; 409 si el estado ya cambió.
+         */
+        post: operations["add_event_api_v1_alerts__alert_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/explanations/{text_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Explanation
+         * @description La explicación guardada (``occlusion_v2`` si existe), o 404.
+         */
+        get: operations["get_explanation_api_v1_explanations__text_key__get"];
+        put?: never;
+        /**
+         * Compute Explanation
+         * @description Calcula la explicación en ``voc-ml-online`` y la guarda.
+         */
+        post: operations["compute_explanation_api_v1_explanations__text_key__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hitl/guidelines/{task}": {
         parameters: {
             query?: never;
@@ -356,6 +611,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reviews
+         * @description Reseñas sanitizadas dentro de la ventana, con paginación del servidor.
+         */
+        get: operations["reviews_api_v1_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Facets
+         * @description Conteos con los filtros aplicados; solo agregados.
+         */
+        get: operations["facets_api_v1_reviews_facets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search
+         * @description Búsqueda semántica; la consulta no se guarda ni se registra.
+         */
+        post: operations["search_api_v1_reviews_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{bank_id}/{id_resena}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail
+         * @description La ficha de una reseña (sin ventana).
+         */
+        get: operations["detail_api_v1_reviews__bank_id___id_resena__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -377,6 +712,101 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlertDetail */
+        AlertDetail: {
+            alert: components["schemas"]["AlertRow"];
+            /** Events */
+            events: components["schemas"]["AlertEventOut"][];
+            explorer: components["schemas"]["ExplorerHint"];
+            /** Series */
+            series: components["schemas"]["SeriesPoint"][];
+        };
+        /** AlertEventIn */
+        AlertEventIn: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Note */
+            note: string;
+            status: components["schemas"]["AlertStatus"];
+            /** Ticket */
+            ticket?: string | null;
+        };
+        /** AlertEventOut */
+        AlertEventOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Event Id */
+            event_id: string;
+            /** Note */
+            note: string | null;
+            status: components["schemas"]["AlertStatus"];
+            /** Ticket */
+            ticket: string | null;
+        };
+        /** AlertRow */
+        AlertRow: {
+            /** Alert Id */
+            alert_id: string;
+            /** Bank Id */
+            bank_id: string;
+            boost: components["schemas"]["BoostOut"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Drift Policy Version */
+            drift_policy_version: string;
+            /** Period */
+            period: string;
+            /** Series */
+            series: string;
+            status: components["schemas"]["AlertStatus"];
+            /** Status At */
+            status_at: string | null;
+            /** Threshold */
+            threshold: number;
+            /** Value */
+            value: number;
+        };
+        /**
+         * AlertStatus
+         * @enum {string}
+         */
+        AlertStatus: "open" | "confirmed" | "dismissed";
+        /** AlertSummary */
+        AlertSummary: {
+            /** Open By Bank */
+            open_by_bank: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * Attribution
+         * @description Posiciones en ``texto_sanitizado``; sin copiar texto.
+         */
+        Attribution: {
+            /** D Neg */
+            d_neg?: number | null;
+            /** D Neu */
+            d_neu?: number | null;
+            /** D Pos */
+            d_pos?: number | null;
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+            /** Weight */
+            weight?: number | null;
+        };
         /** BankCard */
         BankCard: {
             /** Bank Id */
@@ -408,6 +838,34 @@ export interface components {
             /** Period */
             period: string;
         };
+        /**
+         * BoostEndReason
+         * @enum {string}
+         */
+        BoostEndReason: "expired" | "alert_closed" | "manual";
+        /**
+         * BoostOut
+         * @description Subida de revisión que disparó la alerta.
+         */
+        BoostOut: {
+            /** Active */
+            active: boolean;
+            /** Boost Id */
+            boost_id: string;
+            /** Coverage */
+            coverage: number;
+            ended_reason: components["schemas"]["BoostEndReason"] | null;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+        };
         /** CardValues */
         CardValues: {
             gap_estrellas: components["schemas"]["Estimate"] | null;
@@ -415,6 +873,41 @@ export interface components {
             /** Period */
             period: string;
             quejas_4_5: components["schemas"]["Estimate"] | null;
+        };
+        /** CoverageCurveResponse */
+        CoverageCurveResponse: {
+            current_point: components["schemas"]["CoveragePoint"] | null;
+            curve: components["schemas"]["HitlCoverageCurve"];
+            /** Hitl Boosts Active */
+            hitl_boosts_active: components["schemas"]["HitlBoost"][];
+            /** Median Seconds */
+            median_seconds: number | null;
+            /** Timed N */
+            timed_n: number;
+            /** Window Days */
+            window_days: number;
+        };
+        /**
+         * CoveragePoint
+         * @description Un punto de la curva de cobertura y riesgo (5.6).
+         */
+        CoveragePoint: {
+            /** Coverage */
+            coverage: number;
+            /** Errors Caught */
+            errors_caught: number;
+            /** Minutes Per Week */
+            minutes_per_week: number;
+            /** Reviews Per Week */
+            reviews_per_week: number;
+            /** Risk */
+            risk: number;
+            /** Risk Ci High */
+            risk_ci_high?: number | null;
+            /** Risk Ci Low */
+            risk_ci_low?: number | null;
+            /** Threshold */
+            threshold: number;
         };
         /** DailyPoint */
         DailyPoint: {
@@ -479,6 +972,114 @@ export interface components {
             /** Topicos */
             topicos: components["schemas"]["DailyTheme"][];
         };
+        /**
+         * DriftPolicy
+         * @description Fila de ``drift_policy`` (por banco).
+         */
+        DriftPolicy: {
+            /** Bank Id */
+            bank_id: string;
+            /** Baseline Months */
+            baseline_months: number;
+            /** Drift Policy Version */
+            drift_policy_version: string;
+            /** Entry Months */
+            entry_months: number;
+            /** Min Baseline Months */
+            min_baseline_months: number;
+            /** Min Rows Per Month */
+            min_rows_per_month: number;
+            /** Reason */
+            reason: string;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Template Version */
+            template_version: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+        };
+        /** DriftPolicyResponse */
+        DriftPolicyResponse: {
+            current: components["schemas"]["DriftPolicy"];
+            /** Diff Vs Template */
+            diff_vs_template: components["schemas"]["FieldDiff"][];
+            /** History */
+            history: components["schemas"]["DriftPolicy"][];
+            template: components["schemas"]["DriftPolicyTemplate"];
+        };
+        /**
+         * DriftPolicyTemplate
+         * @description Fila de ``drift_policy_template``; cambiarla no cambia a ningún banco.
+         */
+        DriftPolicyTemplate: {
+            /** Baseline Months */
+            baseline_months: number;
+            /** Entry Months */
+            entry_months: number;
+            /** Min Baseline Months */
+            min_baseline_months: number;
+            /** Min Rows Per Month */
+            min_rows_per_month: number;
+            /** Reason */
+            reason: string;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Template Version */
+            template_version: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+        };
+        /** DriftRatesIn */
+        DriftRatesIn: {
+            /** Bank */
+            bank: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+        };
+        /** DriftRatesResponse */
+        DriftRatesResponse: {
+            /** Bank */
+            bank: string;
+            /** Series */
+            series: components["schemas"]["SeriesRate"][];
+        };
+        /** DriftSaveIn */
+        DriftSaveIn: {
+            /** Bank */
+            bank: string;
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * DriftThresholds
+         * @description JSON ``thresholds`` de la política: umbral por serie.
+         *
+         *     Un umbral nulo es una serie que se mide y nunca alerta (ruido y
+         *     alineación de los tópicos). Una serie usa z o PSI, no los dos.
+         */
+        DriftThresholds: {
+            /** Psi */
+            psi?: {
+                [key: string]: number | null;
+            };
+            /** Z */
+            z?: {
+                [key: string]: number | null;
+            };
+        };
         /** Estimate */
         Estimate: {
             /** Ci High */
@@ -496,6 +1097,94 @@ export interface components {
             n_gold: number | null;
             /** N Unlabeled */
             n_unlabeled: number | null;
+        };
+        /** ExplainIn */
+        ExplainIn: {
+            /** Bank Id */
+            bank_id: string;
+            /** Id Resena */
+            id_resena: string;
+        };
+        /** ExplanationOut */
+        ExplanationOut: {
+            /** Attributions */
+            attributions: components["schemas"]["Attribution"][];
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Method */
+            method: string;
+            /** Model Version */
+            model_version: string;
+            /** Source */
+            source: string;
+            /** Text Key */
+            text_key: string;
+        };
+        /** ExplanationRef */
+        ExplanationRef: {
+            /** Method */
+            method: string;
+            /** Model Version */
+            model_version: string;
+            /** Source */
+            source: string;
+        };
+        /**
+         * ExplorerHint
+         * @description Banco y mes de la alerta, para abrir el Explorador.
+         */
+        ExplorerHint: {
+            /** Bank Id */
+            bank_id: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
+        /** FacetCount */
+        FacetCount: {
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** N */
+            n: number;
+        };
+        /**
+         * Facets
+         * @description Solo agregados: ningún campo trae texto de reseñas.
+         */
+        Facets: {
+            /** By Bank */
+            by_bank: components["schemas"]["FacetCount"][];
+            /** By Family */
+            by_family: components["schemas"]["FacetCount"][];
+            /** By Flag Security */
+            by_flag_security: components["schemas"]["FacetCount"][];
+            /** By Flag Update */
+            by_flag_update: components["schemas"]["FacetCount"][];
+            /** By Hitl */
+            by_hitl: components["schemas"]["FacetCount"][];
+            /** By Month */
+            by_month: components["schemas"]["FacetCount"][];
+            /** By Sentiment */
+            by_sentiment: components["schemas"]["FacetCount"][];
+            /** By Stars */
+            by_stars: components["schemas"]["FacetCount"][];
+            /** By Topic */
+            by_topic: components["schemas"]["FacetCount"][];
+            /** Total */
+            total: number;
+            window_applied: components["schemas"]["WindowApplied"];
         };
         /** FamiliesResponse */
         FamiliesResponse: {
@@ -523,6 +1212,15 @@ export interface components {
             /** Z */
             z: number | null;
         };
+        /** FieldDiff */
+        FieldDiff: {
+            /** After */
+            after: unknown;
+            /** Before */
+            before: unknown;
+            /** Field */
+            field: string;
+        };
         /** Freshness */
         Freshness: {
             /** Data Until */
@@ -532,6 +1230,122 @@ export interface components {
             last_ingestion_at: string | null;
             /** Last Monitor At */
             last_monitor_at: string | null;
+        };
+        /** GoldCount */
+        GoldCount: {
+            /** Key */
+            key: string;
+            /** N */
+            n: number;
+        };
+        /** GoldCreateIn */
+        GoldCreateIn: {
+            criteria: components["schemas"]["GoldCriteria"];
+            /** Reason */
+            reason: string;
+        };
+        /** GoldCriteria */
+        GoldCriteria: {
+            /**
+             * Exclude Flags
+             * @default [
+             *       "no_evaluable"
+             *     ]
+             */
+            exclude_flags: components["schemas"]["ReviewFlag"][];
+            /** Guideline Version */
+            guideline_version: string;
+            /**
+             * Reason
+             * @default monitor_sample
+             * @constant
+             */
+            reason: "monitor_sample";
+            /**
+             * Review Round
+             * @default 1
+             * @constant
+             */
+            review_round: 1;
+            /**
+             * Submitted From
+             * Format: date
+             */
+            submitted_from: string;
+            /**
+             * Submitted To
+             * Format: date
+             */
+            submitted_to: string;
+        };
+        /** GoldItem */
+        GoldItem: {
+            /** Id Resena */
+            id_resena: string;
+            /** Item Id */
+            item_id: string;
+            /** Reviewer */
+            reviewer: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Validated Label */
+            validated_label: string | null;
+        };
+        /** GoldItemsResponse */
+        GoldItemsResponse: {
+            /**
+             * Cutoff At
+             * Format: date-time
+             */
+            cutoff_at: string;
+            /** Gold Version */
+            gold_version: string;
+            /** Items */
+            items: components["schemas"]["GoldItem"][];
+        };
+        /** GoldPreview */
+        GoldPreview: {
+            /** By Bank */
+            by_bank: components["schemas"]["GoldCount"][];
+            /** By Label */
+            by_label: components["schemas"]["GoldCount"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * GoldVersion
+         * @description Fila de ``gold_versions``: qué revisiones HITL entran a una versión.
+         */
+        GoldVersion: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Hash */
+            created_by_hash: string;
+            /** Criteria */
+            criteria: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cutoff At
+             * Format: date-time
+             */
+            cutoff_at: string;
+            /** Gold Version */
+            gold_version: string;
+            /** Items */
+            items: number;
+        };
+        /** GoldVersionOut */
+        GoldVersionOut: {
+            /** Reason */
+            reason?: string | null;
+            version: components["schemas"]["GoldVersion"];
         };
         /** GuidelineOut */
         GuidelineOut: {
@@ -550,6 +1364,37 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HitlBoost
+         * @description Fila de ``hitl_boosts``: subida temporal de la revisión de un banco.
+         *
+         *     La fila de cierre repite el ``boost_id`` con ``ended_reason``; no se edita.
+         */
+        HitlBoost: {
+            /** Alert Id */
+            alert_id?: string | null;
+            /** Bank Id */
+            bank_id: string;
+            /** Boost Id */
+            boost_id: string;
+            /** Coverage */
+            coverage: number;
+            ended_reason?: components["schemas"]["BoostEndReason"] | null;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Risk Policy Version */
+            risk_policy_version: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Weekly Cap */
+            weekly_cap: number;
         };
         /** HitlCase */
         HitlCase: {
@@ -580,6 +1425,46 @@ export interface components {
             task: "sentiment";
             /** Text */
             text: string;
+        };
+        /**
+         * HitlCoverageCurve
+         * @description Fila de ``hitl_coverage_curves``: modelo × calibración × cálculo.
+         */
+        HitlCoverageCurve: {
+            /** Calibration Version */
+            calibration_version: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Model Version */
+            model_version: string;
+            /** Points */
+            points: components["schemas"]["CoveragePoint"][];
+            /** Weekly Volume By Bank */
+            weekly_volume_by_bank: {
+                [key: string]: number;
+            };
+            /** Weekly Volume Total */
+            weekly_volume_total: number;
+        };
+        /**
+         * HitlReviewRef
+         * @description Lo que se ve de una revisión humana: nunca quién la hizo.
+         */
+        HitlReviewRef: {
+            /** Outcome */
+            outcome: string;
+            /** Review Round */
+            review_round: number;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Validated Label */
+            validated_label: string | null;
         };
         /** HitlSummary */
         HitlSummary: {
@@ -679,6 +1564,21 @@ export interface components {
             prompt_version: string;
         };
         /**
+         * RetrainTrigger
+         * @description Quién lanza el reentrenamiento del modelo de sentimiento.
+         * @enum {string}
+         */
+        RetrainTrigger: "auto" | "manual";
+        /** ReviewDetail */
+        ReviewDetail: {
+            /** Aspects Prompt Version */
+            aspects_prompt_version: string | null;
+            explanation: components["schemas"]["ExplanationRef"] | null;
+            /** Hitl Reviews */
+            hitl_reviews: components["schemas"]["HitlReviewRef"][];
+            row: components["schemas"]["ReviewRow"];
+        };
+        /**
          * ReviewFlag
          * @description Marcas del revisor de sentimiento (guía ``v2.2``).
          * @enum {string}
@@ -686,10 +1586,174 @@ export interface components {
         ReviewFlag: "menciona_falla" | "duda" | "no_evaluable" | "nombre_persona";
         /** ReviewOut */
         ReviewOut: {
-            /** Next Available */
-            next_available: boolean;
+            next: components["schemas"]["HitlCase"] | null;
             /** Review Id */
             review_id: string;
+        };
+        /** ReviewPage */
+        ReviewPage: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Rows */
+            rows: components["schemas"]["ReviewRow"][];
+            /** Total */
+            total: number;
+            window_applied: components["schemas"]["WindowApplied"];
+        };
+        /** ReviewRow */
+        ReviewRow: {
+            /** Bank Id */
+            bank_id: string;
+            /** Confidence */
+            confidence: number | null;
+            /** Estrellas */
+            estrellas: number;
+            /** Families */
+            families: string[];
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Flag Security */
+            flag_security: boolean | null;
+            /** Flag Update */
+            flag_update: boolean | null;
+            /** Hitl Reviewed */
+            hitl_reviewed: boolean;
+            /** Id Resena */
+            id_resena: string;
+            /** Model Version */
+            model_version: string | null;
+            /** P Neg */
+            p_neg: number | null;
+            /** P Neu */
+            p_neu: number | null;
+            /** P Pos */
+            p_pos: number | null;
+            /** Sentiment */
+            sentiment: string;
+            /** Text */
+            text: string;
+            /** Text Key */
+            text_key: string;
+            /** Topics */
+            topics: components["schemas"]["TopicRef"][];
+            /** Version App */
+            version_app: string | null;
+        };
+        /** RiskChangeIn */
+        RiskChangeIn: {
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * RiskPolicy
+         * @description Fila de ``risk_policy`` (global): el apetito de riesgo.
+         *
+         *     Todos los valores son parámetros que fijan el revisor y el dueño de
+         *     negocio en la pantalla de administración. El tope semanal, la subida por
+         *     deriva y la doble revisión no tienen evidencia en los experimentos: son
+         *     nulos hasta que se configuran (sin tope, sin subida automática y sin doble
+         *     revisión).
+         *
+         *     Los dos disparadores son nulos en las versiones sembradas antes de
+         *     existir: nulo equivale a ``manual`` en el reentrenamiento y a
+         *     ``scheduled`` en el re-ajuste de tópicos (``retrain_mode`` y
+         *     ``topic_refit_mode`` dan el valor efectivo).
+         */
+        RiskPolicy: {
+            /** Agreement Sample Weekly */
+            agreement_sample_weekly: number;
+            /** Drift Boost Coverage */
+            drift_boost_coverage?: number | null;
+            /** Drift Boost Days */
+            drift_boost_days?: number | null;
+            /** Drift Boost Weekly Cap */
+            drift_boost_weekly_cap?: number | null;
+            /** Families Exact Floor */
+            families_exact_floor: number;
+            /** Families Min Prevalence */
+            families_min_prevalence: number;
+            /**
+             * Hitl Signal
+             * @constant
+             */
+            hitl_signal: "prob_max";
+            /** Hitl Target Coverage */
+            hitl_target_coverage: number;
+            /** Hitl Threshold */
+            hitl_threshold: number;
+            /** Hitl Weekly Cap */
+            hitl_weekly_cap?: number | null;
+            /** Human Agreement Frequency */
+            human_agreement_frequency?: string | null;
+            /** Human Agreement Sample Size */
+            human_agreement_sample_size?: number | null;
+            /** Model Version */
+            model_version: string;
+            /** Monitor Frequency */
+            monitor_frequency: string;
+            /** Monitor Sample Size */
+            monitor_sample_size: number;
+            /** Policy Version */
+            policy_version: string;
+            /** Reason */
+            reason: string;
+            /** Retrain Kappa Floor */
+            retrain_kappa_floor: number;
+            retrain_trigger?: components["schemas"]["RetrainTrigger"] | null;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Topic Refit Frequency */
+            topic_refit_frequency: string;
+            topic_refit_trigger?: components["schemas"]["TopicRefitTrigger"] | null;
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+            /** Warn Agreement Floor */
+            warn_agreement_floor: number;
+            /** Warn Correction Rate */
+            warn_correction_rate: number;
+        };
+        /** RiskPolicyResponse */
+        RiskPolicyResponse: {
+            current: components["schemas"]["RiskPolicy"];
+            /** History */
+            history: components["schemas"]["RiskPolicy"][];
+        };
+        /** RiskPreview */
+        RiskPreview: {
+            /** Diff */
+            diff: components["schemas"]["FieldDiff"][];
+            /** Errors */
+            errors: string[];
+            /** Large Change */
+            large_change: boolean;
+            proposed: components["schemas"]["RiskPolicy"] | null;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** RiskSaveIn */
+        RiskSaveIn: {
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** Confirm Word */
+            confirm_word?: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * Role
@@ -727,6 +1791,43 @@ export interface components {
             started_at: string;
             status: components["schemas"]["RunStatus"];
         };
+        /** SearchHit */
+        SearchHit: {
+            /** Bank Id */
+            bank_id: string;
+            /** Distance */
+            distance: number;
+            example: components["schemas"]["ReviewRow"];
+            /** N Reviews */
+            n_reviews: number;
+            /** Text Key */
+            text_key: string;
+        };
+        /** SearchIn */
+        SearchIn: {
+            /** Banks */
+            banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+            /**
+             * K
+             * @default 10
+             */
+            k: number;
+            /** Months */
+            months?: number | null;
+            /** Query */
+            query: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Bytes Billed */
+            bytes_billed: number;
+            /** Embedding Model */
+            embedding_model: string;
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+            /** Months Searched */
+            months_searched: number;
+        };
         /** SentimentProposal */
         SentimentProposal: {
             /**
@@ -754,10 +1855,42 @@ export interface components {
              * Format: uuid
              */
             review_id: string;
-            /** Ticket */
-            ticket?: string | null;
             /** Validated Label */
             validated_label: ("NEG" | "NEU" | "POS") | null;
+        };
+        /** SeriesPoint */
+        SeriesPoint: {
+            /** Alert */
+            alert: boolean;
+            /** Baseline */
+            baseline: number | null;
+            /** Period */
+            period: string;
+            /** Psi */
+            psi: number | null;
+            /** Threshold */
+            threshold: number | null;
+            /** Value */
+            value: number;
+            /** Z */
+            z: number | null;
+        };
+        /** SeriesRate */
+        SeriesRate: {
+            /** Current Alerts */
+            current_alerts: number;
+            /** Current Per Year */
+            current_per_year: number;
+            /** Months */
+            months: number;
+            /** Proposed Alerts */
+            proposed_alerts: number;
+            /** Proposed Per Year */
+            proposed_per_year: number;
+            /** Reference */
+            reference: number | null;
+            /** Series */
+            series: string;
         };
         /** TaskSummary */
         TaskSummary: {
@@ -796,6 +1929,19 @@ export interface components {
             /** Topic Model Version */
             topic_model_version: string;
         };
+        /** TopicRef */
+        TopicRef: {
+            /** Name */
+            name: string | null;
+            /** Topic Id */
+            topic_id: number;
+        };
+        /**
+         * TopicRefitTrigger
+         * @description Quién lanza el re-ajuste del modelo de tópicos.
+         * @enum {string}
+         */
+        TopicRefitTrigger: "scheduled" | "manual";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -893,6 +2039,23 @@ export interface components {
             /** Rows */
             rows: components["schemas"]["VersionRow"][];
         };
+        /** WindowApplied */
+        WindowApplied: {
+            /** Clipped */
+            clipped: boolean;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Months */
+            months: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -902,6 +2065,523 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    coverage_curve_api_v1_admin_coverage_curve_get: {
+        parameters: {
+            query?: {
+                model_version?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageCurveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_policy_api_v1_admin_drift_policy_get: {
+        parameters: {
+            query: {
+                bank: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftPolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_drift_policy_api_v1_admin_drift_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftSaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_rates_api_v1_admin_drift_policy_rates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftRatesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftRatesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_versions_api_v1_admin_gold_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldVersionOut"][];
+                };
+            };
+        };
+    };
+    create_gold_api_v1_admin_gold_versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoldCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_gold_api_v1_admin_gold_versions_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoldCriteria"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_items_api_v1_admin_gold_versions__gold_version__items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gold_version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldItemsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    risk_policy_api_v1_admin_risk_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPolicyResponse"];
+                };
+            };
+        };
+    };
+    save_risk_policy_api_v1_admin_risk_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskSaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_risk_policy_api_v1_admin_risk_policy_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_alerts_api_v1_alerts_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AlertStatus"] | null;
+                bank?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_api_v1_alerts_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSummary"];
+                };
+            };
+        };
+    };
+    alert_detail_api_v1_alerts__alert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_event_api_v1_alerts__alert_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_explanation_api_v1_explanations__text_key__get: {
+        parameters: {
+            query?: {
+                model_version?: string | null;
+            };
+            header?: never;
+            path: {
+                text_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compute_explanation_api_v1_explanations__text_key__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                text_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     guideline_api_v1_hitl_guidelines__task__get: {
         parameters: {
             query?: never;
@@ -1432,6 +3112,156 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    reviews_api_v1_reviews_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                sort?: "fecha_desc" | "confidence_asc" | "estrellas_asc";
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sentiment?: ("NEG" | "NEU" | "POS" | "NO_PREDICTED")[] | null;
+                families?: string[] | null;
+                flag_update?: boolean | null;
+                flag_security?: boolean | null;
+                topic_id?: number | null;
+                stars?: number[] | null;
+                version?: string | null;
+                hitl_reviewed?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    facets_api_v1_reviews_facets_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sentiment?: ("NEG" | "NEU" | "POS" | "NO_PREDICTED")[] | null;
+                families?: string[] | null;
+                flag_update?: boolean | null;
+                flag_security?: boolean | null;
+                topic_id?: number | null;
+                stars?: number[] | null;
+                version?: string | null;
+                hitl_reviewed?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Facets"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_v1_reviews_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_reviews__bank_id___id_resena__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bank_id: "BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE";
+                id_resena: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

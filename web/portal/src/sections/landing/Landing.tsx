@@ -6,28 +6,21 @@ import { hasRole, type Me } from "@/auth/roles";
 import { Callout } from "@/components/Callout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { GlossaryTerm } from "@/components/GlossaryTerm";
-import { KpiCard, KpiCardFrame } from "@/components/KpiCard";
 import { StatusPill } from "@/components/StatusPill";
 import { Tahali } from "@/components/Tahali";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BANK_IDS, BANKS, bankLabel } from "@/config/banks";
+import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { NAV_ITEMS, PORTAL_NAME } from "@/config/nav";
 import {
   formatDate,
   formatDateTime,
   formatInt,
-  formatMonth,
-  formatPct,
-  formatPctRange,
   formatRelative,
-  formatStars,
-  formatStarsRange,
 } from "@/lib/format";
+import { BankSummary } from "./BankSummary";
 
 type LandingData = components["schemas"]["LandingResponse"];
-type Headline = components["schemas"]["BankHeadline"];
 
 const HOUR = 3_600_000;
 const FRESH_HOURS = 36;
@@ -91,6 +84,11 @@ function Freshness({
         <CardTitle as="h2">Última actualización</CardTitle>
       </CardHeader>
       <CardContent>
+        <p className="mb-1 text-sm text-gold-700">
+          {data.data_until
+            ? `Datos al ${formatDate(data.data_until)}`
+            : "Sin fecha de datos"}
+        </p>
         <ul>
           <FreshnessRow
             label="Reseñas nuevas"
@@ -122,93 +120,27 @@ function Freshness({
   );
 }
 
-function BankCard({ bank }: { bank: Headline }) {
-  const style = BANKS[bank.bank_id as keyof typeof BANKS];
+function Hero() {
   return (
-    <KpiCardFrame colorVar={style?.colorVar}>
-      <h3 className="mb-3 font-serif text-xl font-semibold">
-        <Link
-          to={{ pathname: "/cockpit", search: `?bancos=${bank.bank_id}` }}
-          className="after:absolute after:inset-0"
-        >
-          {bankLabel(bank.bank_id)}
-        </Link>
-      </h3>
-      <div className="grid gap-4">
-        <KpiCard
-          label="Reseñas negativas"
-          value={formatPct(bank.neg.estimate)}
-          interval={formatPctRange(bank.neg.ci_low, bank.neg.ci_high)}
-          method={bank.neg.method}
-        />
-        <KpiCard
-          label={
-            <span className="relative z-10">
-              <GlossaryTerm id="gap_estrellas">
-                Brecha en estrellas
-              </GlossaryTerm>
-            </span>
-          }
-          value={formatStars(bank.gap_estrellas.estimate)}
-          interval={formatStarsRange(
-            bank.gap_estrellas.ci_low,
-            bank.gap_estrellas.ci_high,
-          )}
-          method={bank.gap_estrellas.method}
-          collapsedProvenance={{
-            explanation: (
-              <p className="text-sm">
-                Cifras de {formatMonth(bank.period)}. Un modelo clasifica todas
-                las reseñas y personas revisaron una muestra para ajustar el
-                cálculo.
-              </p>
-            ),
-            provenance: { model: bank.model_version, gold: bank.gold_version },
-          }}
-        />
-      </div>
-    </KpiCardFrame>
-  );
-}
-
-function MissingBankCard({ id }: { id: string }) {
-  return (
-    <KpiCardFrame colorVar={BANKS[id as keyof typeof BANKS]?.colorVar}>
-      <h3 className="mb-2 font-serif text-xl font-semibold">{bankLabel(id)}</h3>
-      <p className="text-sm text-text-muted">
-        Sin cifra con revisión humana en un mes cerrado: aún no hay suficientes
-        reseñas revisadas.
-      </p>
-    </KpiCardFrame>
-  );
-}
-
-function Hero({ dataUntil }: { dataUntil: string | null }) {
-  return (
-    <section className="relative overflow-hidden rounded-md bg-green-900 px-8 py-10 text-neutral-0">
+    <section className="relative overflow-hidden rounded-md bg-green-900 px-6 py-5 text-neutral-0">
       {/* La franja solo aparece donde cabe sin tocar el texto. */}
-      <Tahali className="absolute top-0 right-8 hidden h-full w-48 lg:block" />
-      <div className="lg:pr-56">
+      <Tahali className="absolute top-0 right-6 hidden h-full w-32 lg:block" />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6 lg:pr-40">
         <img
           src="/logo-posgrados-up.png"
           alt="Posgrados Universidad Panamericana"
-          className="mb-5 h-24 w-auto"
+          className="h-16 w-auto shrink-0 self-start sm:self-center"
         />
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
-          Maestría en Ciencia de Datos
-        </p>
-        <h1 className="mt-2 font-serif text-5xl font-semibold">
-          {PORTAL_NAME}
-        </h1>
-        <p className="mt-3 max-w-xl text-lg text-green-100">
-          Voz del cliente en apps bancarias: qué opinan los usuarios de cinco
-          apps, con cada cifra acompañada de qué tan segura es.
-        </p>
-        <p className="mt-4 text-sm text-gold-300">
-          {dataUntil
-            ? `Datos al ${formatDate(dataUntil)}`
-            : "Sin fecha de datos"}
-        </p>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
+            Maestría en Ciencia de Datos
+          </p>
+          <h1 className="font-serif text-3xl font-semibold">{PORTAL_NAME}</h1>
+          <p className="mt-1 max-w-2xl text-green-100">
+            Voz del cliente en apps bancarias: qué opinan los usuarios de cinco
+            apps, con cada cifra acompañada de qué tan segura es.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -217,31 +149,20 @@ function Hero({ dataUntil }: { dataUntil: string | null }) {
 function Content({ data, me }: { data: LandingData; me: Me }) {
   const now = Date.now();
   const alerts = Object.entries(data.open_alerts).filter(([, n]) => n > 0);
-  const byBank = new Map(data.banks.map((b) => [b.bank_id, b]));
+  const total = alerts.reduce((sum, [, n]) => sum + n, 0);
   const access = NAV_ITEMS.filter((i) => i.path !== "/" && hasRole(me, i.role));
   return (
     <div className="flex flex-col gap-8">
-      <Hero dataUntil={data.freshness.data_until} />
-      <Freshness data={data.freshness} now={now} />
-      <section aria-labelledby="bancos">
-        <h2
-          id="bancos"
-          className="mb-3 font-serif text-2xl font-semibold text-green-800"
-        >
-          Los cinco bancos
-        </h2>
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {BANK_IDS.map((id) => {
-            const bank = byBank.get(id);
-            return bank ? (
-              <BankCard key={id} bank={bank} />
-            ) : (
-              <MissingBankCard key={id} id={id} />
-            );
-          })}
-        </div>
-      </section>
-      <section aria-labelledby="alertas" className="grid gap-6 lg:grid-cols-2">
+      <Hero />
+      <section
+        aria-label="Estado actual"
+        className={`grid gap-6 ${
+          data.hitl_pending !== null
+            ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)]"
+            : "lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)]"
+        }`}
+      >
+        <Freshness data={data.freshness} now={now} />
         <Card>
           <CardHeader>
             <CardTitle as="h2" id="alertas">
@@ -252,20 +173,44 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
             {alerts.length === 0 ? (
               <p className="text-sm text-text-muted">Ninguna alerta abierta.</p>
             ) : (
-              <ul className="grid gap-1">
-                {alerts.map(([bank, n]) => (
-                  <li
-                    key={bank}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span>{bankLabel(bank)}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="tabular">{formatInt(n)}</span>
-                      <StatusPill status="abierta" />
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <p className="tabular text-4xl font-bold">{formatInt(total)}</p>
+                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  {alerts.map(([bank, n]) => {
+                    const entry = (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="inline-block size-2.5 rounded-full"
+                          style={{
+                            background: `var(${BANKS[bank as BankId]?.colorVar})`,
+                          }}
+                        />
+                        <span>{bankLabel(bank)}</span>
+                        <span className="tabular font-semibold">
+                          {formatInt(n)}
+                        </span>
+                      </>
+                    );
+                    return (
+                      <li key={bank} className="text-sm">
+                        {hasRole(me, "analista") ? (
+                          <Link
+                            to={`/alertas?bancos=${encodeURIComponent(bank)}`}
+                            className="flex items-center gap-1.5 underline-offset-4 hover:underline"
+                          >
+                            {entry}
+                          </Link>
+                        ) : (
+                          <span className="flex items-center gap-1.5">
+                            {entry}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
             {hasRole(me, "analista") ? (
               <Link
@@ -298,6 +243,7 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
           </Card>
         ) : null}
       </section>
+      <BankSummary banks={data.banks} />
       <section aria-labelledby="accesos">
         <h2
           id="accesos"

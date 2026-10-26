@@ -102,6 +102,11 @@ def test_requires_hitl_with_the_policy_and_the_boost_only_for_its_bank(
     assert {r["source"] for r in world.bq.rows("review_explanations")} == {
         "precomputed_hitl"
     }
+    # Con dirección: calibrada con la temperatura de la versión promovida.
+    assert {r["method"] for r in world.bq.rows("review_explanations")} == {
+        "occlusion_v2"
+    }
+    assert set(world.sentiment.temperatures) == {1.0}  # calibration_t sembrada
 
 
 def test_weekly_cap_limits_new_cases(world: Any) -> None:

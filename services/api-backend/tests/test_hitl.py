@@ -12,6 +12,7 @@ from api_backend.dlp import FAKE_NAME, FAKE_TOKEN, FixedNameSanitizer
 from api_backend.errors import ApiError, ErrorCode
 from api_backend.sections.hitl import router as hitl_router
 from api_backend.sections.hitl.repository import (
+    CachedHitlRepository,
     InMemoryHitlRepository,
     public_id,
 )
@@ -388,14 +389,12 @@ def test_revision_confirmada_guarda_modo_guia_y_tiempo(
     assert case is not None
     kit.clock.advance(seconds=42)
 
-    response = review(
-        ana, case, flags=["menciona_falla"], ticket=" T-1 ", comment="ok"
-    )
+    response = review(ana, case, flags=["menciona_falla"], comment="ok")
 
     assert response.status_code == 200
     assert response.json() == {
         "review_id": "11111111-1111-4111-8111-111111111111",
-        "next_available": False,
+        "next": None,  # no quedan más casos
     }
     saved = kit.repo.reviews[0]
     assert saved.outcome.value == "confirmed"
@@ -409,7 +408,7 @@ def test_revision_confirmada_guarda_modo_guia_y_tiempo(
     assert saved.opened_at == T0 and saved.submitted_at == T0 + timedelta(
         seconds=42
     )
-    assert saved.ticket == "T-1" and saved.comment == "ok"
+    assert saved.ticket is None and saved.comment == "ok"
     assert kit.repo.events[-1].status is HitlStatus.SUBMITTED
 
 
@@ -618,7 +617,7 @@ def test_resumen_con_solo_conteos(make_kit: Callable[..., Kit]) -> None:
         "mine_this_week": 1,
         "team_this_week": 2,
         "median_seconds": 50.0,
-        "monitor_done": 2,
+        "monitor_done": 1,  # el segundo ya lo tiene ana, sin revisar
         "monitor_target": 2,
     }
 
@@ -683,3 +682,187 @@ def test_evento_de_otro_item_no_cambia_el_estado(
     case = take(kit.client("ana"))
 
     assert case is not None and "número 1" in case["text"]
+
+
+def test_guardar_devuelve_el_siguiente_caso_ya_tomado(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit = make_kit(make_item(1, priority=0.9), make_item(2, priority=0.1))
+    ana, beto = kit.client("ana"), kit.client("beto")
+    first = take(ana)
+    assert first is not None
+
+    out = review(ana, first).json()
+
+    assert out["next"] is not None and "número 2" in out["next"]["text"]
+    assert out["next"]["item_id"] != first["item_id"]
+    assert take(beto) is None  # el siguiente ya es de ana
+    # Y se puede revisar sin volver a pedirlo.
+    assert (
+        review(
+            ana,
+            out["next"],
+            review_id="44444444-4444-4444-8444-444444444444",
+        ).json()["next"]
+        is None
+    )
+
+
+def test_el_reintento_de_un_guardado_devuelve_el_siguiente(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit = make_kit(make_item(1, priority=0.9), make_item(2, priority=0.1))
+    ana = kit.client("ana")
+    first = take(ana)
+    assert first is not None
+    once = review(ana, first).json()
+
+    again = review(ana, first).json()
+
+    assert again["next"]["item_id"] == once["next"]["item_id"]
+    assert len(kit.repo.reviews) == 1
+
+
+def test_la_peticion_ya_no_acepta_ticket(make_kit: Callable[..., Kit]) -> None:
+    kit = make_kit(make_item(1))
+    ana = kit.client("ana")
+    case = take(ana)
+    assert case is not None
+
+    # Un campo que ya no existe se ignora: no llega a la revisión.
+    assert review(ana, case, ticket="T-1").status_code == 200
+    assert kit.repo.reviews[0].ticket is None
+
+
+# -- memoria del proceso -------------------------------------------------------
+
+
+class Counting(InMemoryHitlRepository):
+    """Cuenta las lecturas de la cola y de los textos."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.queue_reads = 0
+        self.text_batches: list[int] = []
+        self.single_texts = 0
+
+    def entries(self, task: HitlTask, now: datetime) -> Any:
+        self.queue_reads += 1
+        return super().entries(task, now)
+
+    def review_texts(self, pairs: Any) -> Any:
+        self.text_batches.append(len(pairs))
+        return super().review_texts(pairs)
+
+    def review_text(self, bank_id: str, id_resena: str) -> str | None:
+        self.single_texts += 1
+        return super().review_text(bank_id, id_resena)
+
+
+def cached_kit(
+    make_kit: Callable[..., Kit], *pairs: tuple[HitlItem, str]
+) -> tuple[Kit, Counting, CachedHitlRepository, list[float]]:
+    kit = make_kit(*pairs)
+    inner = Counting(list(kit.repo.items), dict(kit.repo.texts), [guideline()])
+    ticks = [0.0]
+    cached = CachedHitlRepository(inner, clock=lambda: ticks[0])
+    kit.repo = cached  # type: ignore[assignment]
+    return kit, inner, cached, ticks
+
+
+def test_la_cola_se_lee_una_vez_y_los_textos_en_lote(
+    make_kit: Callable[..., Kit],
+) -> None:
+    pairs = [make_item(n, priority=1 - n / 10) for n in range(1, 6)]
+    kit, inner, _, _ = cached_kit(make_kit, *pairs)
+    ana = kit.client("ana")
+
+    case = take(ana)
+    for n in range(2, 6):
+        assert case is not None
+        case = review(
+            ana, case, review_id=f"5555555{n}-5555-4555-8555-555555555555"
+        ).json()["next"]
+
+    assert case is not None and "número 5" in case["text"]
+    assert inner.queue_reads == 1  # los cambios propios se aplican en memoria
+    assert inner.text_batches == [5]  # un solo lote para los cinco textos
+    assert inner.single_texts == 0
+
+
+def test_la_cola_en_memoria_vence(make_kit: Callable[..., Kit]) -> None:
+    kit, inner, _, ticks = cached_kit(make_kit, make_item(1), make_item(2))
+    ana = kit.client("ana")
+    assert take(ana) is not None
+
+    ticks[0] += 16
+    assert take(ana) is not None
+
+    assert inner.queue_reads == 2
+
+
+def test_un_caso_revisado_por_otra_instancia_no_se_vuelve_a_tomar(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit, inner, cached, _ = cached_kit(
+        make_kit, make_item(1, priority=0.9), make_item(2, priority=0.1)
+    )
+    ana = kit.client("ana")
+    cached.entries(HitlTask.SENTIMENT, kit.clock())  # la memoria se llena
+    # Otra instancia revisó el caso 1 sin pasar por esta memoria.
+    first = inner.items[0]
+    other = kit.actor("beto")
+    inner.add_event(
+        HitlEvent(
+            event_id="x1",
+            item_id=first.item_id,
+            status=HitlStatus.IN_REVIEW,
+            actor_hash=other,
+            at=T0 - timedelta(minutes=30),
+        )
+    )
+    inner.add_review(
+        make_review(first, other, "66666666-6666-4666-8666-666666666666")
+    )
+    inner.add_event(
+        HitlEvent(
+            event_id="x2",
+            item_id=first.item_id,
+            status=HitlStatus.SUBMITTED,
+            actor_hash=other,
+            at=T0 - timedelta(minutes=29),
+        )
+    )
+
+    case = take(ana)
+
+    assert case is not None and "número 2" in case["text"]
+    last = [e for e in inner.events if e.item_id == first.item_id][-1]
+    assert last.status is HitlStatus.SUBMITTED  # quedó cerrado otra vez
+    assert [
+        e.status for e in inner.events if e.actor_hash == kit.actor("ana")
+    ] == [
+        HitlStatus.IN_REVIEW,
+        HitlStatus.IN_REVIEW,
+    ]
+
+
+def make_review(item: HitlItem, reviewer: str, review_id: str) -> Any:
+    from voc_common import HitlReview
+
+    return HitlReview(
+        review_id=review_id,
+        item_id=item.item_id,
+        id_resena=item.id_resena,
+        task="sentiment",
+        predicted_label="NEG",
+        validated_label="NEG",
+        outcome="confirmed",
+        display_mode="assisted",
+        review_round=1,
+        guideline_version="v2.2",
+        reviewer_hash=reviewer,
+        opened_at=T0 - timedelta(minutes=30),
+        submitted_at=T0 - timedelta(minutes=29),
+        seconds_spent=60,
+    )

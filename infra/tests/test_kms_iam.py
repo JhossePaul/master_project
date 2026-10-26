@@ -34,6 +34,7 @@ _ROLES = {
         "roles/bigquery.jobUser",
         "roles/dlp.user",
     },
+    "voc-sa-ml-online": {"roles/bigquery.jobUser"},
 }
 
 
@@ -58,9 +59,10 @@ def test_security_resources_and_dependencies(
                     resources.sa_sanitization_worker,
                     resources.sa_ml_and_backend,
                     resources.sa_portal_api,
+                    resources.sa_ml_online,
                 }
             )
-            == 5
+            == 6
         )
 
     deploy()
@@ -71,7 +73,7 @@ def test_security_resources_and_dependencies(
     assert all(s["project"] == _PROJECT for s in accounts)
 
     memberships = [s for s in states if "member" in s]
-    assert len(memberships) == 13
+    assert len(memberships) == 14
     for account, roles in _ROLES.items():
         expected_member = (
             f"serviceAccount:{account}@{_PROJECT}.iam.gserviceaccount.com"
@@ -129,7 +131,7 @@ def test_entrypoint_creates_security(
         r.urn for r in registrations if "gcp:projects/service:Service" in r.urn
     }
     accounts = [r for r in registrations if "serviceaccount/account" in r.urn]
-    assert len(accounts) == 5
+    assert len(accounts) == 6
     for account in accounts:
         name = account.urn.rsplit("::", 1)[-1]
         assert apis <= pulumi_mocks.dependencies[name]

@@ -221,28 +221,52 @@ class KpiEstimate(_AnalyticsRecord):
 
 
 class TokenAttribution(_AnalyticsRecord):
-    """Peso de un token por posición en ``texto_sanitizado``, sin texto."""
+    """Peso de un token por posición en ``texto_sanitizado``, sin texto.
+
+    ``occlusion_v1`` trae ``weight`` (cuánto sostiene la palabra la clase
+    predicha). ``occlusion_v2`` trae ``d_neg``, ``d_neu`` y ``d_pos``: el
+    cambio de cada probabilidad calibrada al quitar la palabra; ``d_neg > 0``
+    quiere decir que la palabra empuja hacia ``NEG``.
+    """
 
     start: Counter
     end: Counter
-    weight: float
+    weight: float | None = None
+    d_neg: float | None = None
+    d_neu: float | None = None
+    d_pos: float | None = None
 
     @model_validator(mode="after")
     def _span(self) -> Self:
         if self.end <= self.start:
             raise ValueError("end must be greater than start")
+        deltas = (self.d_neg, self.d_neu, self.d_pos)
+        if self.weight is None:
+            if any(d is None for d in deltas):
+                raise ValueError("weight or all of d_neg, d_neu, d_pos")
+        elif any(d is not None for d in deltas):
+            raise ValueError("weight excludes d_neg, d_neu, d_pos")
         return self
 
 
 class ReviewExplanation(_AnalyticsRecord):
-    """Fila de ``review_explanations``: texto × versión de modelo."""
+    """Fila de ``review_explanations``: texto × versión de modelo × método."""
 
     text_key: Digest
     model_version: NonEmpty
-    method: Literal["occlusion_v1"]
+    method: Literal["occlusion_v1", "occlusion_v2"]
     attributions: list[TokenAttribution]
     source: ExplanationSource
     computed_at: UtcDatetime
+
+    @model_validator(mode="after")
+    def _shape(self) -> Self:
+        directed = self.method == "occlusion_v2"
+        if any((a.weight is None) != directed for a in self.attributions):
+            raise ValueError(
+                f"{self.method} attributions have the wrong fields"
+            )
+        return self
 
 
 class ModelQuality(_AnalyticsRecord):

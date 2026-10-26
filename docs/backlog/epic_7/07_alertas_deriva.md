@@ -1,6 +1,6 @@
 # Paso 7. Feature 7.8: Alertas de deriva
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Terminado en local y probado contra BigQuery de dev (solo lecturas); la primera alerta real llegará con el monitor, así que las casillas 1 y 3 se confirman en dev con una alerta real o sintética. Detalle en "Avance".
 * **Nivel:** importante.
 * **Depende de:** paso 2 (y el sanitizador de comentarios del paso 4 para las notas).
 * **Objetivo:** atender las alertas de deriva que emite el monitor semanal con la `drift_policy` de cada banco: una bandeja por banco, la serie de cada alerta contra su umbral, la subida de revisión que disparó y un flujo auditado (`open` → `confirmed` o `dismissed`). **La detección de incidentes de negocio está fuera del alcance:** los picos de negativas, familias o marca `u` se ven en el cockpit como descripción.
@@ -53,14 +53,30 @@ Rol analista.
 
 ## Terminado cuando
 
-* [ ] Una alerta nueva (en dev, la primera que emita el monitor; en pruebas, una sintética) aparece en la bandeja y en la landing.
-* [ ] Su confirmación o descarte queda auditada en `drift_alert_events` con quién, cuándo, nota y ticket.
-* [ ] Descartar una alerta con subida activa la cierra.
+* [x] Una alerta nueva (en dev, la primera que emita el monitor; en pruebas, una sintética) aparece en la bandeja y en la landing. (Probado con alertas sintéticas en la API y en el portal; en dev `drift_alerts` sigue vacía y las consultas devuelven vacío sin error.)
+* [x] Su confirmación o descarte queda auditada en `drift_alert_events` con quién, cuándo, nota y ticket. (Probado con la tabla en memoria; la escritura real a BigQuery se estrena con la primera alerta de dev.)
+* [x] Descartar una alerta con subida activa la cierra. (Prueba de API: `alert_closed`, y confirmar no la cierra.)
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **El cierre de la subida ya estaba permitido.** `hitl_boosts` y `drift_alert_events` están en `PORTAL_WRITABLE_TABLES` desde el paso 1, así que este paso no toca `infra/`.
+* **El 409 sale de validar la transición contra el estado vigente.** El cuerpo no lleva el estado que el analista vio, así que "cambió entre lectura y escritura" se detecta releyendo la alerta justo antes de escribir: si la transición ya no es válida desde el estado de ahora (por ejemplo, otro analista descartó mientras tú confirmabas), 409 con el estado actual en el mensaje. Dos envíos que lleguen al mismo tiempo desde el mismo estado pueden escribirse los dos (la tabla es de solo inserción y no hay bloqueo); el último evento manda y la historia deja ambos. No se agregó otra relectura.
+* **Reabrir y confirmar de nuevo.** `dismissed → confirmed` no existe: hay que reabrir primero, como dice la tabla del flujo. `open → open` y repetir el mismo estado dan 409.
+* **Nota mínima de 10 caracteres en toda transición**, no solo al confirmar: la tabla pide "Nota" en las demás y el diálogo del portal (`ConfirmWithReason`) ya exige 10. Máximo 500 caracteres; el ticket, 100 (un ticket en blanco se guarda nulo).
+* **Idempotencia por `event_id`.** Un reintento con el mismo `event_id` devuelve 200 con la alerta tal como está, sin escribir otra vez. Si el reintento es de un descarte, vuelve a intentar cerrar la subida: cubre el fallo a medias (evento escrito, cierre no). El orden de escritura es evento primero y cierre después.
+* **El cierre de la subida es literal a la especificación**: al descartar, si `hitl_boost_id` apunta a una subida activa, se inserta la fila de cierre (clave `boost_id` y `ended_reason`, la misma del monitor). Ojo: el monitor reparte **una subida por banco** entre sus alertas (`hitl_boost_id` apunta a la subida del banco aunque otra alerta la haya abierto) y su cierre automático mira solo la alerta que la creó (`boost.alert_id`). Descartar una alerta que comparte subida con otra abierta cierra la subida del banco. Con la subida nula de la política v1 no ocurre; si la política v2 la configura, conviene decidir si se cierra solo cuando no quede otra alerta abierta o confirmada del mismo banco.
+* **`period` y los umbrales.** `AlertRow.period` es "2026-09". Para las series de z, `value` es el valor del mes y `threshold` el z (4), así que la bandeja los muestra como "31.0 %" y "z ≥ 4" (y "PSI ≥ 0.25" en la longitud); el z del mes está en el detalle. El detalle trae los 24 meses que terminan en el mes de la alerta (no 24 previos a él), para que el mes resaltado esté dentro de la gráfica.
+* **Las series sin umbral (tópicos) tienen nombre en el mapa** (`driftSeries.ts`) aunque nunca alertan, por si una política futura les pone uno.
+* **Tres archivos de prueba nuevos** en vez de extender `test_bigquery_integration.py`: `test_alerts.py`, `test_alerts_bigquery.py` (lector y escritor falsos) y `test_alerts_integration.py` (opcional, contra dev).
+* **Landing:** cada banco del conteo de abiertas enlaza a `/alertas?bancos=<banco>` para quien es analista. `GET /alerts/summary` queda disponible para el lector, pero la landing sigue leyendo `open_alerts` de su propia respuesta.
+* **`ConfirmWithReason` acepta un ticket opcional** (`withTicket`, segundo argumento de `onConfirm`) y limita el motivo a 500 y el ticket a 100 caracteres. `ReferenceLine` acepta `labelOutside` para poner el umbral en el margen derecho y no encima de la serie.
+* **El motivo se pierde si el envío falla** (el diálogo se cierra al confirmar): el aviso de error queda en la pantalla y hay que volver a escribirlo. Un reintento del mismo texto reutiliza el `event_id`.
+* **FMEA:** las notas pasan por el mismo sanitizador que los comentarios del HITL, que ya cubre la fila F-21; no se agregó una fila nueva (el archivo de la FMEA tiene cambios sin commitear de otra sesión).
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **API (2026-10-26):** `sections/alerts/` (`router`, `schemas`, `service`, `repository`, `sample`), registrada en `main.py`; `openapi.json` y `schema.d.ts` regenerados. 35 pruebas nuevas (`test_alerts.py` y `test_alerts_bigquery.py`) y la ruta `summary` en `test_sentinel.py`: bandeja por estado y banco, subida activa o terminada, detalle con 24 meses y enlace al Explorador, las seis transiciones válidas y las cuatro inválidas (409), 409 cuando otro analista cambió el estado, nota sanitizada y DLP caído (502 sin escribir nada), descartar cierra con `alert_closed` y confirmar no, subida vencida sin cierre doble, idempotencia (también la del cierre a medias), `summary` de lector sin notas, 403 para el lector y para el revisor en las demás rutas. Suite de la API: 231 pasan, 42 omitidas (BigQuery de dev).
+* **Contra BigQuery de dev** (`RUN_BIGQUERY_TESTS=1`, solo lecturas): las seis consultas (bandeja, una alerta, eventos, subidas, resumen y serie) corren sin error. La bandeja, el resumen, la alerta, los eventos y las subidas leen 0 bytes (tablas casi vacías); la serie de `neg_share` de BBVA lee 10 MB y devuelve sus meses.
+* **Portal (2026-10-26):** `/alertas` (pestañas Abiertas, Confirmadas, Descartadas y Todas en `?estado=`, tabla con banco, mes, serie en lenguaje común, valor, umbral, estado, días abierta y subida) y `/alertas/:alertId` (gráfica de 24 meses con la línea base y el mes resaltado; el z por mes con el umbral para las series de z; subida, historia, acciones válidas con nota y ticket, enlace al Explorador y el `Callout`). 16 pruebas nuevas, entre ellas `axe` sin violaciones en la bandeja y en el detalle. `npm run check`, `tsc`, `npm test` (155) y `npm run build` pasan; las dos pantallas son trozos perezosos (6 KB comprimidos la bandeja).
+* **Revisada en local** (`PORTAL_DATA=fixtures`): se abrió la bandeja y el detalle, se descartó la alerta con subida activa (nota con un nombre propio, que salió como `[PERSON_NAME]`) y la subida pasó a "se cerró al descartar la alerta" con el evento en la historia. Dos pruebas viejas (`a11y` y `cockpit`) usaban `/alertas` como ejemplo de sección en construcción; ahora usan `/mlops`.
+* **Pendiente:** la primera alerta real de dev. La escritura a `drift_alert_events` y `hitl_boosts` por la API se estrena entonces.

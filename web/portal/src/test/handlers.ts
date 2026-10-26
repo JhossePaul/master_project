@@ -95,6 +95,80 @@ export function syntheticHitlSummary(): HitlSummary {
   };
 }
 
+type ReviewRow = components["schemas"]["ReviewRow"];
+type Facets = components["schemas"]["Facets"];
+
+export function syntheticRow(overrides: Partial<ReviewRow> = {}): ReviewRow {
+  return {
+    id_resena: "syn-0001",
+    bank_id: "BBVA",
+    text_key: "a".repeat(64),
+    fecha: "2026-10-20",
+    version_app: "9.1.0",
+    estrellas: 1,
+    text: "No llega el código para entrar a la app.",
+    sentiment: "NEG",
+    p_neg: 0.8,
+    p_neu: 0.15,
+    p_pos: 0.05,
+    confidence: 0.8,
+    model_version: "sintetico_v1",
+    families: ["AC"],
+    flag_update: false,
+    flag_security: false,
+    topics: [{ topic_id: 0, name: "Código de acceso" }],
+    hitl_reviewed: false,
+    ...overrides,
+  };
+}
+
+export const EXPLORER_ROWS: ReviewRow[] = [
+  syntheticRow(),
+  syntheticRow({
+    id_resena: "syn-0002",
+    bank_id: "NUBANK",
+    text_key: "b".repeat(64),
+    estrellas: 5,
+    text: "Muy buena app, la uso todos los días.",
+    sentiment: "POS",
+    p_neg: 0.05,
+    p_neu: 0.15,
+    p_pos: 0.8,
+    families: [],
+    topics: [],
+    hitl_reviewed: true,
+  }),
+];
+
+export function syntheticFacets(
+  total = 2,
+  sentiment: string[] = ["NEG", "POS"],
+): Facets {
+  const items = (keys: string[], n = 1) =>
+    keys.map((key) => ({ key, n, label: null }));
+  return {
+    total,
+    by_bank: items(["BBVA", "NUBANK"]),
+    by_month: [
+      { key: "2026-09", n: 1, label: null },
+      { key: "2026-10", n: 1, label: null },
+    ],
+    by_sentiment: items(sentiment),
+    by_stars: items(["1", "5"]),
+    by_family: items(["AC"]),
+    by_flag_update: items(["no"], 2),
+    by_flag_security: items(["no"], 2),
+    by_topic: [{ key: "0", n: 1, label: "Código de acceso" }],
+    by_hitl: items(["si", "no"]),
+    window_applied: {
+      date_from: "2025-10-01",
+      date_to: "2026-10-26",
+      clipped: false,
+      months: 12,
+    },
+  };
+}
+
 type Estimate = components["schemas"]["Estimate"];
 type Card = components["schemas"]["BankCard"];
 
@@ -308,6 +382,135 @@ export function syntheticVersionDaily(
   };
 }
 
+type RiskPolicy = components["schemas"]["RiskPolicy"];
+type DriftPolicy = components["schemas"]["DriftPolicy"];
+
+export function syntheticRiskPolicy(
+  overrides: Partial<RiskPolicy> = {},
+): RiskPolicy {
+  return {
+    policy_version: "risk_policy_v1",
+    valid_from: "2026-10-01T00:00:00Z",
+    hitl_signal: "prob_max",
+    hitl_target_coverage: 0.9,
+    hitl_threshold: 0.74,
+    model_version: "sintetico_v1",
+    monitor_sample_size: 300,
+    monitor_frequency: "quarterly",
+    topic_refit_frequency: "quarterly",
+    retrain_kappa_floor: 0.89,
+    warn_correction_rate: 0.28,
+    warn_agreement_floor: 0.94,
+    agreement_sample_weekly: 500,
+    families_exact_floor: 0.53,
+    families_min_prevalence: 0.05,
+    set_by_hash: "b".repeat(64),
+    reason: "Semilla inicial",
+    ...overrides,
+  };
+}
+
+const CURVE: [number, number, number][] = [
+  [0.8, 0.021, 0.58],
+  [0.85, 0.014, 0.66],
+  [0.9, 0.004, 0.74],
+  [0.95, 0.002, 0.86],
+];
+
+export function syntheticCurve(): components["schemas"]["CoverageCurveResponse"] {
+  const points = CURVE.map(([coverage, risk, threshold]) => ({
+    coverage,
+    risk,
+    risk_ci_low: Math.max(risk - 0.003, 0),
+    risk_ci_high: risk + 0.004,
+    threshold,
+    errors_caught: 0.7,
+    reviews_per_week: Math.round((1 - coverage) * 3500),
+    minutes_per_week: Math.round(((1 - coverage) * 3500 * 7) / 60),
+  }));
+  return {
+    curve: {
+      model_version: "sintetico_v1",
+      calibration_version: "cal_v1",
+      points,
+      weekly_volume_total: 3500,
+      weekly_volume_by_bank: { BBVA: 3500 },
+      computed_at: "2026-10-23T00:00:00Z",
+    },
+    current_point: points[2] ?? null,
+    median_seconds: 7,
+    timed_n: 412,
+    window_days: 90,
+    hitl_boosts_active: [],
+  };
+}
+
+export function syntheticDriftPolicy(bank: string): DriftPolicy {
+  return {
+    drift_policy_version: `drift_policy_v1_${bank}`,
+    bank_id: bank,
+    template_version: "drift_template_v1",
+    valid_from: "2026-09-01T00:00:00Z",
+    thresholds: {
+      z: { neg_share: 4, mean_words: 4 },
+      psi: { length_distribution: 0.25 },
+    },
+    baseline_months: 12,
+    min_baseline_months: 6,
+    min_rows_per_month: 200,
+    entry_months: 12,
+    set_by_hash: "b".repeat(64),
+    reason: "Copia de la plantilla",
+  };
+}
+
+const adminHandlers = [
+  http.get("*/api/v1/admin/risk-policy", () => {
+    const current = syntheticRiskPolicy();
+    return HttpResponse.json({ current, history: [current] });
+  }),
+  http.get("*/api/v1/admin/coverage-curve", () =>
+    HttpResponse.json(syntheticCurve()),
+  ),
+  http.get("*/api/v1/admin/drift-policy", ({ request }) => {
+    const bank = new URL(request.url).searchParams.get("bank") ?? "BBVA";
+    const current = syntheticDriftPolicy(bank);
+    return HttpResponse.json({
+      current,
+      template: {
+        template_version: "drift_template_v1",
+        valid_from: "2026-08-01T00:00:00Z",
+        thresholds: current.thresholds,
+        baseline_months: 12,
+        min_baseline_months: 6,
+        min_rows_per_month: 200,
+        entry_months: 12,
+        set_by_hash: "b".repeat(64),
+        reason: "Plantilla",
+      },
+      history: [current],
+      diff_vs_template: [],
+    });
+  }),
+  http.post("*/api/v1/admin/drift-policy/rates", () =>
+    HttpResponse.json({
+      bank: "BBVA",
+      series: [
+        {
+          series: "neg_share",
+          months: 60,
+          proposed_alerts: 4,
+          proposed_per_year: 0.8,
+          current_alerts: 4,
+          current_per_year: 0.8,
+          reference: 1.1,
+        },
+      ],
+    }),
+  ),
+  http.get("*/api/v1/admin/gold-versions", () => HttpResponse.json([])),
+];
+
 export const handlers = [
   http.get("*/api/v1/kpis/versions/daily", ({ request }) =>
     HttpResponse.json(
@@ -353,6 +556,35 @@ export const handlers = [
     "*/api/v1/hitl/items/:id/release",
     () => new HttpResponse(null, { status: 204 }),
   ),
+  http.get("*/api/v1/reviews/facets", () =>
+    HttpResponse.json(syntheticFacets()),
+  ),
+  http.get("*/api/v1/reviews/:bank/:id", ({ params }) =>
+    HttpResponse.json({
+      row:
+        EXPLORER_ROWS.find((r) => r.id_resena === params.id) ??
+        EXPLORER_ROWS[0],
+      aspects_prompt_version: "aspects_v2_1",
+      hitl_reviews: [],
+      explanation: null,
+    }),
+  ),
+  http.get("*/api/v1/reviews", () =>
+    HttpResponse.json({
+      rows: EXPLORER_ROWS,
+      total: EXPLORER_ROWS.length,
+      page: 1,
+      page_size: 50,
+      window_applied: syntheticFacets().window_applied,
+    }),
+  ),
+  http.get("*/api/v1/explanations/:key", () =>
+    HttpResponse.json(
+      { error: { code: "not_found", message: "No hay", request_id: "r" } },
+      { status: 404 },
+    ),
+  ),
   http.get("*/api/v1/me", () => HttpResponse.json(syntheticMe())),
   http.get("*/api/v1/landing", () => HttpResponse.json(syntheticLanding())),
+  ...adminHandlers,
 ];

@@ -13,6 +13,7 @@ class SecurityResources:
     sa_sanitization_worker: gcp.serviceaccount.Account
     sa_ml_and_backend: gcp.serviceaccount.Account
     sa_portal_api: gcp.serviceaccount.Account
+    sa_ml_online: gcp.serviceaccount.Account
     kms_crypto_key_id: pulumi.Output[str] | None
     iam_members: list[gcp.projects.IAMMember] = field(default_factory=list)
 
@@ -88,6 +89,11 @@ def create_security_resources(
         ),
     )
 
+    # Servicio privado de explicación y embeddings (EPIC-7): lee pesos de
+    # ml_artifacts/ (permiso condicional en el bucket) y model_versions
+    # (permiso por tabla en analytics_bq); no escribe nada.
+    ml_online = create_account("voc-sa-ml-online", ("roles/bigquery.jobUser",))
+
     kms_crypto_key_id: pulumi.Output[str] | None = None
     if enable_cmek:
         keyring = gcp.kms.KeyRing(
@@ -116,6 +122,7 @@ def create_security_resources(
         sa_sanitization_worker=sanitization,
         sa_ml_and_backend=ml_backend,
         sa_portal_api=portal_api,
+        sa_ml_online=ml_online,
         kms_crypto_key_id=kms_crypto_key_id,
         iam_members=iam_members,
     )
@@ -148,6 +155,29 @@ def create_datalake_access(
                 opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
             )
         )
+    grants.append(
+        gcp.storage.BucketIAMMember(
+            "voc-datalake-ml-online-artifacts",
+            bucket=bucket.name,
+            role="roles/storage.objectViewer",
+            member=security.sa_ml_online.email.apply(
+                lambda email: f"serviceAccount:{email}"
+            ),
+            # Solo los pesos. Listar un prefijo se evalúa contra el bucket,
+            # por eso la condición también admite ese tipo de recurso.
+            condition=gcp.storage.BucketIAMMemberConditionArgs(
+                title="solo-ml-artifacts",
+                expression=bucket.name.apply(
+                    lambda name: (
+                        'resource.type == "storage.googleapis.com/Bucket" || '
+                        "resource.name.startsWith("
+                        f'"projects/_/buckets/{name}/objects/ml_artifacts/")'
+                    )
+                ),
+            ),
+            opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
+        )
+    )
     return grants
 
 

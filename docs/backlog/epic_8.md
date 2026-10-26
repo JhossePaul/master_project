@@ -20,6 +20,7 @@
 | 9 | **La ingesta no registra costo** (`ingestion_runs_log_v2`) | AIOps (7.9) muestra la duración derivada y el costo como "sin dato"; medirlo exigiría la exportación de Cloud Billing | Planificación de EPIC-7 (2026-10-25) |
 | 10 | **Días en hora de la Ciudad de México** en vez de UTC: `DATE(fecha, 'America/Mexico_City')` en `daily_topic_labels`, en las series diarias de la API y en todas las vistas y tablas que agrupan por día o por mes (`kpi_estimates`, `drift_metrics`), con la validación de temas diarios repetida contra los experimentos | Una reseña de las 20:00 de CDMX cuenta en el día siguiente, y eso mueve reseñas entre días en las series y en el top 5 diario. Decisión del autor (2026-10-25): no le encanta UTC, pero cambiarlo exige tocar todas las vistas que se consumen; mientras tanto el portal rotula el eje "día (UTC)" | Cuestionario de diseño de EPIC-7 (L-05) |
 | 11 | **Portal amigable en el teléfono** (ver la sección "Portal móvil") | La decisión `L-04` fijó escritorio primero: por debajo de 1 024 px solo la landing y las tarjetas se leen en una columna, y el HITL, el Explorador y la administración piden una pantalla más ancha | Revisión de la landing en dev (2026-10-26) |
+| 12 | **HITL sin espera:** sacar de BigQuery el estado de la cola y sus escrituras (ver la sección "HITL sin espera") | Con la memoria del paso 4 de EPIC-7 un caso sigue costando 2 a 4 s de escrituras en BigQuery, y buscar un texto en el TDS escanea 150 a 280 MB. Una revisión fluida pide menos de 300 ms | Revisión del autor del HITL en dev (2026-10-26) |
 
 ---
 
@@ -39,3 +40,30 @@
   * una prueba por sección con la ventana a 375 × 812;
   * la guía visual (sección 8.3) y el cuestionario (`L-04`) actualizados con lo que se decida.
 * **Antes de empezar:** revisar con el autor qué secciones sí valen la pena en el teléfono; esta lista es una propuesta.
+
+---
+
+## HITL sin espera
+
+* **Estado (2026-10-26):** pendiente, sin fecha. Pedido del autor: que la revisión sea fluida (*seamless*) y no espere a BigQuery entre un caso y el siguiente.
+* **Qué pasa hoy** (medido en dev, antes y después de las mejoras del paso 4 de EPIC-7):
+  * cada escritura es un `INSERT` de BigQuery (DML): 1 a 2 s, y un caso necesita tres (`in_review`, la revisión y `submitted`);
+  * tomar un caso relee su estado en BigQuery para confirmar que nadie más lo tomó (1.3 s): BigQuery no tiene transacciones, así que la exclusión se comprueba escribiendo y releyendo;
+  * el TDS está agrupado por banco y versión de la app, no por `id_resena`: buscar un texto escanea 150 a 280 MB y tarda 4 a 5 s; el paso 4 los trae en lotes de 20 y los guarda en memoria, pero cada lote cuesta lo mismo;
+  * la memoria del proceso (cola 15 s, textos 15 min) ayuda con una sola instancia; con varias de Cloud Run cada una tiene la suya.
+* **¿Pub/Sub?** Sirve para una parte y no para el corazón del problema:
+  * **No sirve para repartir los casos.** Una suscripción de Pub/Sub entrega cada mensaje a un consumidor y lo reentrega si no hay `ack`, que se parece al bloqueo de 15 minutos, pero: no hay prioridad (la cola se ordena por `priority` y `created_at`), el plazo de `ack` máximo es de 10 minutos, no existe "no se lo ofrezcas a este revisor durante 7 días" ni la segunda ronda para otro revisor, y el portal necesita *pedir* un caso y recibirlo en el momento, no escuchar.
+  * **Sí sirve para las escrituras de auditoría.** Publicar el evento o la revisión toma milisegundos, y una suscripción **BigQuery** (sin código) lo aterriza en `hitl_events` y `hitl_reviews`; las tablas siguen siendo solo inserción y la vista `hitl_queue` no cambia. El costo: la lectura en BigQuery llega con unos segundos de retraso, así que no puede ser la fuente del bloqueo.
+* **Propuesta (a validar con el autor):**
+  1. **Firestore (modo nativo) como estado vivo de la cola:** un documento por caso abierto con su bloqueo (`actor_hash`, `locked_until`), quienes lo saltaron y los revisores de cada ronda. Tomar un caso es una transacción (consulta por prioridad y escritura), con latencia de milisegundos y exclusión real entre instancias. El delta y el monitor siguen escribiendo `hitl_items` en BigQuery, y un paso al crear los casos (o un sincronizador) los copia a Firestore.
+  2. **Escrituras a BigQuery sin DML:** la API de escritura por *streaming* (`insert_rows_json` o Storage Write API), o Pub/Sub con suscripción a BigQuery, en vez de `INSERT … WHERE NOT EXISTS`; la idempotencia pasa a la clave del mensaje (`insertId`) o al documento de Firestore.
+  3. **Texto del caso con el caso:** guardar el texto sanitizado en el documento de Firestore al crear el caso (el delta y el monitor ya lo tienen a la mano) y quitar la lectura del TDS por `id_resena`; la edición de una reseña se detectaría al sincronizar. Tiene costo ético: es texto de reseñas en otro almacén, una fila nueva en la [matriz FMEA](../governance/ethical_fmea_matrix.md) y la misma CMEK.
+  4. **Precarga en el portal:** pedir el caso siguiente mientras se revisa el actual (con su propio bloqueo), para que "Guardar y seguir" sea inmediato.
+* **Alternativa más barata:** conservar solo BigQuery y agregar Memorystore (Redis) para el bloqueo y la cola. Cuesta una instancia siempre encendida y un conector de red sin servidor (VPC); Firestore no tiene instancia que mantener.
+* **Criterios de terminado:**
+  * del clic en "Guardar y seguir" al caso siguiente en pantalla, p95 menor de 500 ms en dev;
+  * dos instancias de la API nunca entregan el mismo caso al mismo tiempo (prueba de concurrencia);
+  * `hitl_events` y `hitl_reviews` conservan el mismo esquema y siguen siendo solo inserción, sin filas duplicadas ante reintentos;
+  * el κ del monitor y la tasa de corrección leen lo mismo que antes;
+  * el costo mensual estimado (Firestore, Pub/Sub y BigQuery) anotado.
+* **Antes de empezar:** decidir con el autor Firestore o Redis y si el texto viaja con el caso (punto 3); medir primero cuánto del tiempo restante es BigQuery y cuánto la red.

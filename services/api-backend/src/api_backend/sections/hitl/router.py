@@ -13,6 +13,7 @@ from api_backend.fixtures import SAMPLE_DIR
 from api_backend.sections.hitl import service
 from api_backend.sections.hitl.repository import (
     BigQueryHitlRepository,
+    CachedHitlRepository,
     HitlRepository,
 )
 from api_backend.sections.hitl.sample import sample_repository
@@ -45,10 +46,12 @@ def get_repository(request: Request, settings: Settings) -> HitlRepository:
         if settings.portal_data == "fixtures":
             repo = sample_repository()
         else:
-            repo = BigQueryHitlRepository(
-                reader_for(request, settings),
-                writer_for(request, settings),
-                settings,
+            repo = CachedHitlRepository(
+                BigQueryHitlRepository(
+                    reader_for(request, settings),
+                    writer_for(request, settings),
+                    settings,
+                )
             )
         state.hitl_repository = repo
     return repo

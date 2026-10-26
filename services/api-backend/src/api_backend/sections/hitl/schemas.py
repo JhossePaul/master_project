@@ -41,7 +41,6 @@ class SentimentReviewIn(BaseModel):
     validated_label: Literal["NEG", "NEU", "POS"] | None
     flags: list[ReviewFlag]
     comment: str | None = Field(default=None, max_length=500)
-    ticket: str | None = Field(default=None, max_length=100)
     guideline_version: str  # la que se mostró
 
     @model_validator(mode="after")
@@ -59,7 +58,9 @@ class SentimentReviewIn(BaseModel):
 
 class ReviewOut(BaseModel):
     review_id: str
-    next_available: bool
+    # El siguiente caso ya tomado, para no esperar otra ronda; ``None`` si no
+    # quedan o no se pudo tomar (el portal pide ``next``).
+    next: HitlCase | None
 
 
 class TaskSummary(BaseModel):

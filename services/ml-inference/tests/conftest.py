@@ -379,14 +379,18 @@ class FakeSentiment:
     def __init__(self) -> None:
         self.calls: list[list[str]] = []
         self.explained: list[str] = []
+        self.temperatures: list[float] = []
 
     def predict(self, texts: Sequence[str]) -> np.ndarray:
         self.calls.append(list(texts))
         return np.array([_proba(t) for t in texts], dtype=np.float32)
 
-    def explain(self, text: str) -> list[TokenAttribution]:
+    def explain(self, text: str, temperature: float) -> list[TokenAttribution]:
         self.explained.append(text)
-        return [TokenAttribution(start=0, end=1, weight=0.5)]
+        self.temperatures.append(temperature)
+        return [
+            TokenAttribution(start=0, end=1, d_neg=0.5, d_neu=-0.2, d_pos=-0.3)
+        ]
 
 
 class FakeEmbedder:

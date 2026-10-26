@@ -6,8 +6,9 @@
 
 import hashlib
 import json
-from collections.abc import Mapping
-from dataclasses import dataclass
+import time
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Protocol
 
@@ -35,6 +36,10 @@ MEDIAN_DAYS = 30
 MONITOR_WINDOW_DAYS = 200
 QUEUE_LIMIT = 500
 PUBLIC_ID_LENGTH = 32
+# Memoria del proceso: la cola cambia poco entre dos peticiones del mismo
+# revisor y los textos del TDS casi no cambian (la edición se detecta al tomar).
+QUEUE_CACHE_SECONDS = 15.0
+TEXT_CACHE_SECONDS = 900.0
 
 
 @dataclass(frozen=True)
@@ -57,6 +62,14 @@ class HitlRepository(Protocol):
         """El caso cuyo ``public_id`` es ``ref``."""
 
     def review_text(self, bank_id: str, id_resena: str) -> str | None: ...
+
+    def review_texts(
+        self, pairs: Sequence[tuple[str, str]]
+    ) -> dict[tuple[str, str], str]:
+        """Los textos que existan, en una sola consulta."""
+
+    def prefetch_texts(self, pairs: Sequence[tuple[str, str]]) -> None:
+        """Trae de una vez los textos de los casos que siguen."""
 
     def guidelines(self, task: HitlTask) -> list[Guideline]: ...
 
@@ -187,6 +200,48 @@ class BigQueryHitlRepository:
             name="hitl_text",
         )
         return str(rows[0]["texto_sanitizado"]) if rows else None
+
+    def review_texts(
+        self, pairs: Sequence[tuple[str, str]]
+    ) -> dict[tuple[str, str], str]:
+        if not pairs:
+            return {}
+        # Banco e id filtran por separado para aprovechar la agrupación de la
+        # tabla; la pareja exacta se escoge después (el producto cruzado trae
+        # a lo sumo unas filas de más).
+        sql = (
+            "SELECT bank_id, id_resena, texto_sanitizado FROM "  # nosec B608
+            f"{self._table('sanitized_reviews_tds')} "
+            "WHERE bank_id IN UNNEST(@banks) "
+            "AND id_resena IN UNNEST(@ids)"
+        )
+        rows = self._reader.rows(
+            sql,
+            [
+                Param(
+                    "banks",
+                    "STRING",
+                    sorted({bank for bank, _ in pairs}),
+                    array=True,
+                ),
+                Param(
+                    "ids",
+                    "STRING",
+                    sorted({id_ for _, id_ in pairs}),
+                    array=True,
+                ),
+            ],
+            name="hitl_texts",
+        )
+        wanted = set(pairs)
+        found = {
+            (str(r["bank_id"]), str(r["id_resena"])): str(r["texto_sanitizado"])
+            for r in rows
+        }
+        return {pair: text for pair, text in found.items() if pair in wanted}
+
+    def prefetch_texts(self, pairs: Sequence[tuple[str, str]]) -> None:
+        """Sin memoria no hay nada que precargar."""
 
     def guidelines(self, task: HitlTask) -> list[Guideline]:
         sql = (
@@ -380,6 +435,14 @@ class InMemoryHitlRepository:
     def review_text(self, bank_id: str, id_resena: str) -> str | None:
         return self.texts.get((bank_id, id_resena))
 
+    def review_texts(
+        self, pairs: Sequence[tuple[str, str]]
+    ) -> dict[tuple[str, str], str]:
+        return {p: self.texts[p] for p in pairs if p in self.texts}
+
+    def prefetch_texts(self, pairs: Sequence[tuple[str, str]]) -> None:
+        """Todo está en memoria."""
+
     def guidelines(self, task: HitlTask) -> list[Guideline]:
         return sorted(
             (g for g in self._guidelines if g.task is task),
@@ -438,6 +501,125 @@ class InMemoryHitlRepository:
         )
 
 
+class CachedHitlRepository:
+    """Memoria del proceso delante del repositorio de BigQuery.
+
+    Guarda la cola de cada tarea unos segundos y los textos del TDS unos
+    minutos, y mantiene la cola al día con lo que este proceso escribe. Lo que
+    otras instancias escriban se ve al vencer el tiempo; el estado de un caso
+    que se va a tomar o a guardar se relee sin memoria (``entry``).
+    """
+
+    def __init__(
+        self,
+        inner: HitlRepository,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._inner = inner
+        self._clock = clock
+        self._queues: dict[HitlTask, tuple[float, list[QueueEntry]]] = {}
+        self._texts: dict[tuple[str, str], tuple[float, str | None]] = {}
+
+    def entries(self, task: HitlTask, now: datetime) -> list[QueueEntry]:
+        cached = self._queues.get(task)
+        if cached and self._clock() - cached[0] < QUEUE_CACHE_SECONDS:
+            return list(cached[1])
+        found = self._inner.entries(task, now)
+        self._queues[task] = (self._clock(), found)
+        return list(found)
+
+    def entry(self, ref: str, now: datetime) -> QueueEntry | None:
+        return self._inner.entry(ref, now)
+
+    def _text(self, key: tuple[str, str]) -> tuple[bool, str | None]:
+        hit = self._texts.get(key)
+        if hit and self._clock() - hit[0] < TEXT_CACHE_SECONDS:
+            return True, hit[1]
+        return False, None
+
+    def review_text(self, bank_id: str, id_resena: str) -> str | None:
+        key = (bank_id, id_resena)
+        found, text = self._text(key)
+        if found:
+            return text
+        text = self._inner.review_text(bank_id, id_resena)
+        self._texts[key] = (self._clock(), text)
+        return text
+
+    def review_texts(
+        self, pairs: Sequence[tuple[str, str]]
+    ) -> dict[tuple[str, str], str]:
+        return self._inner.review_texts(pairs)
+
+    def prefetch_texts(self, pairs: Sequence[tuple[str, str]]) -> None:
+        missing = [p for p in pairs if not self._text(p)[0]]
+        if not missing:
+            return
+        found = self._inner.review_texts(missing)
+        now = self._clock()
+        for pair in missing:
+            self._texts[pair] = (now, found.get(pair))
+
+    def guidelines(self, task: HitlTask) -> list[Guideline]:
+        return self._inner.guidelines(task)
+
+    def has_review(self, review_id: str) -> bool:
+        return self._inner.has_review(review_id)
+
+    def summary(
+        self, task: HitlTask, actor_hash: str, now: datetime
+    ) -> TaskSummary:
+        return self._inner.summary(task, actor_hash, now)
+
+    def add_event(self, event: HitlEvent) -> None:
+        self._inner.add_event(event)
+        for task, (loaded, entries) in list(self._queues.items()):
+            self._queues[task] = (
+                loaded,
+                [
+                    patched
+                    for e in entries
+                    if (patched := _after_event(e, event)) is not None
+                ],
+            )
+
+    def add_review(self, review: HitlReview) -> bool:
+        added = self._inner.add_review(review)
+        if added:
+            for task, (loaded, entries) in list(self._queues.items()):
+                self._queues[task] = (
+                    loaded,
+                    [
+                        replace(
+                            e, reviewers=(*e.reviewers, review.reviewer_hash)
+                        )
+                        if e.item.item_id == review.item_id
+                        else e
+                        for e in entries
+                    ],
+                )
+        return added
+
+
+def _after_event(entry: QueueEntry, event: HitlEvent) -> QueueEntry | None:
+    """La entrada de la cola tras un evento; ``None`` si el caso ya se cerró."""
+    if entry.item.item_id != event.item_id:
+        return entry
+    if event.status is HitlStatus.EXPIRED:
+        return None
+    skipped = entry.skipped_by
+    if event.status is HitlStatus.SKIPPED and event.actor_hash:
+        skipped = skipped | {event.actor_hash}
+    updated = replace(
+        entry,
+        status=event.status,
+        actor_hash=event.actor_hash,
+        status_at=event.at,
+        skipped_by=skipped,
+    )
+    return None if is_closed(updated) else updated
+
+
 def _quarter(item_id: str) -> str:
     parts = item_id.split(":")
     return parts[1] if len(parts) > 1 else ""
@@ -454,6 +636,7 @@ def is_closed(entry: QueueEntry) -> bool:
 
 __all__ = [
     "BigQueryHitlRepository",
+    "CachedHitlRepository",
     "HitlRepository",
     "InMemoryHitlRepository",
     "QueueEntry",

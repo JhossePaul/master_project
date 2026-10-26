@@ -19,6 +19,7 @@ from infra.modules.secrets import (
 )
 from infra.tests.conftest import (
     API_BACKEND_IMAGE,
+    ML_INFERENCE_IMAGE,
     WORKLOAD_CONFIG,
     InfrastructureMonitor,
 )
@@ -248,3 +249,72 @@ def test_portal_users_invalido_se_rechaza(raw: object) -> None:
 
 def test_sin_portal_users_el_mapa_es_vacio() -> None:
     assert parse_portal_users(None) == {}
+
+
+ML_ONLINE_MEMBER = (
+    f"serviceAccount:voc-sa-ml-online@{PROJECT}.iam.gserviceaccount.com"
+)
+
+
+def test_sin_imagen_de_ml_no_hay_servicio_en_linea(
+    pulumi_mocks: InfrastructureMonitor,
+) -> None:
+    states = deploy_program(pulumi_mocks)
+
+    assert "voc-ml-online" not in states
+    env = {
+        e["name"]
+        for e in states["voc-api-backend"]["template"]["containers"][0]["envs"]
+    }
+    assert "ML_ONLINE_URL" not in env
+
+
+def test_el_servicio_en_linea_es_privado_y_solo_la_api_lo_invoca(
+    pulumi_mocks: InfrastructureMonitor,
+) -> None:
+    states = deploy_program(
+        pulumi_mocks, {"bbva-voc-infra:ml_inference_image": ML_INFERENCE_IMAGE}
+    )
+
+    online = states["voc-ml-online"]
+    assert "iapEnabled" not in online
+    template = online["template"]
+    assert template["serviceAccount"].startswith("voc-sa-ml-online@")
+    assert template["timeout"] == "120s"
+    assert template["scaling"] == {"minInstanceCount": 0, "maxInstanceCount": 1}
+    assert template["maxInstanceRequestConcurrency"] == 4
+    container = template["containers"][0]
+    assert container["image"] == ML_INFERENCE_IMAGE
+    assert container["args"] == ["serve"]
+    assert container["resources"]["limits"] == {"cpu": "2", "memory": "4Gi"}
+    invokers = [
+        s
+        for s in states.values()
+        if s.get("role") == "roles/run.invoker"
+        and s.get("name") == "voc-ml-online"
+    ]
+    assert [s["member"] for s in invokers] == [PORTAL_MEMBER]
+    assert all(s.get("member") != "allUsers" for s in states.values())
+    api_env = {
+        e["name"]
+        for e in states["voc-api-backend"]["template"]["containers"][0]["envs"]
+    }
+    assert "ML_ONLINE_URL" in api_env
+
+
+def test_la_cuenta_en_linea_solo_lee_pesos_y_model_versions(
+    pulumi_mocks: InfrastructureMonitor,
+) -> None:
+    states = deploy_program(pulumi_mocks)
+
+    grants = [s for s in states.values() if s.get("member") == ML_ONLINE_MEMBER]
+    roles = sorted(s["role"] for s in grants)
+    assert roles == [
+        "roles/bigquery.dataViewer",
+        "roles/bigquery.jobUser",
+        "roles/storage.objectViewer",
+    ]
+    viewer = next(s for s in grants if s["role"] == "roles/bigquery.dataViewer")
+    assert "tableId" in viewer  # por tabla, no el dataset
+    pesos = next(s for s in grants if s["role"] == "roles/storage.objectViewer")
+    assert "ml_artifacts/" in pesos["condition"]["expression"]

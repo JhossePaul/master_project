@@ -5,7 +5,7 @@ import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
 
 describe("landing", () => {
-  it("muestra las cinco tarjetas con su intervalo, la frescura y las alertas", async () => {
+  it("muestra el resumen de los cinco bancos con su intervalo, la frescura y las alertas", async () => {
     renderApp("/");
 
     expect(
@@ -18,8 +18,12 @@ describe("landing", () => {
       "Banco Morado",
       "Banco Gris",
     ]) {
-      expect(screen.getByRole("heading", { name })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name })).toBeInTheDocument();
     }
+    expect(
+      screen.getByRole("heading", { name: "Resumen" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: /Banco Azul/ }).length).toBe(2);
     expect(screen.getAllByText("entre 14.0 % y 16.0 %").length).toBeGreaterThan(
       0,
     );
