@@ -1,4 +1,6 @@
+import { ArrowUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
   type DailyPoint,
   useCards,
@@ -6,15 +8,18 @@ import {
   useDailyTopics,
   useModelChanges,
 } from "@/api/kpis";
+import { useMe } from "@/api/me";
+import { hasRole } from "@/auth/roles";
 import { TimeSeries, type TimeSeriesItem } from "@/charts/TimeSeries";
 import { Callout } from "@/components/Callout";
 import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
+import { explorerUrl } from "@/components/ExplorerLink";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatDate, formatPct, formatStars } from "@/lib/format";
 import { useKpi } from "./kpi";
-import { BankPicker, familyName, LoadingBlock, OpenInExplorer } from "./shared";
+import { BankPicker, familyName, LoadingBlock } from "./shared";
 import {
   dayShift,
   MAX_WINDOW,
@@ -63,6 +68,7 @@ export function DayPanel({
   const [bank, setBank] = useState<BankId>(banks[0] as BankId);
   const active = banks.includes(bank) ? bank : (banks[0] as BankId);
   const topics = useDailyTopics(active, day);
+  const me = useMe();
   return (
     <aside
       aria-label={`Temas del ${formatDate(day)}`}
@@ -91,6 +97,21 @@ export function DayPanel({
           ? ` Son los temas de ese solo día, no del promedio de ${smoothing} días.`
           : ""}
       </Callout>
+      {hasRole(me.data, "analista") ? (
+        <Button asChild variant="secondary" size="sm" className="w-fit">
+          <Link
+            to={explorerUrl({
+              banks: [active],
+              from: day,
+              to: day,
+              sentimiento: "NEG",
+            })}
+          >
+            Ver las reseñas de ese día
+            <ArrowUpRight aria-hidden="true" />
+          </Link>
+        </Button>
+      ) : null}
       {topics.isPending ? <LoadingBlock /> : null}
       {topics.isError ? (
         <ErrorState error={topics.error} onRetry={() => topics.refetch()} />
@@ -198,7 +219,6 @@ export function SeriesBlock({
   from,
   to,
   day,
-  familia,
   onDay,
   onRange,
 }: {
@@ -206,7 +226,6 @@ export function SeriesBlock({
   from: string;
   to: string;
   day: string | null;
-  familia: string | null;
   onDay: (day: string | null) => void;
   onRange: (from: string, to: string) => void;
 }) {
@@ -294,17 +313,6 @@ export function SeriesBlock({
         title={spec.label}
         subtitle="Por día (UTC), una línea por banco. El rango de la barra de filtros aplica a esta serie."
         method="raw"
-        actions={
-          <OpenInExplorer
-            filters={{
-              banks,
-              from,
-              to,
-              familia,
-              sentimiento: metric === "gap" ? null : "NEG",
-            }}
-          />
-        }
         howToRead={
           <p>
             Cada punto es un día. Haz clic en un día para ver de qué hablan las

@@ -1,3 +1,4 @@
+import { useExplorerContext } from "@/components/ExplorerLink";
 import type { BankId } from "@/config/banks";
 import { isBankId } from "@/config/banks";
 import { useGlobalFilters } from "@/filters/useGlobalFilters";
@@ -17,6 +18,8 @@ export default function EvolutionView() {
     focus && isBankId(focus) && banks.includes(focus)
       ? focus
       : (banks[0] as BankId);
+  // Con un día elegido, el Explorador abre ese día.
+  useExplorerContext(day ? { from: day, to: day } : null);
   const common = { from: filters.from, to: filters.to };
   return (
     <div className="flex flex-col gap-8">
@@ -35,7 +38,6 @@ export default function EvolutionView() {
           banks={banks}
           {...common}
           day={day}
-          familia={null}
           onDay={setDay}
           onRange={(from, to) => update({ from, to })}
         />

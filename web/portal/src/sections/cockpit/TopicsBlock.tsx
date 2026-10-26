@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatInt, formatMonth, formatPct } from "@/lib/format";
-import { familyName, LoadingBlock, OpenInExplorer, useWidth } from "./shared";
+import { familyName, LoadingBlock, useWidth } from "./shared";
 
 const PAGE_SIZE = 6;
 const WINDOW_MONTHS = 24;
@@ -162,13 +162,9 @@ function Panel({
 export function TopicsBlock({
   banks,
   familias,
-  from,
-  to,
 }: {
   banks: BankId[];
   familias: string[];
-  from: string;
-  to: string;
 }) {
   const topics = useTopics(banks);
   const key = banks.join(",");
@@ -238,17 +234,6 @@ export function TopicsBlock({
       title="De qué hablan las negativas"
       subtitle="Solo tópicos útiles para producto o ingeniería, por volumen"
       method="raw"
-      actions={
-        <OpenInExplorer
-          filters={{
-            banks: shown,
-            from,
-            to,
-            familia: familias.join(",") || null,
-            sentimiento: "NEG",
-          }}
-        />
-      }
       howToRead={
         <p>
           Un <GlossaryTerm id="topico_util">tópico útil</GlossaryTerm> agrupa

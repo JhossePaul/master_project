@@ -14,7 +14,6 @@ import {
   FAMILY_ORDER,
   familyName,
   LoadingBlock,
-  OpenInExplorer,
   useWidth,
 } from "./shared";
 
@@ -337,15 +336,11 @@ export function FamiliesBlock({
   bank,
   familias,
   onFamilias,
-  from,
-  to,
 }: {
   banks: BankId[];
   bank: BankId;
   familias: string[];
   onFamilias: (codes: string[]) => void;
-  from: string;
-  to: string;
 }) {
   const families = useFamilies(banks);
   const [view, setView] = useState<"nivel" | "anomalia">("nivel");
@@ -377,17 +372,6 @@ export function FamiliesBlock({
       }
       subtitle={`Últimos ${WINDOW_MONTHS} meses`}
       method="raw"
-      actions={
-        <OpenInExplorer
-          filters={{
-            banks: [bank],
-            from,
-            to,
-            familia: familias.join(",") || null,
-            sentimiento: "NEG",
-          }}
-        />
-      }
       howToRead={
         <p>
           Las <GlossaryTerm id="familia_aspectos">familias</GlossaryTerm> son

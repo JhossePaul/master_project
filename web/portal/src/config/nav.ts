@@ -155,6 +155,9 @@ export const FILTER_PATHS = [
   "/alertas",
 ];
 
+/** Vistas del Dashboard: las que llevan el enlace al Explorador. */
+export const DASHBOARD_PATHS = ["/cockpit", "/evolucion", "/topicos"];
+
 /** Parámetros de la URL que viajan al cambiar de sección (los globales y el KPI). */
 export const SHARED_PARAMS = ["bancos", "desde", "hasta", "kpi"];
 

@@ -1,9 +1,7 @@
-import { ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import type { MonthlyKpi } from "@/api/kpis";
 import { Button } from "@/components/ui/button";
-import { BANK_IDS, BANKS, type BankId, bankLabel } from "@/config/banks";
+import { BANKS, type BankId, bankLabel } from "@/config/banks";
 
 /** Orden y color de las familias de aspectos (tokens de tokens.css). */
 export const FAMILY_ORDER = [
@@ -52,37 +50,6 @@ export const FAMILY_NAMES: Record<string, string> = {
 
 export function familyName(code: string): string {
   return FAMILY_NAMES[code] ?? code;
-}
-
-export interface ExplorerFilters {
-  banks: BankId[];
-  from: string;
-  to: string;
-  familia?: string | null;
-  sentimiento?: string | null;
-}
-
-/** Dirección del Explorador con los filtros que el bloque tiene fijados. */
-export function explorerUrl(f: ExplorerFilters): string {
-  const params = new URLSearchParams();
-  if (f.banks.length > 0 && f.banks.length < BANK_IDS.length)
-    params.set("bancos", f.banks.join(","));
-  params.set("desde", f.from);
-  params.set("hasta", f.to);
-  if (f.familia) params.set("familia", f.familia);
-  if (f.sentimiento) params.set("sentimiento", f.sentimiento);
-  return `/explorador?${params.toString()}`;
-}
-
-export function OpenInExplorer({ filters }: { filters: ExplorerFilters }) {
-  return (
-    <Button asChild variant="ghost" size="sm">
-      <Link to={explorerUrl(filters)}>
-        Abrir en el Explorador
-        <ArrowUpRight aria-hidden="true" />
-      </Link>
-    </Button>
-  );
 }
 
 /** Selector de un banco entre los filtrados (botones, no un menú). */

@@ -21,13 +21,7 @@ import {
 } from "@/components/ui/table";
 import type { BankId } from "@/config/banks";
 import { formatDate, formatInt, formatPct, formatPctRange } from "@/lib/format";
-import {
-  BankPicker,
-  familyName,
-  LoadingBlock,
-  OpenInExplorer,
-  useWidth,
-} from "./shared";
+import { BankPicker, familyName, LoadingBlock, useWidth } from "./shared";
 
 const HEIGHT = 300;
 const M = { top: 10, right: 8, bottom: 30, left: 48 };
@@ -304,16 +298,6 @@ export function VersionTab({
         title="Reseñas por día y versión de la app"
         subtitle={`${label} · del ${formatDate(from)} al ${formatDate(to)}`}
         method="raw"
-        actions={
-          <OpenInExplorer
-            filters={{
-              banks: [bank],
-              from,
-              to,
-              sentimiento: sentiment === "ALL" ? null : sentiment,
-            }}
-          />
-        }
         howToRead={
           <p>
             Cada barra es un día y cada color, una versión de la app: donde un

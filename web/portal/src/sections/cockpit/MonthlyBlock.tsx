@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatMonth } from "@/lib/format";
 import { KPIS, type Kpi, useKpi } from "./kpi";
-import { LoadingBlock, monthDate, OpenInExplorer } from "./shared";
+import { LoadingBlock, monthDate } from "./shared";
 
 const MIN_REVIEWS = 100;
 const WINDOWS = [
@@ -115,14 +115,10 @@ function MonthlyChart({
   kpi,
   banks,
   rows,
-  from,
-  to,
 }: {
   kpi: Kpi;
   banks: BankId[];
   rows: MonthlyKpi[];
-  from: string;
-  to: string;
 }) {
   const spec = specFor(kpi);
   const mine = rows.filter((r) => r.metric === KPIS[kpi].metric);
@@ -143,7 +139,6 @@ function MonthlyChart({
       title={spec.title}
       subtitle="Mismo eje en todos los bancos"
       method="ppi"
-      actions={<OpenInExplorer filters={{ banks, from, to }} />}
       howToRead={
         <p>
           Los puntos con barra son la estimación con revisión humana y su rango;
@@ -184,15 +179,7 @@ function MonthlyChart({
   );
 }
 
-export function MonthlyBlock({
-  banks,
-  from,
-  to,
-}: {
-  banks: BankId[];
-  from: string;
-  to: string;
-}) {
+export function MonthlyBlock({ banks }: { banks: BankId[] }) {
   const monthly = useMonthly(banks);
   const [kpi] = useKpi();
   const [months, setMonths] = useState<12 | 24 | 0>(24);
@@ -231,7 +218,7 @@ export function MonthlyBlock({
           Se ocultan los meses con menos de {MIN_REVIEWS} reseñas.
         </span>
       </fieldset>
-      <MonthlyChart kpi={kpi} banks={banks} rows={rows} from={from} to={to} />
+      <MonthlyChart kpi={kpi} banks={banks} rows={rows} />
     </div>
   );
 }

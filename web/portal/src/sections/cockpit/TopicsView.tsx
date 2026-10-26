@@ -1,3 +1,4 @@
+import { useExplorerContext } from "@/components/ExplorerLink";
 import type { BankId } from "@/config/banks";
 import { isBankId } from "@/config/banks";
 import { useGlobalFilters } from "@/filters/useGlobalFilters";
@@ -16,6 +17,7 @@ export default function TopicsView() {
     focus && isBankId(focus) && banks.includes(focus)
       ? focus
       : (banks[0] as BankId);
+  useExplorerContext({ familia: familias, sentimiento: "NEG" });
   const common = { from: filters.from, to: filters.to };
   return (
     <div className="flex flex-col gap-8">

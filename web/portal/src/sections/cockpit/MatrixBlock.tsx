@@ -3,7 +3,7 @@ import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
 import type { BankId } from "@/config/banks";
 import { formatMonth, formatPct, formatPctRange } from "@/lib/format";
-import { LoadingBlock, OpenInExplorer } from "./shared";
+import { LoadingBlock } from "./shared";
 
 const CLASSES = ["NEG", "NEU", "POS"] as const;
 const LABEL = { NEG: "negativo", NEU: "neutro", POS: "positivo" } as const;
@@ -12,13 +12,9 @@ const STARS = { NEG: "1–2 ★", NEU: "3 ★", POS: "4–5 ★" } as const;
 export function MatrixBlock({
   bank,
   period,
-  from,
-  to,
 }: {
   bank: BankId;
   period: string | null;
-  from: string;
-  to: string;
 }) {
   const matrix = useMatrix(bank, period);
   if (matrix.isPending) return <LoadingBlock />;
@@ -34,7 +30,6 @@ export function MatrixBlock({
       title="Qué dicen las estrellas y qué dice el texto"
       subtitle={shown ? formatMonth(shown) : undefined}
       method="ppi"
-      actions={<OpenInExplorer filters={{ banks: [bank], from, to }} />}
       howToRead={
         <p>
           Cada reseña cae en una celda según sus estrellas (renglón) y el tono
