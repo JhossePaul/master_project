@@ -2,8 +2,9 @@
 
 La referencia sale del análisis de escala
 (``docs/analytics/scale/scale_report.md``, sección 2, z ≥ 4 y PSI ≥ 0.25 desde
-el mes de entrada de cada banco). Es lógica pura: la comparten el comando ``drift-rates`` de ``ml-inference`` y la pantalla
-de administración, que la usa con los umbrales propuestos.
+el mes de entrada de cada banco). Es lógica pura: la comparten el comando
+``drift-rates`` de ``ml-inference`` y la pantalla de administración, que la
+usa con los umbrales propuestos.
 """
 
 from collections import defaultdict
