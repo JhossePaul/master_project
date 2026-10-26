@@ -333,10 +333,7 @@ function Footer({ commit }: { commit: string }) {
   return (
     <footer className="border-t border-border pt-4 text-sm text-text-muted">
       <p>
-        <Link to="/gobernanza" className="font-semibold text-green-600">
-          Gobernanza
-        </Link>{" "}
-        · Versión del portal{" "}
+        Versión del portal{" "}
         <code className="font-mono">{commit.slice(0, 7)}</code>
       </p>
       <p>Universidad Panamericana · Maestría en Ciencia de Datos BBVA</p>

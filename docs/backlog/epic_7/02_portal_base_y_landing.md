@@ -179,6 +179,7 @@ class LandingResponse(BaseModel):
   * El tahalí del *hero* solo aparece desde 1 024 px y el texto le reserva su margen, para que no lo tape en pantallas medianas.
   * **Registros de lenguaje** por sección (ejecutivo, analista, académico y técnico; guía visual, sección 10) y la propiedad `audience` en `nav.ts`. En la landing: "Última actualización" con "Reseñas nuevas", "Análisis de reseñas" y "Revisión del modelo", cada una con una sola insignia (`ok`, `aviso`, `falló` o `en curso`) y su "hace cuánto"; los rangos se escriben "entre 16.5 % y 19.5 %"; la insignia de método dice "Con revisión humana" o "Solo modelo" (no "verificada", porque la revisión es de una muestra); la procedencia técnica queda en un "Cómo se calculó" desplegable; el menú dice "Revisión" y no "HITL".
   * La tarjeta de banco usa un enlace extendido en el título (no un enlace que envuelve controles interactivos).
+* **Gobernanza en el menú (2026-10-26):** los enlaces de Gobernanza del encabezado y del pie de la landing pasan al grupo "Documentación" del menú lateral, junto al Reporte (rol lector); menos ruido visual.
 * **Sin `Skeleton` propio ni `KeyboardHint`/`DataTable`:** el primero es el de shadcn; los otros dos llegan con los pasos 4 y 6, como dice el paso.
 * **Logotipo oficial (`B-01`):** no se descargó el paquete de la UP porque la descarga necesita la aprobación del autor; el encabezado lleva el nombre del portal en serif, que es el sustituto previsto.
 

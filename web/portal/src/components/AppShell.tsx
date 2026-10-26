@@ -1,9 +1,4 @@
-import {
-  PanelLeftClose,
-  PanelLeftOpen,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { ApiError } from "@/api/client";
@@ -89,13 +84,6 @@ export function AppShell() {
               {user.environment}
             </Badge>
           ) : null}
-          <Link
-            to="/gobernanza"
-            className="flex items-center gap-1 hover:underline"
-          >
-            <ShieldCheck className="size-4" aria-hidden="true" />
-            Gobernanza
-          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

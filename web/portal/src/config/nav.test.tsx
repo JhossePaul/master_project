@@ -23,6 +23,7 @@ describe("navegación por rol", () => {
       "Inicio",
       "Cockpit",
       "Reporte",
+      "Gobernanza",
     ]));
 
   it("analista", async () =>
@@ -33,6 +34,7 @@ describe("navegación por rol", () => {
       "Alertas",
       "MLOps y AIOps",
       "Reporte",
+      "Gobernanza",
     ]));
 
   it("revisor", async () =>
@@ -41,6 +43,7 @@ describe("navegación por rol", () => {
       "Cockpit",
       "Revisión",
       "Reporte",
+      "Gobernanza",
     ]));
 
   it("administrador ve todo, incluido lo del analista", async () =>
@@ -52,6 +55,7 @@ describe("navegación por rol", () => {
       "MLOps y AIOps",
       "Administración",
       "Reporte",
+      "Gobernanza",
     ]));
 
   it("conserva los filtros al navegar", async () => {
