@@ -1,8 +1,7 @@
 import { scaleBand, scaleLinear } from "d3-scale";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { type FamilyMonth, useFamilies } from "@/api/kpis";
 import { Axis, GridLines } from "@/charts/primitives";
-import { useChartSize } from "@/charts/useChartSize";
 import { Callout } from "@/components/Callout";
 import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
@@ -16,11 +15,11 @@ import {
   familyName,
   LoadingBlock,
   OpenInExplorer,
+  useWidth,
 } from "./shared";
 
 const WINDOW_MONTHS = 24;
 const HEIGHT = 260;
-const FALLBACK_WIDTH = 640;
 const M = { top: 30, right: 8, bottom: 28, left: 48 };
 const MARK_LABEL = "Marca u";
 
@@ -29,12 +28,6 @@ export function zFill(z: number | null): string {
   const strength = Math.min(Math.abs(z) / 4, 1) * 70;
   const token = z >= 0 ? "--color-sent-neg" : "--color-sent-pos";
   return `color-mix(in srgb, var(${token}) ${strength}%, var(--color-neutral-0))`;
-}
-
-function useWidth() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { width } = useChartSize(ref);
-  return { ref, width: width > 0 ? width : FALLBACK_WIDTH };
 }
 
 function Stacked({

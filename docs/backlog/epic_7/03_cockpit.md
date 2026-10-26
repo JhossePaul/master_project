@@ -216,15 +216,15 @@ El autor revisó el cockpit en dev con datos reales. Esta sección guarda los co
 
 1. **Corrección de datos de la curaduría** (arriba): hecha el 2026-10-26.
 2. **Primera pasada del cockpit (hecha el 2026-10-26, falta desplegar):** cruce de periodos de las anomalías (API, con prueba), anomalía con ventana de 24 meses y leyenda, familias (altura fija, leyenda vertical, `u` aparte, prompt visible), tópicos (audiencia junto al nombre, familias con nombre), encabezados de tabla fijos, barra de filtros (texto, estado activo, nota del rango, fija), franja con la sección a la vista, selector de ventana en las gráficas mensuales y ocultar meses con pocas reseñas, selector de comparación en las tarjetas.
-3. **Segunda pasada:** suavizado y franja de leyenda de la serie diaria, y la vista por versión nueva (ruta de API, barras apiladas, filtro de sentimiento).
+3. **Segunda pasada (hecha el 2026-10-26, falta desplegar):** suavizado y franja de leyenda de la serie diaria, y la vista por versión nueva (ruta de API, barras apiladas, filtro de sentimiento).
 
 ### Terminado cuando (revisión)
 
 * [x] `curation_topics.families` trae las familias del CSV para los 19 tópicos útiles de `topics_v1` (hecho el 2026-10-26). [x] El cockpit las muestra con nombre y "sin familia" solo aparece donde corresponde.
 * [x] La anomalía de familias muestra z por familia y mes (24 meses) y se entiende sin leer el código. (Revisado en local con datos de dev.)
 * [x] Las tablas de datos tienen el encabezado fijo; la barra de filtros y la sección a la vista quedan fijas al hacer scroll.
-* [ ] La serie diaria tiene suavizado de 7, 14 y 28 días, sin romper el panel del día, y su leyenda no tapa el eje.
-* [ ] La vista por versión muestra un banco, barras por día coloreadas por versión y filtro de sentimiento.
+* [x] La serie diaria tiene suavizado de 7, 14 y 28 días, sin romper el panel del día, y su leyenda no tapa el eje.
+* [x] La vista por versión muestra un banco, barras por día coloreadas por versión y filtro de sentimiento.
 
 ### Primera pasada del frontal (2026-10-26)
 
@@ -236,3 +236,11 @@ El autor revisó el cockpit en dev con datos reales. Esta sección guarda los co
 * **Tópicos:** la audiencia (Producto / Ingeniería) va junto al nombre; las familias salen con nombre (tres y "+n") y "sin familia asociada" solo si no hay.
 * **Tablas:** el encabezado de `Table` es fijo (`sticky`), también en "Ver datos" y en la tabla por versión.
 * **Pruebas:** 92 en el portal (10 nuevas: barra, atajo activo, menú de secciones y su seguimiento del scroll, comparación con el mes anterior, tópicos con y sin familias, z de la anomalía, meses ocultos, `shiftMonths`, encabezados fijos) y 154 en la API; `check`, `tsc` y `build` en verde. Revisado en local con datos de dev. **Queda para la segunda pasada:** suavizado y leyenda de la serie diaria, vista por versión nueva y, opcional, la ventana de temas.
+
+### Segunda pasada del frontal (2026-10-26)
+
+* **Suavizado de la serie diaria** (solo frontal, `smoothing.ts`): selector "Sin suavizar / 7 / 14 / 28 días" (7 por defecto), una línea por banco. Cada punto es el promedio ponderado de la ventana que termina en ese día (suma de negativas entre suma de predichas; el *gap* pesa por reseñas predichas), no el promedio de las proporciones diarias. La consulta pide siempre 27 días de más al inicio del rango para que el primer día ya tenga su ventana completa; con uno o dos bancos se dibuja el dato diario como línea de fondo. La leyenda y los valores al pasar el cursor van en una franja propia sobre la gráfica (`labelsDiv`), ya no encima del eje. El clic sigue eligiendo un día y el panel aclara "no del promedio de N días".
+* **Ruta nueva `GET /api/v1/kpis/versions/daily`** (`bank`, `date_from`, `date_to`, `sentiment` = `ALL` / `NEG` / `NEU` / `POS`): reseñas por día y versión de un banco. Se normaliza la versión (`versions.py`), las 8 versiones con más reseñas del rango salen con nombre y el resto (más las reseñas sin versión reconocida) en `OTRAS`; las versiones vienen en orden cronológico con su primer día. Mide 544 MB y 2.2 s con la caché vacía en dev (BBVA, 90 días). En la sentinela y con sus pruebas.
+* **Pestaña Por versión rediseñada:** el aviso "Descriptivo" y la cobertura van primero; debajo, el selector de banco (uno siempre elegido) y el filtro de sentimiento; barras apiladas por día coloreadas por versión (los cambios de color son los despliegues, con líneas punteadas en la primera aparición de cada versión) y una leyenda con "desde" y reseñas. Debajo, la tabla de las versiones activas en el rango (con IC de Wilson, marca `u` y familias principales, encabezado fijo) y la mediana del banco escrita en el texto. El rango es el de la barra de filtros (90 días por defecto). Se quitó la gráfica de puntos por versión.
+* **Pruebas:** 106 en el portal (14 nuevas: ponderación del promedio, ventana, 27 días de más, línea de fondo, leyenda, panel del día, aviso antes de los filtros, leyenda y tabla, filtro de sentimiento y de banco que vuelven a pedir los datos, `axe`) y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.
+* **Pendiente:** la ventana de temas de varios días (necesitaría una consulta nueva de unos 600 MB) y el SVG oficial del logotipo.

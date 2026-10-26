@@ -12,6 +12,7 @@ from api_backend.sections.kpis.repository import (
     KpiRow,
     ThemeRow,
     TopicRow,
+    VersionDayRaw,
     VersionFamily,
     VersionTotals,
     sample_repository,
@@ -520,6 +521,7 @@ def test_el_repositorio_de_muestra_sirve_todas_las_rutas() -> None:
         ("topics", {}),
         ("matrix", {}),
         ("versions", {"bank": "BBVA"}),
+        ("versions/daily", {"bank": "BBVA"}),
         ("model-changes", {}),
     ]:
         response = http.get(f"/api/v1/kpis/{path}", params=params)
@@ -674,3 +676,94 @@ def test_bigquery_topicos_versiones_y_modelo() -> None:
     repo, reader = bq_repo([{"model_version": "m1", "promoted_at": NOW}])
     assert repo.model_changes()[0].model_version == "m1"
     assert "`p.d.model_versions`" in reader.sql[0]
+
+
+# --- versiones por día ----------------------------------------------------
+
+
+def vd(day: str, version: str | None, n: int) -> VersionDayRaw:
+    return VersionDayRaw(date.fromisoformat(day), version, n)
+
+
+def test_versions_daily_agrupa_y_ordena_cronologicamente() -> None:
+    repo = InMemoryKpisRepository(
+        version_days={
+            "BBVA": [
+                vd("2026-10-01", "11.33.210429", 10),
+                vd("2026-10-01", "10.90", 5),
+                vd("2026-10-02", "11.33.210501", 12),  # misma release 11.33
+                vd("2026-10-02", "10.90", 3),
+                vd("2026-10-02", "UNKNOWN", 4),  # sin versión: OTRAS
+                vd("2026-10-03", "12.0", 2),  # fuera del top 2: OTRAS
+                vd("2026-09-01", "9.9", 99),  # fuera del rango
+            ]
+        }
+    )
+
+    body = (
+        client(repo)
+        .get(
+            "/api/v1/kpis/versions/daily",
+            params={
+                "bank": "BBVA",
+                "date_from": "2026-10-01",
+                "date_to": "2026-10-03",
+            },
+        )
+        .json()
+    )
+    direct = service.version_daily(
+        repo, "BBVA", date(2026, 10, 1), date(2026, 10, 3), "ALL", top=2
+    )
+
+    assert body["sentiment"] == "ALL" and body["total"] == 36
+    assert [r["release"] for r in body["releases"]] == [
+        "10.90",
+        "11.33",
+        "12.0",
+        "OTRAS",
+    ]
+    assert [r.release for r in direct.releases] == ["10.90", "11.33", "OTRAS"]
+    assert direct.releases[-1].filas == 6  # UNKNOWN (4) + 12.0 (2)
+    assert direct.days[1].counts == {"11.33": 12, "10.90": 3, "OTRAS": 4}
+    assert [d["dia"] for d in body["days"]] == [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+    ]
+
+
+def test_versions_daily_valida_los_parametros() -> None:
+    http = client(InMemoryKpisRepository())
+
+    assert http.get("/api/v1/kpis/versions/daily").status_code == 422
+    base = {"bank": "BBVA"}
+    assert (
+        http.get(
+            "/api/v1/kpis/versions/daily", params={**base, "sentiment": "X"}
+        ).status_code
+        == 422
+    )
+    bad = http.get(
+        "/api/v1/kpis/versions/daily",
+        params={**base, "date_from": "2026-10-05", "date_to": "2026-10-01"},
+    )
+    assert bad.status_code == 422 and bad.json()["error"]["code"] == "invalid"
+    ok = http.get(
+        "/api/v1/kpis/versions/daily", params={**base, "sentiment": "NEG"}
+    )
+    assert ok.status_code == 200 and ok.json()["days"] == []
+
+
+def test_bigquery_versiones_por_dia_filtra_el_sentimiento() -> None:
+    repo, reader = bq_repo(
+        [{"dia": date(2026, 10, 1), "version_app": "1.0", "n": 4}]
+    )
+
+    rows = repo.version_daily(
+        "BBVA", date(2026, 10, 1), date(2026, 10, 2), "NEG"
+    )
+
+    assert rows[0].n == 4
+    assert "@sentiment = 'ALL'" in reader.sql[0]
+    assert {p.name for p in reader.params[0]} >= {"bank", "sentiment"}  # type: ignore[attr-defined]

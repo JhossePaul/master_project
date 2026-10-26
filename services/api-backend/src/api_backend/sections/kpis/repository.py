@@ -123,6 +123,13 @@ class VersionFamily:
     n: int
 
 
+@dataclass(frozen=True)
+class VersionDayRaw:
+    dia: date
+    version_app: str | None
+    n: int
+
+
 class KpisRepository(Protocol):
     def kpi_rows(
         self, metrics: Sequence[str], banks: Sequence[str]
@@ -149,6 +156,10 @@ class KpisRepository(Protocol):
     def version_families(self, bank: str) -> list[VersionFamily]: ...
 
     def model_changes(self) -> list[ModelChange]: ...
+
+    def version_daily(
+        self, bank: str, date_from: date, date_to: date, sentiment: str
+    ) -> list[VersionDayRaw]: ...
 
 
 # Última etiqueta de aspectos de cada reseña.
@@ -389,6 +400,30 @@ class BigQueryKpisRepository:
         )
         return [VersionFamily(**r) for r in rows]  # type: ignore[arg-type]
 
+    def version_daily(
+        self, bank: str, date_from: date, date_to: date, sentiment: str
+    ) -> list[VersionDayRaw]:
+        sql = (
+            "SELECT DATE(fecha) AS dia, version_app, COUNT(*) AS n "  # nosec B608
+            f"FROM {self._table('review_predictions_current')} "
+            "WHERE bank_id = @bank AND fecha >= TIMESTAMP(@date_from) "
+            "AND fecha < TIMESTAMP(DATE_ADD(@date_to, INTERVAL 1 DAY)) "
+            "AND ((@sentiment = 'ALL' AND sentiment IN ('NEG', 'NEU', 'POS')) "
+            "OR sentiment = @sentiment) "
+            "GROUP BY dia, version_app"
+        )
+        rows = self._rows(
+            sql,
+            [
+                Param("bank", "STRING", bank),
+                Param("date_from", "DATE", date_from),
+                Param("date_to", "DATE", date_to),
+                Param("sentiment", "STRING", sentiment),
+            ],
+            "kpis_version_daily",
+        )
+        return [VersionDayRaw(**r) for r in rows]  # type: ignore[arg-type]
+
     def model_changes(self) -> list[ModelChange]:
         sql = (
             "SELECT model_version, promoted_at "  # nosec B608
@@ -418,6 +453,7 @@ class InMemoryKpisRepository:
     totals: dict[str, list[VersionTotals]] = field(default_factory=dict)
     version_fams: dict[str, list[VersionFamily]] = field(default_factory=dict)
     models: list[ModelChange] = field(default_factory=list)
+    version_days: dict[str, list[VersionDayRaw]] = field(default_factory=dict)
 
     def kpi_rows(
         self, metrics: Sequence[str], banks: Sequence[str]
@@ -461,6 +497,16 @@ class InMemoryKpisRepository:
 
     def model_changes(self) -> list[ModelChange]:
         return list(self.models)
+
+    def version_daily(
+        self, bank: str, date_from: date, date_to: date, sentiment: str
+    ) -> list[VersionDayRaw]:
+        # Los datos de prueba no distinguen el sentimiento.
+        return [
+            r
+            for r in self.version_days.get(bank, [])
+            if date_from <= r.dia <= date_to
+        ]
 
 
 def _months_back(today: date, n: int) -> list[str]:
@@ -588,6 +634,7 @@ def sample_repository(now: datetime | None = None) -> InMemoryKpisRepository:
                 )
             )
             repo.themes.extend(_sample_themes(rng, bank, day, neg))
+        repo.version_days[bank] = _sample_version_days(bank, today)
         repo.totals[bank], repo.version_fams[bank] = _sample_versions(
             bank, today
         )
@@ -756,3 +803,17 @@ def _sample_versions(
     )
     del bank
     return totals, families
+
+
+def _sample_version_days(bank: str, today: date) -> list[VersionDayRaw]:
+    """Cuatro versiones que se relevan cada ~25 días, más versiones chicas."""
+    rows: list[VersionDayRaw] = []
+    releases = ["5.1.0", "5.2.0", "5.3.1", "5.4.0"]
+    for offset in range(120, 0, -1):
+        day = today - timedelta(days=offset)
+        current = releases[min((120 - offset) // 30, len(releases) - 1)]
+        rows.append(VersionDayRaw(day, current, 30))
+        rows.append(VersionDayRaw(day, "5.0.9", 4))
+        rows.append(VersionDayRaw(day, "UNKNOWN", 2))
+    del bank
+    return rows

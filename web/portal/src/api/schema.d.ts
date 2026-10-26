@@ -184,6 +184,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/kpis/versions/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versions Daily
+         * @description Reseñas por día y versión de la app de un banco, para ver los ciclos
+         *     de despliegue.
+         */
+        get: operations["versions_daily_api_v1_kpis_versions_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/landing": {
         parameters: {
             query?: never;
@@ -560,6 +581,46 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** VersionDailyResponse */
+        VersionDailyResponse: {
+            /** Bank Id */
+            bank_id: string;
+            /** Days */
+            days: components["schemas"]["VersionDayCount"][];
+            /** Releases */
+            releases: components["schemas"]["VersionRelease"][];
+            /**
+             * Sentiment
+             * @enum {string}
+             */
+            sentiment: "ALL" | "NEG" | "NEU" | "POS";
+            /** Total */
+            total: number;
+        };
+        /** VersionDayCount */
+        VersionDayCount: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /**
+             * Dia
+             * Format: date
+             */
+            dia: string;
+        };
+        /** VersionRelease */
+        VersionRelease: {
+            /** Filas */
+            filas: number;
+            /**
+             * First Day
+             * Format: date
+             */
+            first_day: string;
+            /** Release */
+            release: string;
+        };
         /** VersionRow */
         VersionRow: {
             /** Families */
@@ -876,6 +937,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versions_daily_api_v1_kpis_versions_daily_get: {
+        parameters: {
+            query: {
+                bank: "BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE";
+                date_from?: string | null;
+                date_to?: string | null;
+                sentiment?: "ALL" | "NEG" | "NEU" | "POS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDailyResponse"];
                 };
             };
             /** @description Validation Error */

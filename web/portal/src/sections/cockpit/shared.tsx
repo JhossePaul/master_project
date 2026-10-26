@@ -1,6 +1,8 @@
 import { ArrowUpRight } from "lucide-react";
+import { useRef } from "react";
 import { Link } from "react-router";
 import type { MonthlyKpi } from "@/api/kpis";
+import { useChartSize } from "@/charts/useChartSize";
 import { Button } from "@/components/ui/button";
 import { BANK_IDS, BANKS, type BankId, bankLabel } from "@/config/banks";
 
@@ -140,4 +142,13 @@ export function LoadingBlock() {
       aria-busy="true"
     />
   );
+}
+
+const FALLBACK_WIDTH = 640;
+
+/** Ancho del contenedor para gráficas SVG a tamaño natural. */
+export function useWidth() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { width } = useChartSize(ref);
+  return { ref, width: width > 0 ? width : FALLBACK_WIDTH };
 }

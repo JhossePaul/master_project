@@ -1041,6 +1041,97 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VersionDailyResponse": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/VersionDayCount"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "releases": {
+            "items": {
+              "$ref": "#/components/schemas/VersionRelease"
+            },
+            "title": "Releases",
+            "type": "array"
+          },
+          "sentiment": {
+            "enum": [
+              "ALL",
+              "NEG",
+              "NEU",
+              "POS"
+            ],
+            "title": "Sentiment",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bank_id",
+          "sentiment",
+          "total",
+          "releases",
+          "days"
+        ],
+        "title": "VersionDailyResponse",
+        "type": "object"
+      },
+      "VersionDayCount": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "dia": {
+            "format": "date",
+            "title": "Dia",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dia",
+          "counts"
+        ],
+        "title": "VersionDayCount",
+        "type": "object"
+      },
+      "VersionRelease": {
+        "properties": {
+          "filas": {
+            "title": "Filas",
+            "type": "integer"
+          },
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "release": {
+            "title": "Release",
+            "type": "string"
+          }
+        },
+        "required": [
+          "release",
+          "filas",
+          "first_day"
+        ],
+        "title": "VersionRelease",
+        "type": "object"
+      },
       "VersionRow": {
         "properties": {
           "families": {
@@ -1785,6 +1876,106 @@
           }
         },
         "summary": "Versions",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/versions/daily": {
+      "get": {
+        "description": "Reseñas por día y versión de la app de un banco, para ver los ciclos\nde despliegue.",
+        "operationId": "versions_daily_api_v1_kpis_versions_daily_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bank",
+            "required": true,
+            "schema": {
+              "enum": [
+                "BBVA",
+                "AZTECA",
+                "SANTANDER",
+                "NUBANK",
+                "BANORTE"
+              ],
+              "title": "Bank",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sentiment",
+            "required": false,
+            "schema": {
+              "default": "ALL",
+              "enum": [
+                "ALL",
+                "NEG",
+                "NEU",
+                "POS"
+              ],
+              "title": "Sentiment",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDailyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Versions Daily",
         "tags": [
           "kpis"
         ]

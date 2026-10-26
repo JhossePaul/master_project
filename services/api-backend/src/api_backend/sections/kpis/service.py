@@ -20,7 +20,11 @@ from api_backend.sections.kpis.schemas import (
     FamilyMonth,
     MatrixCell,
     MonthlyKpi,
+    SentimentFilter,
     TopicMonth,
+    VersionDailyResponse,
+    VersionDayCount,
+    VersionRelease,
     VersionRow,
     VersionsResponse,
 )
@@ -381,4 +385,55 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
         coverage=known_filas / all_filas if all_filas else 0.0,
         median_neg_share=median(r.neg_share for r in named) if named else None,
         median_u_share=median(r.u_share for r in named) if named else None,
+    )
+
+
+TOP_RELEASES = 8
+
+
+def version_daily(
+    repo: KpisRepository,
+    bank: str,
+    date_from: date,
+    date_to: date,
+    sentiment: SentimentFilter,
+    top: int = TOP_RELEASES,
+) -> VersionDailyResponse:
+    """Reseñas por día y versión de un banco: las ``top`` versiones con más
+    reseñas del rango y el resto (más las que no tienen versión reconocida)
+    en ``OTRAS``. Las versiones salen en orden cronológico."""
+    raw = repo.version_daily(bank, date_from, date_to, sentiment)
+    named: dict[str, int] = {}
+    for r in raw:
+        release = normalize(bank, r.version_app)
+        if release:
+            named[release] = named.get(release, 0) + r.n
+    keep = {
+        release
+        for release, _ in sorted(named.items(), key=lambda kv: (-kv[1], kv[0]))[
+            :top
+        ]
+    }
+    per_day: dict[date, dict[str, int]] = {}
+    totals: dict[str, int] = {}
+    first: dict[str, date] = {}
+    for r in raw:
+        release = normalize(bank, r.version_app)
+        label = release if release in keep else OTHER
+        counts = per_day.setdefault(r.dia, {})
+        counts[label] = counts.get(label, 0) + r.n
+        totals[label] = totals.get(label, 0) + r.n
+        first[label] = min(first.get(label, r.dia), r.dia)
+    releases = sorted(totals, key=lambda k: (k == OTHER, first[k], k))
+    return VersionDailyResponse(
+        bank_id=bank,
+        sentiment=sentiment,
+        total=sum(totals.values()),
+        releases=[
+            VersionRelease(release=k, filas=totals[k], first_day=first[k])
+            for k in releases
+        ],
+        days=[
+            VersionDayCount(dia=d, counts=per_day[d]) for d in sorted(per_day)
+        ],
     )

@@ -26,6 +26,7 @@ SAMPLE_PARAMS: dict[tuple[str, str], dict[str, str]] = {
     ("GET", "/api/v1/kpis/topics"): {},
     ("GET", "/api/v1/kpis/matrix"): {},
     ("GET", "/api/v1/kpis/versions"): {"bank": "BBVA"},
+    ("GET", "/api/v1/kpis/versions/daily"): {"bank": "BBVA"},
     ("GET", "/api/v1/kpis/model-changes"): {},
 }
 

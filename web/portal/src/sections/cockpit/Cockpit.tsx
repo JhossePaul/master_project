@@ -165,19 +165,20 @@ function Daily({ banks }: { banks: BankId[] }) {
 }
 
 function ByVersion({ banks }: { banks: BankId[] }) {
+  const [filters] = useGlobalFilters();
   const [focus, setFocus] = useParam("banco", /^[A-Z]+$/);
   const bank: BankId =
-    focus && isBankId(focus) ? focus : ((banks[0] ?? BANK_IDS[0]) as BankId);
+    focus && isBankId(focus) && banks.includes(focus)
+      ? focus
+      : ((banks[0] ?? BANK_IDS[0]) as BankId);
   return (
-    <div className="flex flex-col gap-4">
-      <BankPicker
-        banks={BANK_IDS}
-        value={bank}
-        onChange={setFocus}
-        label="Banco de la vista por versión"
-      />
-      <VersionTab bank={bank} />
-    </div>
+    <VersionTab
+      banks={banks}
+      bank={bank}
+      onBank={setFocus}
+      from={filters.from}
+      to={filters.to}
+    />
   );
 }
 

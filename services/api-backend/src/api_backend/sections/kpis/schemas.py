@@ -13,6 +13,7 @@ BANK_IDS: tuple[BankId, ...] = (
     "NUBANK",
     "BANORTE",
 )
+SentimentFilter = Literal["ALL", "NEG", "NEU", "POS"]
 StarsClass = Literal["NEG", "NEU", "POS"]
 TextClass = Literal["NEG", "NEU", "POS"]
 
@@ -145,3 +146,22 @@ class VersionsResponse(BaseModel):
 class ModelChange(BaseModel):
     model_version: str
     promoted_at: datetime
+
+
+class VersionDayCount(BaseModel):
+    dia: date
+    counts: dict[str, int]
+
+
+class VersionRelease(BaseModel):
+    release: str
+    filas: int
+    first_day: date
+
+
+class VersionDailyResponse(BaseModel):
+    bank_id: str
+    sentiment: SentimentFilter
+    total: int
+    releases: list[VersionRelease]
+    days: list[VersionDayCount]
