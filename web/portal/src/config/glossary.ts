@@ -28,7 +28,7 @@ export const GLOSSARY = {
     link: CALIBRATION,
   },
   gap_estrellas: {
-    term: "gap en estrellas",
+    term: "brecha en estrellas",
     short:
       "Diferencia entre las estrellas que dio la persona y las que sugiere el tono de su texto; negativo significa que el texto es peor que la calificación.",
     link: CALIBRATION,

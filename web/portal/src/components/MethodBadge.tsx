@@ -7,14 +7,14 @@ import {
 
 const COPY = {
   ppi: {
-    label: "PPI",
+    label: "Con revisión humana",
     variant: "brand",
-    hint: "Estimación corregida con una muestra revisada por personas; trae su intervalo de confianza.",
+    hint: "Personas revisaron una muestra de reseñas y con ella se ajustó el cálculo; por eso trae su rango. En términos técnicos: estimación PPI.",
   },
   raw: {
-    label: "crudo",
+    label: "Solo modelo",
     variant: "neutral",
-    hint: "Proporción sin corregir: cuenta lo que predice el modelo, con su error incluido.",
+    hint: "Cuenta lo que predice el modelo, sin ajustarlo con revisión humana.",
   },
 } as const;
 
@@ -23,7 +23,7 @@ export function MethodBadge({ method }: { method: "ppi" | "raw" }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" className="rounded-full">
+        <button type="button" className="relative z-10 rounded-full">
           <Badge variant={variant}>{label}</Badge>
         </button>
       </TooltipTrigger>

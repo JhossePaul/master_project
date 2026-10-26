@@ -144,3 +144,36 @@ export function formatPctInterval(
   if (!isNum(lo) || !isNum(hi)) return "";
   return `[${fixed(lo * 100, 1)}, ${fixed(hi * 100, 1)}]`;
 }
+
+/** "entre 16.5 % y 19.5 %" para explicar un rango en palabras. */
+export function formatPctRange(
+  lo: number | null | undefined,
+  hi: number | null | undefined,
+): string {
+  if (!isNum(lo) || !isNum(hi)) return "";
+  return `entre ${formatPct(lo)} y ${formatPct(hi)}`;
+}
+
+/** "entre −0.35 y −0.25" para un rango de diferencia en estrellas. */
+export function formatStarsRange(
+  lo: number | null | undefined,
+  hi: number | null | undefined,
+): string {
+  if (!isNum(lo) || !isNum(hi)) return "";
+  const signed = (x: number) => `${x < 0 ? "−" : ""}${fixed(Math.abs(x), 2)}`;
+  return `entre ${signed(lo)} y ${signed(hi)}`;
+}
+
+/** "hace 5 h", "hace 3 días"; una fecha futura se lee como "ahora". */
+export function formatRelative(
+  value: Date | string | null | undefined,
+  now: number = Date.now(),
+): string {
+  const date = toDate(value);
+  if (!date) return NO_VALUE;
+  const minutes = Math.floor((now - date.getTime()) / 60_000);
+  if (minutes < 60) return minutes < 1 ? "ahora" : `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `hace ${hours} h`;
+  return `hace ${Math.floor(hours / 24)} días`;
+}

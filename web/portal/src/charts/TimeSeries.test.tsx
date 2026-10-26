@@ -31,7 +31,7 @@ describe("TimeSeries", () => {
         series={[
           {
             id: "a",
-            label: "Banco Índigo",
+            label: "Banco Azul",
             colorVar: "--color-bank-bbva",
             dash: [4, 3],
             points: [
@@ -46,11 +46,11 @@ describe("TimeSeries", () => {
       />,
     );
     expect(getByRole("img")).toHaveAccessibleName(
-      "Serie de tiempo: Banco Índigo",
+      "Serie de tiempo: Banco Azul",
     );
     expect(created.args).toHaveLength(1);
     const options = created.args[0]?.[2] as { labels: string[] };
-    expect(options.labels).toEqual(["día (UTC)", "Banco Índigo"]);
+    expect(options.labels).toEqual(["día (UTC)", "Banco Azul"]);
     expect(created.annotations).toHaveLength(1);
 
     unmount();

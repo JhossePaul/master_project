@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 export type Role = "lector" | "analista" | "revisor" | "administrador";
+export type Audience = "ejecutivo" | "analista" | "academico" | "tecnico";
 export type NavGroup =
   | "Consultar"
   | "Investigar"
@@ -26,6 +27,8 @@ export interface NavItem {
   role: Role;
   /** Para qué sirve; lo usa la landing en sus accesos. */
   purpose: string;
+  /** Registro del lenguaje de la sección (guía visual, sección 10). */
+  audience: Audience;
 }
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -43,6 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Consultar",
     icon: Home,
     role: "lector",
+    audience: "ejecutivo",
     purpose: "Estado de los datos y de cada banco.",
   },
   {
@@ -51,6 +55,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Consultar",
     icon: BookOpen,
     role: "lector",
+    audience: "academico",
     purpose: "La tesis con sus cifras vigentes.",
   },
   {
@@ -59,6 +64,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Consultar",
     icon: BarChart3,
     role: "lector",
+    audience: "analista",
     purpose: "Series diarias, comparaciones y temas por día.",
   },
   {
@@ -67,6 +73,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Investigar",
     icon: Search,
     role: "analista",
+    audience: "analista",
     purpose: "Buscar y leer reseñas con su explicación.",
   },
   {
@@ -75,15 +82,17 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Investigar",
     icon: ShieldAlert,
     role: "analista",
-    purpose: "Alertas de deriva del modelo y su atención.",
+    audience: "analista",
+    purpose: "Avisos de cambios en las reseñas o en el modelo.",
   },
   {
     path: "/hitl",
-    label: "HITL",
+    label: "Revisión",
     group: "Revisar",
     icon: ListChecks,
     role: "revisor",
-    purpose: "Cola de casos para revisar.",
+    audience: "analista",
+    purpose: "Casos que una persona debe revisar.",
   },
   {
     path: "/mlops",
@@ -91,6 +100,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Operar",
     icon: Waypoints,
     role: "analista",
+    audience: "tecnico",
     purpose: "Modelo vigente, corridas y estado del pipeline.",
   },
   {
@@ -99,6 +109,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Configurar",
     icon: Settings,
     role: "administrador",
+    audience: "tecnico",
     purpose: "Políticas, umbrales y muestras.",
   },
 ];
@@ -106,4 +117,4 @@ export const NAV_ITEMS: NavItem[] = [
 /** Secciones que muestran la barra de filtros globales. */
 export const FILTER_PATHS = ["/cockpit", "/explorador", "/alertas"];
 
-export const PORTAL_NAME = "Observatorio de reseñas de apps bancarias";
+export const PORTAL_NAME = "VoC Analyzer";

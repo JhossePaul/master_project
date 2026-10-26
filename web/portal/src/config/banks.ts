@@ -16,35 +16,35 @@ export const BANK_IDS: BankId[] = [
   "BANORTE",
 ];
 
-// label = seudónimo por color (pregunta D-03 del cuestionario de diseño).
+// label = seudónimo por color (pregunta D-03 del cuestionario de diseño; el color es el representativo del banco).
 export const BANKS: Record<BankId, BankStyle> = {
   BBVA: {
     id: "BBVA",
-    label: "Banco Índigo",
+    label: "Banco Azul",
     colorVar: "--color-bank-bbva",
     dash: [],
   },
   AZTECA: {
     id: "AZTECA",
-    label: "Banco Jade",
+    label: "Banco Verde",
     colorVar: "--color-bank-azteca",
     dash: [8, 4],
   },
   SANTANDER: {
     id: "SANTANDER",
-    label: "Banco Carmín",
+    label: "Banco Rojo",
     colorVar: "--color-bank-santander",
     dash: [2, 3],
   },
   NUBANK: {
     id: "NUBANK",
-    label: "Banco Violeta",
+    label: "Banco Morado",
     colorVar: "--color-bank-nubank",
     dash: [8, 3, 2, 3],
   },
   BANORTE: {
     id: "BANORTE",
-    label: "Banco Ónix",
+    label: "Banco Gris",
     colorVar: "--color-bank-banorte",
     dash: [4, 3],
   },

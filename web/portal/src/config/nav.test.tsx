@@ -40,7 +40,7 @@ describe("navegación por rol", () => {
       "Inicio",
       "Reporte",
       "Cockpit",
-      "HITL",
+      "Revisión",
     ]));
 
   it("administrador ve todo, incluido lo del analista", async () =>

@@ -9,31 +9,33 @@ describe("landing", () => {
     renderApp("/");
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: /Observatorio/ }),
+      await screen.findByRole("heading", { level: 1, name: /VoC Analyzer/ }),
     ).toBeInTheDocument();
     for (const name of [
-      "Banco Índigo",
-      "Banco Jade",
-      "Banco Carmín",
-      "Banco Violeta",
-      "Banco Ónix",
+      "Banco Azul",
+      "Banco Verde",
+      "Banco Rojo",
+      "Banco Morado",
+      "Banco Gris",
     ]) {
       expect(screen.getByRole("heading", { name })).toBeInTheDocument();
     }
-    expect(screen.getAllByText("[14.0, 16.0]").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("entre 14.0 % y 16.0 %").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText(/Datos al 24 oct 2026/)).toBeInTheDocument();
 
     const fresh = screen
-      .getByRole("heading", { name: "Frescura de los datos" })
+      .getByRole("heading", { name: "Última actualización" })
       .closest("div")?.parentElement as HTMLElement;
-    expect(within(fresh).getByText("Última ingesta")).toBeInTheDocument();
-    expect(within(fresh).getByText("Último monitor")).toBeInTheDocument();
+    expect(within(fresh).getByText("Reseñas nuevas")).toBeInTheDocument();
+    expect(within(fresh).getByText("Revisión del modelo")).toBeInTheDocument();
     expect(within(fresh).getAllByText("ok").length).toBe(3);
 
     const alerts = screen
-      .getByRole("heading", { name: "Alertas de deriva abiertas" })
+      .getByRole("heading", { name: "Alertas de cambios abiertas" })
       .closest("div")?.parentElement as HTMLElement;
-    expect(within(alerts).getByText("Banco Violeta")).toBeInTheDocument();
+    expect(within(alerts).getByText("Banco Morado")).toBeInTheDocument();
   });
 
   it("marca aviso cuando una corrida está vencida", async () => {
@@ -69,9 +71,9 @@ describe("landing", () => {
       ),
     );
     renderApp("/");
-    expect((await screen.findAllByText(/Sin estimación con PPI/)).length).toBe(
-      5,
-    );
+    expect(
+      (await screen.findAllByText(/Sin cifra con revisión humana/)).length,
+    ).toBe(5);
   });
 
   it("un error muestra ErrorState con el request_id", async () => {

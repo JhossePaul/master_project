@@ -65,7 +65,7 @@ describe("primitivas de gráficas", () => {
         <VersionMarkers markers={[{ at: 4, label: "v2" }]} x={x} height={100} />
         <Legend
           items={[
-            { label: "Banco Índigo", colorVar: "--color-bank-bbva", last: 0.8 },
+            { label: "Banco Azul", colorVar: "--color-bank-bbva", last: 0.8 },
             { label: "sin dato", colorVar: "--color-bank-bbva", last: null },
           ]}
           y={y}
@@ -75,7 +75,7 @@ describe("primitivas de gráficas", () => {
     );
     expect(screen.getByText("día (UTC)")).toBeInTheDocument();
     expect(screen.getByText("umbral")).toBeInTheDocument();
-    expect(screen.getByText("Banco Índigo")).toBeInTheDocument();
+    expect(screen.getByText("Banco Azul")).toBeInTheDocument();
     expect(screen.queryByText("sin dato")).not.toBeInTheDocument();
     expect(container.querySelector("path")?.getAttribute("stroke")).toBe(
       "var(--color-bank-bbva)",
