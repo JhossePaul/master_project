@@ -48,6 +48,34 @@ def test_risk_policy_bounds(field: str, value: Any) -> None:
         RiskPolicy(**{**load("risk_policy"), field: value})
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("monitor_frequency", "monthly"),
+        ("monitor_frequency", "Trimestral"),
+        ("monitor_frequency", "weekly"),
+        ("topic_refit_frequency", "monthly"),
+        ("human_agreement_frequency", "weekly"),
+        ("human_agreement_frequency", "trimestral"),
+    ],
+)
+def test_frequencies_are_only_the_ones_the_jobs_run(
+    field: str, value: str
+) -> None:
+    """Un valor libre no fallaba: el monitor lo registraba y no hacía nada."""
+    with pytest.raises(ValidationError):
+        RiskPolicy(**{**load("risk_policy"), field: value})
+
+
+def test_frequencies_accept_what_the_jobs_support() -> None:
+    base = {**load("risk_policy"), "human_agreement_sample_size": 500}
+    for frequency in ("monthly", "quarterly"):
+        policy = RiskPolicy(**{**base, "human_agreement_frequency": frequency})
+        assert policy.human_agreement_frequency == frequency
+    assert RiskPolicy(**base).monitor_frequency == "quarterly"
+    assert RiskPolicy(**base).topic_refit_frequency == "quarterly"
+
+
 _BUSINESS_FIELDS = (
     "hitl_weekly_cap",
     "drift_boost_coverage",

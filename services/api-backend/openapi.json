@@ -2803,7 +2803,10 @@
           "human_agreement_frequency": {
             "anyOf": [
               {
-                "minLength": 1,
+                "enum": [
+                  "monthly",
+                  "quarterly"
+                ],
                 "type": "string"
               },
               {
@@ -2830,7 +2833,7 @@
             "type": "string"
           },
           "monitor_frequency": {
-            "minLength": 1,
+            "const": "quarterly",
             "title": "Monitor Frequency",
             "type": "string"
           },
@@ -2871,7 +2874,7 @@
             "type": "string"
           },
           "topic_refit_frequency": {
-            "minLength": 1,
+            "const": "quarterly",
             "title": "Topic Refit Frequency",
             "type": "string"
           },
