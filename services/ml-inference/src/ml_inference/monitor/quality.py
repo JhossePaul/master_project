@@ -272,7 +272,8 @@ FROM `${ds}.model_quality`
 """
 
 SAMPLE_SQL: Final = """
-SELECT i.item_id, r.predicted_label, r.validated_label
+SELECT i.item_id, r.predicted_label, r.validated_label,
+  r.review_id IS NOT NULL AS reviewed
 FROM `${ds}.hitl_items` AS i
 LEFT JOIN `${ds}.hitl_reviews` AS r
   ON r.item_id = i.item_id AND r.review_round = 1
@@ -450,12 +451,14 @@ class QualityJob:
             prefix=f"monitor_sample:{quarter}:",
             model_version=model_version,
         )
-        reviewed = [r for r in rows if r["validated_label"] is not None]
-        if not rows or len(reviewed) < len(rows):
+        # "No evaluable" (revisada, sin etiqueta) se deja fuera del κ.
+        done = [r for r in rows if r["reviewed"]]
+        reviewed = [r for r in done if r["validated_label"] is not None]
+        if not rows or len(done) < len(rows) or not reviewed:
             log.info(
                 "quality: muestra %s con %d de %d revisiones",
                 quarter,
-                len(reviewed),
+                len(done),
                 len(rows),
             )
             return None

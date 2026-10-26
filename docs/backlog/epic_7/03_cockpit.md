@@ -1,7 +1,7 @@
 # Paso 3. Feature 7.5: Cockpit diario de KPIs
 
-* **Estado (2026-10-26):** Implementado, probado, medido y desplegado en dev (imagen `bd705ed`). En revisión del autor: hay ajustes de datos, de diseño y una vista por versión nueva (ver "Revisión del autor tras el despliegue en dev").
-* **Nivel:** imprescindible; la pestaña por versión, importante.
+* **Estado (2026-10-26):** Terminado en código y aprobado por el autor tras tres rondas de revisión (ver "Revisión del autor tras el despliegue en dev" y las siguientes). Falta solo mezclar y desplegar (la imagen en dev, `bd705ed`, es anterior a la reorganización en tres vistas) y revisar `/cockpit`, `/evolucion` y `/topicos` en dev detrás de IAP.
+* **Nivel:** imprescindible; la vista por versión (dentro de Evolución), importante.
 * **Depende de:** paso 2.
 * **Objetivo:** el seguimiento diario de los cinco bancos, con solo agregados (rol lector): tarjetas con PPI, series diarias crudas con los temas del día, familias y marca `u` en nivel y en anomalía, tópicos vigentes, la matriz estrellas × texto, la comparación entre bancos y la pestaña por versión de la app.
 
@@ -297,3 +297,27 @@ Tras ver la primera y la segunda pasada en dev, el autor pidió más ajustes y u
 * **Evolución:** el mensual con PPI es un solo bloque con botones por KPI (`GET /kpis/monthly` admite `estrellas_POS_texto_NEG`) y conserva intervalos, la línea cruda y la ventana de 12 / 24 meses o todo.
 * **Tópicos:** filtro de bancos con casillas (los del filtro general al empezar, siempre queda uno) y matriz 3 × 2 con paginador (botones y flechas del teclado, "1–6 de 19 tópicos"); cada panel es un tópico con una línea por banco y su propia escala. Los botones del paginador usan `aria-disabled` para no perder el foco al llegar al límite.
 * **Pruebas:** 113 en el portal y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.
+
+### Tercera revisión del autor (2026-10-26)
+
+* **Leyenda de la serie diaria:** una sola, de altura fija y una línea (`legendFormatter` de dygraphs con `legend: "always"`): sin cursor muestra los nombres con un guion, y con cursor la fecha ("26 oct 2026") y el valor de cada banco en el mismo lugar, así que la página ya no salta. Se quitó la leyenda aparte.
+* **Familias con selección múltiple** (decisión del autor, contra mi propuesta de una sola): se eligen una o varias familias (`?familia=AC,FA`); en "Nivel" solo se apilan las elegidas y la escala se ajusta a lo que queda, para comparar la distribución de los temas que le importan al equipo; en "Anomalía" se conserva el atenuado. Los tópicos que no tienen ninguna de las familias elegidas se atenúan y el enlace al Explorador lleva la lista. Hay un botón "Quitar la selección".
+* **KPI:** no se sube a los filtros globales (solo responden la tabla, la serie diaria y el mensual). En Evolución, un solo selector "Medida", fijo dentro del grupo de la serie diaria y el mensual (se va al llegar a las versiones, que no dependen de él), sustituye a los botones repetidos de cada bloque.
+* **Pruebas:** 118 en el portal. **Pendiente de revisar con el autor:** las familias elegidas con tonos vecinos (por ejemplo, falla general y lentitud, ambas verdes) se distinguen poco al apilarlas; puede hacer falta una paleta con más contraste.
+
+### Enlace único al Explorador (2026-10-26)
+
+* Los enlaces "Abrir en el Explorador" de cada bloque (eran hasta nueve) se reemplazan por **uno solo** a la derecha de la barra de filtros fija, solo en las vistas del Dashboard y solo para analistas y administradores (el Explorador es de analista; antes lo veía cualquier rol y un lector llegaba a "No tienes acceso").
+* Lleva los filtros globales más lo que la vista suma (`ExplorerContext`): en **Tópicos**, las familias elegidas y `sentimiento=NEG`; en **Evolución**, con un día elegido, ese día (`desde = hasta`); en **Cockpit**, solo los globales. Se pierde el banco y el sentimiento propios de la vista por versión (el Explorador aún no filtra por versión).
+* El panel de temas del día conserva su propio enlace "Ver las reseñas de ese día" (banco del panel, ese día, negativas), también solo para analistas.
+* 123 pruebas en el portal (6 del enlace: uno solo y sus filtros, familias y negativas, día elegido, enlace del panel, lector sin enlaces y fuera del Dashboard).
+
+### Cierre del paso 3 (2026-10-26)
+
+Todo lo de "Terminado cuando" está marcado. Lo que queda abierto, y no bloquea el cierre:
+
+* **Despliegue y revisión en dev** (del autor): mezclar la PR #21 y este commit, correr `tools/deploy_images.py` y revisar las tres vistas detrás de IAP.
+* **Paleta de las familias:** al apilar familias de tonos vecinos (falla general y lentitud, ambas verdes) se distinguen poco; puede hacer falta una paleta con más contraste (afecta el color de las once familias).
+* **Ventana de temas de varios días** en el panel de la serie suavizada: necesitaría una consulta nueva de unos 600 MB; hoy el panel es de un solo día.
+* **SVG oficial del logotipo** (`B-01`): se pide a Comunicación de la UP; el PNG actual es un sustituto.
+* **Filtro por versión en el Explorador** (paso 6) para enlazar desde la vista por versión.

@@ -2,9 +2,12 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
+import { legendHtml } from "@/charts/TimeSeries";
+import { explorerUrl } from "@/components/ExplorerLink";
 import {
   syntheticCards,
   syntheticDaily,
+  syntheticMe,
   syntheticMonthly,
   syntheticTopics,
   syntheticVersionDaily,
@@ -12,7 +15,6 @@ import {
 import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
 import { shiftMonths } from "./MonthlyBlock";
-import { explorerUrl } from "./shared";
 
 const graphs = vi.hoisted(() => ({
   options: [] as Record<string, (...args: unknown[]) => unknown>[],
@@ -204,41 +206,59 @@ describe("cockpit, pestaña Diario", () => {
     expect(calls).toBe(1);
   });
 
-  it("pulsar una familia escribe ?familia= en la URL", async () => {
-    const { router } = renderApp("/topicos");
+  it("elegir familias escribe ?familia= en la URL y deja solo esas en la gráfica", async () => {
+    const { router, container } = renderApp("/topicos");
     const group = await screen.findByRole("group", {
-      name: "Familia resaltada",
+      name: "Familias a mostrar",
     });
+    const stackedTitles = () =>
+      [
+        ...container.querySelectorAll(
+          'svg[aria-label="Negativas por familia y mes"] title',
+        ),
+      ].map((t) => t.textContent ?? "");
+    expect(stackedTitles().some((t) => t.includes("Lentitud general"))).toBe(
+      true,
+    );
 
     await userEvent.click(
       within(group).getByRole("button", { name: /Acceso y autenticación/ }),
     );
+    await userEvent.click(
+      within(group).getByRole("button", { name: /Falla general de la app/ }),
+    );
 
-    expect(router.state.location.search).toContain("familia=AC");
+    expect(router.state.location.search).toContain("familia=AC%2CFA");
+    const titles = stackedTitles();
+    expect(titles.length).toBeGreaterThan(0);
+    expect(
+      titles.every((t) => /Acceso y autenticación|Falla general/.test(t)),
+    ).toBe(true);
+    expect(titles.some((t) => t.includes("Lentitud general"))).toBe(false);
+
+    await userEvent.click(
+      within(group).getByRole("button", { name: /Acceso y autenticación/ }),
+    );
+    expect(router.state.location.search).toContain("familia=FA");
+
+    await userEvent.click(
+      within(group).getByRole("button", { name: "Quitar la selección" }),
+    );
+    expect(router.state.location.search).not.toContain("familia");
   });
 
-  it("Abrir en el Explorador arma la URL con los filtros", async () => {
-    renderApp(
-      "/topicos?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30&familia=AC",
-    );
+  it("las familias elegidas atenúan los tópicos que no las tienen", async () => {
+    renderApp("/topicos?familia=TR");
 
-    await screen.findByRole("img", { name: "Negativas por familia y mes" });
-    await waitFor(() =>
-      expect(
-        screen.getAllByRole("link", { name: /Abrir en el Explorador/ }).length,
-      ).toBeGreaterThanOrEqual(2),
-    );
-    const href =
-      screen
-        .getAllByRole("link", { name: /Abrir en el Explorador/ })[0]
-        ?.getAttribute("href") ?? "";
-    const params = new URL(href, "http://x").searchParams;
+    const login = (
+      await screen.findByText("Inicio de sesión que falla")
+    ).closest("li") as HTMLElement;
+    const transfers = screen
+      .getByText("Transferencias que no llegan")
+      .closest("li") as HTMLElement;
 
-    expect(params.get("bancos")).toBe("BBVA");
-    expect(params.get("desde")).toBe("2026-08-01");
-    expect(params.get("hasta")).toBe("2026-09-30");
-    expect(params.get("familia")).toBe("AC");
-    expect(params.get("sentimiento")).toBe("NEG");
+    expect(login.className).toContain("opacity-40");
+    expect(transfers.className).not.toContain("opacity-40");
   });
 
   it("un error de la API muestra ErrorState con el id de la petición", async () => {
@@ -382,6 +402,83 @@ describe("cockpit, pestaña Por versión", () => {
   });
 });
 
+describe("cockpit, leyenda y medida de la serie diaria", () => {
+  const series = (yHTML: string) => [
+    {
+      color: "#1f64b0",
+      dashHTML: "<svg/>",
+      label: "Banco Azul",
+      labelHTML: "Banco Azul",
+      yHTML,
+    },
+    {
+      color: "#1f64b0",
+      dashHTML: "<svg/>",
+      label: "Banco Azul (día)",
+      labelHTML: "Banco Azul (día)",
+      yHTML,
+    },
+  ];
+
+  it("sin cursor la leyenda trae los nombres con un guion", () => {
+    const html = legendHtml({
+      x: undefined,
+      xHTML: "",
+      series: series(""),
+    } as never);
+
+    expect(html).toContain("Banco Azul");
+    expect(html).toContain("—");
+    expect(html).not.toContain("(día)");
+  });
+
+  it("con cursor trae la fecha y el valor, en el mismo formato", () => {
+    const html = legendHtml({
+      x: 1,
+      xHTML: "26 oct 2026",
+      series: series("35.1 %"),
+    } as never);
+
+    expect(html).toContain("26 oct 2026");
+    expect(html).toContain("35.1 %");
+    expect(html).not.toContain("(día)");
+  });
+
+  it("la leyenda de dygraphs es una sola y de altura fija", async () => {
+    renderApp("/evolucion");
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
+
+    const options = lastOptions();
+
+    expect(options.legend).toBe("always");
+    expect(options.legendFormatter).toBe(legendHtml);
+    expect((options.labelsDiv as unknown as HTMLElement).className).toContain(
+      "h-8",
+    );
+  });
+
+  it("la medida es un solo selector fijo que gobierna la serie y el mensual", async () => {
+    renderApp("/evolucion");
+    const buttons = await screen.findAllByRole("button", {
+      name: "Brecha en estrellas",
+    });
+
+    expect(buttons).toHaveLength(1);
+    const bar = buttons[0]?.closest("div.sticky") as HTMLElement;
+    expect(bar).toHaveTextContent("Medida:");
+    expect(bar).toHaveTextContent("serie diaria y a la mensual");
+
+    await userEvent.click(buttons[0] as HTMLElement);
+
+    expect(
+      await screen.findByText("Brecha en estrellas por mes"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("Brecha en estrellas", { selector: "h2" }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("cockpit, suavizado de la serie diaria", () => {
   beforeEach(() => {
     graphs.options.length = 0;
@@ -442,7 +539,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
     const options = lastOptions();
 
     expect((options.labels as unknown as string[]).length).toBe(6);
-    expect(options.legend).toBe("onmouseover");
+    expect(options.legend).toBe("always");
     expect(options.labelsDiv).toBeInstanceOf(HTMLElement);
   });
 
@@ -714,5 +811,94 @@ describe("cockpit, ajustes de la primera pasada", () => {
     expect(within(table).getAllByRole("columnheader")[0]?.className).toContain(
       "sticky",
     );
+  });
+});
+
+describe("enlace único al Explorador", () => {
+  function params(link: HTMLElement) {
+    return new URL(link.getAttribute("href") ?? "", "http://x").searchParams;
+  }
+
+  it("hay uno solo, en la barra, con los filtros globales", async () => {
+    renderApp("/cockpit?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30");
+
+    const link = await screen.findByRole("link", {
+      name: /Abrir en el Explorador/,
+    });
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    expect(
+      screen.getAllByRole("link", { name: /Abrir en el Explorador/ }),
+    ).toHaveLength(1);
+    expect(link.closest("search")).not.toBeNull();
+    expect(params(link).get("bancos")).toBe("BBVA,AZTECA");
+    expect(params(link).get("desde")).toBe("2026-08-01");
+    expect(params(link).get("hasta")).toBe("2026-09-30");
+    expect(params(link).get("familia")).toBeNull();
+  });
+
+  it("en Tópicos lleva las familias elegidas y las negativas", async () => {
+    renderApp("/topicos?familia=AC,FA");
+
+    const link = await screen.findByRole("link", {
+      name: /Abrir en el Explorador/,
+    });
+
+    await waitFor(() => expect(params(link).get("familia")).toBe("AC,FA"));
+    expect(params(link).get("sentimiento")).toBe("NEG");
+    await screen.findByRole("img", { name: "Negativas por familia y mes" });
+    expect(
+      screen.getAllByRole("link", { name: /Abrir en el Explorador/ }),
+    ).toHaveLength(1);
+  });
+
+  it("en Evolución, con un día elegido, abre ese día", async () => {
+    renderApp("/evolucion?dia=2026-10-12");
+
+    const link = await screen.findByRole("link", {
+      name: /Abrir en el Explorador/,
+    });
+
+    await waitFor(() => expect(params(link).get("desde")).toBe("2026-10-12"));
+    expect(params(link).get("hasta")).toBe("2026-10-12");
+  });
+
+  it("el panel del día trae su propio enlace a las reseñas de ese día", async () => {
+    renderApp("/evolucion?dia=2026-10-12");
+
+    const link = await screen.findByRole("link", {
+      name: /Ver las reseñas de ese día/,
+    });
+
+    expect(params(link).get("bancos")).toBe("BBVA");
+    expect(params(link).get("desde")).toBe("2026-10-12");
+    expect(params(link).get("hasta")).toBe("2026-10-12");
+    expect(params(link).get("sentimiento")).toBe("NEG");
+  });
+
+  it("un lector no ve ningún enlace al Explorador", async () => {
+    server.use(
+      http.get("*/api/v1/me", () =>
+        HttpResponse.json(syntheticMe({ roles: ["lector"] })),
+      ),
+    );
+    renderApp("/evolucion?dia=2026-10-12");
+    await screen.findByRole("complementary", { name: /Temas del 12 oct 2026/ });
+
+    expect(
+      screen.queryByRole("link", { name: /Explorador/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Ver las reseñas/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("no sale fuera del Dashboard", async () => {
+    renderApp("/alertas");
+    await screen.findByText("En construcción");
+
+    expect(
+      screen.queryByRole("link", { name: /Abrir en el Explorador/ }),
+    ).not.toBeInTheDocument();
   });
 });

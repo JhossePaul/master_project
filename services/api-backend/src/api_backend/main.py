@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from api_backend.errors import install_error_handlers
 from api_backend.middleware import RequestContextMiddleware
+from api_backend.sections.hitl.router import router as hitl_router
 from api_backend.sections.kpis.router import router as kpis_router
 from api_backend.sections.landing.router import router as landing_router
 from api_backend.sections.me.router import router as me_router
@@ -34,6 +35,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     app.include_router(me_router)
     app.include_router(landing_router)
     app.include_router(kpis_router)
+    app.include_router(hitl_router)
     install_static(app, settings.static_dir)
     return app
 

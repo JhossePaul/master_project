@@ -22,3 +22,23 @@ export function useParam(name: string, valid: RegExp) {
     );
   return [value, set] as const;
 }
+
+/** Una lista en la URL (``?familia=AC,FA``), solo con los valores permitidos. */
+export function useListParam(name: string, allowed: readonly string[]) {
+  const [params, setParams] = useSearchParams();
+  const raw = params.get(name);
+  const value = raw
+    ? [...new Set(raw.split(",").filter((t) => allowed.includes(t)))]
+    : [];
+  const set = (next: string[]) =>
+    setParams(
+      (prev) => {
+        const out = new URLSearchParams(prev);
+        if (next.length > 0) out.set(name, next.join(","));
+        else out.delete(name);
+        return out;
+      },
+      { replace: true },
+    );
+  return [value, set] as const;
+}

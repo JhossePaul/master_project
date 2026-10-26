@@ -168,6 +168,7 @@ def sample_rows(n_wrong: int, missing: int = 0) -> list[dict[str, Any]]:
             "item_id": f"monitor_sample:2026Q2:r{i}",
             "predicted_label": p,
             "validated_label": None if i < missing else g,
+            "reviewed": i >= missing,
         }
         for i, (p, g) in enumerate(zip(pred, gold, strict=True))
     ]

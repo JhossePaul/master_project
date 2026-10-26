@@ -18,6 +18,8 @@
 !services/api-backend/pyproject.toml
 !services/api-backend/src/
 !web/portal/
+!docs/analytics/labeling/annotation_guideline.md
+!docs/analytics/eda/eda_aspects_guideline.md
 web/portal/node_modules/
 web/portal/dist/
 **/__pycache__

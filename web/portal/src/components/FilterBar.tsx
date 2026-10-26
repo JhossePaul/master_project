@@ -1,4 +1,5 @@
 import { RotateCcw } from "lucide-react";
+import { ExplorerLink } from "@/components/ExplorerLink";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,7 +40,7 @@ function isActive(
   return range.from === filters.from && range.to === filters.to;
 }
 
-export function FilterBar() {
+export function FilterBar({ explore = false }: { explore?: boolean }) {
   const [filters, update] = useGlobalFilters();
 
   function toggle(bank: BankId, checked: boolean) {
@@ -123,6 +124,7 @@ export function FilterBar() {
         <RotateCcw aria-hidden="true" />
         Restablecer
       </Button>
+      {explore ? <ExplorerLink /> : null}
     </search>
   );
 }

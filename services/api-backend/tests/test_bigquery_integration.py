@@ -37,3 +37,46 @@ def test_tabla_o_vista_existe(
     assert job.total_bytes_processed is not None
     with capsys.disabled():
         print(f"\n{name}: {job.total_bytes_processed} bytes")
+
+
+def _hitl_repository(project: str):  # noqa: ANN202
+    from api_backend.bq.reader import BigQueryReader
+    from api_backend.sections.hitl.repository import BigQueryHitlRepository
+    from api_backend.settings import ApiSettings
+
+    settings = ApiSettings.model_validate(
+        {
+            "environment": "local",
+            "portal_auth_mode": "local",
+            "portal_local_user": "x@example.com",
+            "gcp_project_id": project,
+            "user_hash_salt": "s" * 16,
+        }
+    )
+    reader = BigQueryReader(bigquery.Client(project=project), settings)
+    # Solo lecturas: el escritor no se usa.
+    return BigQueryHitlRepository(reader, None, settings)  # type: ignore[arg-type]
+
+
+def test_hitl_consultas_de_lectura() -> None:
+    from datetime import UTC, datetime
+
+    from voc_common import HitlTask
+
+    project = os.environ["BQ_TEST_PROJECT"]
+    repo = _hitl_repository(project)
+    now = datetime.now(UTC)
+
+    entries = repo.entries(HitlTask.SENTIMENT, now)
+    assert entries, "dev tiene casos de sentimiento"
+    from api_backend.sections.hitl.repository import public_id
+
+    first = entries[0]
+    assert repo.entry(public_id(first.item.item_id), now) is not None
+    assert repo.entry("0" * 32, now) is None
+    assert repo.guidelines(HitlTask.SENTIMENT)
+    assert repo.has_review("no-existe") is False
+    summary = repo.summary(HitlTask.SENTIMENT, "a" * 64, now)
+    assert summary.pending >= len(entries) or len(entries) == 500
+    text = repo.review_text(first.item.bank_id, first.item.id_resena)
+    assert text is None or isinstance(text, str)

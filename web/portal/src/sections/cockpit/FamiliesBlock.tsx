@@ -14,7 +14,6 @@ import {
   FAMILY_ORDER,
   familyName,
   LoadingBlock,
-  OpenInExplorer,
   useWidth,
 } from "./shared";
 
@@ -33,20 +32,25 @@ export function zFill(z: number | null): string {
 function Stacked({
   rows,
   periods,
-  familia,
+  familias,
   changes,
   width,
 }: {
   rows: FamilyMonth[];
   periods: string[];
-  familia: string | null;
+  familias: string[];
   changes: { prompt_version: string; first_labeled_at: string }[];
   width: number;
 }) {
   const count = (p: string, f: string) =>
     rows.find((r) => r.period === p && r.family === f)?.neg_count ?? 0;
+  // Con selección solo se apilan las familias elegidas: el resto desaparece
+  // y la escala se ajusta a lo que queda.
+  const codes = FAMILY_ORDER.filter(
+    (f) => familias.length === 0 || familias.includes(f),
+  );
   const totals = periods.map((p) =>
-    FAMILY_ORDER.reduce((sum, f) => sum + count(p, f), 0),
+    codes.reduce((sum, f) => sum + count(p, f), 0),
   );
   const x = scaleBand<string>()
     .domain(periods)
@@ -81,7 +85,7 @@ function Stacked({
           let acc = 0;
           return (
             <g key={p} transform={`translate(${x(p)},0)`}>
-              {FAMILY_ORDER.map((f) => {
+              {codes.map((f) => {
                 const n = count(p, f);
                 const top = y(acc + n);
                 const h = y(acc) - top;
@@ -93,7 +97,6 @@ function Stacked({
                     width={x.bandwidth()}
                     height={Math.max(h, 0)}
                     fill={`var(${FAMILY_COLORS[f]})`}
-                    opacity={familia && familia !== f ? 0.25 : 1}
                   >
                     <title>{`${formatMonth(p)} · ${familyName(f)}: ${formatInt(n)}`}</title>
                   </rect>
@@ -137,12 +140,12 @@ function Stacked({
 function Heat({
   rows,
   periods,
-  familia,
+  familias,
   width,
 }: {
   rows: FamilyMonth[];
   periods: string[];
-  familia: string | null;
+  familias: string[];
   width: number;
 }) {
   const cell = (p: string, f: string) =>
@@ -190,7 +193,7 @@ function Heat({
               dy="0.32em"
               textAnchor="end"
               fontSize={12}
-              fontWeight={familia === f ? 700 : 400}
+              fontWeight={familias.includes(f) ? 700 : 400}
               fill="var(--color-neutral-900)"
             >
               {f === "u" ? MARK_LABEL : familyName(f)}
@@ -212,7 +215,9 @@ function Heat({
                   fill={zFill(c?.z ?? null)}
                   stroke={flagged ? "var(--color-neutral-950)" : "none"}
                   strokeWidth={2}
-                  opacity={familia && familia !== f ? 0.4 : 1}
+                  opacity={
+                    familias.length > 0 && !familias.includes(f) ? 0.4 : 1
+                  }
                 >
                   <title>
                     {c?.z != null
@@ -329,17 +334,13 @@ function MarkU({
 export function FamiliesBlock({
   banks,
   bank,
-  familia,
-  onFamilia,
-  from,
-  to,
+  familias,
+  onFamilias,
 }: {
   banks: BankId[];
   bank: BankId;
-  familia: string | null;
-  onFamilia: (code: string | null) => void;
-  from: string;
-  to: string;
+  familias: string[];
+  onFamilias: (codes: string[]) => void;
 }) {
   const families = useFamilies(banks);
   const [view, setView] = useState<"nivel" | "anomalia">("nivel");
@@ -371,19 +372,14 @@ export function FamiliesBlock({
       }
       subtitle={`Últimos ${WINDOW_MONTHS} meses`}
       method="raw"
-      actions={
-        <OpenInExplorer
-          filters={{ banks: [bank], from, to, familia, sentimiento: "NEG" }}
-        />
-      }
       howToRead={
         <p>
           Las <GlossaryTerm id="familia_aspectos">familias</GlossaryTerm> son
           los temas de las reseñas negativas. En "Nivel" cada barra suma las
           negativas del mes. En "Anomalía" el color indica cuánto se aleja el
           mes de lo habitual (z robusto del monitor); si hubiera umbral, el
-          borde marcaría los meses que lo pasan. Pulsa una familia para
-          resaltarla en todo el cockpit.
+          borde marcaría los meses que lo pasan. Elige una o varias familias: en
+          "Nivel" solo se apilan esas; en "Anomalía" se resaltan.
         </p>
       }
       provenance={{
@@ -429,7 +425,7 @@ export function FamiliesBlock({
               <Stacked
                 rows={shown}
                 periods={periods}
-                familia={familia}
+                familias={familias}
                 changes={families.data.prompt_changes}
                 width={width}
               />
@@ -443,7 +439,7 @@ export function FamiliesBlock({
               <Heat
                 rows={shown}
                 periods={periods}
-                familia={familia}
+                familias={familias}
                 width={width}
               />
               <ZLegend />
@@ -460,14 +456,20 @@ export function FamiliesBlock({
         </div>
         <fieldset className="m-0 grid content-start gap-1 border-0 p-0">
           <legend className="mb-1 text-sm font-semibold">
-            Familia resaltada
+            Familias a mostrar
           </legend>
           {FAMILY_ORDER.map((f) => (
             <button
               key={f}
               type="button"
-              aria-pressed={familia === f}
-              onClick={() => onFamilia(familia === f ? null : f)}
+              aria-pressed={familias.includes(f)}
+              onClick={() =>
+                onFamilias(
+                  familias.includes(f)
+                    ? familias.filter((x) => x !== f)
+                    : [...familias, f],
+                )
+              }
               className="flex items-center gap-2 rounded-sm border border-transparent px-2 py-1 text-left text-sm hover:bg-neutral-100 aria-pressed:border-brand aria-pressed:bg-green-100"
             >
               <span
@@ -486,6 +488,16 @@ export function FamiliesBlock({
               ) : null}
             </button>
           ))}
+          {familias.length > 0 ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-1 justify-start"
+              onClick={() => onFamilias([])}
+            >
+              Quitar la selección
+            </Button>
+          ) : null}
         </fieldset>
       </div>
       <div className="mt-6 border-t border-border pt-4">

@@ -122,11 +122,30 @@ def test_outcome_matches_the_labels() -> None:
         _review(outcome="corrected")
 
 
+def test_not_evaluable_review_has_no_label_and_is_corrected() -> None:
+    review = _review(
+        validated_label=None,
+        outcome="corrected",
+        flags=["no_evaluable"],
+    )
+    assert review.validated_label is None
+    with pytest.raises(ValidationError, match="outcome"):
+        _review(
+            validated_label=None, outcome="confirmed", flags=["no_evaluable"]
+        )
+    with pytest.raises(ValidationError, match="carry no validated label"):
+        _review(
+            validated_label="NEG",
+            outcome="confirmed",
+            flags=["no_evaluable"],
+        )
+
+
 def test_sentiment_review_shape() -> None:
-    with pytest.raises(
-        ValidationError, match="require predicted and validated"
-    ):
+    with pytest.raises(ValidationError, match="require a validated label"):
         _review(validated_label=None)
+    with pytest.raises(ValidationError, match="require a predicted label"):
+        _review(predicted_label=None)
     with pytest.raises(ValidationError, match="no aspects"):
         _review(predicted_families=["AC"])
     with pytest.raises(ValidationError, match="repeat"):

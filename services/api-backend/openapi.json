@@ -607,6 +607,34 @@
         "title": "Freshness",
         "type": "object"
       },
+      "GuidelineOut": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "guideline_version": {
+            "title": "Guideline Version",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/HitlTask"
+          },
+          "valid_from": {
+            "format": "date-time",
+            "title": "Valid From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "guideline_version",
+          "valid_from",
+          "content"
+        ],
+        "title": "GuidelineOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -618,6 +646,86 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HitlCase": {
+        "properties": {
+          "display_mode": {
+            "enum": [
+              "blind",
+              "assisted"
+            ],
+            "title": "Display Mode",
+            "type": "string"
+          },
+          "guideline_version": {
+            "title": "Guideline Version",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "opened_at": {
+            "format": "date-time",
+            "title": "Opened At",
+            "type": "string"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SentimentProposal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_round": {
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Review Round",
+            "type": "integer"
+          },
+          "task": {
+            "const": "sentiment",
+            "title": "Task",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "task",
+          "text",
+          "display_mode",
+          "proposal",
+          "guideline_version",
+          "opened_at",
+          "review_round"
+        ],
+        "title": "HitlCase",
+        "type": "object"
+      },
+      "HitlSummary": {
+        "properties": {
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskSummary"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tasks"
+        ],
+        "title": "HitlSummary",
         "type": "object"
       },
       "HitlTask": {
@@ -842,6 +950,20 @@
         "title": "MonthlyKpi",
         "type": "object"
       },
+      "NextIn": {
+        "properties": {
+          "task": {
+            "const": "sentiment",
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "NextIn",
+        "type": "object"
+      },
       "PromptChange": {
         "properties": {
           "first_labeled_at": {
@@ -859,6 +981,35 @@
           "first_labeled_at"
         ],
         "title": "PromptChange",
+        "type": "object"
+      },
+      "ReviewFlag": {
+        "description": "Marcas del revisor de sentimiento (guía ``v2.2``).",
+        "enum": [
+          "menciona_falla",
+          "duda",
+          "no_evaluable",
+          "nombre_persona"
+        ],
+        "title": "ReviewFlag",
+        "type": "string"
+      },
+      "ReviewOut": {
+        "properties": {
+          "next_available": {
+            "title": "Next Available",
+            "type": "boolean"
+          },
+          "review_id": {
+            "title": "Review Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "review_id",
+          "next_available"
+        ],
+        "title": "ReviewOut",
         "type": "object"
       },
       "Role": {
@@ -943,6 +1094,156 @@
           "model_version"
         ],
         "title": "RunSummary",
+        "type": "object"
+      },
+      "SentimentProposal": {
+        "properties": {
+          "label": {
+            "enum": [
+              "NEG",
+              "NEU",
+              "POS"
+            ],
+            "title": "Label",
+            "type": "string"
+          },
+          "p_neg": {
+            "title": "P Neg",
+            "type": "number"
+          },
+          "p_neu": {
+            "title": "P Neu",
+            "type": "number"
+          },
+          "p_pos": {
+            "title": "P Pos",
+            "type": "number"
+          }
+        },
+        "required": [
+          "label",
+          "p_neg",
+          "p_neu",
+          "p_pos"
+        ],
+        "title": "SentimentProposal",
+        "type": "object"
+      },
+      "SentimentReviewIn": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFlag"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "guideline_version": {
+            "title": "Guideline Version",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket"
+          },
+          "validated_label": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NEG",
+                  "NEU",
+                  "POS"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated Label"
+          }
+        },
+        "required": [
+          "review_id",
+          "validated_label",
+          "flags",
+          "guideline_version"
+        ],
+        "title": "SentimentReviewIn",
+        "type": "object"
+      },
+      "TaskSummary": {
+        "properties": {
+          "median_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Seconds"
+          },
+          "mine_this_week": {
+            "title": "Mine This Week",
+            "type": "integer"
+          },
+          "monitor_done": {
+            "title": "Monitor Done",
+            "type": "integer"
+          },
+          "monitor_target": {
+            "title": "Monitor Target",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "task": {
+            "$ref": "#/components/schemas/HitlTask"
+          },
+          "team_this_week": {
+            "title": "Team This Week",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task",
+          "pending",
+          "mine_this_week",
+          "team_this_week",
+          "median_seconds",
+          "monitor_done",
+          "monitor_target"
+        ],
+        "title": "TaskSummary",
         "type": "object"
       },
       "TopicMonth": {
@@ -1253,6 +1554,237 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/hitl/guidelines/{task}": {
+      "get": {
+        "operationId": "guideline_api_v1_hitl_guidelines__task__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/HitlTask"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidelineOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guideline",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/items/{item_id}/release": {
+      "post": {
+        "description": "El portal lo llama al salir de la pantalla (``sendBeacon``).",
+        "operationId": "release_api_v1_hitl_items__item_id__release_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Release",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/items/{item_id}/review": {
+      "post": {
+        "operationId": "review_api_v1_hitl_items__item_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SentimentReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/items/{item_id}/skip": {
+      "post": {
+        "operationId": "skip_api_v1_hitl_items__item_id__skip_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Skip",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/next": {
+      "post": {
+        "description": "Toma el siguiente caso: lo bloquea 15 minutos para el revisor.",
+        "operationId": "next_case_api_v1_hitl_next_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NextIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HitlCase"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "204": {
+            "description": "No hay casos pendientes"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Next Case",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/summary": {
+      "get": {
+        "description": "Por cola permitida: solo conteos.",
+        "operationId": "summary_api_v1_hitl_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HitlSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Summary",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
     "/api/v1/kpis/cards": {
       "get": {
         "description": "Tarjetas por banco con PPI, el mismo mes del año anterior y alertas.",

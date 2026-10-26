@@ -1,6 +1,6 @@
 # Paso 4. Feature 7.7 (parte imprescindible): HITL de sentimiento
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Terminado en local y probado contra BigQuery de dev (solo lecturas); falta la revisión real del autor en dev (casillas 2 y 3). Detalle en "Avance".
 * **Nivel:** imprescindible.
 * **Depende de:** paso 2 y la decisión B5.1 del paso 0 (revisión "no evaluable").
 * **Objetivo:** el equivalente en el portal del prototipo `experiments/analytics/src/voc_analytics/annotation/app.py`: el revisor entra y ve su cola, revisa un caso a la vez con la guía vigente a la vista y guarda su decisión en `hitl_reviews` con su modo, su guía y su tiempo. **La muestra de monitoreo y todo caso que pueda entrar al oro van a ciegas, y la explicación nunca se muestra aquí.**
@@ -123,15 +123,28 @@ Distribución en dos columnas (≥ 1 280 px): el caso a la izquierda (8 columnas
 
 ## Terminado cuando
 
-* [ ] La cola reproduce el flujo del prototipo y escribe en `hitl_reviews` con su modo, su guía y su tiempo.
-* [ ] La muestra de monitoreo nunca muestra la predicción (prueba de API y revisión manual en dev con un caso `monitor_sample`).
+* [x] La cola reproduce el flujo del prototipo y escribe en `hitl_reviews` con su modo, su guía y su tiempo. (Probado con la cola en memoria; la escritura a BigQuery la prueba el autor al revisar en dev.)
+* [ ] La muestra de monitoreo nunca muestra la predicción (prueba de API y revisión manual en dev con un caso `monitor_sample`). (Prueba de API hecha; falta la revisión manual en dev.)
 * [ ] En dev, el autor revisa al menos 20 casos reales y el lunes siguiente el monitor los cuenta para el κ del trimestre (o la consulta de `quality.py` los lee, si el trimestre no cierra todavía).
-* [ ] El comentario sanitizado queda en la FMEA (fila del comentario del revisor), para calificar en el paso 10.
+* [x] El comentario sanitizado queda en la FMEA (fila del comentario del revisor), para calificar en el paso 10. (F-21 ya lo cubría; se anotó su control de este paso.)
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **B5.1 aplicada (2026-10-26, recomendación del paso 0).** `HitlReview` acepta `validated_label` nulo solo con la marca `no_evaluable` (y esa marca exige etiqueta nula); el resultado es siempre `corrected`. El reentrenamiento ya excluía las revisiones sin etiqueta o con la marca. El κ del monitor (`quality.py`) contaba una revisión sin etiqueta como pendiente y no calculaba nunca: ahora distingue "sin revisar" de "no evaluable" (columna `reviewed`) y deja fuera del κ solo a las segundas.
+* **El `item_id` que ve el portal es opaco** (hallazgo de la prueba de "ninguna respuesta trae el motivo"). El real empieza por el motivo (`monitor_sample:2026Q3:…` contra `sentiment:…`), así que mandarlo al navegador dejaba distinguir la muestra de un caso de baja confianza. La API entrega `public_id` (los primeros 32 caracteres del SHA-256 del `item_id`) y busca el caso por él (`LEFT(TO_HEX(SHA256(item_id)), 32)` en BigQuery).
+* **Tomar un caso es escribir y volver a leer.** Se escribe `in_review` y se relee el estado del caso; si el último evento no es del revisor, otro lo tomó al mismo tiempo y se pasa al siguiente. Si el revisor ya tenía un caso abierto (menos de 15 minutos), `next` se lo devuelve con su `opened_at` original, así que recargar la pantalla no pierde el tiempo medido ni deja el caso bloqueado.
+* **Idempotencia.** El evento `submitted` lleva `event_id = "<review_id>:submitted"`; un reintento con el mismo `review_id` y el caso ya enviado devuelve 200 sin escribir de nuevo. `release` sobre un caso que ya no es del revisor no hace nada (204), porque lo llama `sendBeacon` y nadie lee su respuesta; `skip` sí da 409.
+* **Casos sin predicción válida no se ofrecen** (el delta puede dejar `label` nulo): no se podría calcular `outcome`. Se registra una advertencia.
+* **Cuatro consultas por cola de BigQuery con un tope de 500 casos** (`QUEUE_LIMIT`, ordenados por prioridad). Si un revisor saltara más de 500 casos seguidos no vería el resto; no pasa con los 497 de dev.
+* **DLP:** el `parent` es `projects/<proyecto>/locations/<región>` y no `global`, porque las plantillas de `infra/modules/dlp.py` viven en la región del stack. `GUIDELINES_DIR` (por defecto `/app/guidelines`) lo fija la imagen; en `PORTAL_DATA=fixtures` la guía sale de `sample_data/sample_guideline.md`.
+* **Una sola cola en el menú.** El submenú por tipo (Aspectos y Tópicos) llega con el paso 9; con una sola tarea la entrada muestra su tarjeta sin pestañas.
+* **Sin `react-hook-form` en la pantalla de revisión:** el formulario tiene cinco campos y los atajos necesitan el estado a la mano; se usa estado de React y entradas nativas (radio y casilla) con el foco visible.
+* **Nada del caso en `localStorage` ni en la URL.** Lo único que queda en `localStorage` es la preferencia de menú plegado del shell.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **API (2026-10-26):** `sections/hitl/` (`router`, `schemas`, `service`, `repository`, `sample`), `api_backend/dlp.py`, `writer_for`, `GUIDELINES_DIR`, `openapi.json` y `schema.d.ts` regenerados. 33 pruebas nuevas en `test_hitl.py`: orden, `blind` sin propuesta (incluido un caso asistido con motivo `agreement_sample`), ninguna respuesta trae banco, motivo ni explicación, bloqueo de 15 minutos, salto de 7 días, segunda ronda a otro revisor, reseña editada, `outcome`, `no_evaluable`, `seconds_spent`, guía validada, idempotencia, 409, DLP caído (502 y nada escrito), roles y rutas de la guía. La imagen copia las dos guías a `/app/guidelines` y el `.dockerignore` las deja pasar.
+* **Portal (2026-10-26):** `/hitl` (cola con conteos y avance de la muestra) y `/hitl/sentimiento` (texto en Source Serif 4 a 20 px, propuesta solo asistida, radios grandes, marcas, comentario, ticket, atajos con `KeyboardHint`, guía plegable con `react-markdown` y `remark-gfm`, `sendBeacon` al salir). 14 pruebas nuevas, entre ellas `axe` sin violaciones. `npm run check`, `tsc`, `npm test` (137) y `npm run build` pasan; la pantalla de revisión es un trozo perezoso de 51 KB comprimido.
+* **Revisada en local** (`PORTAL_DATA=fixtures`): se abrió el caso, se eligió NEG con la tecla `1`, se guardó con `Enter` y pasó al siguiente.
+* **Contra BigQuery de dev** (`RUN_BIGQUERY_TESTS=1`, solo lecturas): las consultas de la cola, del caso por `public_id`, de las guías, del texto del TDS y del resumen devuelven resultados. Bytes facturados: la cola y la búsqueda de un caso 30 MB cada una (la vista `hitl_queue` más las dos agregaciones), la muestra de monitoreo 20 MB, el texto del TDS 0 (bajo el mínimo facturable), las demás 0. Muy por debajo de los 50 MB del texto que el paso fijaba como umbral para guardarlo en memoria, así que no se agrega esa caché. Tiempos: cola 1.9 s, caso 1.3 s, texto 1.3 s; un "siguiente" suma unos 5 s (cola, texto, escritura y relectura).
+* **Pendiente del autor:** revisar en dev al menos 20 casos reales (con al menos uno `monitor_sample`, a ciegas) y comprobar el lunes siguiente que el monitor los cuenta para el κ del trimestre. La escritura real a `hitl_reviews` y `hitl_events` por la API se estrena en esa revisión: la cuenta de servicio de la API necesita `bigquery.dataEditor` en esas tablas y permiso de DLP (paso 1).

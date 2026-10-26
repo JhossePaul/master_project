@@ -1,21 +1,23 @@
+import { useExplorerContext } from "@/components/ExplorerLink";
 import type { BankId } from "@/config/banks";
 import { isBankId } from "@/config/banks";
 import { useGlobalFilters } from "@/filters/useGlobalFilters";
 import { FamiliesBlock } from "./FamiliesBlock";
-import { BANK, FAMILY, useParam } from "./params";
-import { BankPicker } from "./shared";
+import { BANK, useListParam, useParam } from "./params";
+import { BankPicker, FAMILY_ORDER } from "./shared";
 import { TopicsBlock } from "./TopicsBlock";
 
 /** Tópicos: familias de las negativas y tópicos vigentes. */
 export default function TopicsView() {
   const [filters] = useGlobalFilters();
   const banks = filters.banks;
-  const [familia, setFamilia] = useParam("familia", FAMILY);
+  const [familias, setFamilias] = useListParam("familia", FAMILY_ORDER);
   const [focus, setFocus] = useParam("banco", BANK);
   const detail: BankId =
     focus && isBankId(focus) && banks.includes(focus)
       ? focus
       : (banks[0] as BankId);
+  useExplorerContext({ familia: familias, sentimiento: "NEG" });
   const common = { from: filters.from, to: filters.to };
   return (
     <div className="flex flex-col gap-8">
@@ -34,11 +36,11 @@ export default function TopicsView() {
       <FamiliesBlock
         banks={banks}
         bank={detail}
-        familia={familia}
-        onFamilia={setFamilia}
+        familias={familias}
+        onFamilias={setFamilias}
         {...common}
       />
-      <TopicsBlock banks={banks} familia={familia} {...common} />
+      <TopicsBlock banks={banks} familias={familias} {...common} />
     </div>
   );
 }

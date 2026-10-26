@@ -1,6 +1,8 @@
+import { lazy, type ReactNode, Suspense } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
 import { RequireRole } from "@/auth/RequireRole";
 import { AppShell } from "@/components/AppShell";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Role } from "@/config/nav";
 import { NotFound, UnderConstruction } from "@/sections/Placeholder";
 
@@ -8,6 +10,20 @@ function guarded(role: Role, title: string): RouteObject["element"] {
   return (
     <RequireRole role={role}>
       <UnderConstruction title={title} />
+    </RequireRole>
+  );
+}
+
+const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
+const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
+const REVIEWER: Role = "revisor";
+
+function ReviewerOnly({ children }: { children: ReactNode }) {
+  return (
+    <RequireRole role={REVIEWER}>
+      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+        {children}
+      </Suspense>
     </RequireRole>
   );
 }
@@ -47,7 +63,22 @@ export const routes: RouteObject[] = [
         path: "alertas/:alertId",
         element: guarded("analista", "Alerta de deriva"),
       },
-      { path: "hitl/*", element: guarded("revisor", "HITL") },
+      {
+        path: "hitl",
+        element: (
+          <ReviewerOnly>
+            <HitlHome />
+          </ReviewerOnly>
+        ),
+      },
+      {
+        path: "hitl/sentimiento",
+        element: (
+          <ReviewerOnly>
+            <SentimentReview />
+          </ReviewerOnly>
+        ),
+      },
       { path: "mlops", element: guarded("analista", "MLOps y AIOps") },
       { path: "admin", element: guarded("administrador", "Administración") },
       { path: "gobernanza", element: guarded("lector", "Gobernanza") },

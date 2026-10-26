@@ -2,7 +2,7 @@
 
 El proyecto se divide en **8 épicas** para construir y desplegar en Google Cloud Platform (GCP) el motor analítico de NLP: medir el sentimiento real del texto separado de las estrellas (*Label Noise Bias*, sesgo de *Obligatory 5-Star*), detectar y priorizar incidencias, y exponerlo con revisión humana (HITL) bajo lineamientos de *Ethics by Design*.
 
-* **Estado (2026-10-25):** EPIC-1 a EPIC-5 cerradas; EPIC-6 con el código cerrado y solo la carga y validación en dev abierta (6.6); EPIC-7 pendiente; EPIC-8 es la lista de pendientes técnicos que no bloquean.
+* **Estado (2026-10-26):** EPIC-1 a EPIC-6 cerradas; EPIC-7 pendiente; EPIC-8 es la lista de pendientes técnicos que no bloquean.
 * **Reorganización (2026-10-22):** se agregó EPIC-6 (despliegue del core analítico), que absorbe la antigua fase 3 de EPIC-5 (`epic_5_deployment.md`) y los cambios a los contratos de EPIC-1 y a la infraestructura de EPIC-2. El portal pasó de EPIC-6 a EPIC-7 (features 6.x → 7.x). El cierre de EPIC-1 a EPIC-4, que estaba en `closure_epics_1_4.md`, quedó en la sección [Cierre de las épicas 1 a 4](#cierre-de-las-épicas-1-a-4).
 
 ---
@@ -16,7 +16,7 @@ El proyecto se divide en **8 épicas** para construir y desplegar en Google Clou
 | **EPIC-3** | Ingesta multibanco reanudable desde Google Play (`batchexecute`) | **Cerrada** | `services/ingestion-worker/`, `experiments/playstore/` | [`epic_3.md`](epic_3.md) |
 | **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
 | **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **Cerrada** (2026-10-23) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
-| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **En curso** (6.1 a 6.5 cerradas; abierta 6.6, carga y validación en dev) | `packages/voc-common/`, `packages/voc-nlp/`, `infra/`, `services/ml-inference/` | [`epic_6.md`](epic_6.md) |
+| **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **Cerrada** (2026-10-26; 6.1 a 6.6) | `packages/voc-common/`, `packages/voc-nlp/`, `infra/`, `services/ml-inference/` | [`epic_6.md`](epic_6.md) |
 | **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Planificada** (2026-10-25; detalle por paso en [`epic_7/`](epic_7/README.md)) | `services/api-backend/`, `web/portal/`, `docs/design/`, `docs/governance/`, `docs/thesis/` | [`epic_7.md`](epic_7.md) |
 | **EPIC-8** | Pendientes técnicos (respaldo en GCS de los insumos locales y otras deudas) | **Abierta** (lista) | — | [`epic_8.md`](epic_8.md) |
 
@@ -114,7 +114,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 
 ### EPIC-6: Despliegue del Core Analítico (Contratos, Infraestructura e Inferencia)
 
-* **Estado:** **En curso.** 6.1 a 6.5 cerradas (código, infraestructura y pruebas); abierta 6.6, carga y validación en dev.
+* **Estado:** **Cerrada (2026-10-26).** 6.1 a 6.5 entregaron el código, la infraestructura y las pruebas, y 6.6 cargó y validó todo en dev.
 * **Objetivo técnico:** llevar a producción la estrategia de 5.8 con un backfill único y un delta diario.
 * **Alcance:** contratos v3 (6.1), tablas y curadurías en Pulumi (6.2), inferencia batch (6.3), monitoreo y ciclo de vida (6.4), reentrenamiento y backfills (6.5), carga y validación en dev (6.6).
 
