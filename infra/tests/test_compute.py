@@ -63,9 +63,9 @@ def test_compute_and_scheduler_modes(
     registrations = list(pulumi_mocks.resources.values())
     by_name = {r.urn.rsplit("::", 1)[-1]: r for r in registrations}
     states = {name: _unwrap(r.state) for name, r in by_name.items()}
-    for name, account, image in (
-        ("voc-ingestion-worker", "voc-sa-ingestion", INGESTION_IMAGE),
-        ("voc-api-backend", "voc-sa-ml-backend", API_BACKEND_IMAGE),
+    for name, account, image, timeout in (
+        ("voc-ingestion-worker", "voc-sa-ingestion", INGESTION_IMAGE, "900s"),
+        ("voc-api-backend", "voc-sa-portal-api", API_BACKEND_IMAGE, "300s"),
     ):
         # Valor por defecto de la API declarado para evitar deriva en preview.
         assert states[name]["scaling"] == {"minInstanceCount": 0}
@@ -79,7 +79,7 @@ def test_compute_and_scheduler_modes(
             template["serviceAccount"]
             == f"{account}@test-voc-project.iam.gserviceaccount.com"
         )
-        assert template["timeout"] == "900s"
+        assert template["timeout"] == timeout
         container = template["containers"][0]
         assert container["image"] == image
         assert container["resources"]["limits"] == {"cpu": "1", "memory": "1Gi"}

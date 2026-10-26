@@ -5,6 +5,7 @@ import re
 import pytest
 import voc_common
 from voc_common.text_utils import (
+    actor_hash,
     contar_palabras,
     hash_username_pii,
     limpiar_texto_bancario,
@@ -85,3 +86,17 @@ def test_text_utils_are_exported() -> None:
     ):
         assert name in voc_common.__all__
         assert hasattr(voc_common, name)
+
+
+def test_actor_hash_es_hash_username_pii_y_estable() -> None:
+    salt = "s" * 16
+
+    assert actor_hash("Ana@Example.com", salt) == hash_username_pii(
+        "ana@example.com", salt
+    )
+    assert actor_hash("  ANA@example.com ", salt) == actor_hash(
+        "ana@example.com", salt
+    )
+    assert actor_hash("ana@example.com", salt) != actor_hash(
+        "ana@example.com", "t" * 16
+    )

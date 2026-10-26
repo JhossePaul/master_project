@@ -216,9 +216,9 @@ Revisión pantalla por pantalla (2026-10-22): cada pantalla del portal lee y esc
 | Alertas de deriva | `drift_alerts`, `drift_alert_events`, `hitl_boosts`, `drift_metrics` | `drift_alert_events` |
 | MLOps y AIOps | `model_quality`, `hitl_coverage_curves`, `drift_metrics`, `model_versions`, `inference_runs`, `ingestion_runs_log_v2`, conteos por `eligibility_code` | — |
 | Administración | `risk_policy`, `hitl_boosts`, `drift_policy`, `drift_policy_template`, `hitl_coverage_curves`, `hitl_reviews` (tiempo medido), `gold_versions` | `risk_policy`, `drift_policy`, `gold_versions` |
-| Seguridad | Grupos de IAP y Cloud Audit Logs; no hay tabla de usuarios | — |
+| Seguridad | Mapa de roles del secreto `voc-portal-roles` (correo → roles y colas de revisión) y Cloud Audit Logs; no hay tabla de usuarios | — |
 
-**Fuera del esquema, a propósito:** los usuarios y roles (los resuelve IAP), los registros de acceso (Cloud Audit Logs) y el contenido del reporte (documentos versionados del repositorio).
+**Fuera del esquema, a propósito:** los usuarios y roles (IAP autentica; el mapa del secreto `voc-portal-roles` da los roles), los registros de acceso (Cloud Audit Logs) y el contenido del reporte (documentos versionados del repositorio).
 
 ## Respuestas del autor (2026-10-22)
 

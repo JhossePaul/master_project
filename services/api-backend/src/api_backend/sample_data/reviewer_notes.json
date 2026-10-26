@@ -1,0 +1,12 @@
+[
+  {
+    "review_id": "syn-rev-0001",
+    "item_id": "syn-item-0001",
+    "comment": "CENTINELA: este texto nunca debe llegar a un lector"
+  },
+  {
+    "review_id": "syn-rev-0002",
+    "item_id": "syn-item-0002",
+    "comment": "Revisar con la guía vigente."
+  }
+]

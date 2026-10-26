@@ -56,10 +56,12 @@ config:
     secure: v1:sauUU8V0d1xIRh2x:QcVsWX4sG6pUOE6CsSwsK3BxKmdXFAVAaFHp7hSt1UDHqfKAzp7evn4LShB8ddTFP51b3wisUYWv8qrjuZ4KUsul0Dvcn82AkfGdmzvxflQ=
   gcp:userProjectOverride: "true"
   gcp:billingProject: project-7bafd424-a385-4c05-b5b
-  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:78752f166d89424bc048f48032d48990daa6a673@sha256:b5ad978866bd26508e6fe26c971d146157ab285e3f12520b21c017416a4f029c
-  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:78752f166d89424bc048f48032d48990daa6a673@sha256:8e9988745e37198ba9447abea2f2fe917db16b68a62c46ea03700007eedd1995
+  bbva-voc-infra:ingestion_worker_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ingestion-worker:7cfaf78ccbd73ff87ef4c16c195667f7b4ecea63@sha256:3960669335f0a6674a5de643df48201598dc4fc22fae564056ceb1c66ae8e7a4
+  bbva-voc-infra:sanitization_job_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/sanitization-pipeline:7cfaf78ccbd73ff87ef4c16c195667f7b4ecea63@sha256:9f57b4b29e7cf02d8cab5c34c1ea5bd89332463552bc84fdb7a19ffe46c60861
   bbva-voc-infra:alert_email:
     secure: v1:K8LI9TLqA8C98O9N:Cs61QbLdrmn+AC/E5DlxNS4jCbolRMzROcZjtdNQ+RwMimPmhAfKKnfQvO0=
-  bbva-voc-infra:ml_inference_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ml-inference:78752f166d89424bc048f48032d48990daa6a673@sha256:65c35f11b0ec5d1f4b700a3e52205571a5533a75b7bac694b670c235185f2ff3
+  bbva-voc-infra:ml_inference_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ml-inference:7cfaf78ccbd73ff87ef4c16c195667f7b4ecea63@sha256:a5c986b89a8cf4c2c1d5b0e27218b565979bffe018d829d328126ec8fb0a649b
+  bbva-voc-infra:portal_users:
+    secure: v1:dzOaR3z10SDsCXpc:X6Wjv4vQNt2rMzOQswLSI0I9fCg4+EyTaXtCwvB6pT0y5JJ5iJN5zgMryAMkmS2IufdsKc1nK5ZoBmmq0p3/U3mDIM3N8W97Rsy/H+MjMiCp/cY1sIhuwcxIyPsjzHQEVTW9znU+O+9lO4LGMdKi3QRz8X1q+GQNNmd21dJNRNQao2KywdsXgSQ1
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=

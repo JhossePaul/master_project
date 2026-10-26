@@ -22,12 +22,19 @@ class Fake:
     """Sustituye gcloud y pulumi; registra los comandos ejecutados."""
 
     def __init__(
-        self, ingestion, sanitization, current=None, preview=None, ml=None
+        self,
+        ingestion,
+        sanitization,
+        current=None,
+        preview=None,
+        ml=None,
+        api=None,
     ):
         self.images = {
             f"{REGISTRY}/ingestion-worker": ingestion,
             f"{REGISTRY}/sanitization-pipeline": sanitization,
             f"{REGISTRY}/ml-inference": ingestion if ml is None else ml,
+            f"{REGISTRY}/api-backend": ingestion if api is None else api,
         }
         self.current = current or {}
         self.preview = (
@@ -73,7 +80,7 @@ def run(fake, **kw):
     return code, "\n".join(lines)
 
 
-def test_picks_the_latest_sha_present_in_both_images_and_sets_both_keys():
+def test_picks_the_latest_sha_present_in_every_image_and_sets_every_key():
     fake = Fake(*both())
     code, text = run(fake)
     assert code == 0 and f"Versión: {NEW}" in text
@@ -82,6 +89,7 @@ def test_picks_the_latest_sha_present_in_both_images_and_sets_both_keys():
         "ingestion_worker_image",
         "sanitization_job_image",
         "ml_inference_image",
+        "api_backend_image",
     }
     assert f"{REGISTRY}/ingestion-worker:{NEW}@{D['n']}" in {
         c[-1] for c in sets
@@ -100,6 +108,13 @@ def test_ml_inference_must_share_the_sha():
     ingestion, sanitization = both()
     ml = listing([(D["o"], [OLD])])
     code, text = run(Fake(ingestion, sanitization, ml=ml))
+    assert f"Versión: {OLD}" in text
+
+
+def test_api_backend_must_share_the_sha():
+    ingestion, sanitization = both()
+    api = listing([(D["o"], [OLD])])
+    code, text = run(Fake(ingestion, sanitization, api=api))
     assert f"Versión: {OLD}" in text
 
 
@@ -133,6 +148,7 @@ def test_no_changes_when_already_pinned():
             "ingestion_worker_image": ref("ingestion-worker", NEW, D["n"]),
             "sanitization_job_image": ref("sanitization-pipeline", NEW, D["n"]),
             "ml_inference_image": ref("ml-inference", NEW, D["n"]),
+            "api_backend_image": ref("api-backend", NEW, D["n"]),
         },
         preview="Resources:\n    54 unchanged",
     )

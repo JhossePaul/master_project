@@ -1,6 +1,6 @@
 # Feature 7.0: Preparación y bloqueantes
 
-* **Estado (2026-10-25):** Pendiente. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
+* **Estado (2026-10-25):** En curso: B1 a B4 resueltos; falta B5 (se aplica la recomendación al llegar a cada paso, con aviso); las verificaciones de la sección 4 están hechas. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
 * **Objetivo:** dejar resuelto lo que de verdad detiene el desarrollo y separar lo que no lo detiene. **Cerrar EPIC-6 no es requisito:** los pasos 14 (ciclo de modelo) y 15 de 6.6 y la corrida programada sin intervención no bloquean ningún paso de EPIC-7; lo único que afectan está anotado abajo.
 
 ## 1. Lo que ya está y se puede usar
@@ -20,7 +20,7 @@
 
 **Lo que deja pendiente EPIC-6 y a qué afecta:**
 
-* **Paso 14 de 6.6 (primer reentrenamiento):** sin él no hay un candidato real en `model_versions` ni una fila en `promotion_checks`. Solo afecta a la prueba en dev del botón de promover (paso 8); el desarrollo y sus pruebas usan datos sintéticos.
+* **Paso 14 de 6.6 (primer reentrenamiento):** terminó el 2026-10-26. `robertuito_sentiment_v2` está registrado como candidato, con su *re-scoring* y una fila en `promotion_checks` (`better`); no se ha promovido. La prueba en dev del botón de promover (paso 8) puede usar ese candidato; el desarrollo y sus pruebas usan datos sintéticos.
 * **Corrida programada sin intervención:** no afecta; la landing muestra la frescura que haya.
 
 ## 2. Bloqueantes
@@ -77,7 +77,7 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 
 | Hueco | Se cierra en |
 | :--- | :--- |
-| `services/api-backend/` y `web/hitl-portal/` existen pero todos sus archivos están vacíos; `api-backend` está excluido del workspace uv | Pasos 1 y 2 |
+| `services/api-backend/` y `web/portal/` existen pero todos sus archivos están vacíos; `api-backend` está excluido del workspace uv | Pasos 1 y 2 |
 | `voc-api-backend` corre con `voc-sa-ml-backend` (escritura en todo el dataset), sin IAP, con *ingress* abierto | Paso 1: cuenta `voc-sa-portal-api`, permisos por tabla, IAP |
 | CI, CD, `cloudbuild.yaml`, `.dockerignore` y `.gcloudignore` no conocen la API ni el portal (`.gcloudignore` excluye `web/`); `tools/deploy_images.py` no fija la imagen de la API | Paso 1 |
 | `point_for`, `propose_risk_policy` y `drift_rates.rates` son puras pero viven en `ml-inference`, que importa BigQuery, Gemini y pyarrow | Pasos 5 y 8: se mueven a `voc-nlp` sin extras y `ml-inference` las re-exporta |
@@ -94,19 +94,47 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 
 ## 4. Verificaciones de la sesión (antes del paso 1)
 
-* [ ] `uv sync --all-packages` y las puertas de calidad actuales en verde (línea base).
-* [ ] Node 24 LTS disponible para CI y la imagen; en local, Node 26.12 sirve (`node --version`).
-* [ ] `npm create vite@latest` responde (hay acceso al registro de npm).
-* [ ] `bq query --dry_run` de `SELECT fecha, bank_id, sentiment, estrellas FROM bbva_voc_tds.review_predictions_current WHERE fecha >= '2026-07-01'`: anotar los bytes. La vista elige la última fila por reseña con una ventana, y eso puede impedir que el filtro por fecha pode particiones. Con más de 1 GB por consulta, el paso 3 materializa los agregados diarios.
+* [x] `uv sync --all-packages` y las puertas de calidad actuales en verde (línea base).
+* [x] Node 24 LTS disponible para CI y la imagen; en local, Node 26.12 sirve (`node --version`).
+* [x] `npm create vite@latest` responde (hay acceso al registro de npm).
+* [x] `bq query --dry_run` de `SELECT fecha, bank_id, sentiment, estrellas FROM bbva_voc_tds.review_predictions_current WHERE fecha >= '2026-07-01'`: anotar los bytes. La vista elige la última fila por reseña con una ventana, y eso puede impedir que el filtro por fecha pode particiones. Con más de 1 GB por consulta, el paso 3 materializa los agregados diarios.
 
 ## Terminado cuando
 
-* [ ] B1 y B2 tienen su resultado anotado y la ruta de IAP elegida.
-* [ ] B3: la lista de personas y roles está en la configuración cifrada de Pulumi (o el autor decidió desplegar solo con su cuenta al principio).
-* [ ] B4: las preguntas "antes de 2" tienen respuesta.
-* [ ] B5: cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
-* [ ] Las verificaciones de la sección 4 están marcadas.
+* [x] B1 y B2 tienen su resultado anotado y la ruta de IAP elegida (2026-10-25: IAP directo en Cloud Run con cliente de OAuth External).
+* [x] B3: el autor decidió desplegar solo con su cuenta al principio (2026-10-25); el paso 1 la pone en `portal_users` cifrada.
+* [x] B4: las preguntas "antes de 2" tienen respuesta (2026-10-25).
+* [ ] B5 (la #4 está aprobada, 2026-10-25): cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
+* [x] Las verificaciones de la sección 4 están marcadas (2026-10-25, resultados en "Avance").
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+### B1. Prueba de acceso (2026-10-25)
+
+* **Política de la organización:** no bloquea. La política efectiva de `iam.allowedPolicyMemberDomains` en el proyecto es `allValues: ALLOW` y `iam.managed.allowedPolicyMembers` no se aplica; IAM aceptó dar `roles/iap.httpsResourceAccessor` a correos de Gmail, `up.edu.mx` y `bbva.com`.
+* **IAP directo en Cloud Run:** `gcloud run deploy … --no-allow-unauthenticated --iap` es GA (gcloud 590). Con gcloud hay que dar `roles/run.invoker` al agente de IAP (`service-<número>@gcp-sa-iap.iam.gserviceaccount.com`); la consola lo hace sola.
+* **Cliente de OAuth:** el que gestiona Google solo admite identidades de la organización; con él, ni la cuenta del autor (Gmail) entró aunque tenía el permiso. El autor creó en la consola un cliente propio con audiencia **External** y lo aplicó a nivel de proyecto con `gcloud iap settings set`. El *client secret* no está en el repo; en el paso 1, Pulumi solo referencia la configuración de IAP del proyecto, no la crea (los clientes de OAuth no se crean por API).
+
+| Cuenta | Con el cliente de Google | Con el cliente propio (External) |
+| :--- | :--- | :--- |
+| Gmail del autor | *You don't have access* | Entra |
+| Segunda cuenta Gmail | *You don't have access* (aún sin permiso) | Entra |
+| `up.edu.mx` | *Internal server error 604* | Entra |
+| `bbva.com` | — | **No entra:** bloqueo del Workspace de BBVA |
+
+* **Ruta elegida:** IAP directo en Cloud Run, sin balanceador ni dominio (`S-04` resuelta). Implica subir `pulumi-gcp` a 8.x en el paso 1 (B2).
+* **BBVA:** según `S-03`, se pide la excepción al administrador del Workspace de BBVA y, mientras tanto, esas personas entran con una cuenta Gmail.
+* `voc-portal-spike` se borró al terminar. `iap.googleapis.com` queda habilitada.
+
+### Verificaciones de la sección 4 (2026-10-25)
+
+* **Línea base:** `uv sync --all-packages --locked`, Ruff (lint y formato), Pyrefly (0 errores) y Bandit sin hallazgos; las siete suites de CI en verde con su umbral de cobertura (voc-common 344 pruebas, 99.9 %; infra 128, 100 %; ingestion-worker 196, 96 %; sanitization-pipeline 130, 100 %; tools 50, 97 %; voc-nlp 139, 99 %; ml-inference 214, 98 %).
+* **Node:** 26.12.1 en local; Node 24.22.1 se obtiene con `npx node@24`. npm 11.20 y el registro responden (`vite` 8.3.5).
+* **BigQuery:** la consulta de `review_predictions_current` desde 2026-07-01 procesa como máximo 266 768 144 bytes (≈ 0.27 GB), bajo el límite de 1 GB. El paso 3 puede consultar la vista sin materializar los agregados diarios, y se revisa si crece el rango.
+
+### B5.4. Hash del actor sembrado (2026-10-25)
+
+* **Aprobada** por el autor la regla `actor_hash = hash_username_pii(correo, USER_HASH_SALT)`.
+* **Corroborado contra BigQuery:** `inference_runs.actor_hash` y `risk_policy.set_by_hash` tienen un único valor, `ab498e0e…4611`, y es exactamente el SHA-256 del correo del autor en minúsculas **sin sal** (`sha256("traslasnovenas@gmail.com")`). No coincide con la regla aprobada, que antepone la sal.
+* **Migrado (2026-10-25, con aprobación del autor):** se hizo una excepción puntual a la regla de solo agregar. Se reemplazó el hash sin sal por el hash con sal en las 58 filas que lo llevaban: `curation_topics` 35, `drift_policy` 10, `inference_runs` 7, `drift_policy_template` 2, `guidelines` 2, `model_versions` 1 y `risk_policy` 1. Los totales de cada tabla no cambiaron y no queda ninguna fila con el hash viejo. El origen del hash era solo el argumento `--actor-hash` de `seed`, `load-local`, `train` y `rescore`: no está en los JSON de `docs/analytics/`, en los cuerpos de los Schedulers ni en `ml_artifacts/`. El *time travel* del dataset (168 h) permite revertir hasta el 2026-11-01.
+* **Pendiente de seguir la regla:** los próximos `seed`, `load-local`, `train`, `rescore` y `promote` deben recibir el hash con sal (`tools/actor_hash.py`, paso 1), no el SHA-256 del correo.

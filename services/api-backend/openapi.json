@@ -1,0 +1,120 @@
+{
+  "components": {
+    "schemas": {
+      "HitlTask": {
+        "enum": [
+          "sentiment",
+          "aspects",
+          "topic"
+        ],
+        "title": "HitlTask",
+        "type": "string"
+      },
+      "MeResponse": {
+        "properties": {
+          "actor_hash": {
+            "title": "Actor Hash",
+            "type": "string"
+          },
+          "commit": {
+            "title": "Commit",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "reviewer_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/HitlTask"
+            },
+            "title": "Reviewer Tasks",
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "email",
+          "actor_hash",
+          "roles",
+          "reviewer_tasks",
+          "environment",
+          "commit"
+        ],
+        "title": "MeResponse",
+        "type": "object"
+      },
+      "Role": {
+        "enum": [
+          "lector",
+          "analista",
+          "revisor",
+          "administrador"
+        ],
+        "title": "Role",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "BBVA VoC Analyzer",
+    "version": "1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/me": {
+      "get": {
+        "description": "Cualquier cuenta con rol (todos incluyen al lector).",
+        "operationId": "me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Healthz Healthz Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # EPIC-7, anexo B: especificación anterior (no vigente)
 
-> **No se implementa.** Movido desde `epic_7.md` el 2026-10-25 para que no se confunda con el detalle vigente de [esta carpeta](README.md).
+> **No se implementa.** Movido desde `epic_7.md` el 2026-10-25 para que no se confunda con el detalle vigente de [esta carpeta](README.md). La carpeta `web/hitl-portal/` que cita se llama `web/portal/` desde el 2026-10-25.
 
 > Es la versión de esta épica anterior a la reescritura del 2026-10-22, escrita antes de la evidencia de EPIC-5. Se conserva por trazabilidad. Sus features se renombraron de 7.1–7.7 a B.1–B.7 para no confundirlas con las vigentes. **No se implementa** lo que contradiga lo anterior: Delora y `tnss_numeric_calibrated`, los 8 `ABSATopic`, la búsqueda de 768 dimensiones, el explicador de < 150 ms dentro del HITL, el umbral de entropía 0.65, el ranking por `priority_weight_score` y `hitl_triage_audit_log`.
 

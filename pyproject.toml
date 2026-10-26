@@ -17,11 +17,6 @@ dev = [
 
 [tool.uv.workspace]
 members = ["packages/*", "services/*", "infra"]
-# TEMPORAL: miembros con pyproject.toml aun vacio/ausente. Retirar cada
-# entrada al implementar el paquete correspondiente.
-exclude = [
-    "services/api-backend",
-]
 
 # torch solo en CPU en Linux (CI e imagen de ml-inference, D4): las ruedas de
 # PyPI traen CUDA y pesan varios GB. En macOS la rueda de PyPI ya es de CPU.
@@ -69,6 +64,7 @@ exclude = ["**/*.md"]
 minversion = "8.0"
 addopts = "-ra -q --import-mode=importlib --cov-report=term-missing"
 testpaths = ["packages/*/tests", "services/*/tests", "infra/tests"]
+markers = ["bigquery: consulta BigQuery de dev (fuera de CI, RUN_BIGQUERY_TESTS=1)"]
 
 [tool.bandit]
 # experiments/ no es código de producción: experiments/analytics es un proyecto

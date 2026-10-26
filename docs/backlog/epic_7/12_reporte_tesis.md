@@ -75,7 +75,7 @@ docs/thesis/
 
 ## 3. Construcción
 
-### 3.1 Canal de MDX (`web/hitl-portal/`)
+### 3.1 Canal de MDX (`web/portal/`)
 
 * Dependencias: `@mdx-js/rollup`, `remark-gfm`, `remark-math`, `rehype-mathjax` (fórmulas a SVG al construir), `rehype-slug`, `rehype-autolink-headings`, `mermaid` (cargado de forma perezosa) y `react-markdown` si no estaba.
 * `vite.config.ts`: el plugin de MDX con esos *plugins*, el alias `@thesis` → `../../docs/thesis` y `server.fs.allow` para leer fuera del proyecto.

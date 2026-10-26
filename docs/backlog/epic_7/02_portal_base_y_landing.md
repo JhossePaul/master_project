@@ -3,13 +3,13 @@
 * **Estado (2026-10-25):** Pendiente.
 * **Nivel:** imprescindible.
 * **Depende de:** paso 1 y las preguntas del [cuestionario](design_questions.md) marcadas **"antes de 2"**.
-* **Objetivo:** el proyecto `web/hitl-portal/` con la guía visual hecha código (tokens, tipografías, componentes base, primitivas de gráficas), la estructura de la aplicación (encabezado, navegación por rol, filtros globales en la URL) y la primera pantalla real: la landing.
+* **Objetivo:** el proyecto `web/portal/` con la guía visual hecha código (tokens, tipografías, componentes base, primitivas de gráficas), la estructura de la aplicación (encabezado, navegación por rol, filtros globales en la URL) y la primera pantalla real: la landing.
 
 ## 1. Proyecto
 
-`web/hitl-portal/` tiene 6 archivos vacíos (`package.json`, `vite.config.ts`, `Dockerfile`, `public/index.html`, `src/App.tsx`, `src/main.tsx`). Se borran y se crea el proyecto con la estructura de [`frontend_stack.md`](../../design/frontend_stack.md#31-estructura-de-webhitl-portal).
+`web/portal/` tiene 6 archivos vacíos (`package.json`, `vite.config.ts`, `Dockerfile`, `public/index.html`, `src/App.tsx`, `src/main.tsx`). Se borran y se crea el proyecto con la estructura de [`frontend_stack.md`](../../design/frontend_stack.md#31-estructura-de-webportal).
 
-1. `npm create vite@latest` con la plantilla `react-ts` dentro de `web/hitl-portal/` (o a mano con el mismo resultado). `index.html` queda en la raíz del proyecto.
+1. `npm create vite@latest` con la plantilla `react-ts` dentro de `web/portal/` (o a mano con el mismo resultado). `index.html` queda en la raíz del proyecto.
 2. Dependencias de ejecución: `react`, `react-dom`, `react-router`, `@tanstack/react-query`, `@tanstack/react-table`, `@tanstack/react-virtual`, `openapi-fetch`, `react-hook-form`, `zod`, `@hookform/resolvers`, `d3-scale`, `d3-shape`, `d3-array`, `d3-time`, `d3-time-format`, `d3-brush`, `d3-selection`, `dygraphs`, `date-fns`, `lucide-react`, `clsx`, `tailwind-merge`, `@fontsource-variable/source-serif-4`, `@fontsource-variable/source-sans-3`, `@fontsource/source-code-pro`. Mermaid, MathJax y MDX entran en los pasos que los usan.
 3. Desarrollo: `typescript`, `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`, `@biomejs/biome`, `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `msw`, `vitest-axe`, `openapi-typescript`, `@types/d3-*`.
 4. shadcn/ui: `npx shadcn@latest init` (Tailwind 4, sin estilo base de color: los colores salen de `tokens.css`), y los componentes `button`, `card`, `dialog`, `dropdown-menu`, `popover`, `select`, `tabs`, `tooltip`, `badge`, `checkbox`, `radio-group`, `textarea`, `input`, `label`, `separator`, `skeleton`, `sonner` (avisos) y `table`.

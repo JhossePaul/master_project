@@ -146,6 +146,7 @@ from voc_common.schemas import (
 )
 from voc_common.structured_log import FORBIDDEN_FIELDS, log_event
 from voc_common.text_utils import (
+    actor_hash,
     contar_palabras,
     hash_username_pii,
     limpiar_texto_bancario,
@@ -214,6 +215,7 @@ __all__ = [
     "SequentialBatchIngestionRequest",
     "Settings",
     "UNKNOWN_APP_VERSION",
+    "actor_hash",
     "contar_palabras",
     "ensure_utc",
     "get_settings",

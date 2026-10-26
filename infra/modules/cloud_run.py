@@ -1,5 +1,7 @@
 """Servicios Gen2 y sanitización efímera con identidad dedicada."""
 
+import hashlib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Final
 
@@ -14,10 +16,15 @@ from infra.modules.kms_iam import (
     create_historical_job_access,
 )
 from infra.modules.pubsub import PubSubResources
-from infra.modules.secrets import KAGGLE_SECRET_ID, SecretResources
+from infra.modules.secrets import (
+    KAGGLE_SECRET_ID,
+    PORTAL_ROLES_SECRET_ID,
+    SecretResources,
+)
 from infra.modules.storage_bq import StorageAndBqResources
 
 ARTIFACT_REPOSITORY_ID: Final = "voc-containers-repo"
+API_SERVICE_NAME: Final = "voc-api-backend"
 # Solo digest inmutable: un tag mutable (p. ej. :latest) no dispara redeploys.
 DigestImage = Annotated[
     str,
@@ -86,6 +93,10 @@ class CloudRunResources:
     ml_promote_job: gcp.cloudrunv2.Job | None = None
     ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
     ml_executors: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+    # IAP directo en voc-api-backend: el agente de IAP invoca el servicio y
+    # cada persona de portal_users recibe iap.httpsResourceAccessor.
+    iap_invoker: gcp.cloudrunv2.ServiceIamMember | None = None
+    iap_accessors: tuple[gcp.iap.WebCloudRunServiceIamMember, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -251,6 +262,7 @@ def create_cloud_run_resources(
     historical_config: HistoricalJobConfig | None = None,
     ingestion_v2_enabled: bool = False,
     secrets: SecretResources | None = None,
+    portal_emails: Sequence[str] = (),
 ) -> CloudRunResources:
     """Fase 2: define contenedores y permisos; no ejecuta jobs ni builds."""
     execution = ingestion_execution or IngestionExecutionConfig()
@@ -320,6 +332,8 @@ def create_cloud_run_resources(
         name="voc-ingestion-history-job",
         project=project_id,
         location=region,
+        # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+        deletion_protection=False,
         template={
             "task_count": 1,
             "parallelism": 1,
@@ -372,25 +386,45 @@ def create_cloud_run_resources(
         env: dict[str, pulumi.Input[str]],
         timeout_sec: int = 900,
         wait_for: list[pulumi.Resource] | None = None,
+        *,
+        cpu: str = "1",
+        memory: str = "1Gi",
+        min_instances: int = 0,
+        max_instances: int = 2,
+        ingress: str | None = None,
+        iap_enabled: bool | None = None,
     ) -> gcp.cloudrunv2.Service:
+        # ingress e iap_enabled solo se declaran cuando se piden: los
+        # servicios existentes no deben cambiar en `pulumi preview`.
+        extra: dict[str, object] = {}
+        if ingress is not None:
+            extra["ingress"] = ingress
+        if iap_enabled is not None:
+            extra["iap_enabled"] = iap_enabled
         return gcp.cloudrunv2.Service(
             name,
             name=name,
             project=project_id,
             location=region,
+            # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+            deletion_protection=False,
+            **extra,
             # La API devuelve este valor por defecto a nivel de servicio;
             # declararlo evita un diff permanente en `pulumi preview`.
             scaling={"min_instance_count": 0},
             template={
                 "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
                 "service_account": account,
-                "scaling": {"min_instance_count": 0, "max_instance_count": 2},
+                "scaling": {
+                    "min_instance_count": min_instances,
+                    "max_instance_count": max_instances,
+                },
                 "timeout": f"{timeout_sec}s",
                 "containers": [
                     {
                         "image": image,
                         "resources": {
-                            "limits": {"cpu": "1", "memory": "1Gi"},
+                            "limits": {"cpu": cpu, "memory": memory},
                             "cpu_idle": True,
                         },
                         "envs": [
@@ -419,6 +453,8 @@ def create_cloud_run_resources(
         name="voc-sanitization-job",
         project=project_id,
         location=region,
+        # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+        deletion_protection=False,
         template={
             "task_count": 1,
             "parallelism": 1,
@@ -455,17 +491,72 @@ def create_cloud_run_resources(
         },
         opts=opts,
     )
-    # El backend (EPIC-5) es opcional para activar ingesta y sanitización.
-    backend = (
-        service(
-            "voc-api-backend",
-            images.api_backend,
-            security.sa_ml_and_backend.email,
-            common,
+    # La API y el portal (EPIC-7) son opcionales para activar la ingesta.
+    backend = None
+    iap_invoker = None
+    iap_accessors: list[gcp.iap.WebCloudRunServiceIamMember] = []
+    if images.api_backend is not None:
+        # Agente de IAP: su correo trae el número del proyecto, que forma la
+        # audiencia del JWT (/projects/<número>/locations/<región>/services/…).
+        iap_agent = gcp.projects.ServiceIdentity(
+            "voc-iap-service-agent",
+            project=project_id,
+            service="iap.googleapis.com",
+            opts=opts,
         )
-        if images.api_backend is not None
-        else None
-    )
+        portal_env: dict[str, pulumi.Input[str]] = {
+            "ENVIRONMENT": environment,
+            "USER_HASH_SALT": user_hash_salt,
+            "GCP_PROJECT_ID": project_id,
+            "GCP_REGION": region,
+            "BQ_DATASET_ID": storage_bq.dataset.dataset_id,
+            "PORTAL_AUTH_MODE": "iap",
+            "PORTAL_DATA": "bigquery",
+            "PORTAL_ROLES_SECRET": PORTAL_ROLES_SECRET_ID,
+            "IAP_AUDIENCE": iap_agent.email.apply(
+                lambda email: (
+                    f"/projects/{email.split('@')[0].removeprefix('service-')}"
+                    f"/locations/{region}/services/{API_SERVICE_NAME}"
+                )
+            ),
+            "DLP_INSPECT_TEMPLATE": dlp.inspect_template.id,
+            "DLP_DEIDENTIFY_TEMPLATE": dlp.deidentify_template.id,
+        }
+        backend = service(
+            API_SERVICE_NAME,
+            images.api_backend,
+            security.sa_portal_api.email,
+            portal_env,
+            timeout_sec=300,
+            ingress="INGRESS_TRAFFIC_ALL",
+            iap_enabled=True,
+        )
+        iap_invoker = gcp.cloudrunv2.ServiceIamMember(
+            "voc-api-iap-invoker",
+            project=project_id,
+            location=region,
+            name=backend.name,
+            role="roles/run.invoker",
+            member=iap_agent.email.apply(
+                lambda email: f"serviceAccount:{email}"
+            ),
+            opts=opts,
+        )
+        for email in portal_emails:
+            # El nombre del recurso lleva un hash, no el correo, y el miembro
+            # es secreto: ni la URN ni el preview exponen a las personas.
+            digest = hashlib.sha256(email.encode()).hexdigest()[:10]
+            iap_accessors.append(
+                gcp.iap.WebCloudRunServiceIamMember(
+                    f"voc-portal-iap-{digest}",
+                    project=project_id,
+                    location=region,
+                    cloud_run_service_name=backend.name,
+                    role="roles/iap.httpsResourceAccessor",
+                    member=pulumi.Output.secret(f"user:{email}"),
+                    opts=opts,
+                )
+            )
     invoker = security.sa_scheduler_invoker.email.apply(
         lambda email: f"serviceAccount:{email}"
     )
@@ -529,6 +620,8 @@ def create_cloud_run_resources(
                 name=spec.name,
                 project=project_id,
                 location=region,
+                # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+                deletion_protection=False,
                 template={
                     "task_count": 1,
                     "parallelism": 1,
@@ -606,4 +699,6 @@ def create_cloud_run_resources(
         ml_promote_job=ml_jobs.get(ML_PROMOTE_JOB.command),
         ml_invokers=tuple(ml_invokers),
         ml_executors=tuple(ml_executors),
+        iap_invoker=iap_invoker,
+        iap_accessors=tuple(iap_accessors),
     )

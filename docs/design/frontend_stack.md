@@ -1,6 +1,6 @@
 # Stack y arquitectura del portal
 
-> **Estado (2026-10-25): versión 0.1.** Fija cómo se construye y se despliega el portal (`web/hitl-portal/`) y su API (`services/api-backend/`). El autor delegó estas elecciones (2026-10-25); cada una lleva su criterio para poder revisarla. La apariencia está en la [guía visual](visual_guide.md).
+> **Estado (2026-10-25): versión 0.1.** Fija cómo se construye y se despliega el portal (`web/portal/`) y su API (`services/api-backend/`). El autor delegó estas elecciones (2026-10-25); cada una lleva su criterio para poder revisarla. La apariencia está en la [guía visual](visual_guide.md).
 
 ## 1. Despliegue
 
@@ -66,10 +66,10 @@ flowchart LR
 
 **Versiones:** al crear el proyecto se instala la estable más reciente de cada paquete y `package-lock.json` las fija; se commitea el lock. No se suben versiones mayores a mitad de la épica sin motivo.
 
-### 3.1 Estructura de `web/hitl-portal/`
+### 3.1 Estructura de `web/portal/`
 
 ```
-web/hitl-portal/
+web/portal/
 ├── index.html                # Vite lo espera en la raíz (hoy hay uno vacío en public/: se borra)
 ├── package.json, package-lock.json, tsconfig*.json, vite.config.ts, biome.json, .nvmrc
 ├── public/                   # favicon y logos oficiales en SVG
@@ -110,11 +110,11 @@ web/hitl-portal/
 ## 4. Desarrollo local
 
 1. API: `uv run --package api-backend uvicorn api_backend.main:app --reload --port 8080` desde la raíz, con `PORTAL_AUTH_MODE=local` y `PORTAL_LOCAL_USER=<correo>` y `PORTAL_LOCAL_ROLES=lector,analista,revisor,administrador`. Ese modo solo existe con `ENVIRONMENT=local`: la configuración falla al arrancar si se pide en otro ambiente.
-2. Portal: `npm run dev` en `web/hitl-portal/`.
+2. Portal: `npm run dev` en `web/portal/`.
 3. Sin GCP, la API arranca con `PORTAL_DATA=fixtures`, que lee datos sintéticos de `services/api-backend/tests/fixtures/`, para trabajar en el diseño sin costo ni credenciales.
 
 ## 5. CI y CD
 
 * **CI** (`.github/workflows/ci.yaml`): se suman el `pytest` de `api_backend` con cobertura ≥ 85 %, un trabajo de Node (`npm ci`, `npm run check`, `npm test`, `npm run build`) y la imagen de `api-backend` con su prueba de humo (usuario sin root, `/healthz` responde y sirve `index.html`).
 * **CD** (`cd-cloud-build.yaml`): agrega `web/**` y `docs/thesis/**` a las rutas que disparan la construcción de `api-backend`.
-* **Imagen:** `services/api-backend/Dockerfile` multi-stage: `node` construye el portal → `uv` instala `api-backend` y `voc-common` → `python:3.11-slim` sin root con `dist/` en `/app/static`. El `.dockerignore` (lista de permitidos) suma `services/api-backend`, `web/hitl-portal` (sin `node_modules` ni `dist`), `docs/thesis` y los JSON de métricas de `docs/analytics` que usa el reporte.
+* **Imagen:** `services/api-backend/Dockerfile` multi-stage: `node` construye el portal → `uv` instala `api-backend` y `voc-common` → `python:3.11-slim` sin root con `dist/` en `/app/static`. El `.dockerignore` (lista de permitidos) suma `services/api-backend`, `web/portal` (sin `node_modules` ni `dist`), `docs/thesis` y los JSON de métricas de `docs/analytics` que usa el reporte.

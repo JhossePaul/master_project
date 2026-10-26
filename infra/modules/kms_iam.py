@@ -12,6 +12,7 @@ class SecurityResources:
     sa_scheduler_invoker: gcp.serviceaccount.Account
     sa_sanitization_worker: gcp.serviceaccount.Account
     sa_ml_and_backend: gcp.serviceaccount.Account
+    sa_portal_api: gcp.serviceaccount.Account
     kms_crypto_key_id: pulumi.Output[str] | None
     iam_members: list[gcp.projects.IAMMember] = field(default_factory=list)
 
@@ -77,6 +78,16 @@ def create_security_resources(
         ),
     )
 
+    # API y portal (EPIC-7): lee el dataset y escribe solo en las tablas de
+    # curaduría y HITL (permisos por tabla en analytics_bq).
+    portal_api = create_account(
+        "voc-sa-portal-api",
+        (
+            "roles/bigquery.jobUser",
+            "roles/dlp.user",
+        ),
+    )
+
     kms_crypto_key_id: pulumi.Output[str] | None = None
     if enable_cmek:
         keyring = gcp.kms.KeyRing(
@@ -104,6 +115,7 @@ def create_security_resources(
         sa_scheduler_invoker=scheduler,
         sa_sanitization_worker=sanitization,
         sa_ml_and_backend=ml_backend,
+        sa_portal_api=portal_api,
         kms_crypto_key_id=kms_crypto_key_id,
         iam_members=iam_members,
     )

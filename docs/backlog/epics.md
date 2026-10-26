@@ -17,7 +17,7 @@ El proyecto se divide en **8 épicas** para construir y desplegar en Google Clou
 | **EPIC-4** | Sanitización PII, persistencia idempotente y cobertura TDS | **Cerrada** | `services/sanitization-pipeline/` | [`epic_4.md`](epic_4.md) |
 | **EPIC-5** | Planteamiento analítico y experimentación del core NLP | **Cerrada** (2026-10-23) | `experiments/analytics/`, `docs/analytics/` | [`epic_5.md`](epic_5.md) |
 | **EPIC-6** | Despliegue del core analítico: contratos, infraestructura e inferencia | **En curso** (6.1 a 6.5 cerradas; abierta 6.6, carga y validación en dev) | `packages/voc-common/`, `packages/voc-nlp/`, `infra/`, `services/ml-inference/` | [`epic_6.md`](epic_6.md) |
-| **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Planificada** (2026-10-25; detalle por paso en [`epic_7/`](epic_7/README.md)) | `services/api-backend/`, `web/hitl-portal/`, `docs/design/`, `docs/governance/`, `docs/thesis/` | [`epic_7.md`](epic_7.md) |
+| **EPIC-7** | API (FastAPI), búsqueda vectorial, explicabilidad, portal web HITL y gobernanza | **Planificada** (2026-10-25; detalle por paso en [`epic_7/`](epic_7/README.md)) | `services/api-backend/`, `web/portal/`, `docs/design/`, `docs/governance/`, `docs/thesis/` | [`epic_7.md`](epic_7.md) |
 | **EPIC-8** | Pendientes técnicos (respaldo en GCS de los insumos locales y otras deudas) | **Abierta** (lista) | — | [`epic_8.md`](epic_8.md) |
 
 Orden: cada épica usa los contratos y recursos de las anteriores. EPIC-6 empieza al aprobarse el registro de decisión de EPIC-5 (5.8), y EPIC-7 lee lo que despliega EPIC-6.
@@ -123,7 +123,7 @@ Al 2026-10-18 la ingeniería de extracción queda **cerrada**: el histórico est
 ### EPIC-7: Exposición (FastAPI), Búsqueda Vectorial, Explicabilidad, Portal Web HITL y Gobernanza
 
 * **Estado:** **Planificada** (2026-10-25; antes EPIC-6). Lo que falta para empezar está en la feature 7.0 y el detalle por paso, en [`epic_7/`](epic_7/README.md).
-* **Objetivo técnico:** construir la capa de consumo (`services/api-backend/` y `web/hitl-portal/`): *Satisfaction Gap*, búsqueda semántica de causa raíz, explicabilidad local (atribución por oclusión), protocolo HITL, frontales de curaduría y artefactos normativos (*Data Card*, *Model Card*, matriz FMEA).
+* **Objetivo técnico:** construir la capa de consumo (`services/api-backend/` y `web/portal/`): *Satisfaction Gap*, búsqueda semántica de causa raíz, explicabilidad local (atribución por oclusión), protocolo HITL, frontales de curaduría y artefactos normativos (*Data Card*, *Model Card*, matriz FMEA).
 * **Alcance (reescrito el 2026-10-22, P8-12; planificado el 2026-10-25):** preparación (7.0), API (7.1), seguridad y roles (7.2), landing (7.3), cockpit diario (7.5), HITL de sentimiento, aspectos y tópicos (7.7), administración (7.10), Explorador con búsqueda y XAI (7.6), alertas de deriva (7.8), MLOps y AIOps (7.9), documentos de gobernanza (7.11), pruebas (7.12) y, al final con prioridad mínima, el reporte de la tesis (7.4), con alcance por niveles para la presentación.
 
 ---

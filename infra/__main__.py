@@ -10,7 +10,10 @@ from voc_common.config import (
 )
 
 from infra.modules.alerting import create_alerting_resources
-from infra.modules.analytics_bq import create_analytics_bq
+from infra.modules.analytics_bq import (
+    create_analytics_bq,
+    create_portal_data_access,
+)
 from infra.modules.apis import enable_project_apis
 from infra.modules.cloud_run import (
     ARTIFACT_REPOSITORY_ID,
@@ -27,7 +30,7 @@ from infra.modules.kms_iam import (
     create_security_resources,
 )
 from infra.modules.pubsub import create_pubsub_resources
-from infra.modules.secrets import create_secrets
+from infra.modules.secrets import create_secrets, parse_portal_users
 from infra.modules.storage_bq import create_storage_and_bq_resources
 
 gcp_config = pulumi.Config("gcp")
@@ -81,9 +84,18 @@ pubsub = create_pubsub_resources(
     project_id=project_id,
     alert_publisher_email=security.sa_ml_and_backend.email,
 )
+# Personas del portal (correo -> roles), cifradas en la configuración; sin
+# ellas el secreto de roles queda sin versión y nadie entra.
+portal_users = parse_portal_users(config.get_object("portal_users"))
+portal_users_version = config.get_int("portal_users_version") or 1
 # Fase 1: el autor carga el valor antes de desplegar voc-ml-rescoring.
 secrets = create_secrets(
-    project_id, security.sa_ml_and_backend, list(project_apis.values())
+    project_id,
+    security.sa_ml_and_backend,
+    list(project_apis.values()),
+    portal_reader=security.sa_portal_api,
+    portal_users=portal_users,
+    portal_users_version=portal_users_version,
 )
 alerting = (
     create_alerting_resources(
@@ -106,6 +118,13 @@ analytics_bq = create_analytics_bq(
     security.kms_crypto_key_id,
     is_dev=environment.strip().lower() == "dev",
     deps=storage_bq.bq_deps,
+)
+portal_data_access = create_portal_data_access(
+    project_id,
+    storage_bq.dataset,
+    analytics_bq,
+    security.sa_portal_api,
+    deps=list(project_apis.values()),
 )
 storage_access = create_datalake_access(
     storage_bq.datalake_bucket,
@@ -148,6 +167,7 @@ if deploy_workloads:
         historical_config=historical_config,
         ingestion_v2_enabled=config.get_bool("ingestion_v2_enabled") or False,
         secrets=secrets,
+        portal_emails=sorted(portal_users),
         user_hash_salt=user_hash_salt,
         environment=environment,
         free_tier_mode=free_tier,
@@ -189,6 +209,7 @@ pulumi.export(
     "sa_sanitization_worker_email", security.sa_sanitization_worker.email
 )
 pulumi.export("sa_ml_and_backend_email", security.sa_ml_and_backend.email)
+pulumi.export("sa_portal_api_email", security.sa_portal_api.email)
 pulumi.export("kms_crypto_key_id", security.kms_crypto_key_id)
 pulumi.export("kaggle_secret_id", secrets.kaggle_token.secret_id)
 pulumi.export("dlp_inspect_template_id", dlp_templates.inspect_template.id)

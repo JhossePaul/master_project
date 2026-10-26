@@ -15,5 +15,10 @@
 !packages/voc-nlp/src/
 !services/ml-inference/pyproject.toml
 !services/ml-inference/src/
+!services/api-backend/pyproject.toml
+!services/api-backend/src/
+!web/portal/
+web/portal/node_modules/
+web/portal/dist/
 **/__pycache__
 **/*.pyc
