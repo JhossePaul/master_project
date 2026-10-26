@@ -42,7 +42,7 @@
 
 * **Introducción y sección "Pendiente":** reescribir. Ya no hay filas por añadir de EPIC-5 a EPIC-7: se cierran aquí.
 * **F-15** (el Explorador amplía quién lee reseñas): calificar S, O, D y RPN con los controles del paso 6 (rol analista, sin descarga de texto, consultas no registradas, auditoría). Partida: RPN 50.
-* **F-19** (leer un pico de temas como un incidente): calificar con los controles del paso 3 (aviso en el panel del día y en la pestaña por versión, sin umbrales, participación habitual al lado). Partida: RPN 84.
+* **F-19** (leer un pico de temas como un incidente): **ya calificada el 2026-10-26, al cerrar el paso 3** (S 1, O 1, D 1, RPN 1, decisión del autor: hallazgo de la investigación, sin producción); solo se confirma que la fila cita los controles del cockpit.
 * **F-17 y F-18:** quitar "incidente" donde ya no aplica.
 * ***Label Noise Bias*:** el título deja de decir "propuesta, no validada": está confirmado con el oro *test* (RPN 60).
 * **Filas nuevas del portal:**

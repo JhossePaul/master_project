@@ -1,6 +1,6 @@
 # Paso 3. Feature 7.5: Cockpit diario de KPIs
 
-* **Estado (2026-10-26):** Implementado, probado y medido contra BigQuery de dev. Falta desplegarlo y anotar F-19 en la FMEA (paso 10).
+* **Estado (2026-10-26):** Implementado, probado y medido contra BigQuery de dev. Falta desplegarlo.
 * **Nivel:** imprescindible; la pestaña por versión, importante.
 * **Depende de:** paso 2.
 * **Objetivo:** el seguimiento diario de los cinco bancos, con solo agregados (rol lector): tarjetas con PPI, series diarias crudas con los temas del día, familias y marca `u` en nivel y en anomalía, tópicos vigentes, la matriz estrellas × texto, la comparación entre bancos y la pestaña por versión de la app.
@@ -112,7 +112,7 @@ Cada bloque va en un `ChartFrame` con "Cómo leerla". Desde cualquier bloque, el
 * [x] La serie diaria de 12 meses de los cinco bancos carga en menos de 3 segundos con la caché vacía, y su consulta factura menos de 1 GB (anotar la cifra). (533.5 MB y 2.7 s con la caché vacía; ver "Avance".)
 * [x] El panel del día muestra las dos listas con el aviso de descripción.
 * [x] La pestaña por versión reproduce las medianas por banco del reporte de 5.9 (BBVA: 39.7 % `NEG` y 18.5 % `u`), con la diferencia explicada si el corte de datos cambió. (BBVA 39.7 % y 18.5 %; ver la tabla en "Avance".)
-* [ ] F-19 (lectura de un pico como incidente) queda calificada en la FMEA con los controles de esta pantalla (aviso, sin umbrales, participación habitual al lado); se anota en el paso 10.
+* [x] F-19 (lectura de un pico como incidente) queda calificada en la FMEA con los controles de esta pantalla (aviso, sin umbrales, participación habitual al lado). (Calificada el 2026-10-26; ver "Avance".)
 
 ## Decisiones al implementar
 
@@ -145,4 +145,4 @@ Cada bloque va en un `ChartFrame` con "Cómo leerla". Desde cualquier bloque, el
 | SANTANDER | 28.6 % | 28.6 % | 7.7 % | 7.7 % | 176 / 176 |
 
   La cobertura de versión reconocida es 90.8 % (BBVA) frente al 90.9 % global del reporte. Las diferencias de una décima son del corte de datos (el reporte es del 2026-10-23). La primera comparación salió con 18.3 % de `u` en BBVA porque la base eran todas las negativas; con la base del reporte (dos palabras o más con etiqueta) coincide. Dos errores que la comparación y el `dry_run` destaparon: `OTRAS` se calculaba con negativas en vez de reseñas y la consulta de familias en nivel no compilaba en BigQuery (alias repetido).
-* **Pendiente:** anotar F-19 en la FMEA en el paso 10.
+* **F-19 calificada (2026-10-26, decisión del autor):** S 1, O 1, D 1 (RPN 1), con los controles de esta pantalla; es un hallazgo de la investigación y el producto no está en producción. Quedó escrita en la [FMEA](../../governance/ethical_fmea_matrix.md); el paso 10 solo la confirma.
