@@ -8,8 +8,10 @@ import {
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
+import { syntheticMonthly, syntheticTopics } from "@/test/handlers";
 import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
+import { shiftMonths } from "./MonthlyBlock";
 import { explorerUrl } from "./shared";
 
 const graphs = vi.hoisted(() => ({
@@ -256,6 +258,185 @@ describe("explorerUrl", () => {
       }),
     ).toBe(
       "/explorador?bancos=BBVA&desde=2026-01-01&hasta=2026-02-01&familia=FA&sentimiento=NEG",
+    );
+  });
+});
+
+describe("cockpit, barra fija y secciones", () => {
+  beforeEach(() => {
+    graphs.options.length = 0;
+  });
+
+  it("la barra dice cuántos bancos hay y marca el atajo activo", async () => {
+    renderApp("/cockpit?bancos=BBVA,AZTECA");
+
+    expect(
+      await screen.findByRole("button", {
+        name: "2 de 5 bancos seleccionados",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "90 días" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "30 días" }));
+
+    expect(screen.getByRole("button", { name: "30 días" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "90 días" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("el menú sigue la sección que está a la vista al hacer scroll", async () => {
+    renderApp("/cockpit");
+    const menu = await screen.findByRole("button", { name: /Sección:/ });
+    const tops: Record<string, number> = {
+      resumen: -900,
+      serie: -600,
+      mensual: -300,
+      familias: 120,
+      topicos: 700,
+    };
+    const spy = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: tops[this.id] ?? 2000 } as DOMRect;
+      });
+
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+
+    await waitFor(() => expect(menu).toHaveTextContent("Familias"));
+    spy.mockRestore();
+  });
+
+  it("la barra es fija y trae el menú de secciones", async () => {
+    renderApp("/cockpit");
+
+    const menu = await screen.findByRole("button", { name: /Sección:/ });
+    const bar = menu.closest("search") as HTMLElement;
+    expect(bar.className).toContain("sticky");
+    expect(menu).toHaveTextContent("Último mes por banco");
+
+    await userEvent.click(menu);
+
+    for (const name of [
+      "Serie diaria",
+      "Gráficas mensuales",
+      "Familias",
+      "Tópicos",
+      "Estrellas × texto",
+      "Comparación entre bancos",
+    ]) {
+      expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
+    }
+  });
+});
+
+describe("cockpit, ajustes de la primera pasada", () => {
+  it("las tarjetas comparan con el mes anterior si se pide", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("heading", { name: "Banco Azul" });
+    expect((await screen.findAllByText(/frente a sep 2025/)).length).toBe(15);
+
+    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
+
+    expect(screen.getAllByText(/frente a ago 2026/)).toHaveLength(15);
+  });
+
+  it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
+    renderApp("/cockpit");
+
+    const item = (
+      await screen.findByText("Inicio de sesión que falla")
+    ).closest("li") as HTMLElement;
+
+    expect(within(item).getByText("Ingeniería")).toBeInTheDocument();
+    expect(
+      within(item).getByText("Acceso y autenticación"),
+    ).toBeInTheDocument();
+    expect(item).not.toHaveTextContent("sin familia");
+  });
+
+  it("un tópico sin familias lo dice", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () =>
+        HttpResponse.json(
+          syntheticTopics().map((t) => ({ ...t, families: [] })),
+        ),
+      ),
+    );
+    renderApp("/cockpit");
+
+    expect(
+      (await screen.findAllByText("sin familia asociada")).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("la anomalía de familias muestra el z de cada mes", async () => {
+    const { container } = renderApp("/cockpit");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Anomalía" }),
+    );
+
+    const titles = [...container.querySelectorAll("svg title")].map(
+      (t) => t.textContent,
+    );
+
+    expect(titles.some((t) => t?.includes("z = 4.6"))).toBe(true);
+    expect(screen.getByText(/menos de lo habitual/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Habla de una actualización (u)"),
+    ).toBeInTheDocument();
+  });
+
+  it("las gráficas mensuales ocultan los meses con pocas reseñas", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/monthly", () =>
+        HttpResponse.json(
+          syntheticMonthly().flatMap((r) => [
+            r,
+            {
+              ...r,
+              period: "2024-01",
+              ppi: r.ppi && { ...r.ppi, n_unlabeled: 5 },
+              raw: r.raw && { ...r.raw, n_unlabeled: 5 },
+            },
+          ]),
+        ),
+      ),
+    );
+    renderApp("/cockpit");
+    const frame = (
+      await screen.findByText("Reseñas negativas por mes")
+    ).closest("div")?.parentElement?.parentElement as HTMLElement;
+
+    await userEvent.click(
+      within(frame).getByRole("button", { name: "Ver datos" }),
+    );
+
+    expect(within(frame).queryByText("2024-01")).not.toBeInTheDocument();
+    expect(within(frame).getAllByText("2026-09").length).toBeGreaterThan(0);
+    expect(screen.getByText(/menos de 100 reseñas/)).toBeInTheDocument();
+  });
+
+  it("shiftMonths cruza el año", () => {
+    expect(shiftMonths("2026-02", -3)).toBe("2025-11");
+    expect(shiftMonths("2026-09", -23)).toBe("2024-10");
+  });
+
+  it("los encabezados de las tablas se quedan fijos", async () => {
+    renderApp("/cockpit?vista=version");
+    const table = await screen.findByRole("table");
+
+    expect(within(table).getAllByRole("columnheader")[0]?.className).toContain(
+      "sticky",
     );
   });
 });

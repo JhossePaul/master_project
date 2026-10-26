@@ -259,6 +259,7 @@ export interface components {
             open_alerts: number;
             /** Period */
             period: string | null;
+            previous_month: components["schemas"]["CardValues"] | null;
             previous_year: components["schemas"]["CardValues"] | null;
             quejas_4_5: components["schemas"]["Estimate"] | null;
         };

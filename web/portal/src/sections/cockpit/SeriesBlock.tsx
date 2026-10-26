@@ -259,7 +259,7 @@ export function SeriesBlock({
       <ChartFrame
         kicker="Serie diaria"
         title={spec.label}
-        subtitle="Por día (UTC), una línea por banco"
+        subtitle="Por día (UTC), una línea por banco. El rango de la barra de filtros aplica a esta serie."
         method="raw"
         actions={
           <OpenInExplorer

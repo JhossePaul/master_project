@@ -1,9 +1,11 @@
 import { extent } from "d3-array";
 import { scaleLinear, scaleTime } from "d3-scale";
+import { useState } from "react";
 import { type MonthlyKpi, useMonthly } from "@/api/kpis";
 import { Axis, GridLines, Line, Points } from "@/charts/primitives";
 import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
+import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import {
   formatMonth,
@@ -13,6 +15,13 @@ import {
   formatStarsInterval,
 } from "@/lib/format";
 import { LoadingBlock, monthDate, OpenInExplorer } from "./shared";
+
+const MIN_REVIEWS = 100;
+const WINDOWS = [
+  { key: 12, label: "12 meses" },
+  { key: 24, label: "24 meses" },
+  { key: 0, label: "Todo" },
+] as const;
 
 const W = 300;
 const H = 150;
@@ -204,23 +213,59 @@ export function MonthlyBlock({
   to: string;
 }) {
   const monthly = useMonthly(banks);
+  const [months, setMonths] = useState<12 | 24 | 0>(24);
   if (monthly.isPending) return <LoadingBlock />;
   if (monthly.isError)
     return (
       <ErrorState error={monthly.error} onRetry={() => monthly.refetch()} />
     );
+  const latest = monthly.data
+    .map((r) => r.period)
+    .sort()
+    .at(-1);
+  const cutoff = latest && months > 0 ? shiftMonths(latest, -(months - 1)) : "";
+  const rows = monthly.data.filter(
+    (r) =>
+      r.period >= cutoff &&
+      (r.ppi?.n_unlabeled ?? r.raw?.n_unlabeled ?? 0) >= MIN_REVIEWS,
+  );
   return (
     <div className="grid gap-6">
+      <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
+        <legend className="sr-only">Ventana de las gráficas mensuales</legend>
+        <span className="text-sm text-text-muted">Meses a mostrar:</span>
+        {WINDOWS.map(({ key, label }) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={months === key ? "primary" : "secondary"}
+            aria-pressed={months === key}
+            onClick={() => setMonths(key)}
+          >
+            {label}
+          </Button>
+        ))}
+        <span className="text-xs text-text-muted">
+          Se ocultan los meses con menos de {MIN_REVIEWS} reseñas.
+        </span>
+      </fieldset>
       {(["neg", "gap_estrellas"] as const).map((metric) => (
         <MonthlyChart
           key={metric}
           metric={metric}
           banks={banks}
-          rows={monthly.data}
+          rows={rows}
           from={from}
           to={to}
         />
       ))}
     </div>
   );
+}
+
+/** "2026-09" desplazado ``n`` meses. */
+export function shiftMonths(period: string, n: number): string {
+  const [year, month] = period.split("-").map(Number) as [number, number];
+  const index = year * 12 + (month - 1) + n;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
 }

@@ -64,6 +64,16 @@
             ],
             "title": "Period"
           },
+          "previous_month": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardValues"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previous_year": {
             "anyOf": [
               {
@@ -91,6 +101,7 @@
           "neg",
           "gap_estrellas",
           "quejas_4_5",
+          "previous_month",
           "previous_year",
           "model_version",
           "gold_version",

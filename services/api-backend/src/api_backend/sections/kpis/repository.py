@@ -293,7 +293,8 @@ class BigQueryKpisRepository:
 
     def family_drift(self, banks: Sequence[str]) -> list[FamilyDrift]:
         sql = (
-            "SELECT bank_id, period, metric, z, threshold, alert "  # nosec B608
+            "SELECT bank_id, SUBSTR(CAST(period AS STRING), 1, 7) AS period, "  # nosec B608
+            "metric, z, threshold, alert "
             f"FROM {self._table('drift_metrics')} "
             f"WHERE (STARTS_WITH(metric, '{FAMILY_METRIC_PREFIX}') "
             f"OR metric = '{UPDATE_METRIC}') AND bank_id IN UNNEST(@banks) "

@@ -215,13 +215,24 @@ El autor revisó el cockpit en dev con datos reales. Esta sección guarda los co
 ### Plan por pasadas
 
 1. **Corrección de datos de la curaduría** (arriba): hecha el 2026-10-26.
-2. **Primera pasada del cockpit:** cruce de periodos de las anomalías (API, con prueba), anomalía con ventana de 24 meses y leyenda, familias (altura fija, leyenda vertical, `u` aparte, prompt visible), tópicos (audiencia junto al nombre, familias con nombre), encabezados de tabla fijos, barra de filtros (texto, estado activo, nota del rango, fija), franja con la sección a la vista, selector de ventana en las gráficas mensuales y ocultar meses con pocas reseñas, selector de comparación en las tarjetas.
+2. **Primera pasada del cockpit (hecha el 2026-10-26, falta desplegar):** cruce de periodos de las anomalías (API, con prueba), anomalía con ventana de 24 meses y leyenda, familias (altura fija, leyenda vertical, `u` aparte, prompt visible), tópicos (audiencia junto al nombre, familias con nombre), encabezados de tabla fijos, barra de filtros (texto, estado activo, nota del rango, fija), franja con la sección a la vista, selector de ventana en las gráficas mensuales y ocultar meses con pocas reseñas, selector de comparación en las tarjetas.
 3. **Segunda pasada:** suavizado y franja de leyenda de la serie diaria, y la vista por versión nueva (ruta de API, barras apiladas, filtro de sentimiento).
 
 ### Terminado cuando (revisión)
 
-* [x] `curation_topics.families` trae las familias del CSV para los 19 tópicos útiles de `topics_v1` (hecho el 2026-10-26). [ ] El cockpit las muestra con nombre y "sin familia" solo aparece donde corresponde (queda en la primera pasada del frontal).
-* [ ] La anomalía de familias muestra z por familia y mes (24 meses) y se entiende sin leer el código.
-* [ ] Las tablas de datos tienen el encabezado fijo; la barra de filtros y la sección a la vista quedan fijas al hacer scroll.
+* [x] `curation_topics.families` trae las familias del CSV para los 19 tópicos útiles de `topics_v1` (hecho el 2026-10-26). [x] El cockpit las muestra con nombre y "sin familia" solo aparece donde corresponde.
+* [x] La anomalía de familias muestra z por familia y mes (24 meses) y se entiende sin leer el código. (Revisado en local con datos de dev.)
+* [x] Las tablas de datos tienen el encabezado fijo; la barra de filtros y la sección a la vista quedan fijas al hacer scroll.
 * [ ] La serie diaria tiene suavizado de 7, 14 y 28 días, sin romper el panel del día, y su leyenda no tapa el eje.
 * [ ] La vista por versión muestra un banco, barras por día coloreadas por versión y filtro de sentimiento.
+
+### Primera pasada del frontal (2026-10-26)
+
+* **API:** `drift_metrics` se lee con `period` como `YYYY-MM` (`SUBSTR(CAST(period AS STRING), 1, 7)`) y el servicio lo normaliza también, así que el z ya se une con el nivel de familias; `BankCard` trae `previous_month` además de `previous_year` (`month_before`, con prueba que cruza el año). `openapi.json` y `schema.d.ts` regenerados.
+* **Barra de filtros fija** (`sticky`, debajo del encabezado): "N de 5 bancos seleccionados", atajos con estado activo y, a la derecha, el menú "Sección: …" que sigue el scroll y salta a cada sección (`SectionNav`). Se quitaron los títulos grandes del cuerpo (quedan como encabezados ocultos para lectores de pantalla). La serie diaria aclara que el rango aplica solo a ella.
+* **Tarjetas:** selector "Mismo mes del año anterior / Mes anterior".
+* **Gráficas mensuales:** selector 12 / 24 meses o todo (24 por defecto) y se ocultan los meses con menos de 100 reseñas.
+* **Familias:** últimos 24 meses, altura fija (260 px) con el texto a tamaño natural, leyenda vertical a la derecha que resalta la familia (con las negativas del último mes), etiqueta del prompt a la vista, y la marca `u` como "Habla de una actualización" en su propia gráfica (en la anomalía, en una fila aparte). La anomalía usa celdas de al menos 24 px, una leyenda del z y una nota de que esas series aún no tienen umbral.
+* **Tópicos:** la audiencia (Producto / Ingeniería) va junto al nombre; las familias salen con nombre (tres y "+n") y "sin familia asociada" solo si no hay.
+* **Tablas:** el encabezado de `Table` es fijo (`sticky`), también en "Ver datos" y en la tabla por versión.
+* **Pruebas:** 92 en el portal (10 nuevas: barra, atajo activo, menú de secciones y su seguimiento del scroll, comparación con el mes anterior, tópicos con y sin familias, z de la anomalía, meses ocultos, `shiftMonths`, encabezados fijos) y 154 en la API; `check`, `tsc` y `build` en verde. Revisado en local con datos de dev. **Queda para la segunda pasada:** suavizado y leyenda de la serie diaria, vista por versión nueva y, opcional, la ventana de temas.

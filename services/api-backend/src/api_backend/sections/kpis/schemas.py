@@ -30,6 +30,7 @@ class BankCard(BaseModel):
     neg: Estimate | None
     gap_estrellas: Estimate | None
     quejas_4_5: Estimate | None
+    previous_month: CardValues | None
     previous_year: CardValues | None
     model_version: str | None
     gold_version: str | None

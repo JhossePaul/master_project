@@ -87,6 +87,12 @@ export function syntheticCards(): Card[] {
     neg: est(0.15 + i / 50),
     gap_estrellas: est(-0.3 - i / 20, 0.05),
     quejas_4_5: est(0.04),
+    previous_month: {
+      period: "2026-08",
+      neg: est(0.14),
+      gap_estrellas: est(-0.25, 0.05),
+      quejas_4_5: est(0.035),
+    },
     previous_year: {
       period: "2025-09",
       neg: est(0.12),

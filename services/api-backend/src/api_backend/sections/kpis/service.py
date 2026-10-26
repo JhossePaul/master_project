@@ -59,6 +59,11 @@ def year_before(period: str) -> str:
     return f"{int(year) - 1}-{month}"
 
 
+def month_before(period: str) -> str:
+    year, month = (int(x) for x in period.split("-"))
+    return f"{year - 1}-12" if month == 1 else f"{year}-{month - 1:02d}"
+
+
 def _values(
     index: dict[tuple[str, str, str], KpiRow], bank: str, period: str
 ) -> CardValues:
@@ -101,6 +106,7 @@ def cards(
                     neg=None,
                     gap_estrellas=None,
                     quejas_4_5=None,
+                    previous_month=None,
                     previous_year=None,
                     model_version=None,
                     gold_version=None,
@@ -116,6 +122,10 @@ def cards(
             if (bank, previous, "neg") in index
             else None
         )
+        last = month_before(chosen)
+        month = (
+            _values(index, bank, last) if (bank, last, "neg") in index else None
+        )
         source = index[(bank, chosen, "neg")]
         out.append(
             BankCard(
@@ -124,6 +134,7 @@ def cards(
                 neg=current.neg,
                 gap_estrellas=current.gap_estrellas,
                 quejas_4_5=current.quejas_4_5,
+                previous_month=month,
                 previous_year=before,
                 model_version=source.model_version,
                 gold_version=source.gold_version,
@@ -246,7 +257,7 @@ def families(repo: KpisRepository, banks: Sequence[str]) -> FamiliesResponse:
             code = d.metric.removeprefix(FAMILY_METRIC_PREFIX)
         else:
             continue
-        drift[(d.bank_id, d.period, code)] = (d.z, d.threshold, d.alert)
+        drift[(d.bank_id, d.period[:7], code)] = (d.z, d.threshold, d.alert)
     series = []
     for level in sorted(
         repo.family_levels(banks), key=lambda r: (r.bank_id, r.period, r.family)

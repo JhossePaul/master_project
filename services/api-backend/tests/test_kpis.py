@@ -83,6 +83,7 @@ def test_cards_toma_el_ultimo_mes_y_el_del_anio_anterior() -> None:
             kpi("gap_estrellas", "BBVA", "2026-09", -0.3),
             kpi("estrellas_POS_texto_NEG", "BBVA", "2026-09", 0.05),
             kpi("neg", "BBVA", "2025-09", 0.25),
+            kpi("neg", "BBVA", "2026-08", 0.18),
             kpi("neg", "BBVA", "2026-09", 0.3, method="raw"),
         ],
         alerts={"BBVA": 2},
@@ -99,8 +100,15 @@ def test_cards_toma_el_ultimo_mes_y_el_del_anio_anterior() -> None:
     assert card["previous_year"]["period"] == "2025-09"
     assert card["previous_year"]["neg"]["estimate"] == 0.25
     assert card["previous_year"]["gap_estrellas"] is None
+    assert card["previous_month"]["period"] == "2026-08"
+    assert card["previous_month"]["neg"]["estimate"] == 0.18
     assert card["open_alerts"] == 2
     assert card["model_version"] == "m1" and card["gold_version"] == "g1"
+
+
+def test_month_before_cruza_el_anio() -> None:
+    assert service.month_before("2026-01") == "2025-12"
+    assert service.month_before("2026-10") == "2026-09"
 
 
 def test_cards_cae_al_mes_anterior_si_a_un_banco_le_falta() -> None:
@@ -331,7 +339,7 @@ def test_families_une_nivel_z_y_cambios_de_prompt() -> None:
             FamilyLevel("BBVA", "2026-08", "AC", 5, 0),
         ],
         drift=[
-            FamilyDrift("BBVA", "2026-09", "family_AC", 4.5, 4.0, True),
+            FamilyDrift("BBVA", "2026-09-01", "family_AC", 4.5, 4.0, True),
             FamilyDrift(
                 "BBVA", "2026-09", "flag_update_share", 1.0, None, False
             ),
