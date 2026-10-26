@@ -44,9 +44,12 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 6.1 Contratos v3 | Contratos | `packages/voc-common/`, `docs/contracts/analytics_outputs_v3.md` (reemplaza al borrador `analytics_outputs_v3_draft.md`) |
 | 6.2 Infraestructura de salidas y curadurías | Infraestructura | `infra/`, `.github/workflows/`, `.dockerignore` y el `pyproject.toml` de la raíz |
 | 6.3 Inferencia batch, 6.4 Monitoreo y ciclo de vida y 6.5 Reentrenamiento | Inferencia | `packages/voc-nlp/` (nuevo), `services/ml-inference/` (nuevo; reemplaza al stub `services/ml-delora/`) |
+| 7.0 a 7.3 y 7.5 a 7.10, 7.12 API y portal | Portal | `services/api-backend/`, `web/hitl-portal/`, `docs/design/` y los archivos de `docs/backlog/epic_7/`. Toca, en el paso que lo dice, `infra/` (servicio, IAM, IAP), `.github/workflows/`, `.dockerignore`, `tools/deploy_images.py`, y con la regla de módulos compartidos `packages/voc-common/`, `packages/voc-nlp/` y `services/ml-inference/` |
+| 7.11 Gobernanza | Documentación y gobierno | `docs/governance/data_card.md`, `model_card.md` y `ethical_fmea_matrix.md` |
+| 7.4 Reporte de la tesis (prioridad mínima) | Tesis | `docs/thesis/`, `web/hitl-portal/src/sections/report/`, `tools/export_thesis_aggregates.py`, `tools/check_thesis.py` y `docs/governance/references.md` |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
-Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica o de EPIC-6 (filas 6.1 a 6.4). EPIC-7 se agrega a esta tabla cuando arranque. Dentro de EPIC-6 el orden es 6.1 → 6.2 → 6.3 → 6.4 ([`epic_6.md`](docs/backlog/epic_6.md)); 6.1 y 6.2 comparten PR, así que no son independientes.
+Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica, de EPIC-6 (filas 6.1 a 6.4) o de EPIC-7 (fila del portal). EPIC-7 se ejecuta en el orden de [`docs/backlog/epic_7/`](docs/backlog/epic_7/README.md); 7.11 (solo `docs/governance/`) y la redacción de 7.4 (solo `docs/thesis/`) son las candidatas a sesión paralela. Dentro de EPIC-6 el orden es 6.1 → 6.2 → 6.3 → 6.4 ([`epic_6.md`](docs/backlog/epic_6.md)); 6.1 y 6.2 comparten PR, así que no son independientes.
 
 El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/src/`) y su evidencia en `docs/analytics/`, con una carpeta por etapa del paquete; el mapa de rutas anteriores está en [`experiments/analytics/MIGRATION.md`](experiments/analytics/MIGRATION.md). Los módulos compartidos de abajo son relativos a `voc_analytics/`.
 
@@ -60,6 +63,16 @@ El código de EPIC-5 vive en el paquete `voc_analytics` (`experiments/analytics/
 | `labeling/label_gemini.py` | Golden dataset y etiquetado | Modelos (M9) |
 | `paths.py` | Ninguna: se cambia solo con aprobación del autor | Todos |
 | `labeling/eligibility.py`, `eda/eda_lexicon.py` y `lexicon_v1`, `calibration/calibrate.py` (temperatura), `calibration/selective.py`, `calibration/ppi.py`, `scale/drift_baseline.py`, `eda/prompts/aspects_v2_1.md` | Su área en EPIC-5 | `packages/voc-nlp/` (EPIC-6) los porta sin cambiar el criterio: si cambia el original, cambia también el port, con su prueba |
+| `topics/versions.py` (normalización de versiones) | Tópicos (5.5) | La pestaña por versión del cockpit la porta a SQL (`services/api-backend/`, paso 3 de EPIC-7), con su prueba |
+
+Fuera de `voc_analytics`, los que comparten EPIC-6 y EPIC-7 (rutas desde la raíz):
+
+| Módulo | Área dueña | Lo usan |
+| :--- | :--- | :--- |
+| `packages/voc-common/` (contratos v3) | Contratos | `ml-inference`, `api-backend`, `infra/` |
+| `packages/voc-nlp/src/voc_nlp/policy.py` y `drift_rates.py` (se mueven desde `ml-inference` en los pasos 5 y 8 de EPIC-7) | Inferencia | `ml-inference` (re-exporta), `api-backend` |
+| `packages/voc-nlp/src/voc_nlp/explain.py` (`occlusion_v1` y `occlusion_v2`) | Inferencia | El delta y `voc-ml-online` |
+| [`docs/design/visual_guide.md`](docs/design/visual_guide.md) y `web/hitl-portal/src/styles/tokens.css` | Portal | Todo el portal: cambian juntos |
 
 ## Convenciones del proyecto
 

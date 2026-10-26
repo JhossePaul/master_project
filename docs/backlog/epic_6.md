@@ -2,7 +2,7 @@
 
 * **Estado (2026-10-25):** 6.1 a 6.5 **cerradas**: el código, la infraestructura y las pruebas están terminados. Queda abierta solo **6.6, carga y validación en dev**. La épica se cierra al terminar 6.6; no depende de EPIC-7.
 * **Dependencias:** [EPIC-5](epic_5.md) cerrada, con el [registro de decisión](../analytics/decision_record.md) aprobado, y EPIC-1 a EPIC-4 cerradas ([estado](epics.md#cierre-de-las-épicas-1-a-4)).
-* **La consume:** [EPIC-7](epic_7.md), que lee las tablas y vistas, escribe en las de curaduría y HITL y lanza los Jobs con argumentos. Lo que EPIC-7 construye por su cuenta está en su [sección de insumos](epic_7.md#-insumos-de-epic-6).
+* **La consume:** [EPIC-7](epic_7.md), que lee las tablas y vistas, escribe en las de curaduría y HITL y lanza los Jobs con argumentos. Lo que EPIC-7 construye por su cuenta está en su [feature 7.0](epic_7/00_preparacion.md).
 * **Directorios:**
   * `packages/voc-common/`: contratos v3 (modelos Pydantic, enums, `bq_schema`);
   * `packages/voc-nlp/`: lógica pura portada de EPIC-5 sin cambiar el criterio;

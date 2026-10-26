@@ -16,3 +16,5 @@
 | 5 | **`topics-refit` con la tabla de versiones vacía** propone `topics_v1`, el mismo nombre que carga `load-local` | Solo pasa si el re-ajuste corre antes de la carga; el orden de 6.6 lo evita | Auditoría de EPIC-6 |
 | 6 | **Avisos de los caminos que hoy solo dejan un log**: sin vocabulario, sin cliente de Gemini o sin modelo de tópicos, el delta y el monitor siguen | Un hueco de datos puede pasar sin que nadie lo vea | Auditoría de EPIC-6 |
 | 7 | **Un solo modelo y bancos fijos** (`robertuito-sentiment` en Vertex, `BankKey`) | Agregar otro modelo o banco exige cambiar código | Auditoría de EPIC-6 |
+| 8 | **El monitor no escribe en `inference_runs`** | MLOps (7.9) infiere su última corrida de `kpi_estimates` y no tiene su duración, su memoria ni su costo | Planificación de EPIC-7 (2026-10-25) |
+| 9 | **La ingesta no registra costo** (`ingestion_runs_log_v2`) | AIOps (7.9) muestra la duración derivada y el costo como "sin dato"; medirlo exigiría la exportación de Cloud Billing | Planificación de EPIC-7 (2026-10-25) |

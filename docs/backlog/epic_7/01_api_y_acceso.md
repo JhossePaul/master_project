@@ -235,7 +235,7 @@ Todo con `pulumi preview` revisado por el autor antes de `pulumi up`.
 | APIs `iap.googleapis.com` (y `compute`, `certificatemanager` si va con balanceador) | `infra/modules/apis.py` | Este paso |
 | Cuenta `voc-sa-portal-api` | `infra/modules/kms_iam.py` | Todos |
 | `roles/bigquery.jobUser` en el proyecto; `roles/bigquery.dataViewer` en el dataset `bbva_voc_tds` | `kms_iam.py` | Todos |
-| `roles/bigquery.dataEditor` **por tabla** (`gcp.bigquery.IamMember` de tabla) solo en `hitl_items`, `hitl_events`, `hitl_reviews`, `drift_alert_events`, `risk_policy`, `drift_policy`, `gold_versions`, `review_explanations` y `curation_topics` | `kms_iam.py` o `analytics_bq.py` | Pasos 4 a 9 |
+| `roles/bigquery.dataEditor` **por tabla** (`gcp.bigquery.IamMember` de tabla) solo en `hitl_items`, `hitl_events`, `hitl_reviews`, `hitl_boosts` (cierre de una subida), `drift_alert_events`, `risk_policy`, `drift_policy`, `gold_versions`, `review_explanations` y `curation_topics` | `kms_iam.py` o `analytics_bq.py` | Pasos 4 a 9 |
 | `roles/dlp.user` | `kms_iam.py` | Paso 4 |
 | `roles/secretmanager.secretAccessor` sobre `voc-portal-roles` | `infra/modules/secrets.py` | Este paso |
 | `roles/run.jobsExecutorWithOverrides` sobre `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote` y `voc-ml-topics-refit` | `cloud_run.py`, junto a los permisos de los Jobs de ML | Paso 8 |
