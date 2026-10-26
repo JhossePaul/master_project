@@ -110,3 +110,6 @@ evidence/
 
 # Snapshots locales del TDS para EPIC-5 (texto de reseñas: nunca versionar)
 experiments/analytics/data/
+
+# El portal tiene src/lib/ (utilidades y formatos): no es una carpeta de salida.
+!web/portal/src/lib/
