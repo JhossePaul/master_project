@@ -16,7 +16,20 @@ function guarded(role: Role, title: string): RouteObject["element"] {
 
 const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
 const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
+const AlertsInbox = lazy(() => import("@/sections/alerts/AlertsInbox"));
+const AlertDetail = lazy(() => import("@/sections/alerts/AlertDetail"));
 const REVIEWER: Role = "revisor";
+const ANALYST: Role = "analista";
+
+function AnalystOnly({ children }: { children: ReactNode }) {
+  return (
+    <RequireRole role={ANALYST}>
+      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+        {children}
+      </Suspense>
+    </RequireRole>
+  );
+}
 
 function ReviewerOnly({ children }: { children: ReactNode }) {
   return (
@@ -58,10 +71,21 @@ export const routes: RouteObject[] = [
         }),
       },
       { path: "explorador", element: guarded("analista", "Explorador") },
-      { path: "alertas", element: guarded("analista", "Alertas de deriva") },
+      {
+        path: "alertas",
+        element: (
+          <AnalystOnly>
+            <AlertsInbox />
+          </AnalystOnly>
+        ),
+      },
       {
         path: "alertas/:alertId",
-        element: guarded("analista", "Alerta de deriva"),
+        element: (
+          <AnalystOnly>
+            <AlertDetail />
+          </AnalystOnly>
+        ),
       },
       {
         path: "hitl",

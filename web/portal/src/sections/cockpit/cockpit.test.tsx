@@ -894,7 +894,7 @@ describe("enlace único al Explorador", () => {
   });
 
   it("no sale fuera del Dashboard", async () => {
-    renderApp("/alertas");
+    renderApp("/mlops");
     await screen.findByText("En construcción");
 
     expect(

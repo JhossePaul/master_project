@@ -190,11 +190,14 @@ export function ReferenceLine({
   width,
   label,
   scale,
+  labelOutside = false,
 }: {
   y: number;
   width: number;
   label: string;
   scale: YScale;
+  /** La etiqueta va a la derecha de la línea, en el margen, y no encima de ella. */
+  labelOutside?: boolean;
 }) {
   const py = scale(y);
   return (
@@ -209,9 +212,10 @@ export function ReferenceLine({
         strokeDasharray="6 4"
       />
       <text
-        x={width}
-        y={py - 4}
-        textAnchor="end"
+        x={labelOutside ? width + 6 : width}
+        y={labelOutside ? py : py - 4}
+        dy={labelOutside ? "0.32em" : undefined}
+        textAnchor={labelOutside ? "start" : "end"}
         fontSize={12}
         fill="var(--color-gold-700)"
       >

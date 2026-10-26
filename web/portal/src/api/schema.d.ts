@@ -4,6 +4,83 @@
  */
 
 export interface paths {
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Alerts
+         * @description Las alertas con su estado vigente, de la más reciente a la más vieja.
+         */
+        get: operations["list_alerts_api_v1_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summary
+         * @description Solo conteos por banco: la usa la landing.
+         */
+        get: operations["summary_api_v1_alerts_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alert Detail */
+        get: operations["alert_detail_api_v1_alerts__alert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Event
+         * @description Confirma, descarta o reabre; 409 si el estado ya cambió.
+         */
+        post: operations["add_event_api_v1_alerts__alert_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hitl/guidelines/{task}": {
         parameters: {
             query?: never;
@@ -377,6 +454,83 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlertDetail */
+        AlertDetail: {
+            alert: components["schemas"]["AlertRow"];
+            /** Events */
+            events: components["schemas"]["AlertEventOut"][];
+            explorer: components["schemas"]["ExplorerHint"];
+            /** Series */
+            series: components["schemas"]["SeriesPoint"][];
+        };
+        /** AlertEventIn */
+        AlertEventIn: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Note */
+            note: string;
+            status: components["schemas"]["AlertStatus"];
+            /** Ticket */
+            ticket?: string | null;
+        };
+        /** AlertEventOut */
+        AlertEventOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Event Id */
+            event_id: string;
+            /** Note */
+            note: string | null;
+            status: components["schemas"]["AlertStatus"];
+            /** Ticket */
+            ticket: string | null;
+        };
+        /** AlertRow */
+        AlertRow: {
+            /** Alert Id */
+            alert_id: string;
+            /** Bank Id */
+            bank_id: string;
+            boost: components["schemas"]["BoostOut"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Drift Policy Version */
+            drift_policy_version: string;
+            /** Period */
+            period: string;
+            /** Series */
+            series: string;
+            status: components["schemas"]["AlertStatus"];
+            /** Status At */
+            status_at: string | null;
+            /** Threshold */
+            threshold: number;
+            /** Value */
+            value: number;
+        };
+        /**
+         * AlertStatus
+         * @enum {string}
+         */
+        AlertStatus: "open" | "confirmed" | "dismissed";
+        /** AlertSummary */
+        AlertSummary: {
+            /** Open By Bank */
+            open_by_bank: {
+                [key: string]: number;
+            };
+        };
         /** BankCard */
         BankCard: {
             /** Bank Id */
@@ -407,6 +561,34 @@ export interface components {
             neg: components["schemas"]["Estimate"];
             /** Period */
             period: string;
+        };
+        /**
+         * BoostEndReason
+         * @enum {string}
+         */
+        BoostEndReason: "expired" | "alert_closed" | "manual";
+        /**
+         * BoostOut
+         * @description Subida de revisión que disparó la alerta.
+         */
+        BoostOut: {
+            /** Active */
+            active: boolean;
+            /** Boost Id */
+            boost_id: string;
+            /** Coverage */
+            coverage: number;
+            ended_reason: components["schemas"]["BoostEndReason"] | null;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
         };
         /** CardValues */
         CardValues: {
@@ -496,6 +678,24 @@ export interface components {
             n_gold: number | null;
             /** N Unlabeled */
             n_unlabeled: number | null;
+        };
+        /**
+         * ExplorerHint
+         * @description Banco y mes de la alerta, para abrir el Explorador.
+         */
+        ExplorerHint: {
+            /** Bank Id */
+            bank_id: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
         };
         /** FamiliesResponse */
         FamiliesResponse: {
@@ -756,6 +956,23 @@ export interface components {
             /** Validated Label */
             validated_label: ("NEG" | "NEU" | "POS") | null;
         };
+        /** SeriesPoint */
+        SeriesPoint: {
+            /** Alert */
+            alert: boolean;
+            /** Baseline */
+            baseline: number | null;
+            /** Period */
+            period: string;
+            /** Psi */
+            psi: number | null;
+            /** Threshold */
+            threshold: number | null;
+            /** Value */
+            value: number;
+            /** Z */
+            z: number | null;
+        };
         /** TaskSummary */
         TaskSummary: {
             /** Median Seconds */
@@ -899,6 +1116,124 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_alerts_api_v1_alerts_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AlertStatus"] | null;
+                bank?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summary_api_v1_alerts_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSummary"];
+                };
+            };
+        };
+    };
+    alert_detail_api_v1_alerts__alert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_event_api_v1_alerts__alert_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     guideline_api_v1_hitl_guidelines__task__get: {
         parameters: {
             query?: never;

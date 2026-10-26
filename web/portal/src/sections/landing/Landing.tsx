@@ -176,24 +176,39 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
               <>
                 <p className="tabular text-4xl font-bold">{formatInt(total)}</p>
                 <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                  {alerts.map(([bank, n]) => (
-                    <li
-                      key={bank}
-                      className="flex items-center gap-1.5 text-sm"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="inline-block size-2.5 rounded-full"
-                        style={{
-                          background: `var(${BANKS[bank as BankId]?.colorVar})`,
-                        }}
-                      />
-                      <span>{bankLabel(bank)}</span>
-                      <span className="tabular font-semibold">
-                        {formatInt(n)}
-                      </span>
-                    </li>
-                  ))}
+                  {alerts.map(([bank, n]) => {
+                    const entry = (
+                      <>
+                        <span
+                          aria-hidden="true"
+                          className="inline-block size-2.5 rounded-full"
+                          style={{
+                            background: `var(${BANKS[bank as BankId]?.colorVar})`,
+                          }}
+                        />
+                        <span>{bankLabel(bank)}</span>
+                        <span className="tabular font-semibold">
+                          {formatInt(n)}
+                        </span>
+                      </>
+                    );
+                    return (
+                      <li key={bank} className="text-sm">
+                        {hasRole(me, "analista") ? (
+                          <Link
+                            to={`/alertas?bancos=${encodeURIComponent(bank)}`}
+                            className="flex items-center gap-1.5 underline-offset-4 hover:underline"
+                          >
+                            {entry}
+                          </Link>
+                        ) : (
+                          <span className="flex items-center gap-1.5">
+                            {entry}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}
