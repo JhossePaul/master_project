@@ -61,5 +61,7 @@ config:
   bbva-voc-infra:alert_email:
     secure: v1:K8LI9TLqA8C98O9N:Cs61QbLdrmn+AC/E5DlxNS4jCbolRMzROcZjtdNQ+RwMimPmhAfKKnfQvO0=
   bbva-voc-infra:ml_inference_image: us-central1-docker.pkg.dev/project-7bafd424-a385-4c05-b5b/voc-containers-repo/ml-inference:7cfaf78ccbd73ff87ef4c16c195667f7b4ecea63@sha256:a5c986b89a8cf4c2c1d5b0e27218b565979bffe018d829d328126ec8fb0a649b
+  bbva-voc-infra:portal_users:
+    secure: v1:dzOaR3z10SDsCXpc:X6Wjv4vQNt2rMzOQswLSI0I9fCg4+EyTaXtCwvB6pT0y5JJ5iJN5zgMryAMkmS2IufdsKc1nK5ZoBmmq0p3/U3mDIM3N8W97Rsy/H+MjMiCp/cY1sIhuwcxIyPsjzHQEVTW9znU+O+9lO4LGMdKi3QRz8X1q+GQNNmd21dJNRNQao2KywdsXgSQ1
 secretsprovider: gcpkms://projects/project-7bafd424-a385-4c05-b5b/locations/global/keyRings/pulumi-secrets/cryptoKeys/dev
 encryptedkey: CiQAg6WsPOSYbGWtlWQ3YAqpZZCtRoz3PtldQ3YM1MOURzogxJYSSQBjVU6/8KcNdQLGE4U4PpyFiZNnCvUCJMnQ0l/ZkgCJtRSMZivwRh5zQhR2QYJhNb8m8sMPnfktybfFiGFUNxGTe4R54tfC7kI=
