@@ -283,6 +283,22 @@ Una prueba de integración opcional, marcada `@pytest.mark.bigquery` y fuera de 
 * [ ] En dev (con B1 a B3 resueltos y `pulumi up` aprobado): `voc-api-backend` corre con `voc-sa-portal-api` detrás de IAP; una cuenta del mapa entra a `/api/v1/me`; una cuenta sin permiso de IAP no llega a la API; una cuenta con permiso de IAP pero sin entrada en el mapa recibe 403.
 * [x] `pulumi preview` queda sin cambios después del `up` (142 sin cambios, 2026-10-26).
 
+## Pendientes (2026-10-26)
+
+No bloquean el paso 2.
+
+| # | Pendiente | Qué hacer | Cuándo |
+| :-: | :--- | :--- | :--- |
+| 1 | **403 real.** Una cuenta con permiso de IAP pero fuera del mapa de roles debe recibir 403 del servicio desplegado; hoy solo lo cubren `test_me.py` y `test_roles.py`. La segunda Gmail del autor ya se probó sin permiso de IAP (no entra) | Dar a una segunda cuenta `roles/iap.httpsResourceAccessor` sobre `voc-api-backend` con `gcloud`, comprobar el 403 en `/api/v1/me` y quitar el permiso. Es un cambio temporal fuera de Pulumi: anotarlo | Al probar la primera ruta de roles del paso 2, o cuando haya una cuenta de prueba |
+| 2 | **Nombre del recurso de acceso.** `voc-portal-iap-<10 hex>` usa los primeros 10 caracteres del SHA-256 del correo sin sal: no expone el correo, pero se puede adivinar por diccionario (aparece en el estado de Pulumi y en los `preview`) | Cambiar la derivación a un identificador no adivinable (por ejemplo, HMAC con una clave propia de Pulumi) o a un índice estable. Cambiar el nombre recrea el permiso de IAP de cada persona: hacerlo con una ventana corta | Antes de agregar más personas a `portal_users` |
+| 3 | **`/healthz` público.** Cloud Run lo reserva en `*.run.app` y la URL pública responde 404 con la página de Google. Dentro del contenedor funciona (prueba de humo del CI) | Si se necesita una sonda externa o una sonda de arranque HTTP, renombrar la ruta (por ejemplo `/livez`) y ajustar el CI y `deployment.md` | Solo si se necesita; hoy IAP ya protege el servicio |
+| 4 | **Imagen sin frontal.** `ARG WEB_SOURCE=web-empty`: la imagen lleva `dist/` vacío y `/` da 404 | En el paso 2, poner `web-build` por defecto y sumar el trabajo `portal` (Node 24: `npm ci`, `npm run check`, `npm test`, `npm run build` y `schema.d.ts` al día con `openapi.json`) al CI | Paso 2 |
+| 5 | **Decisiones de contrato B5 #1, #2, #3 y #5** (revisión `no_evaluable`, `occlusion_v2`, `RunKind.TOPIC_REFIT`, cola de aspectos). La #4 (hash del actor) está aprobada y aplicada | Se aplican con su recomendación al llegar a su paso (4, 6, 8 y 9), con aviso. Detalle en `00_preparacion.md` | Pasos 4, 6, 8 y 9 |
+| 6 | **Permisos de los pasos 6 y 8.** `run.jobsExecutorWithOverrides` sobre los Jobs de ML y `storage.objectViewer` de `ml_artifacts/` no se crearon | Se agregan en el paso que los usa, con su `pulumi preview` | Pasos 6 y 8 |
+| 7 | **BBVA.** El Workspace de BBVA bloquea el inicio de sesión en aplicaciones externas | Pedir la excepción al administrador del Workspace; mientras tanto esas personas entran con una cuenta Gmail (`S-03`) | Antes de la presentación |
+
+**Convenciones para seguir:** cada cambio de personas exige subir `portal_users_version`; un `pulumi preview --config k=v` persiste los valores en `Pulumi.dev.yaml`, así que no se usa con valores de marcador (se prueban con los mocks de `infra/tests/`); las consultas de los repositorios nunca leen `text_embeddings`, `segment_embeddings` ni `review_predictions` sin filtro (el tope de 2 GB las rechaza).
+
 ## Decisiones al implementar
 
 _(Se llena al ejecutar.)_
