@@ -13,7 +13,7 @@ Si `propose_risk_policy` no basta para cambiar parámetros distintos de la cober
 
 ## 2. Parámetros y su ayuda
 
-La ayuda de cada parámetro vive en `web/hitl-portal/src/config/policyHelp.ts` (`{ label, unit, means, evidence, link, up, down, min, max, step }`), en lenguaje común. El punto de partida, que se redacta con estos datos:
+La ayuda de cada parámetro vive en `web/portal/src/config/policyHelp.ts` (`{ label, unit, means, evidence, link, up, down, min, max, step }`), en lenguaje común. El punto de partida, que se redacta con estos datos:
 
 | Parámetro | Vigente | De dónde sale (para "evidencia") | Si sube | Si baja |
 | :--- | :--- | :--- | :--- | :--- |

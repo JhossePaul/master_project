@@ -44,9 +44,9 @@ Ya no hay un hilo por área: el mapa sirve para decidir si una sesión paralela 
 | 6.1 Contratos v3 | Contratos | `packages/voc-common/`, `docs/contracts/analytics_outputs_v3.md` (reemplaza al borrador `analytics_outputs_v3_draft.md`) |
 | 6.2 Infraestructura de salidas y curadurías | Infraestructura | `infra/`, `.github/workflows/`, `.dockerignore` y el `pyproject.toml` de la raíz |
 | 6.3 Inferencia batch, 6.4 Monitoreo y ciclo de vida y 6.5 Reentrenamiento | Inferencia | `packages/voc-nlp/` (nuevo), `services/ml-inference/` (nuevo; reemplaza al stub `services/ml-delora/`) |
-| 7.0 a 7.3 y 7.5 a 7.10, 7.12 API y portal | Portal | `services/api-backend/`, `web/hitl-portal/`, `docs/design/` y los archivos de `docs/backlog/epic_7/`. Toca, en el paso que lo dice, `infra/` (servicio, IAM, IAP), `.github/workflows/`, `.dockerignore`, `tools/deploy_images.py`, y con la regla de módulos compartidos `packages/voc-common/`, `packages/voc-nlp/` y `services/ml-inference/` |
+| 7.0 a 7.3 y 7.5 a 7.10, 7.12 API y portal | Portal | `services/api-backend/`, `web/portal/`, `docs/design/` y los archivos de `docs/backlog/epic_7/`. Toca, en el paso que lo dice, `infra/` (servicio, IAM, IAP), `.github/workflows/`, `.dockerignore`, `tools/deploy_images.py`, y con la regla de módulos compartidos `packages/voc-common/`, `packages/voc-nlp/` y `services/ml-inference/` |
 | 7.11 Gobernanza | Documentación y gobierno | `docs/governance/data_card.md`, `model_card.md` y `ethical_fmea_matrix.md` |
-| 7.4 Reporte de la tesis (prioridad mínima) | Tesis | `docs/thesis/`, `web/hitl-portal/src/sections/report/`, `tools/export_thesis_aggregates.py`, `tools/check_thesis.py` y `docs/governance/references.md` |
+| 7.4 Reporte de la tesis (prioridad mínima) | Tesis | `docs/thesis/`, `web/portal/src/sections/report/`, `tools/export_thesis_aggregates.py`, `tools/check_thesis.py` y `docs/governance/references.md` |
 | EPIC-1 a EPIC-4 (ingesta, sanitización, infraestructura) | Ingeniería de extracción (cerrada) | `services/`, `packages/`, `infra/`, `web/`, `tools/` |
 
 Las rutas de EPIC-1 a EPIC-4 solo se cambian cuando hay trabajo de su épica, de EPIC-6 (filas 6.1 a 6.4) o de EPIC-7 (fila del portal). EPIC-7 se ejecuta en el orden de [`docs/backlog/epic_7/`](docs/backlog/epic_7/README.md); 7.11 (solo `docs/governance/`) y la redacción de 7.4 (solo `docs/thesis/`) son las candidatas a sesión paralela. Dentro de EPIC-6 el orden es 6.1 → 6.2 → 6.3 → 6.4 ([`epic_6.md`](docs/backlog/epic_6.md)); 6.1 y 6.2 comparten PR, así que no son independientes.
@@ -72,7 +72,7 @@ Fuera de `voc_analytics`, los que comparten EPIC-6 y EPIC-7 (rutas desde la raí
 | `packages/voc-common/` (contratos v3) | Contratos | `ml-inference`, `api-backend`, `infra/` |
 | `packages/voc-nlp/src/voc_nlp/policy.py` y `drift_rates.py` (se mueven desde `ml-inference` en los pasos 5 y 8 de EPIC-7) | Inferencia | `ml-inference` (re-exporta), `api-backend` |
 | `packages/voc-nlp/src/voc_nlp/explain.py` (`occlusion_v1` y `occlusion_v2`) | Inferencia | El delta y `voc-ml-online` |
-| [`docs/design/visual_guide.md`](docs/design/visual_guide.md) y `web/hitl-portal/src/styles/tokens.css` | Portal | Todo el portal: cambian juntos |
+| [`docs/design/visual_guide.md`](docs/design/visual_guide.md) y `web/portal/src/styles/tokens.css` | Portal | Todo el portal: cambian juntos |
 
 ## Convenciones del proyecto
 

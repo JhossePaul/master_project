@@ -63,7 +63,7 @@ uv run bandit -c pyproject.toml -r .
 uv run pytest services/api-backend --cov=api_backend --cov-fail-under=85
 ```
 
-Y desde `web/hitl-portal/` (a partir del paso 2):
+Y desde `web/portal/` (a partir del paso 2):
 
 ```bash
 npm run check

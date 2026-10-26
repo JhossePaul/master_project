@@ -1,6 +1,6 @@
 # Guía visual del portal
 
-> **Estado (2026-10-25): versión 0.1, para revisar por el autor.** Fija la marca, la paleta, la tipografía y los componentes del portal web (`web/hitl-portal/`). La implementación de los *tokens* vive en `web/hitl-portal/src/styles/tokens.css` y debe copiar los valores de este documento, no reinventarlos. Las preguntas abiertas están en el [cuestionario de diseño](../backlog/epic_7/design_questions.md); el stack técnico, en [`frontend_stack.md`](frontend_stack.md).
+> **Estado (2026-10-25): versión 0.1, para revisar por el autor.** Fija la marca, la paleta, la tipografía y los componentes del portal web (`web/portal/`). La implementación de los *tokens* vive en `web/portal/src/styles/tokens.css` y debe copiar los valores de este documento, no reinventarlos. Las preguntas abiertas están en el [cuestionario de diseño](../backlog/epic_7/design_questions.md); el stack técnico, en [`frontend_stack.md`](frontend_stack.md).
 
 ## 1. De dónde sale
 
@@ -110,7 +110,7 @@ Se usa solo dentro de gráficas, tablas de datos y la explicación por palabras.
 
 ### 4.1 Bancos
 
-Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos están pendientes (cuestionario, pregunta `D-03`). El mapa vive en un solo archivo (`web/hitl-portal/src/config/banks.ts`), indexado por `bank_id`.
+Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos están pendientes (cuestionario, pregunta `D-03`). El mapa vive en un solo archivo (`web/portal/src/config/banks.ts`), indexado por `bank_id`.
 
 | `bank_id` | Color | Hex | Contraste | Trazo de respaldo |
 | :--- | :--- | :--- | :---: | :--- |

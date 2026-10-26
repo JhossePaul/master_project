@@ -1,6 +1,6 @@
 # Cuestionario de diseño del portal
 
-> **Estado (2026-10-25):** abierto. Son las preguntas que conviene responder antes de construir para no detener el desarrollo del frontal. Cada una trae su recomendación: si una pregunta que no es "antes de 2" llega sin respuesta a su paso, la sesión de ejecución aplica la recomendación y lo anota. **Las marcadas "antes de 2" se responden antes del paso 2** (portal base), porque fijan *tokens* y estructura que después cuesta cambiar.
+> **Estado (2026-10-25):** respondido salvo `P-01` (el aporte de la tesis), que se pide al llegar al paso 12. Las "antes de 2" están todas respondidas. Son las preguntas que conviene responder antes de construir para no detener el desarrollo del frontal. Cada una trae su recomendación: si una pregunta que no es "antes de 2" llega sin respuesta a su paso, la sesión de ejecución aplica la recomendación y lo anota. **Las marcadas "antes de 2" se responden antes del paso 2** (portal base), porque fijan *tokens* y estructura que después cuesta cambiar.
 >
 > Para responder, escribe en "Respuesta" la opción (o tu variante) y la fecha.
 
@@ -91,7 +91,7 @@ Propuesta de la guía (sección 4.1): BBVA azul `#1F64B0`, AZTECA verde `#3E8E2F
 * **Pregunta:** ¿tienes la marca de producto de Posgrados en SVG (versión en verde y en blanco)? En tus descargas hay archivos `.ai` del escudo y del emblema, pero la guía reserva el escudo para documentos oficiales.
 * **Recomendación:** pedir el SVG oficial a Comunicación de la UP; mientras tanto, el encabezado lleva solo el nombre del portal en la tipografía de títulos.
 * **Bloquea:** nada (hay un sustituto).
-* **Respuesta:**
+* **Respuesta:** Fuentes oficiales que dio el autor (2026-10-25): el paquete de identidad de la UP (escudo, texturas y logotipos), `https://www.up.edu.mx/wp-content/uploads/2025/08/Up-escudo.zip`, y el logotipo de Posgrados en alta resolución (WebP), `https://virtual.up.edu.mx/p/historia-del-pensamiento-maestria/src/img/logo-posgrados-universidad-panamericana-historia-pensamiento.webp`. El paso 2 descarga el paquete (con aprobación del autor) en su propia carpeta, fuera de git hasta revisarlo, y usa la versión vectorial de la marca de Posgrados si viene ahí; si no, el WebP a altura fija en el encabezado. El escudo sigue reservado para documentos oficiales.
 
 ### B-03. Tahalí y textura de roble
 
@@ -103,7 +103,7 @@ Propuesta de la guía (sección 4.1): BBVA azul `#1F64B0`, AZTECA verde `#3E8E2F
 
 * **Pregunta:** el nombre exacto del programa de posgrado, el nombre del asesor y cómo quieres aparecer como autor, para el pie del portal y la portada de la tesis.
 * **Bloquea:** el pie (con texto provisional) y la tesis.
-* **Respuesta:**
+* **Respuesta:** (2026-10-25) Programa: **Maestría en Ciencia de Datos BBVA**. Revisor: **Carlos González Martínez** (el proyecto no tiene asesor como tal, así que se rotula "revisor"). Autor: **Jhosse Paul Márquez Ruíz**.
 
 ### B-05. Ícono de la pestaña (*favicon*)
 
@@ -323,7 +323,7 @@ Tope semanal, subida por deriva y doble revisión están nulos desde la primera 
 
 * **Pregunta:** la lista de correos con sus roles (lector, analista, revisor de sentimiento, revisor de aspectos o de tópicos, administrador). Va cifrada en Pulumi, nunca en claro en git.
 * **Bloquea:** el despliegue del paso 1.
-* **Respuesta:**
+* **Respuesta:** Al principio solo el autor, como administrador y revisor de sentimiento y de aspectos y tópicos (2026-10-25). La lista del resto se agrega a `portal_users` antes de la presentación; las personas de BBVA entran con Gmail mientras no haya excepción (`S-03`).
 
 ### S-02. ¿El administrador revisa casos HITL sin ser revisor?
 
@@ -341,7 +341,7 @@ Tope semanal, subida por deriva y doble revisión están nulos desde la primera 
 
 * **Opciones:** (a) balanceador HTTPS con IAP y un dominio propio (el dominio cuesta del orden de US$12 al año y la regla del balanceador del orden de US$18 al mes; confirmar precios vigentes); (b) mover el proyecto a una organización que lo permita; (c) solo cuentas de la organización.
 * **Recomendación:** decidir con el resultado de la prueba de acceso del paso 0.
-* **Respuesta:**
+* **Respuesta:** IAP directo en Cloud Run (2026-10-25): con un cliente de OAuth propio de audiencia External entran Gmail y `up.edu.mx`; no hace falta balanceador ni dominio. `bbva.com` lo bloquea su Workspace y se resuelve con `S-03`. Detalle en el [avance de la preparación](00_preparacion.md#avance).
 
 ### S-05. Alcance de los seudónimos
 
@@ -391,7 +391,7 @@ Tope semanal, subida por deriva y doble revisión están nulos desde la primera 
 ### P-04. Extensión
 
 * **Pregunta:** ¿el programa fija una extensión o un formato? Sin requisito, se apunta a unas 25 000–35 000 palabras en total.
-* **Respuesta:**
+* **Respuesta:** Sin requisito del programa (2026-10-25): se apunta a 25 000–35 000 palabras en total.
 
 ### P-05. Resumen
 

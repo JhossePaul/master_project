@@ -12,7 +12,7 @@
   * el [registro de decisión de 5.8](../analytics/decision_record.md), aprobado el 2026-10-22. Las decisiones que la condicionan son P8-6 (búsqueda), P8-8 (explicabilidad), P8-9 (*gap* en estrellas), P8-10 (estimaciones), P8-11 (HITL) y P8-12 (alcance), todas en el [registro de decisiones](epic_5.md#decisiones-pendientes).
 * **Directorios:**
   * `services/api-backend/`: FastAPI, que también sirve el portal;
-  * `web/hitl-portal/`: SPA en React, TypeScript y Vite;
+  * `web/portal/`: SPA en React, TypeScript y Vite;
   * `services/ml-inference/` (comando `serve` y servicio `voc-ml-online`, paso 6);
   * `infra/`, `docs/design/`, `docs/governance/` y `docs/thesis/` (paso 12).
 

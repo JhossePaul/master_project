@@ -1,6 +1,6 @@
 # Feature 7.0: Preparación y bloqueantes
 
-* **Estado (2026-10-25):** Pendiente. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
+* **Estado (2026-10-25):** En curso: B1 a B4 resueltos; faltan B5 (se aplica la recomendación al llegar a cada paso, con aviso) y las verificaciones de la sección 4, que hace la sesión de implementación. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
 * **Objetivo:** dejar resuelto lo que de verdad detiene el desarrollo y separar lo que no lo detiene. **Cerrar EPIC-6 no es requisito:** los pasos 14 (ciclo de modelo) y 15 de 6.6 y la corrida programada sin intervención no bloquean ningún paso de EPIC-7; lo único que afectan está anotado abajo.
 
 ## 1. Lo que ya está y se puede usar
@@ -77,7 +77,7 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 
 | Hueco | Se cierra en |
 | :--- | :--- |
-| `services/api-backend/` y `web/hitl-portal/` existen pero todos sus archivos están vacíos; `api-backend` está excluido del workspace uv | Pasos 1 y 2 |
+| `services/api-backend/` y `web/portal/` existen pero todos sus archivos están vacíos; `api-backend` está excluido del workspace uv | Pasos 1 y 2 |
 | `voc-api-backend` corre con `voc-sa-ml-backend` (escritura en todo el dataset), sin IAP, con *ingress* abierto | Paso 1: cuenta `voc-sa-portal-api`, permisos por tabla, IAP |
 | CI, CD, `cloudbuild.yaml`, `.dockerignore` y `.gcloudignore` no conocen la API ni el portal (`.gcloudignore` excluye `web/`); `tools/deploy_images.py` no fija la imagen de la API | Paso 1 |
 | `point_for`, `propose_risk_policy` y `drift_rates.rates` son puras pero viven en `ml-inference`, que importa BigQuery, Gemini y pyarrow | Pasos 5 y 8: se mueven a `voc-nlp` sin extras y `ml-inference` las re-exporta |
@@ -101,12 +101,27 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 
 ## Terminado cuando
 
-* [ ] B1 y B2 tienen su resultado anotado y la ruta de IAP elegida.
-* [ ] B3: la lista de personas y roles está en la configuración cifrada de Pulumi (o el autor decidió desplegar solo con su cuenta al principio).
-* [ ] B4: las preguntas "antes de 2" tienen respuesta.
+* [x] B1 y B2 tienen su resultado anotado y la ruta de IAP elegida (2026-10-25: IAP directo en Cloud Run con cliente de OAuth External).
+* [x] B3: el autor decidió desplegar solo con su cuenta al principio (2026-10-25); el paso 1 la pone en `portal_users` cifrada.
+* [x] B4: las preguntas "antes de 2" tienen respuesta (2026-10-25).
 * [ ] B5: cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
 * [ ] Las verificaciones de la sección 4 están marcadas.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+### B1. Prueba de acceso (2026-10-25)
+
+* **Política de la organización:** no bloquea. La política efectiva de `iam.allowedPolicyMemberDomains` en el proyecto es `allValues: ALLOW` y `iam.managed.allowedPolicyMembers` no se aplica; IAM aceptó dar `roles/iap.httpsResourceAccessor` a correos de Gmail, `up.edu.mx` y `bbva.com`.
+* **IAP directo en Cloud Run:** `gcloud run deploy … --no-allow-unauthenticated --iap` es GA (gcloud 590). Con gcloud hay que dar `roles/run.invoker` al agente de IAP (`service-<número>@gcp-sa-iap.iam.gserviceaccount.com`); la consola lo hace sola.
+* **Cliente de OAuth:** el que gestiona Google solo admite identidades de la organización; con él, ni la cuenta del autor (Gmail) entró aunque tenía el permiso. El autor creó en la consola un cliente propio con audiencia **External** y lo aplicó a nivel de proyecto con `gcloud iap settings set`. El *client secret* no está en el repo; en el paso 1, Pulumi solo referencia la configuración de IAP del proyecto, no la crea (los clientes de OAuth no se crean por API).
+
+| Cuenta | Con el cliente de Google | Con el cliente propio (External) |
+| :--- | :--- | :--- |
+| Gmail del autor | *You don't have access* | Entra |
+| Segunda cuenta Gmail | *You don't have access* (aún sin permiso) | Entra |
+| `up.edu.mx` | *Internal server error 604* | Entra |
+| `bbva.com` | — | **No entra:** bloqueo del Workspace de BBVA |
+
+* **Ruta elegida:** IAP directo en Cloud Run, sin balanceador ni dominio (`S-04` resuelta). Implica subir `pulumi-gcp` a 8.x en el paso 1 (B2).
+* **BBVA:** según `S-03`, se pide la excepción al administrador del Workspace de BBVA y, mientras tanto, esas personas entran con una cuenta Gmail.
+* `voc-portal-spike` se borró al terminar. `iap.googleapis.com` queda habilitada.

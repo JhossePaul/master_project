@@ -208,20 +208,20 @@ Repositorios en memoria que cumplen los mismos `Protocol`, cargados desde `tests
 
 Multi-stage, desde la raíz del repo, con la plantilla de `services/ingestion-worker/Dockerfile`:
 
-1. `node:24-bookworm-slim` AS `web`: `npm ci` y `npm run build` en `web/hitl-portal/` (desde el paso 2; mientras no exista, la etapa se omite con un `ARG BUILD_WEB=0`).
+1. `node:24-bookworm-slim` AS `web`: `npm ci` y `npm run build` en `web/portal/` (desde el paso 2; mientras no exista, la etapa se omite con un `ARG BUILD_WEB=0`).
 2. `uv` + `python:3.11-slim-bookworm` AS `builder`: `uv sync --frozen --no-dev --package api-backend --no-editable`.
 3. `python:3.11-slim-bookworm` AS `runtime`: usuario 10001 sin root, `/opt/venv`, `dist/` en `/app/static`, `BUILD_COMMIT` como `ARG`, `CMD uvicorn api_backend.main:app --host 0.0.0.0 --port ${PORT}`.
 
-* **`.dockerignore`** (lista de permitidos): sumar `services/api-backend/pyproject.toml`, `services/api-backend/src/`, `packages/voc-nlp/` (solo `pyproject.toml` y `src/`), `web/hitl-portal/` (sin `node_modules/` ni `dist/`) y, desde los pasos que los usen, `docs/thesis/`, los JSON de `docs/analytics/` y las guías de anotación.
+* **`.dockerignore`** (lista de permitidos): sumar `services/api-backend/pyproject.toml`, `services/api-backend/src/`, `packages/voc-nlp/` (solo `pyproject.toml` y `src/`), `web/portal/` (sin `node_modules/` ni `dist/`) y, desde los pasos que los usen, `docs/thesis/`, los JSON de `docs/analytics/` y las guías de anotación.
 * **`.gcloudignore`:** quitar la exclusión de `web/`.
-* Borrar `web/hitl-portal/Dockerfile` (vacío): la imagen única es la de la API.
+* Borrar `web/portal/Dockerfile` (vacío): la imagen única es la de la API.
 
 ### 6.2 CI y CD
 
 * **`ci.yaml`:**
   * en el trabajo `quality`, sumar `uv run pytest services/api-backend --cov=api_backend --cov-fail-under=85`;
   * un trabajo `api-backend-image` como los de las otras imágenes: construir y probar con el usuario 10001 que `/healthz` responde;
-  * desde el paso 2, un trabajo `portal` con Node 24: `npm ci`, `npm run check`, `npm test` y `npm run build` en `web/hitl-portal/`, y la comprobación de que `src/api/schema.d.ts` está al día con `openapi.json`.
+  * desde el paso 2, un trabajo `portal` con Node 24: `npm ci`, `npm run check`, `npm test` y `npm run build` en `web/portal/`, y la comprobación de que `src/api/schema.d.ts` está al día con `openapi.json`.
 * **`cd-cloud-build.yaml`:** sumar `web/**` a las rutas que construyen `api-backend`. El paso `known` ya mapea `api_backend_image` y se salta si el Dockerfile está vacío.
 * **`tools/deploy_images.py`:** sumar `("api-backend", "api_backend_image")` a `WORKERS` y corregir el mensaje "las dos imágenes".
 

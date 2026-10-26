@@ -49,7 +49,7 @@ bbva-voc-analyzer/
 │   ├── ml-inference/       # Jobs de inferencia batch, cargas y siembra (EPIC-6)
 │   └── api-backend/        # API RESTful (FastAPI) de consulta y ruteo
 └── web/
-    └── hitl-portal/        # Frontend (React + Vite) para exploración de incidentes
+    └── portal/             # Portal web (React + Vite): cockpit, explorador, HITL y administración
 ```
 
 ## 🛠 Stack Tecnológico
