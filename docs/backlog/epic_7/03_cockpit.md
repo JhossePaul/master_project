@@ -288,3 +288,12 @@ Tras ver la primera y la segunda pasada en dev, el autor pidió más ajustes y u
 2. Cockpit: KPI global, tabla y mancuerna.
 3. Evolución: mensual con botones por KPI.
 4. Tópicos: filtro de bancos y matriz con paginador.
+
+### Avance de la reorganización (2026-10-26)
+
+* **Tres vistas** (`CockpitView`, `EvolutionView`, `TopicsView`; rutas `/cockpit`, `/evolucion`, `/topicos`) en el grupo **Dashboard** del sidebar, que ahora es fijo y solo conserva `bancos`, `desde`, `hasta` y `kpi` al navegar. Se quitaron el menú "Sección:" (`SectionNav`) y el título del cuerpo (queda un `h1` oculto por vista). Los títulos de cada gráfica pasan a `h2`.
+* **Correcciones:** `useWidth` mide con una referencia por función (la gráfica de versiones ya ocupa todo el ancho y las de familias y tópicos se ajustan a su contenedor), el mapa de anomalías ya no tiene scroll, la serie diaria tiene leyenda propia en una línea (los valores al pasar el cursor siguen en la franja de dygraphs, con una indicación cuando no hay cursor), la gráfica de versiones tiene tooltip del día (fecha, total y detalle por versión, con la columna resaltada) y "marca u" pasa a "Relacionada con una actualización" en la interfaz.
+* **Cockpit:** `ComparisonTable` sustituye a las tarjetas y al bloque de comparación: KPI a la vez con botones (`?kpi=`, compartido con la serie diaria y el mensual), referencia y actual con `[lo, hi]`, diferencia sin intervalo propio, mancuerna (escala compartida entre bancos, bigotes más claros para la referencia), alertas abiertas, "Comparando sep 2026 vs sep 2025", y botones "mismo mes del año anterior / mes anterior" y "ordenar por banco / valor actual". El mes elegido (`?mes=`) lo comparten la tabla y la matriz y viaja a `/kpis/cards`. La landing conserva sus tarjetas.
+* **Evolución:** el mensual con PPI es un solo bloque con botones por KPI (`GET /kpis/monthly` admite `estrellas_POS_texto_NEG`) y conserva intervalos, la línea cruda y la ventana de 12 / 24 meses o todo.
+* **Tópicos:** filtro de bancos con casillas (los del filtro general al empezar, siempre queda uno) y matriz 3 × 2 con paginador (botones y flechas del teclado, "1–6 de 19 tópicos"); cada panel es un tópico con una línea por banco y su propia escala. Los botones del paginador usan `aria-disabled` para no perder el foco al llegar al límite.
+* **Pruebas:** 113 en el portal y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.

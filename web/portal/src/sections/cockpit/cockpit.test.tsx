@@ -516,6 +516,113 @@ describe("cockpit, barra fija y secciones", () => {
   });
 });
 
+describe("tópicos, filtro de bancos y paginador", () => {
+  function manyTopics(n: number) {
+    const base = syntheticTopics();
+    return Array.from({ length: n }, (_, i) =>
+      base.map((t) => ({
+        ...t,
+        topic_id: i,
+        nombre: `Tópico ${i}`,
+        filas: t.filas + (n - i),
+      })),
+    ).flat();
+  }
+
+  it("empieza con los bancos del filtro general y deja quitar uno", async () => {
+    const { container } = renderApp("/topicos?bancos=BBVA,AZTECA");
+    const filter = await screen.findByRole("group", {
+      name: "Bancos de los tópicos",
+    });
+    const azul = within(filter).getByRole("button", { name: "Banco Azul" });
+    expect(azul).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(filter).getByRole("button", { name: "Banco Verde" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    const titles = () =>
+      [...container.querySelectorAll("li svg title")].map((t) => t.textContent);
+    expect(titles().some((t) => t?.startsWith("Banco Azul"))).toBe(true);
+
+    await userEvent.click(azul);
+
+    expect(azul).toHaveAttribute("aria-pressed", "false");
+    expect(titles().some((t) => t?.startsWith("Banco Azul"))).toBe(false);
+    expect(titles().some((t) => t?.startsWith("Banco Verde"))).toBe(true);
+  });
+
+  it("siempre queda al menos un banco", async () => {
+    renderApp("/topicos?bancos=BBVA");
+    const filter = await screen.findByRole("group", {
+      name: "Bancos de los tópicos",
+    });
+    const azul = within(filter).getByRole("button", { name: "Banco Azul" });
+
+    await userEvent.click(azul);
+
+    expect(azul).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("muestra seis tópicos por página y se pagina", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(9))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+
+    const region = await screen.findByRole("region", { name: "Tópicos" });
+    expect(within(region).getAllByRole("listitem")).toHaveLength(6);
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+    const prev = within(region).getByRole("button", {
+      name: "Tópicos anteriores",
+    });
+    const next = within(region).getByRole("button", {
+      name: "Tópicos siguientes",
+    });
+    expect(prev).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(next);
+
+    expect(within(region).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(region).getByText(/7–9 de 9 tópicos/)).toBeInTheDocument();
+    expect(next).toHaveAttribute("aria-disabled", "true");
+    expect(within(region).getByText("Tópico 8")).toBeInTheDocument();
+
+    await userEvent.click(prev);
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+  });
+
+  it("las flechas del teclado cambian de página", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(9))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+    const region = await screen.findByRole("region", { name: "Tópicos" });
+    const next = within(region).getByRole("button", {
+      name: "Tópicos siguientes",
+    });
+    next.focus();
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(within(region).getByText(/7–9 de 9 tópicos/)).toBeInTheDocument();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+  });
+
+  it("ordena los tópicos por volumen", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(3))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+
+    const items = await within(
+      await screen.findByRole("region", { name: "Tópicos" }),
+    ).findAllByRole("listitem");
+
+    expect(items[0]).toHaveTextContent("Tópico 0");
+    expect(items[2]).toHaveTextContent("Tópico 2");
+  });
+});
+
 describe("cockpit, ajustes de la primera pasada", () => {
   it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
     renderApp("/topicos");

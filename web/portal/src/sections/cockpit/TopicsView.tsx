@@ -38,7 +38,7 @@ export default function TopicsView() {
         onFamilia={setFamilia}
         {...common}
       />
-      <TopicsBlock banks={banks} bank={detail} familia={familia} {...common} />
+      <TopicsBlock banks={banks} familia={familia} {...common} />
     </div>
   );
 }
