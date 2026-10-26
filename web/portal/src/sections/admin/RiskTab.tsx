@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import {
+  Controller,
   type FieldPath,
   type Resolver,
   type UseFormReturn,
@@ -24,6 +25,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputGroup } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RISK_HELP, type RiskField } from "@/config/policyHelp";
@@ -41,10 +43,10 @@ export interface RiskForm {
   drift_boost_days: number | null;
   drift_boost_weekly_cap: number | null;
   monitor_sample_size: number;
-  monitor_frequency: string;
+  monitor_frequency: "quarterly";
   no_agreement: boolean;
   human_agreement_sample_size: number | null;
-  human_agreement_frequency: string | null;
+  human_agreement_frequency: "monthly" | "quarterly" | null;
   warn_correction_rate: number;
   warn_agreement_floor: number;
   agreement_sample_weekly: number;
@@ -53,7 +55,7 @@ export interface RiskForm {
   retrain_kappa_floor: number;
   retrain_trigger: "manual" | "auto";
   topic_refit_trigger: "scheduled" | "manual";
-  topic_refit_frequency: string;
+  topic_refit_frequency: "quarterly";
 }
 
 type NumberKey = {
@@ -73,7 +75,16 @@ function bounded(field: RiskField) {
   return schema;
 }
 
-const text = z.string().trim().min(1, "Escribe un valor");
+// Lo único que los Jobs saben ejecutar (el contrato lo exige también).
+const MONITOR_FREQUENCIES = ["quarterly"] as const;
+const REFIT_FREQUENCIES = ["quarterly"] as const;
+const AGREEMENT_FREQUENCIES = ["monthly", "quarterly"] as const;
+const FREQUENCY_LABELS: Record<string, string> = {
+  monthly: "Mensual",
+  quarterly: "Trimestral",
+};
+const options = (values: readonly string[]): [string, string][] =>
+  values.map((v) => [v, FREQUENCY_LABELS[v] ?? v]);
 
 export const riskSchema = z
   .object({
@@ -84,12 +95,12 @@ export const riskSchema = z
     drift_boost_days: bounded("drift_boost_days").nullable(),
     drift_boost_weekly_cap: bounded("drift_boost_weekly_cap").nullable(),
     monitor_sample_size: bounded("monitor_sample_size"),
-    monitor_frequency: text,
+    monitor_frequency: z.enum(MONITOR_FREQUENCIES),
     no_agreement: z.boolean(),
     human_agreement_sample_size: bounded(
       "human_agreement_sample_size",
     ).nullable(),
-    human_agreement_frequency: z.string().trim().nullable(),
+    human_agreement_frequency: z.enum(AGREEMENT_FREQUENCIES).nullable(),
     warn_correction_rate: bounded("warn_correction_rate"),
     warn_agreement_floor: bounded("warn_agreement_floor"),
     agreement_sample_weekly: bounded("agreement_sample_weekly"),
@@ -98,7 +109,7 @@ export const riskSchema = z
     retrain_kappa_floor: bounded("retrain_kappa_floor"),
     retrain_trigger: z.enum(["manual", "auto"]),
     topic_refit_trigger: z.enum(["scheduled", "manual"]),
-    topic_refit_frequency: text,
+    topic_refit_frequency: z.enum(REFIT_FREQUENCIES),
   })
   .superRefine((v, ctx) => {
     if (!v.no_boost) {
@@ -170,7 +181,7 @@ export function toChanges(values: RiskForm, current: RiskPolicy): Changes {
       : values.human_agreement_sample_size,
     human_agreement_frequency: values.no_agreement
       ? null
-      : values.human_agreement_frequency?.trim() || null,
+      : values.human_agreement_frequency || null,
   };
   delete next.no_boost;
   delete next.no_agreement;
@@ -186,6 +197,45 @@ export function toChanges(values: RiskForm, current: RiskPolicy): Changes {
 const toNumber = (v: unknown) =>
   v === "" || v === null || v === undefined ? null : Number(v);
 
+interface NumberHelp {
+  label: string;
+  unit: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+/** Las fracciones (0.90) se muestran como porcentaje (90 %) y se guardan como fracción. */
+const isPercent = (help: NumberHelp) => help.unit === "%";
+const toPercent = (v: number) => Math.round(v * 10_000) / 100;
+
+export function FieldHead({
+  name,
+  label,
+  help,
+}: {
+  name: string;
+  label: string;
+  help: (typeof RISK_HELP)[RiskField];
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label htmlFor={name} className="leading-tight">
+        {label}
+      </Label>
+      <HelpButton help={help} />
+    </div>
+  );
+}
+
+function FieldError({ message }: { message: unknown }) {
+  return message ? (
+    <p role="alert" className="text-xs text-danger">
+      {String(message)}
+    </p>
+  ) : null;
+}
+
 function NumberField({
   form,
   name,
@@ -195,122 +245,130 @@ function NumberField({
   name: NumberKey;
   disabled?: boolean;
 }) {
-  const help = RISK_HELP[name] as {
-    label: string;
-    unit: string;
-    min?: number;
-    max?: number;
-    step?: number;
-  };
+  const help = RISK_HELP[name] as NumberHelp;
+  const percent = isPercent(help);
   const error = form.formState.errors[name]?.message;
+  const unitId = `${name}-unidad`;
+  const shared = {
+    id: name,
+    type: "number" as const,
+    inputMode: "decimal" as const,
+    disabled,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": help.unit ? unitId : undefined,
+  };
   return (
-    <div className="grid gap-1">
-      <div className="flex items-center gap-2">
-        <Label htmlFor={name}>{help.label}</Label>
-        <HelpButton help={RISK_HELP[name]} />
-      </div>
-      <Input
-        id={name}
-        type="number"
-        inputMode="decimal"
-        min={help.min}
-        max={help.max}
-        step={help.step ?? "any"}
-        disabled={disabled}
-        aria-invalid={error ? true : undefined}
-        {...form.register(name as FieldPath<RiskForm>, {
-          setValueAs: toNumber,
-        })}
-      />
-      {help.unit ? (
-        <p className="text-xs text-text-muted">{help.unit}</p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-xs text-danger">
-          {String(error)}
-        </p>
-      ) : null}
+    <div className="grid content-start gap-1">
+      <FieldHead name={name} label={help.label} help={RISK_HELP[name]} />
+      <InputGroup suffix={help.unit} unitId={unitId}>
+        {percent ? (
+          <Controller
+            control={form.control}
+            name={name as FieldPath<RiskForm>}
+            render={({ field }) => (
+              <Input
+                {...shared}
+                min={help.min === undefined ? undefined : toPercent(help.min)}
+                max={help.max === undefined ? undefined : toPercent(help.max)}
+                step={help.step === undefined ? "any" : toPercent(help.step)}
+                name={field.name}
+                ref={field.ref}
+                onBlur={field.onBlur}
+                value={
+                  typeof field.value === "number" &&
+                  Number.isFinite(field.value)
+                    ? toPercent(field.value)
+                    : ""
+                }
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? null : Number(e.target.value) / 100,
+                  )
+                }
+              />
+            )}
+          />
+        ) : (
+          <Input
+            {...shared}
+            min={help.min}
+            max={help.max}
+            step={help.step ?? "any"}
+            {...form.register(name as FieldPath<RiskForm>, {
+              setValueAs: toNumber,
+            })}
+          />
+        )}
+      </InputGroup>
+      <FieldError message={error} />
     </div>
   );
 }
 
-function TextField({
+function SelectField({
   form,
   name,
+  choices,
   disabled,
+  placeholder,
 }: {
   form: UseFormReturn<RiskForm>;
   name:
     | "monitor_frequency"
     | "human_agreement_frequency"
-    | "topic_refit_frequency";
+    | "topic_refit_frequency"
+    | "retrain_trigger"
+    | "topic_refit_trigger";
+  choices: [string, string][];
   disabled?: boolean;
+  /** Para un valor que puede ser nulo (la doble revisión apagada). */
+  placeholder?: string;
 }) {
   const help = RISK_HELP[name];
   const error = form.formState.errors[name]?.message;
   return (
-    <div className="grid gap-1">
-      <div className="flex items-center gap-2">
-        <Label htmlFor={name}>{help.label}</Label>
-        <HelpButton help={help} />
-      </div>
-      <Input
+    <div className="grid content-start gap-1">
+      <FieldHead name={name} label={help.label} help={help} />
+      <select
         id={name}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
+        className="h-9 rounded-sm border border-border-strong bg-surface px-2 text-sm disabled:opacity-50"
         {...form.register(name, {
           setValueAs: (v: string) => (v === "" ? null : v),
         })}
-      />
-      {error ? (
-        <p role="alert" className="text-xs text-danger">
-          {String(error)}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function ChoiceField({
-  form,
-  name,
-  options,
-}: {
-  form: UseFormReturn<RiskForm>;
-  name: "retrain_trigger" | "topic_refit_trigger";
-  options: [string, string][];
-}) {
-  const help = RISK_HELP[name];
-  return (
-    <div className="grid gap-1">
-      <div className="flex items-center gap-2">
-        <Label htmlFor={name}>{help.label}</Label>
-        <HelpButton help={help} />
-      </div>
-      <select
-        id={name}
-        className="h-9 rounded-sm border border-border-strong bg-surface px-3 text-sm"
-        {...form.register(name)}
       >
-        {options.map(([value, label]) => (
+        {placeholder ? <option value="">{placeholder}</option> : null}
+        {choices.map(([value, label]) => (
           <option key={value} value={value}>
             {label}
           </option>
         ))}
       </select>
+      <FieldError message={error} />
     </div>
   );
 }
 
+/** Un grupo de campos cortos: varios por fila, sin repetir las unidades debajo. */
 function Group({
   title,
+  columns,
   children,
 }: {
   title: string;
+  columns: "3" | "4" | "5";
   children: React.ReactNode;
 }) {
+  const cols = {
+    "3": "lg:grid-cols-3",
+    "4": "lg:grid-cols-4",
+    "5": "lg:grid-cols-5",
+  }[columns];
   return (
-    <fieldset className="grid gap-4 rounded-md border border-border p-4 md:grid-cols-2">
+    <fieldset
+      className={`grid grid-cols-1 gap-x-4 gap-y-3 rounded-md border border-border px-4 pt-2 pb-4 sm:grid-cols-2 ${cols}`}
+    >
       <legend className="px-2 font-serif text-lg font-semibold">{title}</legend>
       {children}
     </fieldset>
@@ -327,7 +385,7 @@ function Toggle({
   label: string;
 }) {
   return (
-    <label className="col-span-full flex items-center gap-2 text-sm">
+    <label className="flex items-center gap-2 self-center pt-5 text-sm">
       <input type="checkbox" {...form.register(name)} />
       {label}
     </label>
@@ -339,47 +397,76 @@ function CoverageControl({ form }: { form: UseFormReturn<RiskForm> }) {
   const value = form.watch("hitl_target_coverage");
   const error = form.formState.errors.hitl_target_coverage?.message;
   return (
-    <div className="col-span-full grid gap-1">
-      <div className="flex items-center gap-2">
-        <Label htmlFor="hitl_target_coverage">{help.label}</Label>
-        <HelpButton help={help} />
-      </div>
+    <div className="grid content-start gap-1 sm:col-span-2 lg:col-span-3">
+      <FieldHead name="hitl_target_coverage" label={help.label} help={help} />
       <div className="flex flex-wrap items-center gap-4">
         <input
           type="range"
           aria-label="Cobertura objetivo (control deslizante)"
-          min={help.min}
-          max={help.max}
-          step={help.step}
-          value={Number.isFinite(value) ? value : help.min}
+          min={toPercent(help.min)}
+          max={toPercent(help.max)}
+          step={toPercent(help.step)}
+          value={
+            Number.isFinite(value) ? toPercent(value) : toPercent(help.min)
+          }
           onChange={(e) =>
-            form.setValue("hitl_target_coverage", Number(e.target.value), {
-              shouldDirty: true,
-            })
+            form.setValue(
+              "hitl_target_coverage",
+              Number(e.target.value) / 100,
+              { shouldDirty: true },
+            )
           }
           className="min-w-48 flex-1"
         />
-        <Input
-          id="hitl_target_coverage"
-          type="number"
-          min={help.min}
-          max={help.max}
-          step={help.step}
+        <InputGroup
+          suffix="%"
+          unitId="hitl_target_coverage-unidad"
           className="w-28"
-          {...form.register("hitl_target_coverage", { setValueAs: toNumber })}
-        />
-        <span className="tabular text-sm text-text-muted">
-          {Number.isFinite(value) ? formatPct(value, 0) : "—"} de las reseñas
-          sin revisión
+        >
+          <Controller
+            control={form.control}
+            name="hitl_target_coverage"
+            render={({ field }) => (
+              <Input
+                id="hitl_target_coverage"
+                type="number"
+                aria-describedby="hitl_target_coverage-unidad"
+                min={toPercent(help.min)}
+                max={toPercent(help.max)}
+                step={toPercent(help.step)}
+                name={field.name}
+                ref={field.ref}
+                onBlur={field.onBlur}
+                value={
+                  Number.isFinite(field.value) ? toPercent(field.value) : ""
+                }
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? null : Number(e.target.value) / 100,
+                  )
+                }
+              />
+            )}
+          />
+        </InputGroup>
+        <span className="text-sm text-text-muted">
+          de las reseñas sin revisión
         </span>
       </div>
-      {error ? (
-        <p role="alert" className="text-xs text-danger">
-          {String(error)}
-        </p>
-      ) : null}
+      <FieldError message={error} />
     </div>
   );
+}
+
+/** Valor de un cambio, con el porcentaje como porcentaje. */
+function shown(field: string, value: unknown): string {
+  if (value === null || value === undefined) return "nulo";
+  const help = (RISK_HELP as Record<string, NumberHelp>)[field];
+  if (help && isPercent(help) && typeof value === "number")
+    return `${toPercent(value)} %`;
+  if (typeof value === "string" && FREQUENCY_LABELS[value])
+    return FREQUENCY_LABELS[value];
+  return String(value);
 }
 
 function PreviewPanel({ preview }: { preview: RiskPreview }) {
@@ -401,8 +488,8 @@ function PreviewPanel({ preview }: { preview: RiskPreview }) {
           {preview.diff.map((d) => (
             <li key={d.field}>
               <code className="font-mono">{d.field}</code>:{" "}
-              <span className="tabular">{String(d.before ?? "nulo")}</span> →{" "}
-              <strong className="tabular">{String(d.after ?? "nulo")}</strong>
+              <span className="tabular">{shown(d.field, d.before)}</span> →{" "}
+              <strong className="tabular">{shown(d.field, d.after)}</strong>
             </li>
           ))}
         </ul>
@@ -522,11 +609,11 @@ export default function RiskTab() {
         onSubmit={form.handleSubmit(review)}
         noValidate
       >
-        <Group title="Revisión humana">
+        <Group title="Revisión humana" columns="4">
           <CoverageControl form={form} />
           <NumberField form={form} name="hitl_weekly_cap" />
         </Group>
-        <Group title="Reacción a la deriva">
+        <Group title="Reacción a la deriva" columns="4">
           <Toggle
             form={form}
             name="no_boost"
@@ -544,37 +631,56 @@ export default function RiskTab() {
             disabled={noBoost}
           />
         </Group>
-        <Group title="Muestras">
+        <Group title="Muestras" columns="5">
           <NumberField form={form} name="monitor_sample_size" />
-          <TextField form={form} name="monitor_frequency" />
+          <SelectField
+            form={form}
+            name="monitor_frequency"
+            choices={options(MONITOR_FREQUENCIES)}
+          />
           <Toggle form={form} name="no_agreement" label="Sin doble revisión" />
           <NumberField
             form={form}
             name="human_agreement_sample_size"
             disabled={noAgreement}
           />
-          <TextField
+          <SelectField
             form={form}
             name="human_agreement_frequency"
+            choices={options(AGREEMENT_FREQUENCIES)}
+            placeholder="Elige…"
             disabled={noAgreement}
           />
         </Group>
-        <Group title="Avisos">
+        <Group title="Avisos" columns="5">
           <NumberField form={form} name="warn_correction_rate" />
           <NumberField form={form} name="warn_agreement_floor" />
           <NumberField form={form} name="agreement_sample_weekly" />
           <NumberField form={form} name="families_exact_floor" />
           <NumberField form={form} name="families_min_prevalence" />
         </Group>
-        <Group title="Modelos">
+        <Group title="Modelos" columns="4">
           <NumberField form={form} name="retrain_kappa_floor" />
-          <ChoiceField
+          <SelectField
             form={form}
             name="retrain_trigger"
-            options={[
+            choices={[
               ["manual", "Manual"],
               ["auto", "Automático"],
             ]}
+          />
+          <SelectField
+            form={form}
+            name="topic_refit_trigger"
+            choices={[
+              ["scheduled", "Programado"],
+              ["manual", "Manual"],
+            ]}
+          />
+          <SelectField
+            form={form}
+            name="topic_refit_frequency"
+            choices={options(REFIT_FREQUENCIES)}
           />
           {trigger === "auto" ? (
             <div className="col-span-full">
@@ -584,15 +690,6 @@ export default function RiskTab() {
               </Callout>
             </div>
           ) : null}
-          <ChoiceField
-            form={form}
-            name="topic_refit_trigger"
-            options={[
-              ["scheduled", "Programado"],
-              ["manual", "Manual"],
-            ]}
-          />
-          <TextField form={form} name="topic_refit_frequency" />
         </Group>
 
         <div className="flex flex-wrap items-center gap-3">

@@ -15,6 +15,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputGroup } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -315,7 +316,7 @@ export default function DriftTab() {
         </p>
       </ChartFrame>
 
-      <Card className="grid gap-4 p-5 md:grid-cols-2">
+      <Card className="grid gap-x-4 gap-y-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <h3 className="col-span-full font-serif text-lg font-semibold">
           Entrada de los bancos
         </h3>
@@ -327,18 +328,21 @@ export default function DriftTab() {
                 <Label htmlFor={`param-${name}`}>{help.label}</Label>
                 <HelpButton help={help} />
               </div>
-              <Input
-                id={`param-${name}`}
-                type="number"
-                min={help.min}
-                step={help.step}
-                value={params[name] ?? ""}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, [name]: e.target.value }))
-                }
-              />
+              <InputGroup suffix={help.unit} unitId={`param-${name}-unidad`}>
+                <Input
+                  id={`param-${name}`}
+                  type="number"
+                  min={help.min}
+                  step={help.step}
+                  aria-describedby={`param-${name}-unidad`}
+                  value={params[name] ?? ""}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, [name]: e.target.value }))
+                  }
+                />
+              </InputGroup>
               <p className="text-xs text-text-muted">
-                Plantilla: {template[name]} {help.unit}
+                Plantilla: {template[name]}
               </p>
             </div>
           );

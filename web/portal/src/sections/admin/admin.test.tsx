@@ -73,7 +73,7 @@ describe("administración: apetito de riesgo", () => {
     await screen.findByLabelText("Cobertura objetivo");
     expect(screen.queryByText("◆ Propuesto")).not.toBeInTheDocument();
 
-    await setCoverage("0.85");
+    await setCoverage("85");
 
     expect(await screen.findByText("◆ Propuesto")).toBeInTheDocument();
   });
@@ -81,7 +81,7 @@ describe("administración: apetito de riesgo", () => {
   it("revisar manda solo lo que cambió y el diff lista solo eso", async () => {
     const calls = serveRisk();
     renderApp("/admin");
-    const user = await setCoverage("0.85");
+    const user = await setCoverage("85");
 
     await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
 
@@ -95,10 +95,93 @@ describe("administración: apetito de riesgo", () => {
     expect(within(list).getByText("hitl_threshold")).toBeInTheDocument();
   });
 
+  it("la cobertura se escribe y se lee como porcentaje; el diff también", async () => {
+    serveRisk();
+    renderApp("/admin");
+
+    const field = await screen.findByLabelText("Cobertura objetivo");
+    expect(field).toHaveValue(90); // 0.90 guardado, 90 mostrado
+    const user = await setCoverage("85");
+    await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
+
+    const panel = await screen.findByText("Cambios propuestos");
+    const list = panel.closest("div") as HTMLElement;
+    expect(within(list).getByText("90 %")).toBeInTheDocument();
+    expect(within(list).getByText("85 %")).toBeInTheDocument();
+  });
+
+  it("las unidades van dentro del campo, no debajo", async () => {
+    renderApp("/admin");
+
+    const days = await screen.findByLabelText("Días de la subida");
+    const unit = document.getElementById(
+      days.getAttribute("aria-describedby") ?? "",
+    );
+    expect(unit).toHaveTextContent("días");
+    expect(unit?.parentElement).toContainElement(days); // comparten el recuadro
+    const coverage = screen.getByLabelText("Cobertura objetivo");
+    expect(
+      document.getElementById(coverage.getAttribute("aria-describedby") ?? ""),
+    ).toHaveTextContent("%");
+    const cap = screen.getByLabelText("Tope semanal de revisión");
+    expect(
+      document.getElementById(cap.getAttribute("aria-describedby") ?? ""),
+    ).toHaveTextContent("casos/semana");
+  });
+
+  it("las frecuencias son listas con las únicas opciones que los Jobs ejecutan", async () => {
+    const calls = serveRisk({
+      proposed: syntheticRiskPolicy(),
+      diff: [],
+      large_change: false,
+      warnings: [],
+      errors: [],
+    });
+    const user = userEvent.setup();
+    renderApp("/admin");
+    await screen.findByLabelText("Cobertura objetivo");
+
+    const choices = (label: string) =>
+      within(screen.getByLabelText(label))
+        .getAllByRole("option")
+        .map((o) => o.textContent);
+    expect(choices("Frecuencia de la muestra")).toEqual(["Trimestral"]);
+    expect(choices("Frecuencia del re-ajuste de tópicos")).toEqual([
+      "Trimestral",
+    ]);
+    expect(choices("Frecuencia de la doble revisión")).toEqual([
+      "Elige…",
+      "Mensual",
+      "Trimestral",
+    ]);
+    // Ninguna es un campo de texto libre.
+    for (const label of [
+      "Frecuencia de la muestra",
+      "Frecuencia del re-ajuste de tópicos",
+      "Frecuencia de la doble revisión",
+    ])
+      expect(screen.getByLabelText(label).tagName).toBe("SELECT");
+
+    // Activar la doble revisión y elegir una frecuencia válida.
+    await user.click(screen.getByLabelText("Sin doble revisión"));
+    await user.type(screen.getByLabelText("Doble revisión"), "100");
+    await user.selectOptions(
+      screen.getByLabelText("Frecuencia de la doble revisión"),
+      "monthly",
+    );
+    await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
+
+    await waitFor(() => expect(calls.preview).toHaveLength(1));
+    expect(calls.preview[0]?.changes).toMatchObject({
+      human_agreement_sample_size: 100,
+      human_agreement_frequency: "monthly",
+    });
+  });
+
   it("guardar exige un motivo de al menos 10 caracteres", async () => {
     const calls = serveRisk();
     renderApp("/admin");
-    const user = await setCoverage("0.85");
+    const user = await setCoverage("85");
     await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
     await screen.findByText("Cambios propuestos");
 
@@ -131,7 +214,7 @@ describe("administración: apetito de riesgo", () => {
       ],
     });
     renderApp("/admin");
-    const user = await setCoverage("0.8");
+    const user = await setCoverage("80");
     await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
     await screen.findByText("Cambios propuestos");
 
@@ -167,7 +250,7 @@ describe("administración: apetito de riesgo", () => {
   it("un campo fuera de rango no llega a la API", async () => {
     const calls = serveRisk();
     renderApp("/admin");
-    const user = await setCoverage("0.5");
+    const user = await setCoverage("50");
 
     await user.click(screen.getByRole("button", { name: "Revisar cambios" }));
 

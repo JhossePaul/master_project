@@ -36,7 +36,7 @@ export const RISK_HELP = {
   },
   hitl_weekly_cap: {
     label: "Tope semanal de revisión",
-    unit: "casos por semana",
+    unit: "casos/semana",
     means:
       "Máximo de casos que entran a la cola en una semana. Sin tope, entran todos los que pide la cobertura.",
     evidence:
@@ -71,7 +71,7 @@ export const RISK_HELP = {
   },
   drift_boost_weekly_cap: {
     label: "Tope semanal de la subida",
-    unit: "casos por semana",
+    unit: "casos/semana",
     means: "Máximo de casos extra por semana mientras dura la subida.",
     evidence: "Sin evidencia en los experimentos.",
     up: "Se revisan más casos del banco con alerta.",
@@ -81,7 +81,7 @@ export const RISK_HELP = {
   },
   monitor_sample_size: {
     label: "Muestra de monitoreo",
-    unit: "revisiones por periodo",
+    unit: "por periodo",
     means:
       "Reseñas que se revisan a ciegas cada periodo para medir si el modelo sigue acertando.",
     evidence:
@@ -144,7 +144,7 @@ export const RISK_HELP = {
   },
   human_agreement_sample_size: {
     label: "Doble revisión",
-    unit: "revisiones por periodo",
+    unit: "por periodo",
     means:
       "Casos que revisa una segunda persona para medir el acuerdo entre revisores. Sin esto no hay doble revisión.",
     evidence:
@@ -192,7 +192,7 @@ export const RISK_HELP = {
   },
   agreement_sample_weekly: {
     label: "Muestra semanal de acuerdo",
-    unit: "textos por semana",
+    unit: "textos/semana",
     means: "Textos que Gemini vuelve a clasificar cada semana para el aviso.",
     evidence: "500 textos por semana, unos $0.02.",
     link: SCALE,
