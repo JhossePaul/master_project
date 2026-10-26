@@ -3,7 +3,7 @@
 Sustituye el copiar a mano los comandos `pulumi config set` del resumen del CD:
 
 1. Lista en Artifact Registry las imágenes de `ingestion-worker`,
-   `sanitization-pipeline` y `ml-inference` (EPIC-6, 6.3).
+   `sanitization-pipeline`, `ml-inference` y `api-backend` (EPIC-6 y EPIC-7).
 2. Elige el SHA de commit más reciente que tengan **todas** (comparten código:
    desplegar una sola dejó páginas cerradas con hueco el 2026-10-16) o el que
    se pida con `--sha`.
@@ -32,6 +32,7 @@ WORKERS = (
     ("ingestion-worker", "ingestion_worker_image"),
     ("sanitization-pipeline", "sanitization_job_image"),
     ("ml-inference", "ml_inference_image"),
+    ("api-backend", "api_backend_image"),
 )
 CONFIG_NAMESPACE = "bbva-voc-infra"
 INFRA_DIR = Path(__file__).resolve().parent.parent / "infra"
@@ -113,7 +114,7 @@ def choose_sha(per_image: dict[str, dict[str, str]], wanted: str | None) -> str:
         if all(sha in per_image[n] for n in names[1:]):
             return sha
     raise DeployError(
-        "ninguna versión está construida en las dos imágenes; espera al CD"
+        "ninguna versión está construida en todas las imágenes; espera al CD"
     )
 
 

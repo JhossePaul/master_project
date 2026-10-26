@@ -9,6 +9,7 @@ on:
     paths:
       - services/**
       - packages/**
+      - web/**
       - pyproject.toml
       - uv.lock
       - cloudbuild.yaml

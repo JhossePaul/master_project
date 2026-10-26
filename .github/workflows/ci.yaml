@@ -87,6 +87,11 @@ jobs:
           uv run --frozen pytest services/ml-inference/tests
           --cov=ml_inference --cov-fail-under=85
 
+      - name: API and portal backend
+        run: >-
+          uv run --frozen pytest services/api-backend
+          --cov=api_backend --cov-fail-under=85
+
   ingestion-image:
     # Valida que la imagen del worker construye; la publicación es del CD.
     runs-on: ubuntu-latest
@@ -158,3 +163,40 @@ jobs:
             from kaggle.api.kaggle_api_extended import KaggleApi"
           id=$(docker run --rm --entrypoint id ml-inference:ci -u)
           test "$id" = "10001"
+
+  api-backend-image:
+    # Valida que la imagen de la API y el portal construye y arranca; la
+    # publicación es del CD. Sin PyTorch: tarda lo de la imagen de ingesta.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build api-backend image
+        run: >-
+          docker build --platform=linux/amd64
+          --file services/api-backend/Dockerfile
+          --build-arg BUILD_COMMIT=${{ github.sha }}
+          --tag api-backend:ci .
+
+      - name: Smoke test
+        run: |
+          id=$(docker run --rm --entrypoint id api-backend:ci -u)
+          test "$id" = "10001"
+          docker run -d --name api -p 8080:8080 \
+            -e ENVIRONMENT=dev -e GCP_PROJECT_ID=ci \
+            -e IAP_AUDIENCE=/projects/1/locations/us-central1/services/voc-api-backend \
+            api-backend:ci
+          for _ in $(seq 1 30); do
+            curl -fsS localhost:8080/healthz && break
+            sleep 1
+          done
+          curl -fsS localhost:8080/healthz | grep -F '"commit":"${{ github.sha }}"'
+          # Sin el JWT de IAP: 401 y no un error del servidor.
+          code=$(curl -s -o /dev/null -w "%{http_code}" localhost:8080/api/v1/me)
+          test "$code" = "401"
+          # Ni PyTorch ni Beam en la imagen de la API.
+          docker exec api python -c \
+            "import importlib.util as u; assert not u.find_spec('torch') and not u.find_spec('apache_beam')"
+          docker logs api

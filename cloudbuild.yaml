@@ -37,6 +37,7 @@ steps:
       - --platform=linux/amd64
       - --file=services/${_SERVICE}/Dockerfile
       - --tag=${_IMAGE}:${_TAG}
+      - --build-arg=BUILD_COMMIT=${_TAG}
       - --label=org.opencontainers.image.revision=${_TAG}
       - --label=org.opencontainers.image.source=services/${_SERVICE}
       - .
