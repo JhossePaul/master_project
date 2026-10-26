@@ -48,6 +48,8 @@ class ApiSettings(BaseSettings):
     dlp_inspect_template: str = ""
     dlp_deidentify_template: str = ""
 
+    # Guías de revisión: ``<guidelines_dir>/<content_uri>`` (copia la imagen).
+    guidelines_dir: str = "/app/guidelines"
     static_dir: str = "/app/static"
     build_commit: str = "unknown"
 

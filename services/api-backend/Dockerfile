@@ -55,11 +55,17 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home app
 COPY --from=builder --chown=root:root /opt/venv /opt/venv
 COPY --from=web --chown=root:root /web/portal/dist /app/static
+# Guías de revisión: `guidelines.content_uri` es una ruta del repo.
+COPY --chown=root:root docs/analytics/labeling/annotation_guideline.md \
+    /app/guidelines/docs/analytics/labeling/annotation_guideline.md
+COPY --chown=root:root docs/analytics/eda/eda_aspects_guideline.md \
+    /app/guidelines/docs/analytics/eda/eda_aspects_guideline.md
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8080 \
     STATIC_DIR=/app/static \
+    GUIDELINES_DIR=/app/guidelines \
     BUILD_COMMIT=${BUILD_COMMIT}
 WORKDIR /app
 USER 10001:10001
