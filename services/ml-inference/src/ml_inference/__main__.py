@@ -3,6 +3,8 @@
 * ``delta``: el delta diario (Job ``voc-ml-inference-delta``).
 * ``seed``: versiones iniciales desde las métricas de los experimentos (autor).
 * ``load-local``: carga única del backfill histórico desde el Mac (autor).
+* ``load-curation``: solo la curaduría de tópicos (``curation_topics``), para
+  corregirla sin repetir el backfill (autor).
 * ``register`` y ``promote``: ciclo de vida del modelo de sentimiento.
   ``promote`` evalúa la regla de promoción, recalcula la curva y propone la
   ``risk_policy`` del modelo nuevo; el candidato ya debe estar re-predicho.
@@ -65,6 +67,11 @@ def parser() -> argparse.ArgumentParser:
     )
     load.add_argument("--work", type=Path, required=True)
     load.add_argument("--minilm", type=Path, default=None)
+    cur = sub.add_parser("load-curation", help="solo la curaduría de tópicos")
+    cur.add_argument("--actor-hash", type=_actor, required=True)
+    cur.add_argument(
+        "--data", type=Path, default=Path("experiments/analytics/data")
+    )
     reg = sub.add_parser("register", help="registra una versión candidata")
     reg.add_argument("--weights-uri", required=True)
     reg.add_argument("--model-version", required=True)
@@ -321,6 +328,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         files = LocalBackfill.from_data_dir(args.data, minilm)
         load_backfill(
             settings, bigquery, storage, files, args.work, args.actor_hash, now
+        )
+        return 0
+    if args.command == "load-curation":
+        from ml_inference.load_local import LocalBackfill, load_curation
+
+        files = LocalBackfill.from_data_dir(args.data, Path("."))
+        log.info(
+            "load-curation: %d filas",
+            load_curation(settings, bigquery, files, args.actor_hash, now),
         )
         return 0
     if args.command == "register":

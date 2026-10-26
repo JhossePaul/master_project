@@ -33,6 +33,7 @@ Pasos (``load_backfill``):
 import csv
 import json
 import logging
+import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
@@ -389,15 +390,29 @@ class Loader:
                 ["topic_model_version", "topic_id"],
                 self.run_id,
             ),
-            "curation_topics": writer.write(
-                "curation_topics",
-                curation_rows(
-                    self.files.curation_csv, self.actor_hash, self.now
-                ),
-                ["topic_model_version", "topic_id", "curator_hash"],
-                self.run_id,
-            ),
+            "curation_topics": self.curation(writer),
         }
+
+    CURATION_KEY: Final = (
+        "topic_model_version",
+        "topic_id",
+        "curator_hash",
+        "curated_at",
+    )
+
+    def curation(self, writer: StagingMergeWriter) -> int:
+        """Curaduría de tópicos del autor (``revision_topicos.csv``).
+
+        La tabla es un historial: la vista toma la última fila de cada
+        tópico, así que ``curated_at`` entra en la clave y una carga nueva
+        agrega filas en vez de saltarse las que ya existían.
+        """
+        return writer.write(
+            "curation_topics",
+            curation_rows(self.files.curation_csv, self.actor_hash, self.now),
+            list(self.CURATION_KEY),
+            self.run_id,
+        )
 
     # -- 6. oro ------------------------------------------------------------
 
@@ -498,6 +513,23 @@ def bertopic_terms(path: Path, top: int = 10) -> dict[int, list[str]]:
     }
 
 
+def curation_families(correct: str, majority: str) -> list[str]:
+    """Familias de un tópico, de ``familia_correcta`` en el orden del curador.
+
+    El CSV las separa con ``|`` (``PR | UX | TR | u``); se aceptan también
+    comas. Se descarta lo que no es una de las 11 familias (las marcas ``u``
+    y ``s``, ``SIN`` y los errores de captura). ``MEZCLA`` dice que el tópico
+    no tiene una familia: la lista queda vacía. Solo si el curador no
+    escribió nada se usa la familia mayoritaria.
+    """
+    tokens = [t for t in re.split(r"[|,]", correct.replace(" ", "")) if t]
+    if "MEZCLA" in tokens:
+        return []
+    if not tokens:
+        tokens = [majority.strip()]
+    return list(dict.fromkeys(t for t in tokens if t in FAMILIES))
+
+
 def curation_rows(
     path: Path, curator_hash: str, now: datetime
 ) -> list[TopicCuration]:
@@ -514,11 +546,9 @@ def curation_rows(
                 if coherence >= MIN_COHERENCE
                 else TopicAudience.SIN_VALOR
             )
-            codes = (r.get("familia_correcta") or "").replace(" ", "")
-            if not codes:
-                codes = r.get("familia_mayoritaria") or ""
-            families = list(
-                dict.fromkeys(c for c in codes.split(",") if c in FAMILIES)
+            families = curation_families(
+                r.get("familia_correcta") or "",
+                r.get("familia_mayoritaria") or "",
             )
             rows.append(
                 TopicCuration(
@@ -787,3 +817,16 @@ def load_backfill(
     runs = loader.runs(counts, max(datetime.now(now.tzinfo), now))
     writer.write("inference_runs", runs, list(RUN_KEY), loader.run_id)
     return runs
+
+
+def load_curation(
+    settings: InferenceSettings,
+    bigquery: Any,
+    files: LocalBackfill,
+    actor_hash: str,
+    now: datetime,
+) -> int:
+    """Carga solo ``curation_topics``, sin repetir el resto del backfill."""
+    loader = Loader(settings, bigquery, None, files, Path("."), actor_hash, now)
+    writer = StagingMergeWriter(bigquery, settings.dataset)
+    return loader.curation(writer)
