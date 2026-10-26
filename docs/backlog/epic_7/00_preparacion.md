@@ -1,6 +1,6 @@
 # Feature 7.0: Preparación y bloqueantes
 
-* **Estado (2026-10-25):** En curso: B1 a B4 resueltos; faltan B5 (se aplica la recomendación al llegar a cada paso, con aviso) y las verificaciones de la sección 4, que hace la sesión de implementación. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
+* **Estado (2026-10-25):** En curso: B1 a B4 resueltos; falta B5 (se aplica la recomendación al llegar a cada paso, con aviso); las verificaciones de la sección 4 están hechas. Revisión hecha en la sesión de planificación contra el código (`2279505`) y BigQuery en dev.
 * **Objetivo:** dejar resuelto lo que de verdad detiene el desarrollo y separar lo que no lo detiene. **Cerrar EPIC-6 no es requisito:** los pasos 14 (ciclo de modelo) y 15 de 6.6 y la corrida programada sin intervención no bloquean ningún paso de EPIC-7; lo único que afectan está anotado abajo.
 
 ## 1. Lo que ya está y se puede usar
@@ -94,10 +94,10 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 
 ## 4. Verificaciones de la sesión (antes del paso 1)
 
-* [ ] `uv sync --all-packages` y las puertas de calidad actuales en verde (línea base).
-* [ ] Node 24 LTS disponible para CI y la imagen; en local, Node 26.12 sirve (`node --version`).
-* [ ] `npm create vite@latest` responde (hay acceso al registro de npm).
-* [ ] `bq query --dry_run` de `SELECT fecha, bank_id, sentiment, estrellas FROM bbva_voc_tds.review_predictions_current WHERE fecha >= '2026-07-01'`: anotar los bytes. La vista elige la última fila por reseña con una ventana, y eso puede impedir que el filtro por fecha pode particiones. Con más de 1 GB por consulta, el paso 3 materializa los agregados diarios.
+* [x] `uv sync --all-packages` y las puertas de calidad actuales en verde (línea base).
+* [x] Node 24 LTS disponible para CI y la imagen; en local, Node 26.12 sirve (`node --version`).
+* [x] `npm create vite@latest` responde (hay acceso al registro de npm).
+* [x] `bq query --dry_run` de `SELECT fecha, bank_id, sentiment, estrellas FROM bbva_voc_tds.review_predictions_current WHERE fecha >= '2026-07-01'`: anotar los bytes. La vista elige la última fila por reseña con una ventana, y eso puede impedir que el filtro por fecha pode particiones. Con más de 1 GB por consulta, el paso 3 materializa los agregados diarios.
 
 ## Terminado cuando
 
@@ -105,7 +105,7 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 * [x] B3: el autor decidió desplegar solo con su cuenta al principio (2026-10-25); el paso 1 la pone en `portal_users` cifrada.
 * [x] B4: las preguntas "antes de 2" tienen respuesta (2026-10-25).
 * [ ] B5: cada decisión tiene la respuesta del autor (o se aplica la recomendación al llegar a su paso, con aviso).
-* [ ] Las verificaciones de la sección 4 están marcadas.
+* [x] Las verificaciones de la sección 4 están marcadas (2026-10-25, resultados en "Avance").
 
 ## Avance
 
@@ -125,3 +125,9 @@ Las del [cuestionario](design_questions.md) marcadas **"antes de 2"**. Las demá
 * **Ruta elegida:** IAP directo en Cloud Run, sin balanceador ni dominio (`S-04` resuelta). Implica subir `pulumi-gcp` a 8.x en el paso 1 (B2).
 * **BBVA:** según `S-03`, se pide la excepción al administrador del Workspace de BBVA y, mientras tanto, esas personas entran con una cuenta Gmail.
 * `voc-portal-spike` se borró al terminar. `iap.googleapis.com` queda habilitada.
+
+### Verificaciones de la sección 4 (2026-10-25)
+
+* **Línea base:** `uv sync --all-packages --locked`, Ruff (lint y formato), Pyrefly (0 errores) y Bandit sin hallazgos; las siete suites de CI en verde con su umbral de cobertura (voc-common 344 pruebas, 99.9 %; infra 128, 100 %; ingestion-worker 196, 96 %; sanitization-pipeline 130, 100 %; tools 50, 97 %; voc-nlp 139, 99 %; ml-inference 214, 98 %).
+* **Node:** 26.12.1 en local; Node 24.22.1 se obtiene con `npx node@24`. npm 11.20 y el registro responden (`vite` 8.3.5).
+* **BigQuery:** la consulta de `review_predictions_current` desde 2026-07-01 procesa como máximo 266 768 144 bytes (≈ 0.27 GB), bajo el límite de 1 GB. El paso 3 puede consultar la vista sin materializar los agregados diarios, y se revisa si crece el rango.
