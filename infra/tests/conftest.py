@@ -56,8 +56,10 @@ class InfrastructureMocks(pulumi.runtime.Mocks):
                 f"projects/{outputs['project']}/notificationChannels/{args.name}"
             )
         if args.typ == "gcp:projects/serviceIdentity:ServiceIdentity":
+            agent = str(outputs.get("service", "pubsub.googleapis.com"))
             outputs["email"] = (
-                "service-123@gcp-sa-pubsub.iam.gserviceaccount.com"
+                f"service-123@gcp-sa-{agent.split('.')[0]}"
+                ".iam.gserviceaccount.com"
             )
         return f"{args.name}-id", outputs
 

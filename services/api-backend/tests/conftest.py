@@ -29,6 +29,25 @@ def _pem_pair() -> tuple[str, str]:
     return private, public
 
 
+@pytest.fixture(autouse=True)
+def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """El CI exporta ENVIRONMENT, GCP_PROJECT_ID y USER_HASH_SALT."""
+    for name in (
+        "ENVIRONMENT",
+        "GCP_PROJECT_ID",
+        "GCP_REGION",
+        "USER_HASH_SALT",
+        "IAP_AUDIENCE",
+        "PORTAL_AUTH_MODE",
+        "PORTAL_LOCAL_USER",
+        "PORTAL_LOCAL_ROLES",
+        "PORTAL_DATA",
+        "ML_ONLINE_URL",
+        "BQ_MAX_BYTES_BILLED",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
 @pytest.fixture(scope="session")
 def iap_kit() -> IapKit:
     private, public = _pem_pair()

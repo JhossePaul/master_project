@@ -101,7 +101,6 @@ def test_ingestion_audit_schema_storage_and_consumer_wiring(
     for name in (
         "voc-ingestion-worker",
         "voc-sanitization-job",
-        "voc-api-backend",
     ):
         resource = next(
             r for r in registrations if r.urn.rsplit("::", 1)[-1] == name

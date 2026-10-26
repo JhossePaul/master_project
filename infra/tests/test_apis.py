@@ -23,6 +23,7 @@ _BASE_APIS = {
     "cloudbuild.googleapis.com",
     "monitoring.googleapis.com",
     "secretmanager.googleapis.com",
+    "iap.googleapis.com",
 }
 
 

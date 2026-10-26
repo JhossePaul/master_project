@@ -10,9 +10,11 @@ from api_backend.settings import ApiSettings
 from google.api_core.exceptions import BadRequest, InternalServerError
 from google.cloud import bigquery
 
-SETTINGS = ApiSettings.model_validate(
-    {"gcp_project_id": "p", "iap_audience": "/a", "cache_ttl_seconds": 600}
-)
+
+def settings() -> ApiSettings:
+    return ApiSettings.model_validate(
+        {"gcp_project_id": "p", "iap_audience": "/a", "cache_ttl_seconds": 600}
+    )
 
 
 @dataclass
@@ -48,7 +50,7 @@ class FakeClient:
 
 
 def reader(client: FakeClient) -> BigQueryReader:
-    return BigQueryReader(cast(Any, client), SETTINGS)
+    return BigQueryReader(cast(Any, client), settings())
 
 
 def test_devuelve_filas_y_pasa_los_valores_como_parametros() -> None:

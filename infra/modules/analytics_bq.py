@@ -82,6 +82,21 @@ VIEWS: Final[tuple[str, ...]] = (
 _REFERENCE = re.compile(r"`\{project\}\.\{dataset\}\.([a-z0-9_]+)`")
 
 
+# Las únicas tablas donde escribe el portal (solo inserción, EPIC-7).
+PORTAL_WRITABLE_TABLES: Final[tuple[str, ...]] = (
+    "hitl_items",
+    "hitl_events",
+    "hitl_reviews",
+    "hitl_boosts",
+    "drift_alert_events",
+    "risk_policy",
+    "drift_policy",
+    "gold_versions",
+    "review_explanations",
+    "curation_topics",
+)
+
+
 @dataclass(frozen=True)
 class AnalyticsBqResources:
     tables: Mapping[str, gcp.bigquery.Table]
@@ -148,3 +163,44 @@ def create_analytics_bq(
             opts=pulumi.ResourceOptions(depends_on=[dataset, *deps, *sources]),
         )
     return AnalyticsBqResources(tables, views)
+
+
+def create_portal_data_access(
+    project: str,
+    dataset: gcp.bigquery.Dataset,
+    analytics: AnalyticsBqResources,
+    account: gcp.serviceaccount.Account,
+    *,
+    deps: list[pulumi.Resource] | None = None,
+) -> list[pulumi.Resource]:
+    """Lee todo el dataset y escribe solo en ``PORTAL_WRITABLE_TABLES``.
+
+    ``dataEditor`` por tabla y no en el dataset: el portal no puede escribir en
+    las predicciones ni en las métricas de EPIC-6.
+    """
+    member = account.email.apply(lambda email: f"serviceAccount:{email}")
+    opts = pulumi.ResourceOptions(depends_on=[dataset, *(deps or [])])
+    grants: list[pulumi.Resource] = [
+        gcp.bigquery.DatasetIamMember(
+            "voc-portal-dataset-viewer",
+            project=project,
+            dataset_id=dataset.dataset_id,
+            role="roles/bigquery.dataViewer",
+            member=member,
+            opts=opts,
+        )
+    ]
+    for name in PORTAL_WRITABLE_TABLES:
+        table = analytics.tables[name]
+        grants.append(
+            gcp.bigquery.IamMember(
+                f"voc-portal-{name.replace('_', '-')}-editor",
+                project=project,
+                dataset_id=dataset.dataset_id,
+                table_id=table.table_id,
+                role="roles/bigquery.dataEditor",
+                member=member,
+                opts=pulumi.ResourceOptions(depends_on=[table, *(deps or [])]),
+            )
+        )
+    return grants

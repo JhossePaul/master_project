@@ -16,21 +16,7 @@ IAP = {"iap_audience": "/projects/1/locations/us-central1/services/voc-api"}
 
 
 @pytest.fixture(autouse=True)
-def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in (
-        "ENVIRONMENT",
-        "GCP_PROJECT_ID",
-        "GCP_REGION",
-        "USER_HASH_SALT",
-        "IAP_AUDIENCE",
-        "PORTAL_AUTH_MODE",
-        "PORTAL_LOCAL_USER",
-        "PORTAL_LOCAL_ROLES",
-        "PORTAL_DATA",
-        "ML_ONLINE_URL",
-        "BQ_MAX_BYTES_BILLED",
-    ):
-        monkeypatch.delenv(name, raising=False)
+def fresh_settings_cache() -> None:
     get_settings.cache_clear()
 
 

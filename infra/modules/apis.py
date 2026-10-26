@@ -16,8 +16,10 @@ _BASE_APIS: tuple[str, ...] = (
     "cloudbuild.googleapis.com",
     # Canal de correo y políticas de los avisos.
     "monitoring.googleapis.com",
-    # Clave de Kaggle del re-scoring.
+    # Clave de Kaggle del re-scoring y mapa de roles del portal.
     "secretmanager.googleapis.com",
+    # Acceso al portal (EPIC-7): IAP directo en Cloud Run.
+    "iap.googleapis.com",
 )
 
 

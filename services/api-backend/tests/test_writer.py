@@ -22,9 +22,14 @@ from voc_common.policies import DriftPolicy
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / "packages/voc-common/tests/fixtures/analytics_v3"
-SETTINGS = ApiSettings.model_validate(
-    {"gcp_project_id": "p", "bq_dataset_id": "ds", "iap_audience": "/a"}
-)
+
+
+def settings() -> ApiSettings:
+    return ApiSettings.model_validate(
+        {"gcp_project_id": "p", "bq_dataset_id": "ds", "iap_audience": "/a"}
+    )
+
+
 EVENT = HitlEvent(
     event_id="e1",
     item_id="i1",
@@ -62,7 +67,7 @@ class FakeClient:
 
 
 def writer(client: FakeClient) -> BigQueryWriter:
-    return BigQueryWriter(cast(Any, client), SETTINGS)
+    return BigQueryWriter(cast(Any, client), settings())
 
 
 def test_columnas_por_nombre_entre_comillas_incluida_at() -> None:
