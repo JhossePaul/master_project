@@ -1,6 +1,6 @@
 # Paso 6. Feature 7.6: Explorador de reseñas, búsqueda semántica y explicación
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Terminado en local, con las consultas probadas contra BigQuery de dev (solo lecturas); falta desplegar `voc-ml-online` y la medición de la búsqueda con el servicio real. Detalle en "Avance".
 * **Nivel:** importante.
 * **Depende de:** paso 2 y la decisión B5.2 del paso 0 (explicación con dirección).
 * **Objetivo:** investigar reseñas y causas raíz (rol analista): una tabla de reseñas sanitizadas que responde a gráficas de agregados (*crossfilter*), búsqueda semántica con `VECTOR_SEARCH` sobre MiniLM y una ficha por reseña con la explicación por palabras. Es la única sección, aparte del HITL, que muestra texto, y **la única que muestra la explicación**.
@@ -116,15 +116,40 @@ FROM VECTOR_SEARCH(
 
 ## Terminado cuando
 
-* [ ] La tabla responde a los filtros dentro de la ventana, con menos de 2 GB facturados por página (anotar la cifra).
-* [ ] La búsqueda devuelve vecinos con su distancia en menos de 10 s con el servicio caliente.
-* [ ] La ficha muestra la explicación con su versión de modelo; una explicación bajo pedido queda en `review_explanations` con `on_demand`.
-* [ ] F-15 (el Explorador amplía quién lee reseñas) queda calificada en la FMEA con los controles de esta sección (rol analista, sin descarga de texto, consultas no registradas, auditoría de BigQuery); se anota en el paso 10.
+* [x] La tabla responde a los filtros dentro de la ventana, con menos de 2 GB facturados por página (anotar la cifra). (1.10 GB una página de 12 meses; ver "Avance".)
+* [ ] La búsqueda devuelve vecinos con su distancia en menos de 10 s con el servicio caliente. (Las consultas de BigQuery suman unos 6 s; falta medirla con el servicio real.)
+* [ ] La ficha muestra la explicación con su versión de modelo; una explicación bajo pedido queda en `review_explanations` con `on_demand`. (Probado con modelos falsos; falta con el servicio real.)
+* [x] F-15 (el Explorador amplía quién lee reseñas) queda calificada en la FMEA con los controles de esta sección (rol analista, sin descarga de texto, consultas no registradas, auditoría de BigQuery); se anota en el paso 10. (Controles anotados en F-15; se califica en el paso 10.)
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **B5.2 aplicada (2026-10-26, recomendación del paso 0).** `occlusion_v2` calibrada con la temperatura de la versión. Para no cambiar el esquema de BigQuery (`attributions` es una lista de JSON) `TokenAttribution` pasó a tener `weight` (v1) o `d_neg`, `d_neu` y `d_pos` (v2), y `ReviewExplanation` exige la forma que dice su método. El delta precalcula v2; las filas v1 quedan como historia.
+* **`voc-ml-online` sin ingress interno.** El paso pedía ingress interno, pero la API no tiene acceso a la VPC y Cloud Run rechaza ahí a quien llega por la URL pública. Queda con ingress abierto y `roles/run.invoker` solo para `voc-sa-portal-api`; sin `allUsers` (prueba de infra). Endurecerlo a ingress interno exige salida por VPC en la API.
+* **Temperatura desde `model_versions`.** `/explain` recibe solo `{ text, model_version }`; el servicio lee la temperatura de esa tabla (permiso por tabla para `voc-sa-ml-online`, más `objectViewer` en el bucket condicionado a `ml_artifacts/` y a listar el bucket).
+* **Texto de la página en una segunda consulta.** La tabla no une el TDS: trae las filas de la página sin texto y después pide el texto de esas reseñas con la fecha acotada al rango de la página (10 MB). Así la unión no escanea el TDS entero. El texto solo cuenta si su hash es el `text_key` de la predicción; si la reseña cambió, el campo queda vacío y la tabla lo dice.
+* **Facets con todos los filtros** (incluidos los de su propia dimensión), como pide el paso: al elegir `NEG`, la gráfica de sentimiento muestra solo `NEG`. Un banco elegido en su gráfica se suma al filtro global de bancos.
+* **Sin virtualizar ni TanStack Table:** 50 filas por página no lo piden, y la API de la versión 9 de TanStack Table cambió; es una tabla simple con paginación del servidor. Se reabre si el tamaño de página crece.
+* **La consulta de la búsqueda** no va a la URL, a la caché de consultas ni al registro; la mutación no guarda resultados (`gcTime: 0`). La ficha sí va a la URL (`ficha=BANCO:id`): es un identificador, no texto.
+* **`bytes_billed`** de la búsqueda lo mide el lector (`stats`), no una consulta aparte.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **Modelo y contrato (2026-10-26):** `occlusion_v2` en `voc_nlp.explain` (4 pruebas: calibración, suma cero, temperatura, texto vacío), `TokenAttribution` y `ReviewExplanation` con las dos formas, contrato v3 actualizado y el delta con `occlusion_v2`.
+* **`voc-ml-online` (2026-10-26):** `ml_inference/online.py` (`/explain`, `/embed`, `/healthz`; carga perezosa, un modelo de sentimiento en memoria, tope de 128 palabras, 7 pruebas con modelos falsos), comando `serve` y `fastapi` y `uvicorn` en `ml-inference` (`uv.lock` regenerado).
+* **Infraestructura:** cuenta `voc-sa-ml-online`, servicio `voc-ml-online` (2 vCPU, 4 GiB, 0 a 1 instancias, concurrencia 4, 120 s, comando `serve`), invocador solo para la cuenta de la API y `ML_ONLINE_URL` en la API; 3 pruebas nuevas en `test_portal.py` y las de IAM ajustadas. `pulumi up` no se corrió.
+* **API:** `sections/reviews/` y `sections/explanations/`, `api_backend/online.py`, `stats` en el lector; 44 pruebas nuevas en `test_reviews.py` (403 de lector y revisor, ventana, filtros, paginación, búsqueda con deduplicación, la consulta ausente de los registros, explicación bajo pedido sin recalcular, `text_key` obsoleto, SQL con poda de particiones). `openapi.json` y `schema.d.ts` regenerados.
+* **Portal:** `/explorador` con búsqueda, doce resúmenes (mes con selección por arrastre, banco, sentimiento, estrellas, familia, marcas, tópico y revisión humana), fichas de filtros activos, tabla, ficha lateral con la explicación en dos colores, leyenda y palabras que más empujan, y CSV de agregados; 19 pruebas nuevas (entre ellas `axe` con la ficha abierta). `npm run check`, `tsc`, `npm test` (158) y `npm run build` pasan; el Explorador es un trozo perezoso de 10 KB comprimido.
+* **Bytes y tiempos contra BigQuery de dev** (consultas reales de solo lectura, 2026-10-26):
+
+| Consulta | Bytes facturados | Tiempo |
+| :--- | ---: | ---: |
+| Página de 50 reseñas, 12 meses y los cinco bancos | 1.10 GB | 3.0 s |
+| Texto de esas 50 reseñas | 10 MB | 1.1 s |
+| Resúmenes (`facets`), 12 meses | 0.55 GB | 4.0 s |
+| Página filtrada (un banco, 30 días, `NEG`, 1 o 2 estrellas) | 1.08 GB | 2.6 s |
+| Ficha: fecha de la reseña + fila | 0.46 + 1.08 GB | 1.4 + 1.9 s |
+| Búsqueda vectorial (12 meses, 5 bancos, 10 vecinos) | 0.77 GB | 2.3 s |
+| Reseñas de esos vecinos (`n_reviews` y ejemplo) | 1.10 GB | 2.3 s |
+
+  La vista `review_predictions_current` no deja podar particiones (ya anotado en el cockpit), así que cada consulta que la lee cuesta cerca de 1 GB aunque el rango sea corto; ninguna pasa del tope de 2 GB de la API. La búsqueda completa suma 1.9 GB y unos 6 s antes del servicio de embeddings.
+* **Pendiente:** desplegar `voc-ml-online` (imagen nueva de `ml-inference` y `pulumi up`), medir la búsqueda y la explicación con el servicio caliente y frío, y que el autor pruebe el Explorador en dev con una reseña real.

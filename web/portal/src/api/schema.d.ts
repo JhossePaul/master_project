@@ -4,6 +4,30 @@
  */
 
 export interface paths {
+    "/api/v1/explanations/{text_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Explanation
+         * @description La explicación guardada (``occlusion_v2`` si existe), o 404.
+         */
+        get: operations["get_explanation_api_v1_explanations__text_key__get"];
+        put?: never;
+        /**
+         * Compute Explanation
+         * @description Calcula la explicación en ``voc-ml-online`` y la guarda.
+         */
+        post: operations["compute_explanation_api_v1_explanations__text_key__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hitl/guidelines/{task}": {
         parameters: {
             query?: never;
@@ -356,6 +380,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reviews
+         * @description Reseñas sanitizadas dentro de la ventana, con paginación del servidor.
+         */
+        get: operations["reviews_api_v1_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Facets
+         * @description Conteos con los filtros aplicados; solo agregados.
+         */
+        get: operations["facets_api_v1_reviews_facets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search
+         * @description Búsqueda semántica; la consulta no se guarda ni se registra.
+         */
+        post: operations["search_api_v1_reviews_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{bank_id}/{id_resena}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail
+         * @description La ficha de una reseña (sin ventana).
+         */
+        get: operations["detail_api_v1_reviews__bank_id___id_resena__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -377,6 +481,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Attribution
+         * @description Posiciones en ``texto_sanitizado``; sin copiar texto.
+         */
+        Attribution: {
+            /** D Neg */
+            d_neg?: number | null;
+            /** D Neu */
+            d_neu?: number | null;
+            /** D Pos */
+            d_pos?: number | null;
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+            /** Weight */
+            weight?: number | null;
+        };
         /** BankCard */
         BankCard: {
             /** Bank Id */
@@ -497,6 +619,76 @@ export interface components {
             /** N Unlabeled */
             n_unlabeled: number | null;
         };
+        /** ExplainIn */
+        ExplainIn: {
+            /** Bank Id */
+            bank_id: string;
+            /** Id Resena */
+            id_resena: string;
+        };
+        /** ExplanationOut */
+        ExplanationOut: {
+            /** Attributions */
+            attributions: components["schemas"]["Attribution"][];
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Method */
+            method: string;
+            /** Model Version */
+            model_version: string;
+            /** Source */
+            source: string;
+            /** Text Key */
+            text_key: string;
+        };
+        /** ExplanationRef */
+        ExplanationRef: {
+            /** Method */
+            method: string;
+            /** Model Version */
+            model_version: string;
+            /** Source */
+            source: string;
+        };
+        /** FacetCount */
+        FacetCount: {
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** N */
+            n: number;
+        };
+        /**
+         * Facets
+         * @description Solo agregados: ningún campo trae texto de reseñas.
+         */
+        Facets: {
+            /** By Bank */
+            by_bank: components["schemas"]["FacetCount"][];
+            /** By Family */
+            by_family: components["schemas"]["FacetCount"][];
+            /** By Flag Security */
+            by_flag_security: components["schemas"]["FacetCount"][];
+            /** By Flag Update */
+            by_flag_update: components["schemas"]["FacetCount"][];
+            /** By Hitl */
+            by_hitl: components["schemas"]["FacetCount"][];
+            /** By Month */
+            by_month: components["schemas"]["FacetCount"][];
+            /** By Sentiment */
+            by_sentiment: components["schemas"]["FacetCount"][];
+            /** By Stars */
+            by_stars: components["schemas"]["FacetCount"][];
+            /** By Topic */
+            by_topic: components["schemas"]["FacetCount"][];
+            /** Total */
+            total: number;
+            window_applied: components["schemas"]["WindowApplied"];
+        };
         /** FamiliesResponse */
         FamiliesResponse: {
             /** Prompt Changes */
@@ -580,6 +772,23 @@ export interface components {
             task: "sentiment";
             /** Text */
             text: string;
+        };
+        /**
+         * HitlReviewRef
+         * @description Lo que se ve de una revisión humana: nunca quién la hizo.
+         */
+        HitlReviewRef: {
+            /** Outcome */
+            outcome: string;
+            /** Review Round */
+            review_round: number;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Validated Label */
+            validated_label: string | null;
         };
         /** HitlSummary */
         HitlSummary: {
@@ -678,6 +887,15 @@ export interface components {
             /** Prompt Version */
             prompt_version: string;
         };
+        /** ReviewDetail */
+        ReviewDetail: {
+            /** Aspects Prompt Version */
+            aspects_prompt_version: string | null;
+            explanation: components["schemas"]["ExplanationRef"] | null;
+            /** Hitl Reviews */
+            hitl_reviews: components["schemas"]["HitlReviewRef"][];
+            row: components["schemas"]["ReviewRow"];
+        };
         /**
          * ReviewFlag
          * @description Marcas del revisor de sentimiento (guía ``v2.2``).
@@ -689,6 +907,60 @@ export interface components {
             next: components["schemas"]["HitlCase"] | null;
             /** Review Id */
             review_id: string;
+        };
+        /** ReviewPage */
+        ReviewPage: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Rows */
+            rows: components["schemas"]["ReviewRow"][];
+            /** Total */
+            total: number;
+            window_applied: components["schemas"]["WindowApplied"];
+        };
+        /** ReviewRow */
+        ReviewRow: {
+            /** Bank Id */
+            bank_id: string;
+            /** Confidence */
+            confidence: number | null;
+            /** Estrellas */
+            estrellas: number;
+            /** Families */
+            families: string[];
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Flag Security */
+            flag_security: boolean | null;
+            /** Flag Update */
+            flag_update: boolean | null;
+            /** Hitl Reviewed */
+            hitl_reviewed: boolean;
+            /** Id Resena */
+            id_resena: string;
+            /** Model Version */
+            model_version: string | null;
+            /** P Neg */
+            p_neg: number | null;
+            /** P Neu */
+            p_neu: number | null;
+            /** P Pos */
+            p_pos: number | null;
+            /** Sentiment */
+            sentiment: string;
+            /** Text */
+            text: string;
+            /** Text Key */
+            text_key: string;
+            /** Topics */
+            topics: components["schemas"]["TopicRef"][];
+            /** Version App */
+            version_app: string | null;
         };
         /**
          * Role
@@ -725,6 +997,43 @@ export interface components {
              */
             started_at: string;
             status: components["schemas"]["RunStatus"];
+        };
+        /** SearchHit */
+        SearchHit: {
+            /** Bank Id */
+            bank_id: string;
+            /** Distance */
+            distance: number;
+            example: components["schemas"]["ReviewRow"];
+            /** N Reviews */
+            n_reviews: number;
+            /** Text Key */
+            text_key: string;
+        };
+        /** SearchIn */
+        SearchIn: {
+            /** Banks */
+            banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+            /**
+             * K
+             * @default 10
+             */
+            k: number;
+            /** Months */
+            months?: number | null;
+            /** Query */
+            query: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Bytes Billed */
+            bytes_billed: number;
+            /** Embedding Model */
+            embedding_model: string;
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+            /** Months Searched */
+            months_searched: number;
         };
         /** SentimentProposal */
         SentimentProposal: {
@@ -792,6 +1101,13 @@ export interface components {
             topic_id: number;
             /** Topic Model Version */
             topic_model_version: string;
+        };
+        /** TopicRef */
+        TopicRef: {
+            /** Name */
+            name: string | null;
+            /** Topic Id */
+            topic_id: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -890,6 +1206,23 @@ export interface components {
             /** Rows */
             rows: components["schemas"]["VersionRow"][];
         };
+        /** WindowApplied */
+        WindowApplied: {
+            /** Clipped */
+            clipped: boolean;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Months */
+            months: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -899,6 +1232,74 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_explanation_api_v1_explanations__text_key__get: {
+        parameters: {
+            query?: {
+                model_version?: string | null;
+            };
+            header?: never;
+            path: {
+                text_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compute_explanation_api_v1_explanations__text_key__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                text_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     guideline_api_v1_hitl_guidelines__task__get: {
         parameters: {
             query?: never;
@@ -1429,6 +1830,156 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    reviews_api_v1_reviews_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                sort?: "fecha_desc" | "confidence_asc" | "estrellas_asc";
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sentiment?: ("NEG" | "NEU" | "POS" | "NO_PREDICTED")[] | null;
+                families?: string[] | null;
+                flag_update?: boolean | null;
+                flag_security?: boolean | null;
+                topic_id?: number | null;
+                stars?: number[] | null;
+                version?: string | null;
+                hitl_reviewed?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    facets_api_v1_reviews_facets_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sentiment?: ("NEG" | "NEU" | "POS" | "NO_PREDICTED")[] | null;
+                families?: string[] | null;
+                flag_update?: boolean | null;
+                flag_security?: boolean | null;
+                topic_id?: number | null;
+                stars?: number[] | null;
+                version?: string | null;
+                hitl_reviewed?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Facets"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_v1_reviews_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detail_api_v1_reviews__bank_id___id_resena__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bank_id: "BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE";
+                id_resena: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -95,6 +95,80 @@ export function syntheticHitlSummary(): HitlSummary {
   };
 }
 
+type ReviewRow = components["schemas"]["ReviewRow"];
+type Facets = components["schemas"]["Facets"];
+
+export function syntheticRow(overrides: Partial<ReviewRow> = {}): ReviewRow {
+  return {
+    id_resena: "syn-0001",
+    bank_id: "BBVA",
+    text_key: "a".repeat(64),
+    fecha: "2026-10-20",
+    version_app: "9.1.0",
+    estrellas: 1,
+    text: "No llega el código para entrar a la app.",
+    sentiment: "NEG",
+    p_neg: 0.8,
+    p_neu: 0.15,
+    p_pos: 0.05,
+    confidence: 0.8,
+    model_version: "sintetico_v1",
+    families: ["AC"],
+    flag_update: false,
+    flag_security: false,
+    topics: [{ topic_id: 0, name: "Código de acceso" }],
+    hitl_reviewed: false,
+    ...overrides,
+  };
+}
+
+export const EXPLORER_ROWS: ReviewRow[] = [
+  syntheticRow(),
+  syntheticRow({
+    id_resena: "syn-0002",
+    bank_id: "NUBANK",
+    text_key: "b".repeat(64),
+    estrellas: 5,
+    text: "Muy buena app, la uso todos los días.",
+    sentiment: "POS",
+    p_neg: 0.05,
+    p_neu: 0.15,
+    p_pos: 0.8,
+    families: [],
+    topics: [],
+    hitl_reviewed: true,
+  }),
+];
+
+export function syntheticFacets(
+  total = 2,
+  sentiment: string[] = ["NEG", "POS"],
+): Facets {
+  const items = (keys: string[], n = 1) =>
+    keys.map((key) => ({ key, n, label: null }));
+  return {
+    total,
+    by_bank: items(["BBVA", "NUBANK"]),
+    by_month: [
+      { key: "2026-09", n: 1, label: null },
+      { key: "2026-10", n: 1, label: null },
+    ],
+    by_sentiment: items(sentiment),
+    by_stars: items(["1", "5"]),
+    by_family: items(["AC"]),
+    by_flag_update: items(["no"], 2),
+    by_flag_security: items(["no"], 2),
+    by_topic: [{ key: "0", n: 1, label: "Código de acceso" }],
+    by_hitl: items(["si", "no"]),
+    window_applied: {
+      date_from: "2025-10-01",
+      date_to: "2026-10-26",
+      clipped: false,
+      months: 12,
+    },
+  };
+}
+
 type Estimate = components["schemas"]["Estimate"];
 type Card = components["schemas"]["BankCard"];
 
@@ -352,6 +426,34 @@ export const handlers = [
   http.post(
     "*/api/v1/hitl/items/:id/release",
     () => new HttpResponse(null, { status: 204 }),
+  ),
+  http.get("*/api/v1/reviews/facets", () =>
+    HttpResponse.json(syntheticFacets()),
+  ),
+  http.get("*/api/v1/reviews/:bank/:id", ({ params }) =>
+    HttpResponse.json({
+      row:
+        EXPLORER_ROWS.find((r) => r.id_resena === params.id) ??
+        EXPLORER_ROWS[0],
+      aspects_prompt_version: "aspects_v2_1",
+      hitl_reviews: [],
+      explanation: null,
+    }),
+  ),
+  http.get("*/api/v1/reviews", () =>
+    HttpResponse.json({
+      rows: EXPLORER_ROWS,
+      total: EXPLORER_ROWS.length,
+      page: 1,
+      page_size: 50,
+      window_applied: syntheticFacets().window_applied,
+    }),
+  ),
+  http.get("*/api/v1/explanations/:key", () =>
+    HttpResponse.json(
+      { error: { code: "not_found", message: "No hay", request_id: "r" } },
+      { status: 404 },
+    ),
   ),
   http.get("*/api/v1/me", () => HttpResponse.json(syntheticMe())),
   http.get("*/api/v1/landing", () => HttpResponse.json(syntheticLanding())),
