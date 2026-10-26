@@ -70,10 +70,17 @@ class BigQueryReader:
         name: str = "query",
         cache: bool = False,
         max_bytes: int | None = None,
+        stats: dict[str, int] | None = None,
     ) -> list[Mapping[str, object]]:
-        """Ejecuta ``sql`` con ``params``; ``cache`` solo para agregados."""
+        """Ejecuta ``sql`` con ``params``; ``cache`` solo para agregados.
+
+        ``stats`` recibe ``bytes_billed`` de la consulta (0 si salió de la
+        caché de la API).
+        """
         key = (sql, *(_cache_part(p) for p in params))
         if cache and key in self._cache:
+            if stats is not None:
+                stats["bytes_billed"] = 0
             return self._cache[key]
         config = bigquery.QueryJobConfig(
             query_parameters=[query_parameter(p) for p in params],
@@ -88,6 +95,8 @@ class BigQueryReader:
         except GoogleAPICallError as exc:
             log_event("WARNING", "consulta rechazada", query=name)
             raise to_api_error(exc) from exc
+        if stats is not None:
+            stats["bytes_billed"] = int(job.total_bytes_billed or 0)
         log_event(
             "INFO",
             "consulta",

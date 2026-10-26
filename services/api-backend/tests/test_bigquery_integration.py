@@ -83,3 +83,75 @@ def test_hitl_consultas_de_lectura() -> None:
     pairs = [(e.item.bank_id, e.item.id_resena) for e in entries[:10]]
     batch = repo.review_texts(pairs)
     assert set(batch) <= set(pairs) and batch
+
+
+def _reviews_repository(project: str):  # noqa: ANN202
+    from api_backend.bq.reader import BigQueryReader
+    from api_backend.sections.reviews.repository import (
+        BigQueryReviewsRepository,
+    )
+    from api_backend.settings import ApiSettings
+
+    settings = ApiSettings.model_validate(
+        {
+            "environment": "local",
+            "portal_auth_mode": "local",
+            "portal_local_user": "x@example.com",
+            "gcp_project_id": project,
+            "user_hash_salt": "s" * 16,
+        }
+    )
+    reader = BigQueryReader(bigquery.Client(project=project), settings)
+    return BigQueryReviewsRepository(reader, settings), reader, settings
+
+
+def test_explorador_consultas_de_lectura(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from api_backend.sections.kpis.schemas import BANK_IDS
+    from api_backend.sections.reviews.filters import ReviewFilters
+
+    project = os.environ["BQ_TEST_PROJECT"]
+    repo, reader, settings = _reviews_repository(project)
+    today = datetime.now(UTC).date()
+    f = ReviewFilters(
+        banks=tuple(BANK_IDS),
+        date_from=today - timedelta(days=365),
+        date_to=today,
+    )
+
+    rows, total = repo.page(f, "fecha_desc", 1, 50)
+    assert rows and total >= len(rows)
+    assert any(r.text for r in rows), "el texto del TDS no llegó"
+    total_facets, by = repo.facets(f)
+    assert total_facets == total and by["bank"]
+    narrow = ReviewFilters(
+        banks=("BBVA",),
+        date_from=today - timedelta(days=30),
+        date_to=today,
+        sentiment=("NEG",),
+        stars=(1, 2),
+    )
+    small, _ = repo.page(narrow, "confidence_asc", 1, 20)
+    assert all(r.bank_id == "BBVA" and r.sentiment == "NEG" for r in small)
+    first = rows[0]
+    detail = repo.detail(first.bank_id, first.id_resena)
+    assert detail is not None and detail[0].id_resena == first.id_resena
+    repo.hitl_reviews(first.id_resena)
+    repo.stored_explanation(first.text_key)
+    with capsys.disabled():
+        print(f"\nfilas de la primera página: {len(rows)}, total {total}")
+    # Una consulta vectorial con un vector fijo (no necesita el servicio).
+    from api_backend.sections.reviews.filters import months_back
+
+    stats: dict[str, int] = {}
+    vector = [((i * 7) % 11 - 5) / 10 for i in range(384)]
+    hits = repo.vector_search(
+        vector, list(BANK_IDS), months_back(today, 12), 10, stats
+    )
+    groups = repo.groups(hits, months_back(today, 12))
+    assert hits and groups
+    with capsys.disabled():
+        print(f"búsqueda: {len(hits)} vecinos, {stats['bytes_billed']} bytes")

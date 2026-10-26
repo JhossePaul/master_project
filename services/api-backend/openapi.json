@@ -1,6 +1,69 @@
 {
   "components": {
     "schemas": {
+      "Attribution": {
+        "description": "Posiciones en ``texto_sanitizado``; sin copiar texto.",
+        "properties": {
+          "d_neg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Neg"
+          },
+          "d_neu": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Neu"
+          },
+          "d_pos": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Pos"
+          },
+          "end": {
+            "title": "End",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "Attribution",
+        "type": "object"
+      },
       "BankCard": {
         "properties": {
           "bank_id": {
@@ -456,6 +519,208 @@
         "title": "Estimate",
         "type": "object"
       },
+      "ExplainIn": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "id_resena": {
+            "title": "Id Resena",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "id_resena"
+        ],
+        "title": "ExplainIn",
+        "type": "object"
+      },
+      "ExplanationOut": {
+        "properties": {
+          "attributions": {
+            "items": {
+              "$ref": "#/components/schemas/Attribution"
+            },
+            "title": "Attributions",
+            "type": "array"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "text_key": {
+            "title": "Text Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text_key",
+          "model_version",
+          "method",
+          "source",
+          "computed_at",
+          "attributions"
+        ],
+        "title": "ExplanationOut",
+        "type": "object"
+      },
+      "ExplanationRef": {
+        "properties": {
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "model_version",
+          "source"
+        ],
+        "title": "ExplanationRef",
+        "type": "object"
+      },
+      "FacetCount": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "n"
+        ],
+        "title": "FacetCount",
+        "type": "object"
+      },
+      "Facets": {
+        "description": "Solo agregados: ningún campo trae texto de reseñas.",
+        "properties": {
+          "by_bank": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Bank",
+            "type": "array"
+          },
+          "by_family": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Family",
+            "type": "array"
+          },
+          "by_flag_security": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Flag Security",
+            "type": "array"
+          },
+          "by_flag_update": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Flag Update",
+            "type": "array"
+          },
+          "by_hitl": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Hitl",
+            "type": "array"
+          },
+          "by_month": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Month",
+            "type": "array"
+          },
+          "by_sentiment": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Sentiment",
+            "type": "array"
+          },
+          "by_stars": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Stars",
+            "type": "array"
+          },
+          "by_topic": {
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            },
+            "title": "By Topic",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "window_applied": {
+            "$ref": "#/components/schemas/WindowApplied"
+          }
+        },
+        "required": [
+          "total",
+          "by_bank",
+          "by_month",
+          "by_sentiment",
+          "by_stars",
+          "by_family",
+          "by_flag_update",
+          "by_flag_security",
+          "by_topic",
+          "by_hitl",
+          "window_applied"
+        ],
+        "title": "Facets",
+        "type": "object"
+      },
       "FamiliesResponse": {
         "properties": {
           "prompt_changes": {
@@ -710,6 +975,43 @@
           "review_round"
         ],
         "title": "HitlCase",
+        "type": "object"
+      },
+      "HitlReviewRef": {
+        "description": "Lo que se ve de una revisión humana: nunca quién la hizo.",
+        "properties": {
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "review_round": {
+            "title": "Review Round",
+            "type": "integer"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "validated_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated Label"
+          }
+        },
+        "required": [
+          "outcome",
+          "validated_label",
+          "review_round",
+          "submitted_at"
+        ],
+        "title": "HitlReviewRef",
         "type": "object"
       },
       "HitlSummary": {
@@ -983,6 +1285,49 @@
         "title": "PromptChange",
         "type": "object"
       },
+      "ReviewDetail": {
+        "properties": {
+          "aspects_prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspects Prompt Version"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplanationRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hitl_reviews": {
+            "items": {
+              "$ref": "#/components/schemas/HitlReviewRef"
+            },
+            "title": "Hitl Reviews",
+            "type": "array"
+          },
+          "row": {
+            "$ref": "#/components/schemas/ReviewRow"
+          }
+        },
+        "required": [
+          "row",
+          "aspects_prompt_version",
+          "hitl_reviews",
+          "explanation"
+        ],
+        "title": "ReviewDetail",
+        "type": "object"
+      },
       "ReviewFlag": {
         "description": "Marcas del revisor de sentimiento (guía ``v2.2``).",
         "enum": [
@@ -1016,6 +1361,202 @@
           "next"
         ],
         "title": "ReviewOut",
+        "type": "object"
+      },
+      "ReviewPage": {
+        "properties": {
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "window_applied": {
+            "$ref": "#/components/schemas/WindowApplied"
+          }
+        },
+        "required": [
+          "rows",
+          "total",
+          "page",
+          "page_size",
+          "window_applied"
+        ],
+        "title": "ReviewPage",
+        "type": "object"
+      },
+      "ReviewRow": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "estrellas": {
+            "title": "Estrellas",
+            "type": "integer"
+          },
+          "families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "fecha": {
+            "format": "date",
+            "title": "Fecha",
+            "type": "string"
+          },
+          "flag_security": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Security"
+          },
+          "flag_update": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Update"
+          },
+          "hitl_reviewed": {
+            "title": "Hitl Reviewed",
+            "type": "boolean"
+          },
+          "id_resena": {
+            "title": "Id Resena",
+            "type": "string"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "p_neg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P Neg"
+          },
+          "p_neu": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P Neu"
+          },
+          "p_pos": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P Pos"
+          },
+          "sentiment": {
+            "title": "Sentiment",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "text_key": {
+            "title": "Text Key",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicRef"
+            },
+            "title": "Topics",
+            "type": "array"
+          },
+          "version_app": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version App"
+          }
+        },
+        "required": [
+          "id_resena",
+          "bank_id",
+          "text_key",
+          "fecha",
+          "version_app",
+          "estrellas",
+          "text",
+          "sentiment",
+          "p_neg",
+          "p_neu",
+          "p_pos",
+          "confidence",
+          "model_version",
+          "families",
+          "flag_update",
+          "flag_security",
+          "topics",
+          "hitl_reviewed"
+        ],
+        "title": "ReviewRow",
         "type": "object"
       },
       "Role": {
@@ -1100,6 +1641,124 @@
           "model_version"
         ],
         "title": "RunSummary",
+        "type": "object"
+      },
+      "SearchHit": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "distance": {
+            "title": "Distance",
+            "type": "number"
+          },
+          "example": {
+            "$ref": "#/components/schemas/ReviewRow"
+          },
+          "n_reviews": {
+            "title": "N Reviews",
+            "type": "integer"
+          },
+          "text_key": {
+            "title": "Text Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text_key",
+          "bank_id",
+          "distance",
+          "n_reviews",
+          "example"
+        ],
+        "title": "SearchHit",
+        "type": "object"
+      },
+      "SearchIn": {
+        "properties": {
+          "banks": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "BBVA",
+                    "AZTECA",
+                    "SANTANDER",
+                    "NUBANK",
+                    "BANORTE"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banks"
+          },
+          "k": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "K",
+            "type": "integer"
+          },
+          "months": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Months"
+          },
+          "query": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchIn",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "bytes_billed": {
+            "title": "Bytes Billed",
+            "type": "integer"
+          },
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "months_searched": {
+            "title": "Months Searched",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hits",
+          "embedding_model",
+          "months_searched",
+          "bytes_billed"
+        ],
+        "title": "SearchResponse",
         "type": "object"
       },
       "SentimentProposal": {
@@ -1294,6 +1953,31 @@
           "topic_model_version"
         ],
         "title": "TopicMonth",
+        "type": "object"
+      },
+      "TopicRef": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "topic_id",
+          "name"
+        ],
+        "title": "TopicRef",
         "type": "object"
       },
       "ValidationError": {
@@ -1539,6 +2223,36 @@
         ],
         "title": "VersionsResponse",
         "type": "object"
+      },
+      "WindowApplied": {
+        "properties": {
+          "clipped": {
+            "title": "Clipped",
+            "type": "boolean"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "clipped",
+          "months"
+        ],
+        "title": "WindowApplied",
+        "type": "object"
       }
     }
   },
@@ -1548,6 +2262,117 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/explanations/{text_key}": {
+      "get": {
+        "description": "La explicación guardada (``occlusion_v2`` si existe), o 404.",
+        "operationId": "get_explanation_api_v1_explanations__text_key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "text_key",
+            "required": true,
+            "schema": {
+              "title": "Text Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model_version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Explanation",
+        "tags": [
+          "explanations"
+        ]
+      },
+      "post": {
+        "description": "Calcula la explicación en ``voc-ml-online`` y la guarda.",
+        "operationId": "compute_explanation_api_v1_explanations__text_key__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "text_key",
+            "required": true,
+            "schema": {
+              "title": "Text Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compute Explanation",
+        "tags": [
+          "explanations"
+        ]
+      }
+    },
     "/api/v1/hitl/guidelines/{task}": {
       "get": {
         "operationId": "guideline_api_v1_hitl_guidelines__task__get",
@@ -2548,6 +3373,627 @@
         "summary": "Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/api/v1/reviews": {
+      "get": {
+        "description": "Reseñas sanitizadas dentro de la ventana, con paginación del servidor.",
+        "operationId": "reviews_api_v1_reviews_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "fecha_desc",
+              "enum": [
+                "fecha_desc",
+                "confidence_asc",
+                "estrellas_asc"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sentiment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "NEG",
+                      "NEU",
+                      "POS",
+                      "NO_PREDICTED"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentiment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "families",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Families"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_update",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Update"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_security",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Security"
+            }
+          },
+          {
+            "in": "query",
+            "name": "topic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Topic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stars",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stars"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hitl_reviewed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hitl Reviewed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reviews",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/facets": {
+      "get": {
+        "description": "Conteos con los filtros aplicados; solo agregados.",
+        "operationId": "facets_api_v1_reviews_facets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sentiment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "NEG",
+                      "NEU",
+                      "POS",
+                      "NO_PREDICTED"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sentiment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "families",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Families"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_update",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Update"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_security",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Security"
+            }
+          },
+          {
+            "in": "query",
+            "name": "topic_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Topic Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stars",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stars"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hitl_reviewed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hitl Reviewed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Facets"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Facets",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/search": {
+      "post": {
+        "description": "Búsqueda semántica; la consulta no se guarda ni se registra.",
+        "operationId": "search_api_v1_reviews_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{bank_id}/{id_resena}": {
+      "get": {
+        "description": "La ficha de una reseña (sin ventana).",
+        "operationId": "detail_api_v1_reviews__bank_id___id_resena__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bank_id",
+            "required": true,
+            "schema": {
+              "enum": [
+                "BBVA",
+                "AZTECA",
+                "SANTANDER",
+                "NUBANK",
+                "BANORTE"
+              ],
+              "title": "Bank Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_resena",
+            "required": true,
+            "schema": {
+              "title": "Id Resena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detail",
+        "tags": [
+          "reviews"
         ]
       }
     },
