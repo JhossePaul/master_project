@@ -10,6 +10,7 @@ de estado es una fila nueva.
 """
 
 import logging
+import re
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Any, Final
@@ -26,6 +27,15 @@ log = logging.getLogger(__name__)
 
 DISPLAY_NAME: Final = "robertuito-sentiment"
 PRODUCTION_ALIAS: Final = "produccion"
+
+
+def vertex_image(image: str) -> str:
+    """Imagen de serving para Vertex: el digest sin la etiqueta.
+
+    Cloud Run acepta ``imagen:etiqueta@sha256:…``; el registro de modelos de
+    Vertex la rechaza como URI inválida (probado el 2026-10-26).
+    """
+    return re.sub(r":[^/@]+@", "@", image)
 
 
 def version_alias(model_version: str) -> str:
@@ -70,7 +80,7 @@ def register(
     aiplatform.Model.upload(
         display_name=DISPLAY_NAME,
         artifact_uri=weights_uri,
-        serving_container_image_uri=serving_image,
+        serving_container_image_uri=vertex_image(serving_image),
         parent_model=parent.resource_name if parent else None,
         is_default_version=parent is None,
         version_aliases=[version_alias(model_version)],
@@ -192,7 +202,7 @@ def _registered(
     return aiplatform.Model.upload(
         display_name=DISPLAY_NAME,
         artifact_uri=model.registry_uri,
-        serving_container_image_uri=settings.serving_image,
+        serving_container_image_uri=vertex_image(settings.serving_image),
         parent_model=parent.resource_name if parent else None,
         is_default_version=parent is None,
         version_aliases=[alias],

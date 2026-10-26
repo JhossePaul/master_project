@@ -149,12 +149,14 @@ def curve_points(
             if target < 1.0
             else (None, None)
         )
-        reviews = (1 - point.coverage) * weekly_total
+        # La suma de pesos puede pasar de 1 por redondeo (1.0000000000000002).
+        coverage = min(point.coverage, 1.0)
+        reviews = (1 - coverage) * weekly_total
         # Con pocos ítems, un percentil puede quedar del otro lado del punto;
         # el contrato pide que el intervalo lo contenga.
         points.append(
             CoveragePoint(
-                coverage=point.coverage,
+                coverage=coverage,
                 risk=point.risk,
                 risk_ci_low=None if ci[0] is None else min(ci[0], point.risk),
                 risk_ci_high=None if ci[1] is None else max(ci[1], point.risk),
