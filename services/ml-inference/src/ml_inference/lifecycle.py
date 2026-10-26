@@ -35,7 +35,6 @@ la vista quedaría vacía y el delta re-predeciría el corpus en CPU.
 """
 
 import logging
-import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -45,6 +44,13 @@ import numpy as np
 from voc_common.operations_v3 import ModelVersion
 from voc_common.policies import CoveragePoint, HitlCoverageCurve, RiskPolicy
 from voc_nlp.agreement import cohen_kappa, macro_f1
+
+# ``next_policy_version`` se re-exporta: vive en ``voc_nlp.policy``.
+from voc_nlp.policy import (  # noqa: F401
+    next_policy_version,
+    point_for,
+    propose_risk_policy,
+)
 from voc_nlp.selective import at_coverage, boot_risk, resample
 
 from ml_inference import registry
@@ -193,50 +199,6 @@ def build_curve(
 
 
 # -- Política ----------------------------------------------------------------
-
-
-def next_policy_version(current: str) -> str:
-    """``risk_policy_v1`` → ``risk_policy_v2``."""
-    match = re.fullmatch(r"(.*_v)(\d+)", current)
-    if match is None:
-        return f"{current}_v2"
-    return f"{match[1]}{int(match[2]) + 1}"
-
-
-def point_for(curve: HitlCoverageCurve, coverage: float) -> CoveragePoint:
-    """Primer punto de la curva con cobertura ≥ ``coverage``."""
-    for point in curve.points:
-        if point.coverage >= coverage - 1e-9:
-            return point
-    raise ValueError(f"the curve does not reach coverage {coverage}")
-
-
-def propose_risk_policy(
-    curve: HitlCoverageCurve,
-    current: RiskPolicy,
-    actor_hash: str,
-    reason: str,
-    now: datetime,
-    coverage: float | None = None,
-) -> RiskPolicy:
-    """Siguiente versión con el umbral de ``coverage`` en ``curve``.
-
-    Sin ``coverage`` se conserva la cobertura objetivo vigente. Los demás
-    parámetros no cambian.
-    """
-    target = current.hitl_target_coverage if coverage is None else coverage
-    point = point_for(curve, target)
-    return current.model_copy(
-        update={
-            "policy_version": next_policy_version(current.policy_version),
-            "valid_from": now,
-            "hitl_target_coverage": target,
-            "hitl_threshold": point.threshold,
-            "model_version": curve.model_version,
-            "set_by_hash": actor_hash,
-            "reason": reason,
-        }
-    )
 
 
 # -- Regla de promoción ------------------------------------------------------

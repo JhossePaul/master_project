@@ -18,8 +18,10 @@ const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
 const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
 const AlertsInbox = lazy(() => import("@/sections/alerts/AlertsInbox"));
 const AlertDetail = lazy(() => import("@/sections/alerts/AlertDetail"));
+const AdminView = lazy(() => import("@/sections/admin/AdminView"));
 const REVIEWER: Role = "revisor";
 const ANALYST: Role = "analista";
+const ADMIN: Role = "administrador";
 const ExplorerView = lazy(() => import("@/sections/explorer/ExplorerView"));
 
 function AnalystOnly({ children }: { children: ReactNode }) {
@@ -112,7 +114,16 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: "mlops", element: guarded("analista", "MLOps y AIOps") },
-      { path: "admin", element: guarded("administrador", "Administración") },
+      {
+        path: "admin",
+        element: (
+          <RequireRole role={ADMIN}>
+            <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+              <AdminView />
+            </Suspense>
+          </RequireRole>
+        ),
+      },
       { path: "gobernanza", element: guarded("lector", "Gobernanza") },
       { path: "*", element: <NotFound /> },
     ],

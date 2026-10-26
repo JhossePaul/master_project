@@ -4,6 +4,160 @@
  */
 
 export interface paths {
+    "/api/v1/admin/coverage-curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage Curve
+         * @description Curva del modelo promovido, su punto vigente y el tiempo medido.
+         */
+        get: operations["coverage_curve_api_v1_admin_coverage_curve_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/drift-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drift Policy */
+        get: operations["drift_policy_api_v1_admin_drift_policy_get"];
+        put?: never;
+        /** Save Drift Policy */
+        post: operations["save_drift_policy_api_v1_admin_drift_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/drift-policy/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Drift Rates
+         * @description Meses de alerta al año con los umbrales propuestos y con los vigentes.
+         */
+        post: operations["drift_rates_api_v1_admin_drift_policy_rates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Versions */
+        get: operations["gold_versions_api_v1_admin_gold_versions_get"];
+        put?: never;
+        /** Create Gold */
+        post: operations["create_gold_api_v1_admin_gold_versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Gold */
+        post: operations["preview_gold_api_v1_admin_gold_versions_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/gold-versions/{gold_version}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gold Items */
+        get: operations["gold_items_api_v1_admin_gold_versions__gold_version__items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/risk-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Risk Policy
+         * @description La versión vigente y la tabla completa, por ``valid_from``.
+         */
+        get: operations["risk_policy_api_v1_admin_risk_policy_get"];
+        put?: never;
+        /**
+         * Save Risk Policy
+         * @description Crea la versión siguiente (solo inserta).
+         */
+        post: operations["save_risk_policy_api_v1_admin_risk_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/risk-policy/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Risk Policy
+         * @description La versión propuesta y su diferencia, sin guardar nada.
+         */
+        post: operations["preview_risk_policy_api_v1_admin_risk_policy_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/alerts": {
         parameters: {
             query?: never;
@@ -720,6 +874,41 @@ export interface components {
             period: string;
             quejas_4_5: components["schemas"]["Estimate"] | null;
         };
+        /** CoverageCurveResponse */
+        CoverageCurveResponse: {
+            current_point: components["schemas"]["CoveragePoint"] | null;
+            curve: components["schemas"]["HitlCoverageCurve"];
+            /** Hitl Boosts Active */
+            hitl_boosts_active: components["schemas"]["HitlBoost"][];
+            /** Median Seconds */
+            median_seconds: number | null;
+            /** Timed N */
+            timed_n: number;
+            /** Window Days */
+            window_days: number;
+        };
+        /**
+         * CoveragePoint
+         * @description Un punto de la curva de cobertura y riesgo (5.6).
+         */
+        CoveragePoint: {
+            /** Coverage */
+            coverage: number;
+            /** Errors Caught */
+            errors_caught: number;
+            /** Minutes Per Week */
+            minutes_per_week: number;
+            /** Reviews Per Week */
+            reviews_per_week: number;
+            /** Risk */
+            risk: number;
+            /** Risk Ci High */
+            risk_ci_high?: number | null;
+            /** Risk Ci Low */
+            risk_ci_low?: number | null;
+            /** Threshold */
+            threshold: number;
+        };
         /** DailyPoint */
         DailyPoint: {
             /** Bank Id */
@@ -782,6 +971,114 @@ export interface components {
             topic_model_version: string | null;
             /** Topicos */
             topicos: components["schemas"]["DailyTheme"][];
+        };
+        /**
+         * DriftPolicy
+         * @description Fila de ``drift_policy`` (por banco).
+         */
+        DriftPolicy: {
+            /** Bank Id */
+            bank_id: string;
+            /** Baseline Months */
+            baseline_months: number;
+            /** Drift Policy Version */
+            drift_policy_version: string;
+            /** Entry Months */
+            entry_months: number;
+            /** Min Baseline Months */
+            min_baseline_months: number;
+            /** Min Rows Per Month */
+            min_rows_per_month: number;
+            /** Reason */
+            reason: string;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Template Version */
+            template_version: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+        };
+        /** DriftPolicyResponse */
+        DriftPolicyResponse: {
+            current: components["schemas"]["DriftPolicy"];
+            /** Diff Vs Template */
+            diff_vs_template: components["schemas"]["FieldDiff"][];
+            /** History */
+            history: components["schemas"]["DriftPolicy"][];
+            template: components["schemas"]["DriftPolicyTemplate"];
+        };
+        /**
+         * DriftPolicyTemplate
+         * @description Fila de ``drift_policy_template``; cambiarla no cambia a ningún banco.
+         */
+        DriftPolicyTemplate: {
+            /** Baseline Months */
+            baseline_months: number;
+            /** Entry Months */
+            entry_months: number;
+            /** Min Baseline Months */
+            min_baseline_months: number;
+            /** Min Rows Per Month */
+            min_rows_per_month: number;
+            /** Reason */
+            reason: string;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Template Version */
+            template_version: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+        };
+        /** DriftRatesIn */
+        DriftRatesIn: {
+            /** Bank */
+            bank: string;
+            thresholds: components["schemas"]["DriftThresholds"];
+        };
+        /** DriftRatesResponse */
+        DriftRatesResponse: {
+            /** Bank */
+            bank: string;
+            /** Series */
+            series: components["schemas"]["SeriesRate"][];
+        };
+        /** DriftSaveIn */
+        DriftSaveIn: {
+            /** Bank */
+            bank: string;
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * DriftThresholds
+         * @description JSON ``thresholds`` de la política: umbral por serie.
+         *
+         *     Un umbral nulo es una serie que se mide y nunca alerta (ruido y
+         *     alineación de los tópicos). Una serie usa z o PSI, no los dos.
+         */
+        DriftThresholds: {
+            /** Psi */
+            psi?: {
+                [key: string]: number | null;
+            };
+            /** Z */
+            z?: {
+                [key: string]: number | null;
+            };
         };
         /** Estimate */
         Estimate: {
@@ -915,6 +1212,15 @@ export interface components {
             /** Z */
             z: number | null;
         };
+        /** FieldDiff */
+        FieldDiff: {
+            /** After */
+            after: unknown;
+            /** Before */
+            before: unknown;
+            /** Field */
+            field: string;
+        };
         /** Freshness */
         Freshness: {
             /** Data Until */
@@ -924,6 +1230,122 @@ export interface components {
             last_ingestion_at: string | null;
             /** Last Monitor At */
             last_monitor_at: string | null;
+        };
+        /** GoldCount */
+        GoldCount: {
+            /** Key */
+            key: string;
+            /** N */
+            n: number;
+        };
+        /** GoldCreateIn */
+        GoldCreateIn: {
+            criteria: components["schemas"]["GoldCriteria"];
+            /** Reason */
+            reason: string;
+        };
+        /** GoldCriteria */
+        GoldCriteria: {
+            /**
+             * Exclude Flags
+             * @default [
+             *       "no_evaluable"
+             *     ]
+             */
+            exclude_flags: components["schemas"]["ReviewFlag"][];
+            /** Guideline Version */
+            guideline_version: string;
+            /**
+             * Reason
+             * @default monitor_sample
+             * @constant
+             */
+            reason: "monitor_sample";
+            /**
+             * Review Round
+             * @default 1
+             * @constant
+             */
+            review_round: 1;
+            /**
+             * Submitted From
+             * Format: date
+             */
+            submitted_from: string;
+            /**
+             * Submitted To
+             * Format: date
+             */
+            submitted_to: string;
+        };
+        /** GoldItem */
+        GoldItem: {
+            /** Id Resena */
+            id_resena: string;
+            /** Item Id */
+            item_id: string;
+            /** Reviewer */
+            reviewer: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Validated Label */
+            validated_label: string | null;
+        };
+        /** GoldItemsResponse */
+        GoldItemsResponse: {
+            /**
+             * Cutoff At
+             * Format: date-time
+             */
+            cutoff_at: string;
+            /** Gold Version */
+            gold_version: string;
+            /** Items */
+            items: components["schemas"]["GoldItem"][];
+        };
+        /** GoldPreview */
+        GoldPreview: {
+            /** By Bank */
+            by_bank: components["schemas"]["GoldCount"][];
+            /** By Label */
+            by_label: components["schemas"]["GoldCount"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * GoldVersion
+         * @description Fila de ``gold_versions``: qué revisiones HITL entran a una versión.
+         */
+        GoldVersion: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Hash */
+            created_by_hash: string;
+            /** Criteria */
+            criteria: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cutoff At
+             * Format: date-time
+             */
+            cutoff_at: string;
+            /** Gold Version */
+            gold_version: string;
+            /** Items */
+            items: number;
+        };
+        /** GoldVersionOut */
+        GoldVersionOut: {
+            /** Reason */
+            reason?: string | null;
+            version: components["schemas"]["GoldVersion"];
         };
         /** GuidelineOut */
         GuidelineOut: {
@@ -942,6 +1364,37 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HitlBoost
+         * @description Fila de ``hitl_boosts``: subida temporal de la revisión de un banco.
+         *
+         *     La fila de cierre repite el ``boost_id`` con ``ended_reason``; no se edita.
+         */
+        HitlBoost: {
+            /** Alert Id */
+            alert_id?: string | null;
+            /** Bank Id */
+            bank_id: string;
+            /** Boost Id */
+            boost_id: string;
+            /** Coverage */
+            coverage: number;
+            ended_reason?: components["schemas"]["BoostEndReason"] | null;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Risk Policy Version */
+            risk_policy_version: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Weekly Cap */
+            weekly_cap: number;
         };
         /** HitlCase */
         HitlCase: {
@@ -972,6 +1425,29 @@ export interface components {
             task: "sentiment";
             /** Text */
             text: string;
+        };
+        /**
+         * HitlCoverageCurve
+         * @description Fila de ``hitl_coverage_curves``: modelo × calibración × cálculo.
+         */
+        HitlCoverageCurve: {
+            /** Calibration Version */
+            calibration_version: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Model Version */
+            model_version: string;
+            /** Points */
+            points: components["schemas"]["CoveragePoint"][];
+            /** Weekly Volume By Bank */
+            weekly_volume_by_bank: {
+                [key: string]: number;
+            };
+            /** Weekly Volume Total */
+            weekly_volume_total: number;
         };
         /**
          * HitlReviewRef
@@ -1087,6 +1563,12 @@ export interface components {
             /** Prompt Version */
             prompt_version: string;
         };
+        /**
+         * RetrainTrigger
+         * @description Quién lanza el reentrenamiento del modelo de sentimiento.
+         * @enum {string}
+         */
+        RetrainTrigger: "auto" | "manual";
         /** ReviewDetail */
         ReviewDetail: {
             /** Aspects Prompt Version */
@@ -1161,6 +1643,117 @@ export interface components {
             topics: components["schemas"]["TopicRef"][];
             /** Version App */
             version_app: string | null;
+        };
+        /** RiskChangeIn */
+        RiskChangeIn: {
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * RiskPolicy
+         * @description Fila de ``risk_policy`` (global): el apetito de riesgo.
+         *
+         *     Todos los valores son parámetros que fijan el revisor y el dueño de
+         *     negocio en la pantalla de administración. El tope semanal, la subida por
+         *     deriva y la doble revisión no tienen evidencia en los experimentos: son
+         *     nulos hasta que se configuran (sin tope, sin subida automática y sin doble
+         *     revisión).
+         *
+         *     Los dos disparadores son nulos en las versiones sembradas antes de
+         *     existir: nulo equivale a ``manual`` en el reentrenamiento y a
+         *     ``scheduled`` en el re-ajuste de tópicos (``retrain_mode`` y
+         *     ``topic_refit_mode`` dan el valor efectivo).
+         */
+        RiskPolicy: {
+            /** Agreement Sample Weekly */
+            agreement_sample_weekly: number;
+            /** Drift Boost Coverage */
+            drift_boost_coverage?: number | null;
+            /** Drift Boost Days */
+            drift_boost_days?: number | null;
+            /** Drift Boost Weekly Cap */
+            drift_boost_weekly_cap?: number | null;
+            /** Families Exact Floor */
+            families_exact_floor: number;
+            /** Families Min Prevalence */
+            families_min_prevalence: number;
+            /**
+             * Hitl Signal
+             * @constant
+             */
+            hitl_signal: "prob_max";
+            /** Hitl Target Coverage */
+            hitl_target_coverage: number;
+            /** Hitl Threshold */
+            hitl_threshold: number;
+            /** Hitl Weekly Cap */
+            hitl_weekly_cap?: number | null;
+            /** Human Agreement Frequency */
+            human_agreement_frequency?: string | null;
+            /** Human Agreement Sample Size */
+            human_agreement_sample_size?: number | null;
+            /** Model Version */
+            model_version: string;
+            /** Monitor Frequency */
+            monitor_frequency: string;
+            /** Monitor Sample Size */
+            monitor_sample_size: number;
+            /** Policy Version */
+            policy_version: string;
+            /** Reason */
+            reason: string;
+            /** Retrain Kappa Floor */
+            retrain_kappa_floor: number;
+            retrain_trigger?: components["schemas"]["RetrainTrigger"] | null;
+            /** Set By Hash */
+            set_by_hash: string;
+            /** Topic Refit Frequency */
+            topic_refit_frequency: string;
+            topic_refit_trigger?: components["schemas"]["TopicRefitTrigger"] | null;
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+            /** Warn Agreement Floor */
+            warn_agreement_floor: number;
+            /** Warn Correction Rate */
+            warn_correction_rate: number;
+        };
+        /** RiskPolicyResponse */
+        RiskPolicyResponse: {
+            current: components["schemas"]["RiskPolicy"];
+            /** History */
+            history: components["schemas"]["RiskPolicy"][];
+        };
+        /** RiskPreview */
+        RiskPreview: {
+            /** Diff */
+            diff: components["schemas"]["FieldDiff"][];
+            /** Errors */
+            errors: string[];
+            /** Large Change */
+            large_change: boolean;
+            proposed: components["schemas"]["RiskPolicy"] | null;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** RiskSaveIn */
+        RiskSaveIn: {
+            /** Base Version */
+            base_version: string;
+            /** Changes */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** Confirm Word */
+            confirm_word?: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * Role
@@ -1282,6 +1875,23 @@ export interface components {
             /** Z */
             z: number | null;
         };
+        /** SeriesRate */
+        SeriesRate: {
+            /** Current Alerts */
+            current_alerts: number;
+            /** Current Per Year */
+            current_per_year: number;
+            /** Months */
+            months: number;
+            /** Proposed Alerts */
+            proposed_alerts: number;
+            /** Proposed Per Year */
+            proposed_per_year: number;
+            /** Reference */
+            reference: number | null;
+            /** Series */
+            series: string;
+        };
         /** TaskSummary */
         TaskSummary: {
             /** Median Seconds */
@@ -1326,6 +1936,12 @@ export interface components {
             /** Topic Id */
             topic_id: number;
         };
+        /**
+         * TopicRefitTrigger
+         * @description Quién lanza el re-ajuste del modelo de tópicos.
+         * @enum {string}
+         */
+        TopicRefitTrigger: "scheduled" | "manual";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1449,6 +2065,337 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    coverage_curve_api_v1_admin_coverage_curve_get: {
+        parameters: {
+            query?: {
+                model_version?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageCurveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_policy_api_v1_admin_drift_policy_get: {
+        parameters: {
+            query: {
+                bank: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftPolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_drift_policy_api_v1_admin_drift_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftSaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_rates_api_v1_admin_drift_policy_rates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftRatesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftRatesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_versions_api_v1_admin_gold_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldVersionOut"][];
+                };
+            };
+        };
+    };
+    create_gold_api_v1_admin_gold_versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoldCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_gold_api_v1_admin_gold_versions_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoldCriteria"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gold_items_api_v1_admin_gold_versions__gold_version__items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gold_version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoldItemsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    risk_policy_api_v1_admin_risk_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPolicyResponse"];
+                };
+            };
+        };
+    };
+    save_risk_policy_api_v1_admin_risk_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskSaveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_risk_policy_api_v1_admin_risk_policy_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RiskChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_alerts_api_v1_alerts_get: {
         parameters: {
             query?: {

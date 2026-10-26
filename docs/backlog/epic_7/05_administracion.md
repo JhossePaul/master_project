@@ -1,6 +1,6 @@
 # Paso 5. Feature 7.10: Administración y configuración
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Implementado en código (lógica, API y pantalla); faltan la prueba en dev con el autor y fijar los parámetros sin evidencia. Trabajado en su propio *worktree* (rama `admin-7-10`).
 * **Nivel:** imprescindible.
 * **Depende de:** paso 2.
 * **Objetivo:** ajustar el apetito de riesgo (`risk_policy`, global) y la deriva (`drift_policy`, por banco) como decisiones informadas, cada una con su evidencia y su ayuda; ver y comparar el historial de versiones, y crear versiones del oro desde la muestra de monitoreo. Cambiar un parámetro **crea una versión nueva**, con quién (hash) y por qué, y la siguiente corrida la usa.
@@ -126,8 +126,25 @@ Pestañas: **Apetito de riesgo**, **Deriva por banco**, **Historial**, **Oro** (
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **Un solo `next_risk_policy`.** `propose_risk_policy` no cambia más que la cobertura, así que se agregó `voc_nlp.policy.next_risk_policy(current, changes, curve, actor_hash, reason, now)`. Revalida la fila completa con `RiskPolicy.model_validate` (un `model_copy` no valida, y el grupo incompleto debe fallar), rechaza los campos que fija el sistema (`policy_version`, `valid_from`, `hitl_signal`, `hitl_threshold`, `model_version`, `set_by_hash`, `reason`) y los desconocidos, y recalcula umbral y `model_version` solo si cambia la cobertura. `lifecycle.py` y `monitor/drift_rates.py` re-exportan lo movido; sus pruebas no cambiaron.
+* **Vista previa con `errors`, no con 422.** `preview` siempre responde 200: si los cambios no pasan la validación (un grupo incompleto, un rango), `proposed` es nulo y `errors` dice por qué; guardar sí da 422. Así la pantalla muestra el motivo junto al formulario.
+* **El motivo del oro vive en `criteria`.** `gold_versions` no tiene columna de motivo; se guarda como `criteria.created_reason`, y los ítems se reproducen con el resto de `criteria` (los campos extra se ignoran). No cambia el contrato.
+* **Tasas de deriva en Python.** La consulta trae los meses evaluados (con umbral, última `computed_at`) y el servicio cuenta las alertas con los umbrales propuestos y con los vigentes antes de pasar el resultado a `voc_nlp.drift_rates.rates()`; son unas miles de filas por banco y la prueba compara con un cálculo a mano. Los meses son los que el monitor evaluó con su política vigente (`threshold IS NOT NULL`), como en el comando `drift-rates`.
+* **Versión de deriva por banco:** `drift_policy_v<n>_<banco>`; solo se editan los umbrales y los cuatro parámetros de entrada, y `template_version` se hereda de la vigente.
+* **Versión vigente = última con `valid_from` ≤ ahora**, igual que las vistas: una versión guardada es la vigente de inmediato y la anterior queda en el historial. `base_version` debe ser la vigente (409 si no).
+* **Oro:** el corte es el momento de crear la versión; los ítems de una versión son las revisiones que cumplen su criterio hasta ese corte, sin texto. Requiere al menos una revisión y la guía es una sola por versión.
+* **Permisos de BigQuery:** el servicio ya podía insertar en `risk_policy`, `drift_policy` y `gold_versions` (`PORTAL_WRITABLE_TABLES`); no hubo cambios en `infra/`.
+* **Pantalla:** cuatro pestañas por `?tab=` (`riesgo`, `deriva`, `historial`, `oro`; **Muestras** llega en el paso 9). El formulario usa React Hook Form con Zod, con los rangos de `policyHelp.ts`; Guardar usa `ConfirmWithReason` y, si `large_change`, pide `CONFIRMAR`. El historial compara dos versiones en el portal.
+* **Nombres de banco:** la pantalla muestra el seudónimo, pero los identificadores de versión (`drift_policy_v1_BBVA`) llevan el id real del banco; es una pantalla de administrador y son ids técnicos.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **Lógica compartida (2026-10-26):** `voc_nlp.policy` (`point_for`, `next_policy_version`, `propose_risk_policy`, `next_risk_policy`) y `voc_nlp.drift_rates` (`Rate`, `rates`, `REFERENCE`, `TOLERANCE`, `CEILING`) con sus pruebas. Pasan las pruebas de `lifecycle`, `drift_rates` y `rescore` de `ml-inference`.
+* **API (2026-10-26):** `sections/admin/` con las 11 rutas de la sección 3 (rol administrador, en `ROUTE_ROLES`), datos de muestra para `PORTAL_DATA=fixtures` y `openapi.json` regenerado. 35 pruebas nuevas en `test_admin.py`, `test_admin_edges.py` y `test_admin_bigquery.py`: la cobertura recalcula el umbral y guarda `model_version`; más de 5 puntos sin `CONFIRMAR` da 422; grupo incompleto, 422; base vieja, 409; `set_by_hash` y `reason` siempre presentes y solo se escribe en la tabla de la política; las tasas propuestas coinciden con un cálculo a mano; los criterios del oro excluyen `no_evaluable` y la segunda ronda; analista, lector y revisor reciben 403 en todas las rutas. `api_backend` queda en 96 % de cobertura (mínimo del CI: 85 %); `ruff`, `pyrefly` y `bandit` en verde.
+* **Portal (2026-10-26):** `/admin` con las cuatro pestañas, `policyHelp.ts` con la ayuda de cada parámetro, el gráfico de la curva con el punto vigente y el propuesto, la tabla con los minutos de la curva y los medidos, el formulario agrupado, las tasas por serie con la referencia dorada, el historial con comparación y el oro con su aviso de `GOLD_VERSION`. 15 pruebas nuevas (`npm test`: 154; `check`, `tsc` y `build` en verde, incluido `axe`). Revisado en local con datos de muestra.
+
+## Pendiente
+
+* Probar en dev con el autor: mezclar, desplegar y cambiar la cobertura (0.89 y de vuelta a 0.90, motivo "prueba de la pantalla de administración") para ver la `risk_policy_version` nueva en el siguiente delta. No se hizo: necesita la aprobación del autor.
+* Comparar las tasas de la plantilla vigente con `drift-rates` contra datos reales de dev.
+* Que el autor fije o deje nulos con su motivo el tope semanal, la subida por deriva y la doble revisión.

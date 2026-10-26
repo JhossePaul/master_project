@@ -547,6 +547,135 @@
         "title": "CardValues",
         "type": "object"
       },
+      "CoverageCurveResponse": {
+        "properties": {
+          "current_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoveragePoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "curve": {
+            "$ref": "#/components/schemas/HitlCoverageCurve"
+          },
+          "hitl_boosts_active": {
+            "items": {
+              "$ref": "#/components/schemas/HitlBoost"
+            },
+            "title": "Hitl Boosts Active",
+            "type": "array"
+          },
+          "median_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Seconds"
+          },
+          "timed_n": {
+            "title": "Timed N",
+            "type": "integer"
+          },
+          "window_days": {
+            "title": "Window Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "curve",
+          "current_point",
+          "median_seconds",
+          "timed_n",
+          "window_days",
+          "hitl_boosts_active"
+        ],
+        "title": "CoverageCurveResponse",
+        "type": "object"
+      },
+      "CoveragePoint": {
+        "additionalProperties": false,
+        "description": "Un punto de la curva de cobertura y riesgo (5.6).",
+        "properties": {
+          "coverage": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "type": "number"
+          },
+          "errors_caught": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Errors Caught",
+            "type": "number"
+          },
+          "minutes_per_week": {
+            "minimum": 0.0,
+            "title": "Minutes Per Week",
+            "type": "number"
+          },
+          "reviews_per_week": {
+            "minimum": 0.0,
+            "title": "Reviews Per Week",
+            "type": "number"
+          },
+          "risk": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Risk",
+            "type": "number"
+          },
+          "risk_ci_high": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Ci High"
+          },
+          "risk_ci_low": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Ci Low"
+          },
+          "threshold": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "coverage",
+          "risk",
+          "threshold",
+          "errors_caught",
+          "reviews_per_week",
+          "minutes_per_week"
+        ],
+        "title": "CoveragePoint",
+        "type": "object"
+      },
       "DailyPoint": {
         "properties": {
           "bank_id": {
@@ -732,6 +861,284 @@
           "topic_model_version"
         ],
         "title": "DailyTopics",
+        "type": "object"
+      },
+      "DriftPolicy": {
+        "additionalProperties": false,
+        "description": "Fila de ``drift_policy`` (por banco).",
+        "properties": {
+          "bank_id": {
+            "minLength": 1,
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "baseline_months": {
+            "minimum": 1.0,
+            "title": "Baseline Months",
+            "type": "integer"
+          },
+          "drift_policy_version": {
+            "minLength": 1,
+            "title": "Drift Policy Version",
+            "type": "string"
+          },
+          "entry_months": {
+            "minimum": 1.0,
+            "title": "Entry Months",
+            "type": "integer"
+          },
+          "min_baseline_months": {
+            "minimum": 1.0,
+            "title": "Min Baseline Months",
+            "type": "integer"
+          },
+          "min_rows_per_month": {
+            "minimum": 1.0,
+            "title": "Min Rows Per Month",
+            "type": "integer"
+          },
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "set_by_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Set By Hash",
+            "type": "string"
+          },
+          "template_version": {
+            "minLength": 1,
+            "title": "Template Version",
+            "type": "string"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/DriftThresholds"
+          },
+          "valid_from": {
+            "format": "date-time",
+            "title": "Valid From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid_from",
+          "thresholds",
+          "baseline_months",
+          "min_baseline_months",
+          "min_rows_per_month",
+          "entry_months",
+          "set_by_hash",
+          "reason",
+          "drift_policy_version",
+          "bank_id",
+          "template_version"
+        ],
+        "title": "DriftPolicy",
+        "type": "object"
+      },
+      "DriftPolicyResponse": {
+        "properties": {
+          "current": {
+            "$ref": "#/components/schemas/DriftPolicy"
+          },
+          "diff_vs_template": {
+            "items": {
+              "$ref": "#/components/schemas/FieldDiff"
+            },
+            "title": "Diff Vs Template",
+            "type": "array"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/DriftPolicy"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "template": {
+            "$ref": "#/components/schemas/DriftPolicyTemplate"
+          }
+        },
+        "required": [
+          "current",
+          "template",
+          "history",
+          "diff_vs_template"
+        ],
+        "title": "DriftPolicyResponse",
+        "type": "object"
+      },
+      "DriftPolicyTemplate": {
+        "additionalProperties": false,
+        "description": "Fila de ``drift_policy_template``; cambiarla no cambia a ningún banco.",
+        "properties": {
+          "baseline_months": {
+            "minimum": 1.0,
+            "title": "Baseline Months",
+            "type": "integer"
+          },
+          "entry_months": {
+            "minimum": 1.0,
+            "title": "Entry Months",
+            "type": "integer"
+          },
+          "min_baseline_months": {
+            "minimum": 1.0,
+            "title": "Min Baseline Months",
+            "type": "integer"
+          },
+          "min_rows_per_month": {
+            "minimum": 1.0,
+            "title": "Min Rows Per Month",
+            "type": "integer"
+          },
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "set_by_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Set By Hash",
+            "type": "string"
+          },
+          "template_version": {
+            "minLength": 1,
+            "title": "Template Version",
+            "type": "string"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/DriftThresholds"
+          },
+          "valid_from": {
+            "format": "date-time",
+            "title": "Valid From",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valid_from",
+          "thresholds",
+          "baseline_months",
+          "min_baseline_months",
+          "min_rows_per_month",
+          "entry_months",
+          "set_by_hash",
+          "reason",
+          "template_version"
+        ],
+        "title": "DriftPolicyTemplate",
+        "type": "object"
+      },
+      "DriftRatesIn": {
+        "properties": {
+          "bank": {
+            "title": "Bank",
+            "type": "string"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/DriftThresholds"
+          }
+        },
+        "required": [
+          "bank",
+          "thresholds"
+        ],
+        "title": "DriftRatesIn",
+        "type": "object"
+      },
+      "DriftRatesResponse": {
+        "properties": {
+          "bank": {
+            "title": "Bank",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesRate"
+            },
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bank",
+          "series"
+        ],
+        "title": "DriftRatesResponse",
+        "type": "object"
+      },
+      "DriftSaveIn": {
+        "properties": {
+          "bank": {
+            "title": "Bank",
+            "type": "string"
+          },
+          "base_version": {
+            "title": "Base Version",
+            "type": "string"
+          },
+          "changes": {
+            "additionalProperties": true,
+            "title": "Changes",
+            "type": "object"
+          },
+          "reason": {
+            "minLength": 10,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank",
+          "base_version",
+          "changes",
+          "reason"
+        ],
+        "title": "DriftSaveIn",
+        "type": "object"
+      },
+      "DriftThresholds": {
+        "additionalProperties": false,
+        "description": "JSON ``thresholds`` de la política: umbral por serie.\n\nUn umbral nulo es una serie que se mide y nunca alerta (ruido y\nalineación de los tópicos). Una serie usa z o PSI, no los dos.",
+        "properties": {
+          "psi": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "minLength": 1
+            },
+            "title": "Psi",
+            "type": "object"
+          },
+          "z": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "minLength": 1
+            },
+            "title": "Z",
+            "type": "object"
+          }
+        },
+        "title": "DriftThresholds",
         "type": "object"
       },
       "Estimate": {
@@ -1125,6 +1532,27 @@
         "title": "FamilyMonth",
         "type": "object"
       },
+      "FieldDiff": {
+        "properties": {
+          "after": {
+            "title": "After"
+          },
+          "before": {
+            "title": "Before"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "before",
+          "after"
+        ],
+        "title": "FieldDiff",
+        "type": "object"
+      },
       "Freshness": {
         "properties": {
           "data_until": {
@@ -1183,6 +1611,255 @@
         "title": "Freshness",
         "type": "object"
       },
+      "GoldCount": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "n"
+        ],
+        "title": "GoldCount",
+        "type": "object"
+      },
+      "GoldCreateIn": {
+        "properties": {
+          "criteria": {
+            "$ref": "#/components/schemas/GoldCriteria"
+          },
+          "reason": {
+            "minLength": 10,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "criteria",
+          "reason"
+        ],
+        "title": "GoldCreateIn",
+        "type": "object"
+      },
+      "GoldCriteria": {
+        "properties": {
+          "exclude_flags": {
+            "default": [
+              "no_evaluable"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ReviewFlag"
+            },
+            "title": "Exclude Flags",
+            "type": "array"
+          },
+          "guideline_version": {
+            "title": "Guideline Version",
+            "type": "string"
+          },
+          "reason": {
+            "const": "monitor_sample",
+            "default": "monitor_sample",
+            "title": "Reason",
+            "type": "string"
+          },
+          "review_round": {
+            "const": 1,
+            "default": 1,
+            "title": "Review Round",
+            "type": "integer"
+          },
+          "submitted_from": {
+            "format": "date",
+            "title": "Submitted From",
+            "type": "string"
+          },
+          "submitted_to": {
+            "format": "date",
+            "title": "Submitted To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submitted_from",
+          "submitted_to",
+          "guideline_version"
+        ],
+        "title": "GoldCriteria",
+        "type": "object"
+      },
+      "GoldItem": {
+        "properties": {
+          "id_resena": {
+            "title": "Id Resena",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "reviewer": {
+            "title": "Reviewer",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          },
+          "validated_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated Label"
+          }
+        },
+        "required": [
+          "item_id",
+          "id_resena",
+          "validated_label",
+          "submitted_at",
+          "reviewer"
+        ],
+        "title": "GoldItem",
+        "type": "object"
+      },
+      "GoldItemsResponse": {
+        "properties": {
+          "cutoff_at": {
+            "format": "date-time",
+            "title": "Cutoff At",
+            "type": "string"
+          },
+          "gold_version": {
+            "title": "Gold Version",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GoldItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gold_version",
+          "cutoff_at",
+          "items"
+        ],
+        "title": "GoldItemsResponse",
+        "type": "object"
+      },
+      "GoldPreview": {
+        "properties": {
+          "by_bank": {
+            "items": {
+              "$ref": "#/components/schemas/GoldCount"
+            },
+            "title": "By Bank",
+            "type": "array"
+          },
+          "by_label": {
+            "items": {
+              "$ref": "#/components/schemas/GoldCount"
+            },
+            "title": "By Label",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "by_bank",
+          "by_label"
+        ],
+        "title": "GoldPreview",
+        "type": "object"
+      },
+      "GoldVersion": {
+        "additionalProperties": false,
+        "description": "Fila de ``gold_versions``: qué revisiones HITL entran a una versión.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Created By Hash",
+            "type": "string"
+          },
+          "criteria": {
+            "additionalProperties": true,
+            "title": "Criteria",
+            "type": "object"
+          },
+          "cutoff_at": {
+            "format": "date-time",
+            "title": "Cutoff At",
+            "type": "string"
+          },
+          "gold_version": {
+            "minLength": 1,
+            "title": "Gold Version",
+            "type": "string"
+          },
+          "items": {
+            "minimum": 0.0,
+            "title": "Items",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gold_version",
+          "criteria",
+          "cutoff_at",
+          "items",
+          "created_by_hash",
+          "created_at"
+        ],
+        "title": "GoldVersion",
+        "type": "object"
+      },
+      "GoldVersionOut": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "version": {
+            "$ref": "#/components/schemas/GoldVersion"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "GoldVersionOut",
+        "type": "object"
+      },
       "GuidelineOut": {
         "properties": {
           "content": {
@@ -1222,6 +1899,81 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HitlBoost": {
+        "additionalProperties": false,
+        "description": "Fila de ``hitl_boosts``: subida temporal de la revisión de un banco.\n\nLa fila de cierre repite el ``boost_id`` con ``ended_reason``; no se edita.",
+        "properties": {
+          "alert_id": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Id"
+          },
+          "bank_id": {
+            "minLength": 1,
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "boost_id": {
+            "minLength": 1,
+            "title": "Boost Id",
+            "type": "string"
+          },
+          "coverage": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "type": "number"
+          },
+          "ended_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoostEndReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "risk_policy_version": {
+            "minLength": 1,
+            "title": "Risk Policy Version",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "weekly_cap": {
+            "minimum": 1.0,
+            "title": "Weekly Cap",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "boost_id",
+          "bank_id",
+          "risk_policy_version",
+          "coverage",
+          "weekly_cap",
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "HitlBoost",
         "type": "object"
       },
       "HitlCase": {
@@ -1286,6 +2038,61 @@
           "review_round"
         ],
         "title": "HitlCase",
+        "type": "object"
+      },
+      "HitlCoverageCurve": {
+        "additionalProperties": false,
+        "description": "Fila de ``hitl_coverage_curves``: modelo × calibración × cálculo.",
+        "properties": {
+          "calibration_version": {
+            "minLength": 1,
+            "title": "Calibration Version",
+            "type": "string"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "model_version": {
+            "minLength": 1,
+            "title": "Model Version",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/CoveragePoint"
+            },
+            "minItems": 1,
+            "title": "Points",
+            "type": "array"
+          },
+          "weekly_volume_by_bank": {
+            "additionalProperties": {
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "propertyNames": {
+              "minLength": 1
+            },
+            "title": "Weekly Volume By Bank",
+            "type": "object"
+          },
+          "weekly_volume_total": {
+            "minimum": 0.0,
+            "title": "Weekly Volume Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_version",
+          "calibration_version",
+          "points",
+          "weekly_volume_total",
+          "weekly_volume_by_bank",
+          "computed_at"
+        ],
+        "title": "HitlCoverageCurve",
         "type": "object"
       },
       "HitlReviewRef": {
@@ -1596,6 +2403,15 @@
         "title": "PromptChange",
         "type": "object"
       },
+      "RetrainTrigger": {
+        "description": "Quién lanza el reentrenamiento del modelo de sentimiento.",
+        "enum": [
+          "auto",
+          "manual"
+        ],
+        "title": "RetrainTrigger",
+        "type": "string"
+      },
       "ReviewDetail": {
         "properties": {
           "aspects_prompt_version": {
@@ -1868,6 +2684,341 @@
           "hitl_reviewed"
         ],
         "title": "ReviewRow",
+        "type": "object"
+      },
+      "RiskChangeIn": {
+        "properties": {
+          "base_version": {
+            "title": "Base Version",
+            "type": "string"
+          },
+          "changes": {
+            "additionalProperties": true,
+            "title": "Changes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "base_version",
+          "changes"
+        ],
+        "title": "RiskChangeIn",
+        "type": "object"
+      },
+      "RiskPolicy": {
+        "additionalProperties": false,
+        "description": "Fila de ``risk_policy`` (global): el apetito de riesgo.\n\nTodos los valores son parámetros que fijan el revisor y el dueño de\nnegocio en la pantalla de administración. El tope semanal, la subida por\nderiva y la doble revisión no tienen evidencia en los experimentos: son\nnulos hasta que se configuran (sin tope, sin subida automática y sin doble\nrevisión).\n\nLos dos disparadores son nulos en las versiones sembradas antes de\nexistir: nulo equivale a ``manual`` en el reentrenamiento y a\n``scheduled`` en el re-ajuste de tópicos (``retrain_mode`` y\n``topic_refit_mode`` dan el valor efectivo).",
+        "properties": {
+          "agreement_sample_weekly": {
+            "minimum": 0.0,
+            "title": "Agreement Sample Weekly",
+            "type": "integer"
+          },
+          "drift_boost_coverage": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift Boost Coverage"
+          },
+          "drift_boost_days": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift Boost Days"
+          },
+          "drift_boost_weekly_cap": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift Boost Weekly Cap"
+          },
+          "families_exact_floor": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Families Exact Floor",
+            "type": "number"
+          },
+          "families_min_prevalence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Families Min Prevalence",
+            "type": "number"
+          },
+          "hitl_signal": {
+            "const": "prob_max",
+            "title": "Hitl Signal",
+            "type": "string"
+          },
+          "hitl_target_coverage": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hitl Target Coverage",
+            "type": "number"
+          },
+          "hitl_threshold": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hitl Threshold",
+            "type": "number"
+          },
+          "hitl_weekly_cap": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hitl Weekly Cap"
+          },
+          "human_agreement_frequency": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Agreement Frequency"
+          },
+          "human_agreement_sample_size": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human Agreement Sample Size"
+          },
+          "model_version": {
+            "minLength": 1,
+            "title": "Model Version",
+            "type": "string"
+          },
+          "monitor_frequency": {
+            "minLength": 1,
+            "title": "Monitor Frequency",
+            "type": "string"
+          },
+          "monitor_sample_size": {
+            "minimum": 1.0,
+            "title": "Monitor Sample Size",
+            "type": "integer"
+          },
+          "policy_version": {
+            "minLength": 1,
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "retrain_kappa_floor": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Retrain Kappa Floor",
+            "type": "number"
+          },
+          "retrain_trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetrainTrigger"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "set_by_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Set By Hash",
+            "type": "string"
+          },
+          "topic_refit_frequency": {
+            "minLength": 1,
+            "title": "Topic Refit Frequency",
+            "type": "string"
+          },
+          "topic_refit_trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TopicRefitTrigger"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_from": {
+            "format": "date-time",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "warn_agreement_floor": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Warn Agreement Floor",
+            "type": "number"
+          },
+          "warn_correction_rate": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Warn Correction Rate",
+            "type": "number"
+          }
+        },
+        "required": [
+          "policy_version",
+          "valid_from",
+          "hitl_signal",
+          "hitl_target_coverage",
+          "hitl_threshold",
+          "model_version",
+          "monitor_sample_size",
+          "monitor_frequency",
+          "topic_refit_frequency",
+          "retrain_kappa_floor",
+          "warn_correction_rate",
+          "warn_agreement_floor",
+          "agreement_sample_weekly",
+          "families_exact_floor",
+          "families_min_prevalence",
+          "set_by_hash",
+          "reason"
+        ],
+        "title": "RiskPolicy",
+        "type": "object"
+      },
+      "RiskPolicyResponse": {
+        "properties": {
+          "current": {
+            "$ref": "#/components/schemas/RiskPolicy"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/RiskPolicy"
+            },
+            "title": "History",
+            "type": "array"
+          }
+        },
+        "required": [
+          "current",
+          "history"
+        ],
+        "title": "RiskPolicyResponse",
+        "type": "object"
+      },
+      "RiskPreview": {
+        "properties": {
+          "diff": {
+            "items": {
+              "$ref": "#/components/schemas/FieldDiff"
+            },
+            "title": "Diff",
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "large_change": {
+            "title": "Large Change",
+            "type": "boolean"
+          },
+          "proposed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "proposed",
+          "diff",
+          "large_change",
+          "warnings",
+          "errors"
+        ],
+        "title": "RiskPreview",
+        "type": "object"
+      },
+      "RiskSaveIn": {
+        "properties": {
+          "base_version": {
+            "title": "Base Version",
+            "type": "string"
+          },
+          "changes": {
+            "additionalProperties": true,
+            "title": "Changes",
+            "type": "object"
+          },
+          "confirm_word": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Word"
+          },
+          "reason": {
+            "minLength": 10,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_version",
+          "changes",
+          "reason"
+        ],
+        "title": "RiskSaveIn",
         "type": "object"
       },
       "Role": {
@@ -2232,6 +3383,56 @@
         "title": "SeriesPoint",
         "type": "object"
       },
+      "SeriesRate": {
+        "properties": {
+          "current_alerts": {
+            "title": "Current Alerts",
+            "type": "integer"
+          },
+          "current_per_year": {
+            "title": "Current Per Year",
+            "type": "number"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "proposed_alerts": {
+            "title": "Proposed Alerts",
+            "type": "integer"
+          },
+          "proposed_per_year": {
+            "title": "Proposed Per Year",
+            "type": "number"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "series": {
+            "title": "Series",
+            "type": "string"
+          }
+        },
+        "required": [
+          "series",
+          "months",
+          "proposed_alerts",
+          "proposed_per_year",
+          "current_alerts",
+          "current_per_year",
+          "reference"
+        ],
+        "title": "SeriesRate",
+        "type": "object"
+      },
       "TaskSummary": {
         "properties": {
           "median_seconds": {
@@ -2361,6 +3562,15 @@
         ],
         "title": "TopicRef",
         "type": "object"
+      },
+      "TopicRefitTrigger": {
+        "description": "Quién lanza el re-ajuste del modelo de tópicos.",
+        "enum": [
+          "scheduled",
+          "manual"
+        ],
+        "title": "TopicRefitTrigger",
+        "type": "string"
       },
       "ValidationError": {
         "properties": {
@@ -2644,6 +3854,430 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/coverage-curve": {
+      "get": {
+        "description": "Curva del modelo promovido, su punto vigente y el tiempo medido.",
+        "operationId": "coverage_curve_api_v1_admin_coverage_curve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model_version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageCurveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coverage Curve",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/drift-policy": {
+      "get": {
+        "operationId": "drift_policy_api_v1_admin_drift_policy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bank",
+            "required": true,
+            "schema": {
+              "title": "Bank",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriftPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Drift Policy",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "save_drift_policy_api_v1_admin_drift_policy_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriftSaveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriftPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Drift Policy",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/drift-policy/rates": {
+      "post": {
+        "description": "Meses de alerta al año con los umbrales propuestos y con los vigentes.",
+        "operationId": "drift_rates_api_v1_admin_drift_policy_rates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriftRatesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriftRatesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Drift Rates",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/gold-versions": {
+      "get": {
+        "operationId": "gold_versions_api_v1_admin_gold_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GoldVersionOut"
+                  },
+                  "title": "Response Gold Versions Api V1 Admin Gold Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Gold Versions",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "create_gold_api_v1_admin_gold_versions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoldCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoldVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Gold",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/gold-versions/preview": {
+      "post": {
+        "operationId": "preview_gold_api_v1_admin_gold_versions_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoldCriteria"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoldPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Gold",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/gold-versions/{gold_version}/items": {
+      "get": {
+        "operationId": "gold_items_api_v1_admin_gold_versions__gold_version__items_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gold_version",
+            "required": true,
+            "schema": {
+              "title": "Gold Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoldItemsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gold Items",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/risk-policy": {
+      "get": {
+        "description": "La versión vigente y la tabla completa, por ``valid_from``.",
+        "operationId": "risk_policy_api_v1_admin_risk_policy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Risk Policy",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Crea la versión siguiente (solo inserta).",
+        "operationId": "save_risk_policy_api_v1_admin_risk_policy_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskSaveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Risk Policy",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/risk-policy/preview": {
+      "post": {
+        "description": "La versión propuesta y su diferencia, sin guardar nada.",
+        "operationId": "preview_risk_policy_api_v1_admin_risk_policy_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskChangeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Risk Policy",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "description": "Las alertas con su estado vigente, de la más reciente a la más vieja.",
