@@ -34,7 +34,11 @@ function Explanation({ row }: { row: ReviewRow }) {
             ? "calculada bajo pedido"
             : "precalculada"}
         </p>
-        <ExplanationText text={row.text} explanation={explanation} />
+        <ExplanationText
+          text={row.text}
+          explanation={explanation}
+          probabilities={row}
+        />
       </div>
     );
   return (

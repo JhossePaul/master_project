@@ -33,6 +33,9 @@ class HitlCase(BaseModel):
 
 class NextIn(BaseModel):
     task: Literal["sentiment"]
+    # Casos que el revisor ya tiene abiertos (``item_id`` del portal): al
+    # precargar el siguiente no se le vuelve a dar el que está revisando.
+    exclude: list[str] = Field(default_factory=list, max_length=10)
 
 
 class SentimentReviewIn(BaseModel):
@@ -42,6 +45,9 @@ class SentimentReviewIn(BaseModel):
     flags: list[ReviewFlag]
     comment: str | None = Field(default=None, max_length=500)
     guideline_version: str  # la que se mostró
+    # ``False`` si el portal ya tiene el siguiente caso precargado: guardar no
+    # toma otro.
+    claim_next: bool = True
 
     @model_validator(mode="after")
     def _label_and_flags(self) -> Self:

@@ -6,6 +6,8 @@ import { facetsCsv } from "@/sections/explorer/ExplorerView";
 import {
   alpha,
   backgroundOf,
+  read,
+  score,
   segments,
   topWords,
 } from "@/sections/explorer/explanation";
@@ -69,7 +71,7 @@ const EXPLANATION = {
   attributions: [
     { start: 0, end: 2, d_neg: 0.4, d_neu: -0.1, d_pos: -0.3 }, // "No"
     { start: 3, end: 8, d_neg: -0.02, d_neu: 0.01, d_pos: 0.01 }, // "llega"
-    { start: 12, end: 18, d_neg: -0.3, d_neu: -0.05, d_pos: 0.35 }, // "código"
+    { start: 12, end: 18, d_neg: -0.1, d_neu: 0.06, d_pos: 0.04 }, // "código"
   ],
 };
 
@@ -223,6 +225,11 @@ describe("explorador", () => {
     expect(
       marks.find((m) => m.textContent === "código")?.dataset.direction,
     ).toBe("pos");
+    // Sin efecto apreciable: sin fondo propio (nunca el amarillo del navegador).
+    const quiet = marks.find((m) => m.textContent === "llega");
+    expect(quiet?.dataset.direction).toBe("none");
+    expect(quiet?.style.background).toBe("");
+    expect(quiet).toHaveClass("bg-transparent");
     expect(marks.find((m) => m.textContent === "No")).toHaveAttribute(
       "title",
       "NEG +0.40 · NEU −0.10 · POS −0.30",
@@ -489,34 +496,65 @@ describe("agregados y explicación", () => {
     expect(parts[1]?.attribution).toBeNull();
   });
 
-  it("el color sigue la dirección y la opacidad su intensidad", () => {
-    const neg = backgroundOf(EXPLANATION.attributions[0] as never);
-    const pos = backgroundOf(EXPLANATION.attributions[2] as never);
-    const flat = backgroundOf({
-      start: 0,
-      end: 1,
-      d_neg: 0,
-      d_neu: 0,
-      d_pos: 0.01,
-    });
+  it("mide el empuje en log-odds, que no se satura con una predicción segura", () => {
+    // Texto 99 % POS: quitar la palabra cambia las probabilidades muy poco.
+    const base = { p_neg: 0.004, p_pos: 0.992 };
+    const word = { start: 0, end: 3, d_neg: -0.003, d_neu: 0, d_pos: 0.003 };
+    const filler = { start: 4, end: 6, d_neg: 0, d_neu: 0, d_pos: 0 };
+
+    const strong = score(word, base) as number;
+
+    // Con probabilidades daría 0.006; en log-odds es un efecto claro (0.56).
+    expect(Math.abs(word.d_pos - word.d_neg)).toBeLessThan(0.01);
+    expect(Math.abs(strong)).toBeGreaterThan(0.4);
+    expect(strong).toBeGreaterThan(0); // quitarla baja POS: empujaba hacia POS
+    expect(score(filler, base)).toBeCloseTo(0, 6);
+    expect(score({ start: 0, end: 1, weight: 0.3 }, base)).toBeNull();
+    // Sin probabilidades base cae a la diferencia de cambios.
+    expect(score(word)).toBeCloseTo(0.006, 6);
+  });
+
+  it("el color sigue la dirección y la opacidad el efecto relativo al texto", () => {
+    const base = { p_neg: 0.8, p_pos: 0.05 };
+    const reading = read(EXPLANATION.attributions, base);
+    const neg = backgroundOf(EXPLANATION.attributions[0] as never, reading, 0);
+    const none = backgroundOf(EXPLANATION.attributions[1] as never, reading, 1);
+    const pos = backgroundOf(EXPLANATION.attributions[2] as never, reading, 2);
 
     expect(neg).toMatch(/^rgba\(178, 58, 46, /);
     expect(pos).toMatch(/^rgba\(0, 104, 94, /);
-    expect(flat).toBeUndefined();
-    expect(alpha(0.05)).toBeLessThan(alpha(0.4));
-    expect(alpha(5)).toBe(0.75);
+    expect(none).toBeUndefined();
+    expect(alpha(0.1, 1)).toBeLessThan(alpha(0.9, 1));
+    expect(alpha(5, 1)).toBe(0.75);
+    expect(alpha(0, 1)).toBe(0.2);
   });
 
-  it("las tres palabras que más empujan hacia cada lado", () => {
+  it("un texto donde nada mueve la predicción no colorea ni lista palabras", () => {
+    const attributions = [
+      { start: 0, end: 1, d_neg: 0.0001, d_neu: 0, d_pos: -0.0001 },
+      { start: 2, end: 3, d_neg: -0.0001, d_neu: 0, d_pos: 0.0001 },
+    ];
+    const reading = read(attributions, { p_neg: 0.3, p_pos: 0.4 });
+
+    expect(reading.flat).toBe(true);
+    expect(backgroundOf(attributions[0] as never, reading, 0)).toBeUndefined();
+    expect(topWords("a b", attributions, reading)).toEqual({
+      toNeg: [],
+      toPos: [],
+    });
+  });
+
+  it("las palabras con efecto claro que más empujan hacia cada lado", () => {
     const attributions = [
       { start: 0, end: 1, d_neg: 0.5, d_neu: 0, d_pos: -0.5 },
       { start: 2, end: 3, d_neg: 0.2, d_neu: 0, d_pos: -0.2 },
       { start: 4, end: 5, d_neg: 0.1, d_neu: 0, d_pos: -0.1 },
-      { start: 6, end: 7, d_neg: 0.05, d_neu: 0, d_pos: -0.05 },
+      { start: 6, end: 7, d_neg: 0.001, d_neu: 0, d_pos: -0.001 },
       { start: 8, end: 9, d_neg: -0.3, d_neu: 0, d_pos: 0.3 },
     ];
+    const reading = read(attributions);
 
-    expect(topWords("a b c d e", attributions)).toEqual({
+    expect(topWords("a b c d e", attributions, reading)).toEqual({
       toNeg: ["a", "b", "c"],
       toPos: ["e"],
     });

@@ -97,7 +97,9 @@ def next_case(
     body: NextIn, principal: Reviewer, repo: Repo, at: Now
 ) -> HitlCase | Response:
     """Toma el siguiente caso: lo bloquea 15 minutos para el revisor."""
-    case = service.take_next(repo, principal, HitlTask(body.task), at)
+    case = service.take_next(
+        repo, principal, HitlTask(body.task), at, set(body.exclude)
+    )
     return case if case is not None else Response(status_code=204)
 
 

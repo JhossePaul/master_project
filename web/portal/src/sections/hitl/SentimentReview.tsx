@@ -35,8 +35,18 @@ const CHOICES: { value: Choice; label: string; key: string }[] = [
 ];
 
 const FLAGS: { value: Flag; label: string; key: string; help?: string }[] = [
-  { value: "menciona_falla", label: "Menciona falla", key: "F" },
-  { value: "duda", label: "Duda", key: "D" },
+  {
+    value: "menciona_falla",
+    label: "Menciona una falla concreta",
+    key: "F",
+    help: "Describe un problema de funcionamiento o de servicio, aunque ya esté resuelto.",
+  },
+  {
+    value: "duda",
+    label: "Tengo dudas con esta etiqueta",
+    key: "D",
+    help: "La decisión fue difícil: elige la mejor opción y marca esto. No uses NEU como refugio.",
+  },
   {
     value: "nombre_persona",
     label: "Contiene nombre propio de una persona",
@@ -48,8 +58,8 @@ const FLAGS: { value: Flag; label: string; key: string; help?: string }[] = [
 const SHORTCUTS = [
   { keys: "1 2 3", action: "NEG, NEU, POS" },
   { keys: "0", action: "No evaluable" },
-  { keys: "F", action: "Menciona falla" },
-  { keys: "D", action: "Duda" },
+  { keys: "F", action: "Falla concreta" },
+  { keys: "D", action: "Tengo dudas" },
   { keys: "N", action: "Nombre propio" },
   { keys: "Enter", action: "Guardar y seguir" },
   { keys: "S", action: "Saltar" },
@@ -91,6 +101,44 @@ function Guide() {
   );
 }
 
+interface Draft {
+  reviewId: string;
+  choice: Choice | null;
+  flags: ReadonlySet<Flag>;
+  comment: string;
+}
+
+/** Una revisión enviada que el servidor no aceptó. */
+interface Failed {
+  item: HitlCase;
+  draft: Draft;
+  message: string;
+}
+
+type Outcome = { ok: true; item: HitlCase | null } | { ok: false };
+
+/** El caso siguiente, ya pedido (y bloqueado) mientras se revisa el actual. */
+interface Ahead {
+  for: string;
+  outcome: Promise<Outcome>;
+  /** El caso bloqueado, en cuanto llega (para soltarlo al salir). */
+  held: HitlCase | null;
+}
+
+function payload(item: HitlCase, draft: Draft, claimNext: boolean) {
+  const noEvaluable = draft.choice === "NO_EVALUABLE";
+  return {
+    review_id: draft.reviewId,
+    validated_label: noEvaluable
+      ? null
+      : (draft.choice as Exclude<Choice, "NO_EVALUABLE">),
+    flags: [...draft.flags, ...(noEvaluable ? ["no_evaluable" as const] : [])],
+    comment: draft.comment.trim() || null,
+    guideline_version: item.guideline_version,
+    claim_next: claimNext,
+  };
+}
+
 export default function SentimentReview() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
@@ -102,21 +150,54 @@ export default function SentimentReview() {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(true);
+  const [pending, setPending] = useState(0);
+  const [failed, setFailed] = useState<Failed | null>(null);
   const openItem = useRef<string | null>(null);
+  const ahead = useRef<Ahead | null>(null);
+  const inFlight = useRef<Set<Promise<unknown>>>(new Set());
+  const mounted = useRef(true);
 
-  const show = useCallback((item: HitlCase) => {
+  /** Pide el caso que sigue mientras se lee el actual: guardar ya no espera. */
+  const prefetch = useCallback((current: HitlCase) => {
+    const entry: Ahead = {
+      for: current.item_id,
+      held: null,
+      outcome: Promise.resolve({ ok: false }),
+    };
+    entry.outcome = nextCase([current.item_id]).then(
+      (item): Outcome => {
+        entry.held = item;
+        return { ok: true, item };
+      },
+      (): Outcome => ({ ok: false }),
+    );
+    ahead.current = entry;
+  }, []);
+
+  const fill = useCallback((item: HitlCase, draft?: Draft) => {
     openItem.current = item.item_id;
-    setChoice(item.proposal ? item.proposal.label : null);
-    setFlags(new Set());
-    setComment("");
-    setReviewId(crypto.randomUUID());
-    setSeen((n) => n + 1);
+    setChoice(
+      draft ? draft.choice : item.proposal ? item.proposal.label : null,
+    );
+    setFlags(draft ? draft.flags : new Set());
+    setComment(draft ? draft.comment : "");
+    setReviewId(draft ? draft.reviewId : crypto.randomUUID());
     setFormError(null);
     setPhase({ kind: "case", item });
   }, []);
 
+  const show = useCallback(
+    (item: HitlCase) => {
+      fill(item);
+      setSeen((n) => n + 1);
+      prefetch(item);
+    },
+    [fill, prefetch],
+  );
+
   const load = useCallback(async () => {
     openItem.current = null;
+    ahead.current = null;
     setPhase({ kind: "loading" });
     setFormError(null);
     try {
@@ -132,15 +213,20 @@ export default function SentimentReview() {
     void load();
   }, [load]);
 
-  // Al salir de la pantalla o cerrar la pestaña, el caso vuelve a la cola.
+  // Al salir de la pantalla o cerrar la pestaña, los casos abiertos (el actual
+  // y el precargado) vuelven a la cola.
   useEffect(() => {
-    const leave = () => {
+    mounted.current = true;
+    const release = () => {
       if (openItem.current) releaseOnExit(openItem.current);
+      const held = ahead.current?.held;
+      if (held) releaseOnExit(held.item_id);
     };
-    window.addEventListener("pagehide", leave);
+    window.addEventListener("pagehide", release);
     return () => {
-      window.removeEventListener("pagehide", leave);
-      leave();
+      mounted.current = false;
+      window.removeEventListener("pagehide", release);
+      release();
     };
   }, []);
 
@@ -161,23 +247,74 @@ export default function SentimentReview() {
     }
   }, []);
 
+  /** Envía la revisión sin bloquear la pantalla; si falla, avisa y la conserva. */
+  const submitInBackground = useCallback((item: HitlCase, draft: Draft) => {
+    setPending((n) => n + 1);
+    const task = saveReview(item.item_id, payload(item, draft, false))
+      .then(() => {
+        if (mounted.current) toast.success("Guardado");
+      })
+      .catch((error: unknown) => {
+        if (!mounted.current) return;
+        if (error instanceof ApiError && error.status === 409) {
+          toast.error(
+            "Una revisión no se guardó: el caso volvió a la cola antes de enviarla.",
+          );
+          return;
+        }
+        setFailed({
+          item,
+          draft,
+          message:
+            error instanceof ApiError && error.status === 502
+              ? "No se pudo sanitizar el comentario."
+              : error instanceof ApiError
+                ? error.message
+                : "No se pudo enviar.",
+        });
+      })
+      .finally(() => {
+        inFlight.current.delete(task);
+        setPending((n) => n - 1);
+      });
+    inFlight.current.add(task);
+  }, []);
+
+  const advance = useCallback(
+    async (next: HitlCase | null) => {
+      if (!mounted.current) return;
+      if (next) show(next);
+      else {
+        openItem.current = null;
+        ahead.current = null;
+        setPhase({ kind: "empty" });
+      }
+    },
+    [show],
+  );
+
   const save = useCallback(async () => {
     if (phase.kind !== "case" || busy) return;
     if (choice === null) {
       setFormError("Elige un sentimiento antes de guardar.");
       return;
     }
-    const noEvaluable = choice === "NO_EVALUABLE";
+    const item = phase.item;
+    const draft: Draft = { reviewId, choice, flags, comment };
+    const pre = ahead.current;
+    const out = pre && pre.for === item.item_id ? await pre.outcome : null;
+    if (out?.ok) {
+      // El siguiente ya está pedido: se muestra de inmediato y el guardado
+      // sigue en segundo plano.
+      openItem.current = null;
+      submitInBackground(item, draft);
+      await advance(out.item);
+      return;
+    }
     setBusy(true);
     setFormError(null);
     try {
-      const saved = await saveReview(phase.item.item_id, {
-        review_id: reviewId,
-        validated_label: noEvaluable ? null : choice,
-        flags: [...flags, ...(noEvaluable ? ["no_evaluable" as const] : [])],
-        comment: comment.trim() || null,
-        guideline_version: phase.item.guideline_version,
-      });
+      const saved = await saveReview(item.item_id, payload(item, draft, true));
       openItem.current = null;
       toast.success("Guardado");
       setBusy(false);
@@ -188,13 +325,36 @@ export default function SentimentReview() {
       setBusy(false);
       fail(error);
     }
-  }, [phase, busy, choice, flags, comment, reviewId, load, show, fail]);
+  }, [
+    phase,
+    busy,
+    choice,
+    flags,
+    comment,
+    reviewId,
+    load,
+    show,
+    fail,
+    advance,
+    submitInBackground,
+  ]);
 
   const skip = useCallback(async () => {
     if (phase.kind !== "case" || busy) return;
+    const item = phase.item;
+    const pre = ahead.current;
+    const out = pre && pre.for === item.item_id ? await pre.outcome : null;
+    if (out?.ok) {
+      openItem.current = null;
+      void skipCase(item.item_id).catch(() => {
+        if (mounted.current) toast.error("No se pudo saltar el caso anterior.");
+      });
+      await advance(out.item);
+      return;
+    }
     setBusy(true);
     try {
-      await skipCase(phase.item.item_id);
+      await skipCase(item.item_id);
       openItem.current = null;
       setBusy(false);
       await load();
@@ -202,12 +362,35 @@ export default function SentimentReview() {
       setBusy(false);
       fail(error);
     }
-  }, [phase, busy, load, fail]);
+  }, [phase, busy, load, fail, advance]);
+
+  /** Vuelve al caso cuya revisión no se aceptó, con su formulario. */
+  const restore = useCallback(() => {
+    if (!failed) return;
+    const current = phase.kind === "case" ? phase.item : null;
+    // El caso que se estaba viendo pasa a ser el precargado: no se pierde.
+    ahead.current = current
+      ? {
+          for: failed.item.item_id,
+          held: current,
+          outcome: Promise.resolve({ ok: true, item: current }),
+        }
+      : null;
+    fill(failed.item, failed.draft);
+    setFailed(null);
+  }, [failed, phase, fill]);
 
   const leave = useCallback(async () => {
+    await Promise.allSettled([...inFlight.current]);
     const id = openItem.current;
     openItem.current = null;
-    if (id) await releaseCase(id).catch(() => undefined);
+    const held = ahead.current?.held;
+    ahead.current = null;
+    await Promise.all(
+      [id, held?.item_id]
+        .filter((x): x is string => Boolean(x))
+        .map((x) => releaseCase(x).catch(() => undefined)),
+    );
     navigate("/hitl");
   }, [navigate]);
 
@@ -296,6 +479,12 @@ export default function SentimentReview() {
         <h1 className="text-base font-semibold">
           Caso {seen} de esta sesión · guía {item.guideline_version} · modo{" "}
           {mode}
+          {pending > 0 ? (
+            <span className="ml-3 font-normal text-text-muted" role="status">
+              Guardando{" "}
+              {pending === 1 ? "una revisión" : `${pending} revisiones`}…
+            </span>
+          ) : null}
         </h1>
         <Button
           variant="ghost"
@@ -311,6 +500,22 @@ export default function SentimentReview() {
           {guideOpen ? "Ocultar la guía" : "Mostrar la guía"}
         </Button>
       </div>
+      {failed ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-3 rounded-md border border-danger/30 bg-danger-bg p-3 text-sm text-danger"
+        >
+          <span>
+            No se guardó la revisión del caso anterior: {failed.message}
+          </span>
+          <Button size="sm" variant="secondary" onClick={restore}>
+            Volver a ese caso
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setFailed(null)}>
+            Descartar
+          </Button>
+        </div>
+      ) : null}
       <div className="grid gap-6 xl:grid-cols-12">
         <section
           aria-label="Caso"

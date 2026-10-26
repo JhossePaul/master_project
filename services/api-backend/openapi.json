@@ -2372,6 +2372,14 @@
       },
       "NextIn": {
         "properties": {
+          "exclude": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Exclude",
+            "type": "array"
+          },
           "task": {
             "const": "sentiment",
             "title": "Task",
@@ -3258,6 +3266,11 @@
       },
       "SentimentReviewIn": {
         "properties": {
+          "claim_next": {
+            "default": true,
+            "title": "Claim Next",
+            "type": "boolean"
+          },
           "comment": {
             "anyOf": [
               {

@@ -1,6 +1,7 @@
 """Reglas de la cola de revisión: tomar, saltar, soltar y guardar."""
 
 import uuid
+from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -125,13 +126,22 @@ def current_guideline(
 
 
 def take_next(
-    repo: HitlRepository, principal: Principal, task: HitlTask, now: datetime
+    repo: HitlRepository,
+    principal: Principal,
+    task: HitlTask,
+    now: datetime,
+    exclude: Collection[str] = (),
 ) -> HitlCase | None:
     ensure_task(principal, task)
     actor = principal.actor_hash
     guideline = current_guideline(repo, task, now)
     candidates = sorted(
-        (e for e in repo.entries(task, now) if is_available(e, actor, now)),
+        (
+            e
+            for e in repo.entries(task, now)
+            if public_id(e.item.item_id) not in exclude
+            and is_available(e, actor, now)
+        ),
         key=lambda e: (
             not _own_open(e, actor, now),  # primero el caso que ya tenía
             -e.item.priority,
@@ -142,7 +152,11 @@ def take_next(
     repo.prefetch_texts(
         [(e.item.bank_id, e.item.id_resena) for e in candidates[:PREFETCH]]
     )
-    for entry in candidates[:MAX_TRIES]:
+    for cached in candidates[:MAX_TRIES]:
+        # La lista puede venir de la memoria: el estado de este caso, no.
+        entry = repo.entry(public_id(cached.item.item_id), now)
+        if entry is None or not is_available(entry, actor, now):
+            continue
         item = entry.item
         text = repo.review_text(item.bank_id, item.id_resena)
         if text is None or not text_matches(item.item_id, text):
@@ -244,7 +258,8 @@ def save_review(  # noqa: PLR0913
     if not _holds(entry, principal):
         if repo.has_review(review_id):  # reintento de un guardado exitoso
             return ReviewOut(
-                review_id=review_id, next=_next_after(repo, principal, now)
+                review_id=review_id,
+                next=_next_after(repo, principal, now, body.claim_next),
             )
         raise ApiError(ErrorCode.CONFLICT, CONFLICT_MESSAGE)
     item = entry.item
@@ -301,14 +316,17 @@ def save_review(  # noqa: PLR0913
         for future in written:
             future.result()
     return ReviewOut(
-        review_id=review_id, next=_next_after(repo, principal, now)
+        review_id=review_id,
+        next=_next_after(repo, principal, now, body.claim_next),
     )
 
 
 def _next_after(
-    repo: HitlRepository, principal: Principal, now: datetime
+    repo: HitlRepository, principal: Principal, now: datetime, claim: bool
 ) -> HitlCase | None:
-    """El siguiente caso, si se puede; el guardado ya ocurrió y no se pierde."""
+    """El siguiente caso, si se pide y se puede; el guardado no se pierde."""
+    if not claim:
+        return None
     try:
         return take_next(repo, principal, HitlTask.SENTIMENT, now)
     except ApiError:

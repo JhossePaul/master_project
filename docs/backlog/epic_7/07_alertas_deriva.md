@@ -1,6 +1,6 @@
 # Paso 7. Feature 7.8: Alertas de deriva
 
-* **Estado (2026-10-26):** Terminado en local y probado contra BigQuery de dev (solo lecturas); la primera alerta real llegará con el monitor, así que las casillas 1 y 3 se confirman en dev con una alerta real o sintética. Detalle en "Avance".
+* **Estado (2026-10-26):** Terminado. Probado con alertas sintéticas, con BigQuery de dev (solo lecturas) y con el flujo completo contra un dataset desechable. Lo único que queda es observar la primera alerta real que emita el monitor, que pasó a EPIC-8 (pendiente 13) porque depende de los datos y no bloquea. Detalle en "Avance".
 * **Nivel:** importante.
 * **Depende de:** paso 2 (y el sanitizador de comentarios del paso 4 para las notas).
 * **Objetivo:** atender las alertas de deriva que emite el monitor semanal con la `drift_policy` de cada banco: una bandeja por banco, la serie de cada alerta contra su umbral, la subida de revisión que disparó y un flujo auditado (`open` → `confirmed` o `dismissed`). **La detección de incidentes de negocio está fuera del alcance:** los picos de negativas, familias o marca `u` se ven en el cockpit como descripción.
@@ -53,8 +53,8 @@ Rol analista.
 
 ## Terminado cuando
 
-* [x] Una alerta nueva (en dev, la primera que emita el monitor; en pruebas, una sintética) aparece en la bandeja y en la landing. (Probado con alertas sintéticas en la API y en el portal; en dev `drift_alerts` sigue vacía y las consultas devuelven vacío sin error.)
-* [x] Su confirmación o descarte queda auditada en `drift_alert_events` con quién, cuándo, nota y ticket. (Probado con la tabla en memoria; la escritura real a BigQuery se estrena con la primera alerta de dev.)
+* [x] Una alerta nueva (en dev, la primera que emita el monitor; en pruebas, una sintética) aparece en la bandeja y en la landing. (Probado con alertas sintéticas en la API y en el portal y con una alerta de prueba en un dataset desechable; en dev `drift_alerts` sigue vacía y las consultas devuelven vacío sin error.)
+* [x] Su confirmación o descarte queda auditada en `drift_alert_events` con quién, cuándo, nota y ticket. (Probado con la tabla en memoria; la escritura real a BigQuery se probó en el dataset desechable.)
 * [x] Descartar una alerta con subida activa la cierra. (Prueba de API: `alert_closed`, y confirmar no la cierra.)
 
 ## Decisiones al implementar
@@ -79,4 +79,5 @@ Rol analista.
 * **Contra BigQuery de dev** (`RUN_BIGQUERY_TESTS=1`, solo lecturas): las seis consultas (bandeja, una alerta, eventos, subidas, resumen y serie) corren sin error. La bandeja, el resumen, la alerta, los eventos y las subidas leen 0 bytes (tablas casi vacías); la serie de `neg_share` de BBVA lee 10 MB y devuelve sus meses.
 * **Portal (2026-10-26):** `/alertas` (pestañas Abiertas, Confirmadas, Descartadas y Todas en `?estado=`, tabla con banco, mes, serie en lenguaje común, valor, umbral, estado, días abierta y subida) y `/alertas/:alertId` (gráfica de 24 meses con la línea base y el mes resaltado; el z por mes con el umbral para las series de z; subida, historia, acciones válidas con nota y ticket, enlace al Explorador y el `Callout`). 16 pruebas nuevas, entre ellas `axe` sin violaciones en la bandeja y en el detalle. `npm run check`, `tsc`, `npm test` (155) y `npm run build` pasan; las dos pantallas son trozos perezosos (6 KB comprimidos la bandeja).
 * **Revisada en local** (`PORTAL_DATA=fixtures`): se abrió la bandeja y el detalle, se descartó la alerta con subida activa (nota con un nombre propio, que salió como `[PERSON_NAME]`) y la subida pasó a "se cerró al descartar la alerta" con el evento en la historia. Dos pruebas viejas (`a11y` y `cockpit`) usaban `/alertas` como ejemplo de sección en construcción; ahora usan `/mlops`.
-* **Pendiente:** la primera alerta real de dev. La escritura a `drift_alert_events` y `hitl_boosts` por la API se estrena entonces.
+* **Flujo completo contra BigQuery real, en un dataset desechable (2026-10-26).** Para no sembrar una alerta sintética en `bbva_voc_tds`, se creó `voc_scratch_alertas` (copias vacías de `drift_alerts`, `drift_alert_events` y `hitl_boosts`, la vista `drift_alerts_current` y 33 filas de `drift_metrics` de BBVA, con vencimiento de 24 h) y se corrió la API en local apuntando a él (`BQ_DATASET_ID`), con Cloud DLP real. Resultado: la bandeja y el detalle leen bien; confirmar guardó actor, nota y ticket, y DLP reemplazó el nombre propio por `[PERSON_NAME]`; el reintento con el mismo `event_id` dio 200 sin duplicar; confirmar de nuevo dio 409; descartar cerró la subida con una fila `alert_closed` y la dejó inactiva. Se borró el dataset y `bbva_voc_tds` no recibió ninguna fila.
+* **Pendiente:** ninguno de este paso. Observar la primera alerta real (correo y mensaje de Pub/Sub del monitor) quedó como el pendiente 13 de [EPIC-8](../epic_8.md).

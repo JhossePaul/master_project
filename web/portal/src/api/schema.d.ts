@@ -1547,6 +1547,8 @@ export interface components {
         };
         /** NextIn */
         NextIn: {
+            /** Exclude */
+            exclude?: string[];
             /**
              * Task
              * @constant
@@ -1844,6 +1846,11 @@ export interface components {
         };
         /** SentimentReviewIn */
         SentimentReviewIn: {
+            /**
+             * Claim Next
+             * @default true
+             */
+            claim_next: boolean;
             /** Comment */
             comment?: string | null;
             /** Flags */
