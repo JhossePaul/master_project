@@ -320,6 +320,8 @@ def create_cloud_run_resources(
         name="voc-ingestion-history-job",
         project=project_id,
         location=region,
+        # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+        deletion_protection=False,
         template={
             "task_count": 1,
             "parallelism": 1,
@@ -378,6 +380,8 @@ def create_cloud_run_resources(
             name=name,
             project=project_id,
             location=region,
+            # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+            deletion_protection=False,
             # La API devuelve este valor por defecto a nivel de servicio;
             # declararlo evita un diff permanente en `pulumi preview`.
             scaling={"min_instance_count": 0},
@@ -419,6 +423,8 @@ def create_cloud_run_resources(
         name="voc-sanitization-job",
         project=project_id,
         location=region,
+        # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+        deletion_protection=False,
         template={
             "task_count": 1,
             "parallelism": 1,
@@ -529,6 +535,8 @@ def create_cloud_run_resources(
                 name=spec.name,
                 project=project_id,
                 location=region,
+                # pulumi-gcp 8 protege del borrado; dev sigue como con la 7.
+                deletion_protection=False,
                 template={
                     "task_count": 1,
                     "parallelism": 1,
