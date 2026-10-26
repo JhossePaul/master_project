@@ -190,7 +190,7 @@ function Hero({ dataUntil }: { dataUntil: string | null }) {
       <Tahali className="absolute top-0 right-8 hidden h-full w-48 lg:block" />
       <div className="lg:pr-56">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
-          Maestría en Ciencia de Datos BBVA
+          Maestría en Ciencia de Datos
         </p>
         <h1 className="mt-2 font-serif text-5xl font-semibold">
           {PORTAL_NAME}

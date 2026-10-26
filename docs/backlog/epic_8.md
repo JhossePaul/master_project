@@ -19,3 +19,23 @@
 | 8 | **El monitor no escribe en `inference_runs`** | MLOps (7.9) infiere su última corrida de `kpi_estimates` y no tiene su duración, su memoria ni su costo | Planificación de EPIC-7 (2026-10-25) |
 | 9 | **La ingesta no registra costo** (`ingestion_runs_log_v2`) | AIOps (7.9) muestra la duración derivada y el costo como "sin dato"; medirlo exigiría la exportación de Cloud Billing | Planificación de EPIC-7 (2026-10-25) |
 | 10 | **Días en hora de la Ciudad de México** en vez de UTC: `DATE(fecha, 'America/Mexico_City')` en `daily_topic_labels`, en las series diarias de la API y en todas las vistas y tablas que agrupan por día o por mes (`kpi_estimates`, `drift_metrics`), con la validación de temas diarios repetida contra los experimentos | Una reseña de las 20:00 de CDMX cuenta en el día siguiente, y eso mueve reseñas entre días en las series y en el top 5 diario. Decisión del autor (2026-10-25): no le encanta UTC, pero cambiarlo exige tocar todas las vistas que se consumen; mientras tanto el portal rotula el eje "día (UTC)" | Cuestionario de diseño de EPIC-7 (L-05) |
+| 11 | **Portal amigable en el teléfono** (ver la sección "Portal móvil") | La decisión `L-04` fijó escritorio primero: por debajo de 1 024 px solo la landing y las tarjetas se leen en una columna, y el HITL, el Explorador y la administración piden una pantalla más ancha | Revisión de la landing en dev (2026-10-26) |
+
+---
+
+## Portal móvil
+
+* **Estado (2026-10-26):** pendiente, sin fecha. Decisión del autor: hacer el portal amigable en el teléfono después de cerrar EPIC-7; hoy se diseña para escritorio y para proyectar (`L-04`, opción a).
+* **Alcance propuesto:**
+  * **Navegación:** en pantallas de menos de 768 px, el menú lateral pasa a un cajón que se abre desde el encabezado; la barra de filtros globales se pliega en un botón "Filtros".
+  * **Landing, Reporte y Cockpit:** una columna; las gráficas ocupan el ancho completo, con etiquetas legibles y zoom táctil en las series de dygraphs.
+  * **Tablas** (Explorador, Alertas, MLOps): filas como tarjetas o desplazamiento horizontal con la primera columna fija.
+  * **HITL:** una revisión por pantalla con botones grandes y atajos táctiles; el modo ciego y el asistido se conservan.
+  * **Administración:** puede quedar solo en escritorio, con el aviso actual, porque cambiar políticas desde el teléfono no es un caso de uso.
+* **Criterios de terminado:**
+  * `axe` sin violaciones a 375 px en todas las secciones que se habiliten;
+  * objetivos táctiles de al menos 44 px;
+  * sin desplazamiento horizontal de la página;
+  * una prueba por sección con la ventana a 375 × 812;
+  * la guía visual (sección 8.3) y el cuestionario (`L-04`) actualizados con lo que se decida.
+* **Antes de empezar:** revisar con el autor qué secciones sí valen la pena en el teléfono; esta lista es una propuesta.

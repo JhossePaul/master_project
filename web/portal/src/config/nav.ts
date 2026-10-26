@@ -17,7 +17,8 @@ export type NavGroup =
   | "Investigar"
   | "Revisar"
   | "Operar"
-  | "Configurar";
+  | "Configurar"
+  | "Documentación";
 
 export interface NavItem {
   path: string;
@@ -37,6 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
   "Revisar",
   "Operar",
   "Configurar",
+  "Documentación",
 ];
 
 export const NAV_ITEMS: NavItem[] = [
@@ -48,15 +50,6 @@ export const NAV_ITEMS: NavItem[] = [
     role: "lector",
     audience: "ejecutivo",
     purpose: "Estado de los datos y de cada banco.",
-  },
-  {
-    path: "/reporte",
-    label: "Reporte",
-    group: "Consultar",
-    icon: BookOpen,
-    role: "lector",
-    audience: "academico",
-    purpose: "La tesis con sus cifras vigentes.",
   },
   {
     path: "/cockpit",
@@ -111,6 +104,15 @@ export const NAV_ITEMS: NavItem[] = [
     role: "administrador",
     audience: "tecnico",
     purpose: "Políticas, umbrales y muestras.",
+  },
+  {
+    path: "/reporte",
+    label: "Reporte",
+    group: "Documentación",
+    icon: BookOpen,
+    role: "lector",
+    audience: "academico",
+    purpose: "La tesis con sus cifras vigentes.",
   },
 ];
 

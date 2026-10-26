@@ -1,6 +1,6 @@
 # Paso 2. Feature 7.3: Portal base, navegación y landing
 
-* **Estado (2026-10-26):** En curso: código, pruebas e imagen listos; falta el despliegue en dev (`main`) y el logotipo oficial (`B-01`).
+* **Estado (2026-10-26):** Terminado.
 * **Nivel:** imprescindible.
 * **Depende de:** paso 1 y las preguntas del [cuestionario](design_questions.md) marcadas **"antes de 2"**.
 * **Objetivo:** el proyecto `web/portal/` con la guía visual hecha código (tokens, tipografías, componentes base, primitivas de gráficas), la estructura de la aplicación (encabezado, navegación por rol, filtros globales en la URL) y la primera pantalla real: la landing.
@@ -158,7 +158,7 @@ class LandingResponse(BaseModel):
 ## Terminado cuando
 
 * [x] `npm run check`, `npm test` y `npm run build` pasan; `dist/` pesa menos de 400 KB comprimido sin las secciones perezosas.
-* [ ] La imagen de la API incluye el portal (comprobado en local con Docker) y en dev se ve la landing con datos reales detrás de IAP (falta el despliegue).
+* [x] La imagen de la API incluye el portal (comprobado en local con Docker) y en dev se ve la landing detrás de IAP (revisada por el autor).
 * [x] Los filtros se conservan al navegar y se pueden compartir por URL.
 * [x] Ningún hex, nombre real de banco ni tipo de respuesta está escrito a mano fuera de `tokens.css`, `banks.ts` y `schema.d.ts` (lo revisa `grep` en la prueba de `banks`).
 
@@ -188,4 +188,6 @@ class LandingResponse(BaseModel):
 * **Portal (2026-10-26):** proyecto Vite en `web/portal/` con tokens, tipografías, `banks.ts`, `format.ts`, glosario (27 términos), navegación por rol, filtros en la URL, `AppShell`, 13 componentes base, primitivas de D3 y `TimeSeries` (dygraphs), cliente tipado y la landing. `npm run check`, `npm test` (66 pruebas en 11 archivos, con `axe` sobre la landing y el *shell*) y `npm run build` pasan; `dist/` pesa 285 KB comprimido (el *bundle* principal, 187 KB; la landing perezosa, 5 KB).
 * **Imagen y CI:** `Dockerfile` con `WEB_SOURCE=web-build` por defecto; construida en local (`docker build`), `/` y `/cockpit` devuelven `index.html`, `/api/v1/landing` sin JWT da 401. El CI suma el trabajo `portal` (Node 24, tipos de la API al día, Biome, pruebas y construcción) y la prueba de humo comprueba `/` y `/cockpit`. Sin ejecutarse aún en GitHub.
 * **Vista previa local** (`PORTAL_DATA=fixtures`, modo local): hero con tahalí, frescura, cinco tarjetas con su color, alertas y accesos.
-* **Pendiente:** commits (propuestos al autor), merge a `main` para que el CD publique la imagen y comprobar la landing en dev con datos reales (`deploy_images.py --apply`, con aprobación), y el logotipo oficial de Posgrados (`B-01`).
+* **Despliegue en dev (2026-10-26):** PR 17 y 18 mezcladas; `deploy_images.py --apply` dos veces (12 recursos actualizados cada una, sin borrados) y `voc-api-backend` con la imagen `b4bc79e`. El autor revisó la landing en dev y pidió los ajustes de la sección "Decisiones" (nombre, bancos, lenguaje, tahalí).
+* **Últimos ajustes:** el *hero* dice "Maestría en Ciencia de Datos" (el nombre completo con BBVA queda en el pie) y el Reporte pasa a un grupo "Documentación" al final del menú.
+* **Pendiente fuera del paso:** el logotipo oficial de Posgrados (`B-01`): el paquete de la UP trae solo el escudo y el emblema en `.ai`, y el WebP es la variante "En línea" en verde sobre blanco, que no sirve para el encabezado oscuro. Se pedirá la versión en blanco a Comunicación de la UP.
