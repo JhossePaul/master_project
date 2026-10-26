@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router";
 import { useMonthly } from "@/api/kpis";
 import { ErrorState } from "@/components/ErrorState";
+import { type SectionItem, useSectionNav } from "@/components/SectionNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BANK_IDS, type BankId, isBankId } from "@/config/banks";
 import { useGlobalFilters } from "@/filters/useGlobalFilters";
@@ -64,12 +65,31 @@ function MonthPicker({
   );
 }
 
+const SECTIONS: SectionItem[] = [
+  { id: "resumen", label: "Último mes por banco" },
+  { id: "serie", label: "Serie diaria" },
+  { id: "mensual", label: "Gráficas mensuales" },
+  { id: "familias", label: "Familias" },
+  { id: "topicos", label: "Tópicos" },
+  { id: "matriz", label: "Estrellas × texto" },
+  { id: "comparacion", label: "Comparación entre bancos" },
+];
+
+function Section({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <div id={id} className="scroll-mt-40">
+      {children}
+    </div>
+  );
+}
+
 function Daily({ banks }: { banks: BankId[] }) {
   const [filters, update] = useGlobalFilters();
   const [day, setDay] = useParam("dia", DAY);
   const [familia, setFamilia] = useParam("familia", FAMILY);
   const [focus, setFocus] = useParam("banco", /^[A-Z]+$/);
   const [mes, setMes] = useParam("mes", MONTH);
+  useSectionNav(SECTIONS);
   const monthly = useMonthly(banks);
   const detail: BankId =
     focus && isBankId(focus) && banks.includes(focus)
@@ -80,81 +100,85 @@ function Daily({ banks }: { banks: BankId[] }) {
   return (
     <div className="flex flex-col gap-8">
       <CardsBlock banks={banks} />
-      <SeriesBlock
-        banks={banks}
-        {...common}
-        day={day}
-        familia={familia}
-        onDay={setDay}
-        onRange={(from, to) => update({ from, to })}
-      />
-      <MonthlyBlock banks={banks} {...common} />
-      <section aria-labelledby="detalle" className="grid gap-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <h2
-            id="detalle"
-            className="font-serif text-2xl font-semibold text-green-800"
-          >
-            Detalle de un banco
-          </h2>
-          {banks.length > 1 ? (
+      <Section id="serie">
+        <SeriesBlock
+          banks={banks}
+          {...common}
+          day={day}
+          familia={familia}
+          onDay={setDay}
+          onRange={(from, to) => update({ from, to })}
+        />
+      </Section>
+      <Section id="mensual">
+        <MonthlyBlock banks={banks} {...common} />
+      </Section>
+      <section aria-label="Detalle de un banco" className="grid gap-6">
+        {banks.length > 1 ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm text-text-muted">
+              Detalle de un banco:
+            </span>
             <BankPicker
               banks={banks}
               value={detail}
               onChange={(b) => setFocus(b)}
               label="Banco del detalle"
             />
-          ) : null}
-        </div>
-        <FamiliesBlock
-          banks={banks}
-          bank={detail}
-          familia={familia}
-          onFamilia={setFamilia}
-          {...common}
-        />
-        <TopicsBlock
-          banks={banks}
-          bank={detail}
-          familia={familia}
-          {...common}
-        />
-        <MatrixBlock bank={detail} period={mes} {...common} />
+          </div>
+        ) : null}
+        <Section id="familias">
+          <FamiliesBlock
+            banks={banks}
+            bank={detail}
+            familia={familia}
+            onFamilia={setFamilia}
+            {...common}
+          />
+        </Section>
+        <Section id="topicos">
+          <TopicsBlock
+            banks={banks}
+            bank={detail}
+            familia={familia}
+            {...common}
+          />
+        </Section>
+        <Section id="matriz">
+          <MatrixBlock bank={detail} period={mes} {...common} />
+        </Section>
       </section>
-      <section aria-labelledby="comparacion" className="grid gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <h2
-            id="comparacion"
-            className="font-serif text-2xl font-semibold text-green-800"
-          >
-            Comparación entre bancos
-          </h2>
-          <MonthPicker options={options} value={mes} onChange={setMes} />
-        </div>
-        {monthly.isError ? (
-          <ErrorState error={monthly.error} />
-        ) : (
-          <ComparisonBlock banks={banks} period={mes} {...common} />
-        )}
-      </section>
+      <Section id="comparacion">
+        <section aria-label="Comparación entre bancos" className="grid gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <MonthPicker options={options} value={mes} onChange={setMes} />
+          </div>
+          {monthly.isError ? (
+            <ErrorState error={monthly.error} />
+          ) : (
+            <ComparisonBlock banks={banks} period={mes} {...common} />
+          )}
+        </section>
+      </Section>
     </div>
   );
 }
 
 function ByVersion({ banks }: { banks: BankId[] }) {
+  const [filters] = useGlobalFilters();
   const [focus, setFocus] = useParam("banco", /^[A-Z]+$/);
   const bank: BankId =
-    focus && isBankId(focus) ? focus : ((banks[0] ?? BANK_IDS[0]) as BankId);
+    focus && isBankId(focus) && banks.includes(focus)
+      ? focus
+      : ((banks[0] ?? BANK_IDS[0]) as BankId);
   return (
-    <div className="flex flex-col gap-4">
-      <BankPicker
-        banks={BANK_IDS}
-        value={bank}
-        onChange={setFocus}
-        label="Banco de la vista por versión"
-      />
-      <VersionTab bank={bank} />
-    </div>
+    <VersionTab
+      banks={banks}
+      bank={bank}
+      onBank={setFocus}
+      from={filters.from}
+      to={filters.to}
+    />
   );
 }
 

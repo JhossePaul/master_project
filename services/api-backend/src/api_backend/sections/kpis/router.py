@@ -23,7 +23,9 @@ from api_backend.sections.kpis.schemas import (
     MatrixCell,
     ModelChange,
     MonthlyKpi,
+    SentimentFilter,
     TopicMonth,
+    VersionDailyResponse,
     VersionsResponse,
 )
 
@@ -46,6 +48,7 @@ for _route in (
     "topics",
     "matrix",
     "versions",
+    "versions/daily",
     "model-changes",
 ):
     ROUTE_ROLES[("GET", f"/api/v1/kpis/{_route}")] = Role.LECTOR
@@ -145,6 +148,23 @@ def matrix(
 def versions(repo: Repo, bank: BankId) -> VersionsResponse:
     """Proporción de negativas por versión de la app, con IC de Wilson."""
     return service.versions(repo, bank)
+
+
+@router.get("/versions/daily")
+def versions_daily(
+    repo: Repo,
+    bank: BankId,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sentiment: SentimentFilter = "ALL",
+) -> VersionDailyResponse:
+    """Reseñas por día y versión de la app de un banco, para ver los ciclos
+    de despliegue."""
+    end = date_to or datetime.now(UTC).date()
+    start = date_from or end - timedelta(days=DEFAULT_DAYS)
+    if start > end or (end - start).days > MAX_DAYS:
+        raise ApiError(ErrorCode.INVALID, "Rango de fechas no válido")
+    return service.version_daily(repo, bank, start, end, sentiment)
 
 
 @router.get("/model-changes")

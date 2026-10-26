@@ -10,6 +10,10 @@ import { formatInt, formatPct } from "@/lib/format";
 import { familyName, LoadingBlock, OpenInExplorer } from "./shared";
 
 const TOP = 12;
+const AUDIENCE_LABEL: Record<string, string> = {
+  producto: "Producto",
+  ingenieria: "Ingeniería",
+};
 
 function Spark({ rows, colorVar }: { rows: TopicMonth[]; colorVar: string }) {
   const sorted = [...rows].sort((a, b) => a.period.localeCompare(b.period));
@@ -93,8 +97,8 @@ export function TopicsBlock({
         columns: ["Tópico", "Audiencia", "Familias", "Reseñas"],
         rows: groups.map((g) => [
           g.head.nombre,
-          g.head.audience,
-          g.head.families.join(", "),
+          AUDIENCE_LABEL[g.head.audience] ?? g.head.audience,
+          g.head.families.map(familyName).join(", "),
           g.total,
         ]),
       }}
@@ -110,23 +114,54 @@ export function TopicsBlock({
             return (
               <li
                 key={g.head.topic_id}
-                className={`flex flex-wrap items-center gap-3 rounded-sm border border-border p-2 ${dim ? "opacity-40" : ""}`}
+                className={`grid gap-2 rounded-sm border border-border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center ${dim ? "opacity-40" : ""}`}
               >
-                <span className="min-w-48 flex-1 font-semibold">
-                  {g.head.nombre}
-                </span>
-                <Badge variant="neutral">{g.head.audience}</Badge>
-                <span className="text-xs text-text-muted">
-                  {g.head.families.map(familyName).join(" · ") || "sin familia"}
-                </span>
-                <Spark rows={g.rows} colorVar={BANKS[bank].colorVar} />
-                <span className="tabular w-28 text-right text-sm">
-                  {formatInt(g.total)} reseñas
-                  <br />
-                  <span className="text-text-muted">
-                    {formatPct(g.rows.at(-1)?.share)} último mes
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold">
+                    <Badge
+                      variant={
+                        g.head.audience === "producto" ? "brand" : "neutral"
+                      }
+                    >
+                      {AUDIENCE_LABEL[g.head.audience] ?? g.head.audience}
+                    </Badge>
+                    {g.head.nombre}
+                  </p>
+                  <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-text-muted">
+                    <span>Familias:</span>
+                    {g.head.families.length === 0 ? (
+                      <span>sin familia asociada</span>
+                    ) : (
+                      <>
+                        {g.head.families.slice(0, 3).map((f) => (
+                          <Badge key={f} variant="neutral">
+                            {familyName(f)}
+                          </Badge>
+                        ))}
+                        {g.head.families.length > 3 ? (
+                          <span
+                            title={g.head.families
+                              .slice(3)
+                              .map(familyName)
+                              .join(", ")}
+                          >
+                            +{g.head.families.length - 3}
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Spark rows={g.rows} colorVar={BANKS[bank].colorVar} />
+                  <span className="tabular w-28 text-right text-sm">
+                    {formatInt(g.total)} reseñas
+                    <br />
+                    <span className="text-text-muted">
+                      {formatPct(g.rows.at(-1)?.share)} último mes
+                    </span>
                   </span>
-                </span>
+                </div>
               </li>
             );
           })}

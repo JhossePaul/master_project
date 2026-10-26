@@ -13,6 +13,9 @@ export type TopicMonth = components["schemas"]["TopicMonth"];
 export type MatrixCell = components["schemas"]["MatrixCell"];
 export type VersionsResponse = components["schemas"]["VersionsResponse"];
 export type VersionRow = components["schemas"]["VersionRow"];
+export type VersionDailyResponse =
+  components["schemas"]["VersionDailyResponse"];
+export type SentimentFilter = "ALL" | "NEG" | "NEU" | "POS";
 export type ModelChange = components["schemas"]["ModelChange"];
 
 const STALE = 5 * 60_000;
@@ -122,6 +125,26 @@ export function useVersions(bank: BankId) {
         params: { query: { bank } },
       });
       return required(data, "/kpis/versions");
+    },
+    staleTime: STALE,
+  });
+}
+
+export function useVersionDaily(
+  bank: BankId,
+  from: string,
+  to: string,
+  sentiment: SentimentFilter,
+) {
+  return useQuery({
+    queryKey: ["kpis", "versions-daily", bank, from, to, sentiment],
+    queryFn: async () => {
+      const { data } = await api.GET("/api/v1/kpis/versions/daily", {
+        params: {
+          query: { bank, date_from: from, date_to: to, sentiment },
+        },
+      });
+      return required(data, "/kpis/versions/daily");
     },
     staleTime: STALE,
   });

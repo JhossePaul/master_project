@@ -14,8 +14,14 @@ import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatDate, formatPct, formatStars } from "@/lib/format";
 import { BankPicker, familyName, LoadingBlock, OpenInExplorer } from "./shared";
-
-type SeriesMetric = "neg" | "gap" | "neg45";
+import {
+  dayShift,
+  MAX_WINDOW,
+  rolling,
+  type SeriesMetric,
+  type SmoothingWindow,
+  WINDOWS,
+} from "./smoothing";
 
 const METRICS: Record<
   SeriesMetric,
@@ -45,10 +51,12 @@ const METRICS: Record<
 export function DayPanel({
   banks,
   day,
+  smoothing,
   onClose,
 }: {
   banks: BankId[];
   day: string;
+  smoothing: SmoothingWindow;
   onClose: () => void;
 }) {
   const [bank, setBank] = useState<BankId>(banks[0] as BankId);
@@ -78,6 +86,9 @@ export function DayPanel({
       <Callout variant="info">
         Describe lo que dicen las reseñas negativas de ese día; no es un
         diagnóstico ni la detección de un incidente.
+        {smoothing > 1
+          ? ` Son los temas de ese solo día, no del promedio de ${smoothing} días.`
+          : ""}
       </Callout>
       {topics.isPending ? <LoadingBlock /> : null}
       {topics.isError ? (
@@ -199,29 +210,49 @@ export function SeriesBlock({
   onRange: (from: string, to: string) => void;
 }) {
   const [metric, setMetric] = useState<SeriesMetric>("neg");
-  const daily = useDaily(banks, from, to);
+  const [smoothing, setSmoothing] = useState<SmoothingWindow>(7);
+  // Siempre se piden 27 días de más al inicio para que el promedio móvil
+  // del primer día del rango ya tenga su ventana completa.
+  const daily = useDaily(banks, dayShift(from, -(MAX_WINDOW - 1)), to);
   const models = useModelChanges();
   const cards = useCards(banks);
   const spec = METRICS[metric];
 
   const series = useMemo<TimeSeriesItem[]>(() => {
     const rows = daily.data ?? [];
-    return banks.map((id) => ({
-      id,
-      label: bankLabel(id),
-      colorVar: BANKS[id].colorVar,
-      dash: BANKS[id].dash,
-      points: rows
-        .filter((r) => r.bank_id === id)
-        .map(
-          (r) =>
-            [new Date(`${r.dia}T00:00:00Z`), spec.value(r)] as [
-              Date,
-              number | null,
-            ],
-        ),
-    }));
-  }, [daily.data, banks, spec]);
+    // Con uno o dos bancos se deja el dato diario como línea de fondo.
+    const withRaw = smoothing > 1 && banks.length <= 2;
+    const out: TimeSeriesItem[] = [];
+    for (const id of banks) {
+      const own = rows.filter((r) => r.bank_id === id);
+      const points = (window: number) =>
+        rolling(own, window, metric)
+          .filter((p) => p.dia >= from)
+          .map(
+            (p) =>
+              [new Date(`${p.dia}T00:00:00Z`), p.value] as [
+                Date,
+                number | null,
+              ],
+          );
+      if (withRaw)
+        out.push({
+          id: `${id}-dia`,
+          label: `${bankLabel(id)} (día)`,
+          colorVar: BANKS[id].colorVar,
+          faint: true,
+          points: points(1),
+        });
+      out.push({
+        id,
+        label: bankLabel(id),
+        colorVar: BANKS[id].colorVar,
+        dash: BANKS[id].dash,
+        points: points(smoothing),
+      });
+    }
+    return out;
+  }, [daily.data, banks, metric, smoothing, from]);
 
   const markers = useMemo(
     () =>
@@ -259,7 +290,7 @@ export function SeriesBlock({
       <ChartFrame
         kicker="Serie diaria"
         title={spec.label}
-        subtitle="Por día (UTC), una línea por banco"
+        subtitle="Por día (UTC), una línea por banco. El rango de la barra de filtros aplica a esta serie."
         method="raw"
         actions={
           <OpenInExplorer
@@ -276,8 +307,10 @@ export function SeriesBlock({
           <p>
             Cada punto es un día. Haz clic en un día para ver de qué hablan las
             reseñas negativas de ese día, o arrastra sobre la gráfica para
-            acercar un rango. Las cifras son las del modelo sin ajustar: los
-            días con pocas reseñas varían mucho.
+            acercar un rango. Las cifras son las del modelo sin ajustar. Con
+            suavizado, cada punto es el promedio de los últimos N días (pesado
+            por las reseñas de cada día) y los días con pocas reseñas pesan
+            menos.
           </p>
         }
         provenance={{
@@ -287,29 +320,49 @@ export function SeriesBlock({
         }}
         data={{
           columns: ["Día", "Banco", "Predichas", "Valor"],
-          rows: (daily.data ?? []).map((r) => {
-            const v = spec.value(r);
-            return [
-              r.dia,
-              bankLabel(r.bank_id),
-              r.predichas,
-              v === null ? null : spec.format(v),
-            ];
-          }),
+          rows: (daily.data ?? [])
+            .filter((r) => r.dia >= from)
+            .map((r) => {
+              const v = spec.value(r);
+              return [
+                r.dia,
+                bankLabel(r.bank_id),
+                r.predichas,
+                v === null ? null : spec.format(v),
+              ];
+            }),
         }}
       >
-        <div className="mb-3 flex flex-wrap gap-1">
-          {(Object.keys(METRICS) as SeriesMetric[]).map((key) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={key === metric ? "primary" : "secondary"}
-              aria-pressed={key === metric}
-              onClick={() => setMetric(key)}
-            >
-              {METRICS[key].label}
-            </Button>
-          ))}
+        <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <fieldset className="m-0 flex flex-wrap gap-1 border-0 p-0">
+            <legend className="sr-only">Medida</legend>
+            {(Object.keys(METRICS) as SeriesMetric[]).map((key) => (
+              <Button
+                key={key}
+                size="sm"
+                variant={key === metric ? "primary" : "secondary"}
+                aria-pressed={key === metric}
+                onClick={() => setMetric(key)}
+              >
+                {METRICS[key].label}
+              </Button>
+            ))}
+          </fieldset>
+          <fieldset className="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
+            <legend className="sr-only">Suavizado</legend>
+            <span className="text-sm text-text-muted">Suavizado:</span>
+            {WINDOWS.map((w) => (
+              <Button
+                key={w}
+                size="sm"
+                variant={w === smoothing ? "primary" : "secondary"}
+                aria-pressed={w === smoothing}
+                onClick={() => setSmoothing(w)}
+              >
+                {w === 1 ? "Sin suavizar" : `${w} días`}
+              </Button>
+            ))}
+          </fieldset>
         </div>
         {daily.isPending ? <LoadingBlock /> : null}
         {daily.isError ? (
@@ -334,7 +387,12 @@ export function SeriesBlock({
         ) : null}
       </ChartFrame>
       {day ? (
-        <DayPanel banks={banks} day={day} onClose={() => onDay(null)} />
+        <DayPanel
+          banks={banks}
+          day={day}
+          smoothing={smoothing}
+          onClose={() => onDay(null)}
+        />
       ) : null}
     </div>
   );

@@ -1,6 +1,6 @@
 # Paso 3. Feature 7.5: Cockpit diario de KPIs
 
-* **Estado (2026-10-26):** Implementado, probado y medido contra BigQuery de dev. Falta desplegarlo.
+* **Estado (2026-10-26):** Implementado, probado, medido y desplegado en dev (imagen `bd705ed`). En revisión del autor: hay ajustes de datos, de diseño y una vista por versión nueva (ver "Revisión del autor tras el despliegue en dev").
 * **Nivel:** imprescindible; la pestaña por versión, importante.
 * **Depende de:** paso 2.
 * **Objetivo:** el seguimiento diario de los cinco bancos, con solo agregados (rol lector): tarjetas con PPI, series diarias crudas con los temas del día, familias y marca `u` en nivel y en anomalía, tópicos vigentes, la matriz estrellas × texto, la comparación entre bancos y la pestaña por versión de la app.
@@ -146,3 +146,101 @@ Cada bloque va en un `ChartFrame` con "Cómo leerla". Desde cualquier bloque, el
 
   La cobertura de versión reconocida es 90.8 % (BBVA) frente al 90.9 % global del reporte. Las diferencias de una décima son del corte de datos (el reporte es del 2026-10-23). La primera comparación salió con 18.3 % de `u` en BBVA porque la base eran todas las negativas; con la base del reporte (dos palabras o más con etiqueta) coincide. Dos errores que la comparación y el `dry_run` destaparon: `OTRAS` se calculaba con negativas en vez de reseñas y la consulta de familias en nivel no compilaba en BigQuery (alias repetido).
 * **F-19 calificada (2026-10-26, decisión del autor):** S 1, O 1, D 1 (RPN 1), con los controles de esta pantalla; es un hallazgo de la investigación y el producto no está en producción. Quedó escrita en la [FMEA](../../governance/ethical_fmea_matrix.md); el paso 10 solo la confirma.
+
+## Revisión del autor tras el despliegue en dev (2026-10-26)
+
+El autor revisó el cockpit en dev con datos reales. Esta sección guarda los comentarios, lo que se encontró al investigarlos y el plan. Nada de esto está implementado todavía.
+
+### Hallazgos al investigar
+
+* **Anomalías vacías: error propio.** `drift_metrics` sí trae z en todas las filas de familias (hasta |z| = 34), pero guarda `period` como fecha (`2026-09-01`) y la unión con el nivel de familias usa `2026-09`: nunca coincide y todas las celdas salen grises. Además tiene 125 meses (desde 2016-05) y ninguna fila con umbral (la política v2 aún no está en esas series), así que no habrá bordes de alerta.
+* **Los botones 30 días, 90 días, 12 meses y Todo sí funcionan** (probado en local: cambian la URL y las fechas). Lo que no se nota es que solo la serie diaria usa el rango, y que los botones no muestran cuál está activo.
+* **Las gráficas mensuales sí existen** ("Reseñas negativas por mes" y "Brecha en estrellas por mes", debajo de la serie diaria), pero se dibujan con todo el historial (BBVA desde 2011-04, los demás desde 2020), con meses de 2 reseñas y rangos enormes, y no se leen.
+* **Tópicos "sin familia": las familias se perdieron al cargar la curaduría** (análisis completo abajo).
+* **Versiones:** BBVA tiene 259 versiones; el eje de categorías con todas es ilegible. Se rediseña.
+
+### Comentarios y decisiones
+
+| # | Comentario del autor | Decisión |
+| :--- | :--- | :--- |
+| 1 | Encabezados fijos en todas las tablas de datos | Sí: `sticky` en el encabezado de la tabla de `ChartFrame` y de la tabla por versión |
+| 2 | Promedio móvil y su convivencia con el panel del día | Un selector "Suavizado: sin / 7 / 14 / 28 días" (por defecto 7), una línea por banco (cinco, no veinte), promedio ponderado de ventana que termina en cada día (suma de negativas entre suma de predichas). El dato diario crudo queda como línea tenue solo con uno o dos bancos. Se calcula en el frontal; dygraphs se conserva. El clic sigue eligiendo **un día** y el panel dice "Temas del día X (no del promedio)": `daily_topic_labels` guarda solo el top 5 de cada día, así que no se puede sumar una ventana sin una consulta nueva (unos 600 MB), que queda como opción futura. La leyenda de hover de dygraphs (que se encima con el eje Y) pasa a una franja propia con fondo |
+| 3 | Familias: gráfico demasiado grande, etiqueta del prompt cortada, `u` no es familia, etiquetas ocupan dos renglones | Altura fija; leyenda vertical a la derecha que también filtra; el nombre del prompt con espacio propio; `u` sale de las etiquetas y se muestra aparte como la marca "habla de una actualización", con su propia mini-gráfica |
+| 4 | Anomalías no se entiende | Arreglar el cruce de periodos, limitar a los últimos 24 meses con celdas grandes, leyenda del z (escala "z robusto"; sin umbral no hay borde ni se promete alerta) |
+| 5 | Tópicos sin familia; audiencia a la izquierda | Es un error de carga (ver abajo), no de curación. La audiencia (ingeniería / producto) pasa junto al nombre del tópico; el gráfico y las familias quedan del otro lado |
+| 6 | Vista por versión ilegible | Rediseño (ver abajo) |
+| 7 | Barra de filtros poco clara y sin movimiento; que sea fija | "2 de 5 bancos seleccionados"; estado activo en los atajos; nota de qué bloques usan el rango; las gráficas mensuales tienen su propio selector (12, 24 meses o todo; 24 por defecto) y ocultan los meses con muy pocas reseñas; la barra queda fija al hacer scroll |
+| 8 | ¿Mes contra mes, año contra mes, acumulado? | Selector en las tarjetas: "vs. mes anterior" y "vs. año anterior" (hoy solo hay el segundo). Mes contra mes es más ruidoso (cada punto trae su intervalo). El acumulado del año no se hace |
+| 9 | Títulos de sección como parte del header | Una sola franja fija: filtros a la izquierda y, a la derecha, la sección que está a la vista con un menú para saltar a otra (IntersectionObserver); se quitan los títulos grandes del cuerpo (los de cada gráfica se quedan). Evita apilar tres franjas fijas (encabezado, filtros y secciones) |
+
+### Vista por versión (rediseño)
+
+* Un banco siempre filtrado (el primero por defecto); los filtros de banco van **debajo** del aviso "Descriptivo", no encima del título.
+* Barras apiladas por día (como el análisis preliminar), coloreadas por versión: las 8 principales del rango y el resto agrupado; los despliegues se leen como cambios de color.
+* Filtro de sentimiento (todas, negativas, neutras, positivas) y rango de 90 días por defecto.
+* Ruta de API nueva (conteos por día, versión y sentimiento, para un banco y un rango); la tabla con IC de Wilson y las medianas quedan debajo, con la mediana visible y no escondida detrás de los puntos.
+
+### Alcance de la corrección de la curaduría
+
+**Causa.** `curation_rows` (`services/ml-inference/src/ml_inference/load_local.py`) separa `familia_correcta` por comas, pero `experiments/analytics/data/topics/phase4_v0/revision_topicos.csv` las separa con `|` (`PR | UX | TR | u`). Al quitar los espacios queda `PR|UX|TR|u`, que no es una de las 11 familias, y se descarta. Como `familia_correcta` no viene vacía, tampoco se usa `familia_mayoritaria` como respaldo.
+
+**Qué datos están mal.** Solo `curation_topics.families` de `topics_v1`: 35 filas (35 tópicos, un solo `curator_hash`, cargadas el 2026-10-25 09:25:51 por la corrida `backfill-20261022-20261025T092551`). Las familias están vacías en todas, salvo dos tópicos cuya lista tenía un solo código (15 y 17, `FA`). De los 35, 11 son de producto, 8 de ingeniería y 16 sin valor; los 19 útiles tienen al menos una familia válida en el CSV.
+
+**Qué no está mal** (verificado contra el CSV y BigQuery): `audience` (11 + 8 + 16, coincide con la regla), nombres curados, coherencia, tema nuevo, `topic_assignments`, `topic_catalog`, `topic_model_current` y `daily_topic_labels` (esas vistas solo leen nombre y audiencia, no familias). El comando `seed` no toca la curaduría (carga versiones y políticas), así que no hace falta correrlo.
+
+**Por qué no basta volver a correr `load-local`.**
+
+* Corre los siete pasos (artefactos, elegibilidad leyendo el TDS, predicciones, familias, embeddings, tópicos, oro) y registra tres corridas nuevas en `inference_runs`: mucho más de lo que hay que corregir.
+* El escritor (`StagingMergeWriter`) solo inserta las claves que no existen, y la clave de la curaduría (`topic_model_version`, `topic_id`, `curator_hash`) no incluye `curated_at`: una recarga con el mismo curador no actualiza ninguna fila.
+
+**Corrección propuesta.**
+
+1. **Código** (`ml-inference`, área Inferencia): `curation_rows` separa por `|` y por coma, descarta lo que no es una de las 11 familias (`u` y `s` son marcas; `SIN` y `FQ` no son familias; `MEZCLA` deja la lista vacía y no usa el respaldo) y solo usa `familia_mayoritaria` si no queda ninguna y no es `MEZCLA`. Prueba con los renglones reales del CSV (`PR | UX | TR | u`, `u | SIN | AC | LE | FA`, `MEZCLA`).
+2. **Carga acotada:** un subcomando `load-curation` que solo escribe `curation_topics`, con la clave ampliada con `curated_at`. La tabla es de historial (la vista toma la última fila por tópico, y el HITL de tópicos del paso 9 también inserta filas nuevas), así que se agregan 35 filas nuevas con `curated_at` actual y las viejas se conservan como historial. No toca ninguna otra tabla ni registra corridas de inferencia.
+3. **Verificación:** consulta de `curation_topics` por `audience` y `ARRAY_LENGTH(families)`; la API `GET /api/v1/kpis/topics` devuelve familias; las vistas no cambian.
+4. **Frontal** (cockpit): sin cambio de datos. Las familias de cada tópico se muestran con nombre (primeras tres y "+n"), "sin familia" solo cuando de verdad no hay, y la audiencia pasa junto al nombre. La familia fijada con `?familia=` atenúa los tópicos que no la tienen (ya funciona; hoy atenúa todos).
+5. **Documentación:** nota en el contrato (`families` de la curaduría se carga de `familia_correcta`, en el orden de importancia que dio el curador) y en el backlog del paso.
+
+**Decisiones del autor (2026-10-26):**
+
+* `SIN` se descarta. `FQ` (un solo caso, tópico 38: `UX | CO | TR | FQ | u`) tampoco es una de las 11 familias y no hay forma de saber qué quiso escribir el curador (probablemente `FA`, vecina de `Q` en el teclado), así que se descarta; si es `FA`, se corrige en el CSV y se vuelve a correr `load-curation`.
+* Se corrige el flujo original de `load-local` (no solo el comando nuevo) y se elimina la curaduría anterior, que era un error de carga y no una decisión del curador. Autorizadas la escritura de las 35 filas y la limpieza de la tabla.
+* El cambio vive en `services/ml-inference/` (área Inferencia): se hizo en esta misma sesión, con su prueba, sin tocar nada más de ese servicio.
+
+**Hecho (2026-10-26):**
+
+* `curation_families` (nueva, con sus pruebas con renglones reales del CSV) y `curation_rows` la usan; `Loader.curation` escribe con `curated_at` en la clave, y `load-local` y `python -m ml_inference load-curation` comparten ese método. `pytest services/ml-inference` (cobertura 98 %), `ruff`, `pyrefly` y `bandit` en verde.
+* Respaldo de las 35 filas viejas en JSON (copia local de la sesión, fuera de git), `load-curation` en dev (35 filas nuevas, `curated_at` 2026-10-26 15:45:10) y `DELETE` de las 35 viejas (`curated_at` 2026-10-25 09:25:51). Verificado: 19 tópicos útiles con familias (producto 3.1 de promedio, ingeniería 2.9) y los 16 sin valor vacíos; `topic_model_current` sigue en `topics_v1`; `GET /api/v1/kpis/topics` devuelve las familias.
+
+### Plan por pasadas
+
+1. **Corrección de datos de la curaduría** (arriba): hecha el 2026-10-26.
+2. **Primera pasada del cockpit (hecha el 2026-10-26, falta desplegar):** cruce de periodos de las anomalías (API, con prueba), anomalía con ventana de 24 meses y leyenda, familias (altura fija, leyenda vertical, `u` aparte, prompt visible), tópicos (audiencia junto al nombre, familias con nombre), encabezados de tabla fijos, barra de filtros (texto, estado activo, nota del rango, fija), franja con la sección a la vista, selector de ventana en las gráficas mensuales y ocultar meses con pocas reseñas, selector de comparación en las tarjetas.
+3. **Segunda pasada (hecha el 2026-10-26, falta desplegar):** suavizado y franja de leyenda de la serie diaria, y la vista por versión nueva (ruta de API, barras apiladas, filtro de sentimiento).
+
+### Terminado cuando (revisión)
+
+* [x] `curation_topics.families` trae las familias del CSV para los 19 tópicos útiles de `topics_v1` (hecho el 2026-10-26). [x] El cockpit las muestra con nombre y "sin familia" solo aparece donde corresponde.
+* [x] La anomalía de familias muestra z por familia y mes (24 meses) y se entiende sin leer el código. (Revisado en local con datos de dev.)
+* [x] Las tablas de datos tienen el encabezado fijo; la barra de filtros y la sección a la vista quedan fijas al hacer scroll.
+* [x] La serie diaria tiene suavizado de 7, 14 y 28 días, sin romper el panel del día, y su leyenda no tapa el eje.
+* [x] La vista por versión muestra un banco, barras por día coloreadas por versión y filtro de sentimiento.
+
+### Primera pasada del frontal (2026-10-26)
+
+* **API:** `drift_metrics` se lee con `period` como `YYYY-MM` (`SUBSTR(CAST(period AS STRING), 1, 7)`) y el servicio lo normaliza también, así que el z ya se une con el nivel de familias; `BankCard` trae `previous_month` además de `previous_year` (`month_before`, con prueba que cruza el año). `openapi.json` y `schema.d.ts` regenerados.
+* **Barra de filtros fija** (`sticky`, debajo del encabezado): "N de 5 bancos seleccionados", atajos con estado activo y, a la derecha, el menú "Sección: …" que sigue el scroll y salta a cada sección (`SectionNav`). Se quitaron los títulos grandes del cuerpo (quedan como encabezados ocultos para lectores de pantalla). La serie diaria aclara que el rango aplica solo a ella.
+* **Tarjetas:** selector "Mismo mes del año anterior / Mes anterior".
+* **Gráficas mensuales:** selector 12 / 24 meses o todo (24 por defecto) y se ocultan los meses con menos de 100 reseñas.
+* **Familias:** últimos 24 meses, altura fija (260 px) con el texto a tamaño natural, leyenda vertical a la derecha que resalta la familia (con las negativas del último mes), etiqueta del prompt a la vista, y la marca `u` como "Habla de una actualización" en su propia gráfica (en la anomalía, en una fila aparte). La anomalía usa celdas de al menos 24 px, una leyenda del z y una nota de que esas series aún no tienen umbral.
+* **Tópicos:** la audiencia (Producto / Ingeniería) va junto al nombre; las familias salen con nombre (tres y "+n") y "sin familia asociada" solo si no hay.
+* **Tablas:** el encabezado de `Table` es fijo (`sticky`), también en "Ver datos" y en la tabla por versión.
+* **Pruebas:** 92 en el portal (10 nuevas: barra, atajo activo, menú de secciones y su seguimiento del scroll, comparación con el mes anterior, tópicos con y sin familias, z de la anomalía, meses ocultos, `shiftMonths`, encabezados fijos) y 154 en la API; `check`, `tsc` y `build` en verde. Revisado en local con datos de dev. **Queda para la segunda pasada:** suavizado y leyenda de la serie diaria, vista por versión nueva y, opcional, la ventana de temas.
+
+### Segunda pasada del frontal (2026-10-26)
+
+* **Suavizado de la serie diaria** (solo frontal, `smoothing.ts`): selector "Sin suavizar / 7 / 14 / 28 días" (7 por defecto), una línea por banco. Cada punto es el promedio ponderado de la ventana que termina en ese día (suma de negativas entre suma de predichas; el *gap* pesa por reseñas predichas), no el promedio de las proporciones diarias. La consulta pide siempre 27 días de más al inicio del rango para que el primer día ya tenga su ventana completa; con uno o dos bancos se dibuja el dato diario como línea de fondo. La leyenda y los valores al pasar el cursor van en una franja propia sobre la gráfica (`labelsDiv`), ya no encima del eje. El clic sigue eligiendo un día y el panel aclara "no del promedio de N días".
+* **Ruta nueva `GET /api/v1/kpis/versions/daily`** (`bank`, `date_from`, `date_to`, `sentiment` = `ALL` / `NEG` / `NEU` / `POS`): reseñas por día y versión de un banco. Se normaliza la versión (`versions.py`), las 8 versiones con más reseñas del rango salen con nombre y el resto (más las reseñas sin versión reconocida) en `OTRAS`; las versiones vienen en orden cronológico con su primer día. Mide 544 MB y 2.2 s con la caché vacía en dev (BBVA, 90 días). En la sentinela y con sus pruebas.
+* **Pestaña Por versión rediseñada:** el aviso "Descriptivo" y la cobertura van primero; debajo, el selector de banco (uno siempre elegido) y el filtro de sentimiento; barras apiladas por día coloreadas por versión (los cambios de color son los despliegues, con líneas punteadas en la primera aparición de cada versión) y una leyenda con "desde" y reseñas. Debajo, la tabla de las versiones activas en el rango (con IC de Wilson, marca `u` y familias principales, encabezado fijo) y la mediana del banco escrita en el texto. El rango es el de la barra de filtros (90 días por defecto). Se quitó la gráfica de puntos por versión.
+* **Pruebas:** 106 en el portal (14 nuevas: ponderación del promedio, ventana, 27 días de más, línea de fondo, leyenda, panel del día, aviso antes de los filtros, leyenda y tabla, filtro de sentimiento y de banco que vuelven a pedir los datos, `axe`) y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.
+* **Pendiente:** la ventana de temas de varios días (necesitaría una consulta nueva de unos 600 MB) y el SVG oficial del logotipo.

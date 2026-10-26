@@ -87,6 +87,12 @@ export function syntheticCards(): Card[] {
     neg: est(0.15 + i / 50),
     gap_estrellas: est(-0.3 - i / 20, 0.05),
     quejas_4_5: est(0.04),
+    previous_month: {
+      period: "2026-08",
+      neg: est(0.14),
+      gap_estrellas: est(-0.25, 0.05),
+      quejas_4_5: est(0.035),
+    },
     previous_year: {
       period: "2025-09",
       neg: est(0.12),
@@ -223,8 +229,10 @@ export function syntheticMatrix(): components["schemas"]["MatrixCell"][] {
 export function syntheticVersions(): components["schemas"]["VersionsResponse"] {
   const row = (release: string, share: number) => ({
     release,
-    first_seen: "2026-01-01",
-    last_seen: "2026-02-01",
+    first_seen: new Date(Date.now() - 20 * 86_400_000)
+      .toISOString()
+      .slice(0, 10),
+    last_seen: new Date().toISOString().slice(0, 10),
     filas: 1000,
     neg: Math.round(share * 1000),
     neg_share: share,
@@ -242,7 +250,39 @@ export function syntheticVersions(): components["schemas"]["VersionsResponse"] {
   };
 }
 
+export function syntheticVersionDaily(
+  sentiment: "ALL" | "NEG" | "NEU" | "POS" = "ALL",
+): components["schemas"]["VersionDailyResponse"] {
+  const days = ["2026-10-10", "2026-10-11", "2026-10-12"];
+  return {
+    bank_id: "BBVA",
+    sentiment,
+    total: 90,
+    releases: [
+      { release: "26.80.9", filas: 30, first_day: "2026-10-10" },
+      { release: "26.90.10", filas: 40, first_day: "2026-10-11" },
+      { release: "OTRAS", filas: 20, first_day: "2026-10-10" },
+    ],
+    days: days.map((dia, i) => ({
+      dia,
+      counts: (i === 0
+        ? { "26.80.9": 20, OTRAS: 10 }
+        : { "26.80.9": 10, "26.90.10": 20, OTRAS: 5 }) as Record<
+        string,
+        number
+      >,
+    })),
+  };
+}
+
 export const handlers = [
+  http.get("*/api/v1/kpis/versions/daily", ({ request }) =>
+    HttpResponse.json(
+      syntheticVersionDaily(
+        (new URL(request.url).searchParams.get("sentiment") ?? "ALL") as "ALL",
+      ),
+    ),
+  ),
   http.get("*/api/v1/kpis/cards", () => HttpResponse.json(syntheticCards())),
   http.get("*/api/v1/kpis/daily", () => HttpResponse.json(syntheticDaily())),
   http.get("*/api/v1/kpis/daily-topics", () =>

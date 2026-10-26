@@ -1,10 +1,12 @@
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { useState } from "react";
 import { type BankCard, useCards } from "@/api/kpis";
 import type { components } from "@/api/schema";
 import { ErrorState } from "@/components/ErrorState";
 import { GlossaryTerm } from "@/components/GlossaryTerm";
 import { KpiCard, KpiCardFrame } from "@/components/KpiCard";
 import { StatusPill } from "@/components/StatusPill";
+import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import {
   formatInt,
@@ -45,9 +47,11 @@ export function Change({
   );
 }
 
-function BankCardView({ card }: { card: BankCard }) {
+type Compare = "year" | "month";
+
+function BankCardView({ card, compare }: { card: BankCard; compare: Compare }) {
   const style = BANKS[card.bank_id as BankId];
-  const prev = card.previous_year;
+  const prev = compare === "year" ? card.previous_year : card.previous_month;
   if (!card.period) {
     return (
       <KpiCardFrame colorVar={style?.colorVar}>
@@ -146,20 +150,40 @@ function BankCardView({ card }: { card: BankCard }) {
 
 export function CardsBlock({ banks }: { banks: BankId[] }) {
   const cards = useCards(banks);
+  const [compare, setCompare] = useState<Compare>("year");
   if (cards.isPending) return <LoadingBlock />;
   if (cards.isError)
     return <ErrorState error={cards.error} onRetry={() => cards.refetch()} />;
   return (
-    <section aria-labelledby="tarjetas">
-      <h2
-        id="tarjetas"
-        className="mb-3 font-serif text-2xl font-semibold text-green-800"
-      >
-        Último mes por banco
-      </h2>
+    <section
+      id="resumen"
+      aria-label="Último mes por banco"
+      className="scroll-mt-40"
+    >
+      <h2 className="sr-only">Último mes por banco</h2>
+      <fieldset className="m-0 mb-3 flex flex-wrap items-center gap-2 border-0 p-0">
+        <legend className="sr-only">Comparar con</legend>
+        <span className="text-sm text-text-muted">Comparar con:</span>
+        {(
+          [
+            ["year", "Mismo mes del año anterior"],
+            ["month", "Mes anterior"],
+          ] as const
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={compare === key ? "primary" : "secondary"}
+            aria-pressed={compare === key}
+            onClick={() => setCompare(key)}
+          >
+            {label}
+          </Button>
+        ))}
+      </fieldset>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {cards.data.map((card) => (
-          <BankCardView key={card.bank_id} card={card} />
+          <BankCardView key={card.bank_id} card={card} compare={compare} />
         ))}
       </div>
     </section>

@@ -189,6 +189,11 @@ function Hero({ dataUntil }: { dataUntil: string | null }) {
       {/* La franja solo aparece donde cabe sin tocar el texto. */}
       <Tahali className="absolute top-0 right-8 hidden h-full w-48 lg:block" />
       <div className="lg:pr-56">
+        <img
+          src="/logo-posgrados-up.png"
+          alt="Posgrados Universidad Panamericana"
+          className="mb-5 h-24 w-auto"
+        />
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
           Maestría en Ciencia de Datos
         </p>
@@ -331,16 +336,24 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
 
 function Footer({ commit }: { commit: string }) {
   return (
-    <footer className="border-t border-border pt-4 text-sm text-text-muted">
-      <p>
-        <Link to="/gobernanza" className="font-semibold text-green-600">
-          Gobernanza
-        </Link>{" "}
-        · Versión del portal{" "}
-        <code className="font-mono">{commit.slice(0, 7)}</code>
-      </p>
-      <p>Universidad Panamericana · Maestría en Ciencia de Datos BBVA</p>
-      <p>Autor: Jhosse Paul Márquez Ruíz · Revisor: Carlos González Martínez</p>
+    <footer className="flex items-center gap-4 border-t border-border pt-4 text-sm text-text-muted">
+      <span className="shrink-0 rounded-sm bg-green-900 p-1.5">
+        <img
+          src="/logo-posgrados-up.png"
+          alt="Posgrados Universidad Panamericana"
+          className="h-12 w-auto"
+        />
+      </span>
+      <div>
+        <p>
+          Versión del portal{" "}
+          <code className="font-mono">{commit.slice(0, 7)}</code>
+        </p>
+        <p>Universidad Panamericana · Maestría en Ciencia de Datos BBVA</p>
+        <p>
+          Autor: Jhosse Paul Márquez Ruíz · Revisor: Carlos González Martínez
+        </p>
+      </div>
     </footer>
   );
 }

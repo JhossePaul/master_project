@@ -187,7 +187,7 @@ Los ítems de una versión se reproducen aplicando sus criterios a `hitl_reviews
 
 `gold_version`, `split` (`dev` o `aspects_gold_v2_1`, las 300 reseñas de aspectos anotadas por el autor), `task` (`sentiment` o `aspects`), `id_resena` (nulo en el oro de aspectos, que es por texto único), `text_key`, `weight` (1/π del oro *dev* aleatorio; nulo en aspectos), `label` (sentimiento) o `families` con `flag_update`, `flag_security` y `praise` (aspectos), `guideline_version`, `loaded_at`. Se carga una vez desde local: el oro *dev* aleatorio (guía `v2.2`) y las 300 reseñas de aspectos (guía `v2.1`). El oro *test* no se carga: se usó una sola vez para la [decisión del modelo](../analytics/decision_record.md). Lo usan el recálculo de la curva HITL, los KPI con PPI y la revalidación de las familias. Son etiquetas individuales: viven solo en BigQuery, nunca en git.
 
-La curaduría de tópicos (`curation_topics`) se queda aparte, porque su grano es el tópico y no la reseña.
+La curaduría de tópicos (`curation_topics`) se queda aparte, porque su grano es el tópico y no la reseña. Es un historial: la vista toma la última fila de cada tópico (`curated_at`). `families` son las familias que el curador asoció al tópico, en su orden de importancia; lista vacía quiere decir que el tópico mezcla temas o no tiene una familia.
 
 ## 5. Migración
 

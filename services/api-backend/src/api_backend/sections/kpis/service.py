@@ -20,7 +20,11 @@ from api_backend.sections.kpis.schemas import (
     FamilyMonth,
     MatrixCell,
     MonthlyKpi,
+    SentimentFilter,
     TopicMonth,
+    VersionDailyResponse,
+    VersionDayCount,
+    VersionRelease,
     VersionRow,
     VersionsResponse,
 )
@@ -57,6 +61,11 @@ def _index(
 def year_before(period: str) -> str:
     year, month = period.split("-")
     return f"{int(year) - 1}-{month}"
+
+
+def month_before(period: str) -> str:
+    year, month = (int(x) for x in period.split("-"))
+    return f"{year - 1}-12" if month == 1 else f"{year}-{month - 1:02d}"
 
 
 def _values(
@@ -101,6 +110,7 @@ def cards(
                     neg=None,
                     gap_estrellas=None,
                     quejas_4_5=None,
+                    previous_month=None,
                     previous_year=None,
                     model_version=None,
                     gold_version=None,
@@ -116,6 +126,10 @@ def cards(
             if (bank, previous, "neg") in index
             else None
         )
+        last = month_before(chosen)
+        month = (
+            _values(index, bank, last) if (bank, last, "neg") in index else None
+        )
         source = index[(bank, chosen, "neg")]
         out.append(
             BankCard(
@@ -124,6 +138,7 @@ def cards(
                 neg=current.neg,
                 gap_estrellas=current.gap_estrellas,
                 quejas_4_5=current.quejas_4_5,
+                previous_month=month,
                 previous_year=before,
                 model_version=source.model_version,
                 gold_version=source.gold_version,
@@ -246,7 +261,7 @@ def families(repo: KpisRepository, banks: Sequence[str]) -> FamiliesResponse:
             code = d.metric.removeprefix(FAMILY_METRIC_PREFIX)
         else:
             continue
-        drift[(d.bank_id, d.period, code)] = (d.z, d.threshold, d.alert)
+        drift[(d.bank_id, d.period[:7], code)] = (d.z, d.threshold, d.alert)
     series = []
     for level in sorted(
         repo.family_levels(banks), key=lambda r: (r.bank_id, r.period, r.family)
@@ -370,4 +385,55 @@ def versions(repo: KpisRepository, bank: str) -> VersionsResponse:
         coverage=known_filas / all_filas if all_filas else 0.0,
         median_neg_share=median(r.neg_share for r in named) if named else None,
         median_u_share=median(r.u_share for r in named) if named else None,
+    )
+
+
+TOP_RELEASES = 8
+
+
+def version_daily(
+    repo: KpisRepository,
+    bank: str,
+    date_from: date,
+    date_to: date,
+    sentiment: SentimentFilter,
+    top: int = TOP_RELEASES,
+) -> VersionDailyResponse:
+    """Reseñas por día y versión de un banco: las ``top`` versiones con más
+    reseñas del rango y el resto (más las que no tienen versión reconocida)
+    en ``OTRAS``. Las versiones salen en orden cronológico."""
+    raw = repo.version_daily(bank, date_from, date_to, sentiment)
+    named: dict[str, int] = {}
+    for r in raw:
+        release = normalize(bank, r.version_app)
+        if release:
+            named[release] = named.get(release, 0) + r.n
+    keep = {
+        release
+        for release, _ in sorted(named.items(), key=lambda kv: (-kv[1], kv[0]))[
+            :top
+        ]
+    }
+    per_day: dict[date, dict[str, int]] = {}
+    totals: dict[str, int] = {}
+    first: dict[str, date] = {}
+    for r in raw:
+        release = normalize(bank, r.version_app)
+        label = release if release in keep else OTHER
+        counts = per_day.setdefault(r.dia, {})
+        counts[label] = counts.get(label, 0) + r.n
+        totals[label] = totals.get(label, 0) + r.n
+        first[label] = min(first.get(label, r.dia), r.dia)
+    releases = sorted(totals, key=lambda k: (k == OTHER, first[k], k))
+    return VersionDailyResponse(
+        bank_id=bank,
+        sentiment=sentiment,
+        total=sum(totals.values()),
+        releases=[
+            VersionRelease(release=k, filas=totals[k], first_day=first[k])
+            for k in releases
+        ],
+        days=[
+            VersionDayCount(dia=d, counts=per_day[d]) for d in sorted(per_day)
+        ],
     )

@@ -1,9 +1,16 @@
 import { scaleBand, scaleLinear } from "d3-scale";
-import { useVersions } from "@/api/kpis";
-import { Axis, GridLines, ReferenceLine } from "@/charts/primitives";
+import { useMemo, useState } from "react";
+import {
+  type SentimentFilter,
+  useVersionDaily,
+  useVersions,
+  type VersionDailyResponse,
+} from "@/api/kpis";
+import { Axis, GridLines } from "@/charts/primitives";
 import { Callout } from "@/components/Callout";
 import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,32 +21,176 @@ import {
 } from "@/components/ui/table";
 import type { BankId } from "@/config/banks";
 import { formatDate, formatInt, formatPct, formatPctRange } from "@/lib/format";
-import { familyName, LoadingBlock } from "./shared";
+import {
+  BankPicker,
+  familyName,
+  LoadingBlock,
+  OpenInExplorer,
+  useWidth,
+} from "./shared";
 
-const W = 640;
-const H = 280;
-const M = { top: 16, right: 80, bottom: 40, left: 48 };
+const HEIGHT = 300;
+const M = { top: 10, right: 8, bottom: 30, left: 48 };
+const OTHER = "OTRAS";
 
-export function VersionTab({ bank }: { bank: BankId }) {
-  const versions = useVersions(bank);
-  if (versions.isPending) return <LoadingBlock />;
-  if (versions.isError)
-    return (
-      <ErrorState error={versions.error} onRetry={() => versions.refetch()} />
-    );
-  const { rows, coverage, median_neg_share: median } = versions.data;
+/** Colores por orden de aparición: versiones vecinas contrastan entre sí. */
+export const VERSION_COLORS = [
+  "--color-green-700",
+  "--color-gold-400",
+  "--color-green-300",
+  "--color-neutral-700",
+  "--color-gold-700",
+  "--color-green-500",
+  "--color-sent-neg",
+  "--color-gold-200",
+] as const;
+const OTHER_COLOR = "--color-neutral-300";
+
+const SENTIMENTS: { key: SentimentFilter; label: string }[] = [
+  { key: "ALL", label: "Todas" },
+  { key: "NEG", label: "Negativas" },
+  { key: "NEU", label: "Neutras" },
+  { key: "POS", label: "Positivas" },
+];
+
+export function releaseColor(release: string, index: number): string {
+  return release === OTHER
+    ? OTHER_COLOR
+    : (VERSION_COLORS[index % VERSION_COLORS.length] as string);
+}
+
+function shortDay(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`)
+    .toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    })
+    .replace(/\./g, "");
+}
+
+function Stacked({
+  data,
+  width,
+}: {
+  data: VersionDailyResponse;
+  width: number;
+}) {
+  const colors = new Map(
+    data.releases.map((r, i) => [r.release, releaseColor(r.release, i)]),
+  );
+  const days = data.days.map((d) => d.dia);
   const x = scaleBand<string>()
-    .domain(rows.map((r) => r.release))
-    .range([0, W - M.left - M.right])
-    .padding(0.3);
-  const top = Math.max(
-    0.05,
-    ...rows.map((r) => r.neg_ci_high),
-    ...rows.map((r) => r.u_share),
+    .domain(days)
+    .range([0, width - M.left - M.right])
+    .padding(0.1);
+  const totals = data.days.map((d) =>
+    Object.values(d.counts).reduce((a, b) => a + b, 0),
   );
   const y = scaleLinear()
-    .domain([0, top])
-    .range([H - M.top - M.bottom, 0]);
+    .domain([0, Math.max(1, ...totals)])
+    .range([HEIGHT - M.top - M.bottom, 0]);
+  const step = Math.ceil(days.length / Math.max(2, Math.floor(width / 80)));
+  const firstDay = days[0];
+  return (
+    <svg
+      width={width}
+      height={HEIGHT}
+      role="img"
+      aria-label="Reseñas por día y versión de la app"
+    >
+      <g transform={`translate(${M.left},${M.top})`}>
+        <GridLines scale={y} width={width - M.left - M.right} />
+        <Axis
+          scale={y}
+          orientation="left"
+          length={HEIGHT - M.top - M.bottom}
+          format={(v) => formatInt(v as number)}
+        />
+        {data.days.map((d) => {
+          let acc = 0;
+          return (
+            <g key={d.dia} transform={`translate(${x(d.dia)},0)`}>
+              {data.releases.map((r) => {
+                const n = d.counts[r.release] ?? 0;
+                if (n === 0) return null;
+                const top = y(acc + n);
+                const h = y(acc) - top;
+                acc += n;
+                return (
+                  <rect
+                    key={r.release}
+                    y={top}
+                    width={x.bandwidth()}
+                    height={Math.max(h, 0)}
+                    fill={`var(${colors.get(r.release)})`}
+                  >
+                    <title>{`${formatDate(d.dia)} · ${r.release}: ${formatInt(n)}`}</title>
+                  </rect>
+                );
+              })}
+            </g>
+          );
+        })}
+        {/* Despliegues: la primera vez que aparece cada versión del rango. */}
+        {data.releases
+          .filter((r) => r.release !== OTHER && r.first_day !== firstDay)
+          .map((r) => (
+            <line
+              key={r.release}
+              x1={x(r.first_day) ?? 0}
+              x2={x(r.first_day) ?? 0}
+              y1={0}
+              y2={HEIGHT - M.top - M.bottom}
+              stroke="var(--color-neutral-900)"
+              strokeDasharray="2 3"
+              opacity={0.6}
+            />
+          ))}
+        {days.map((d, i) =>
+          i % step === 0 ? (
+            <text
+              key={d}
+              x={(x(d) ?? 0) + x.bandwidth() / 2}
+              y={HEIGHT - M.top - M.bottom + 18}
+              textAnchor="middle"
+              fontSize={11}
+              fill="var(--color-neutral-700)"
+            >
+              {shortDay(d)}
+            </text>
+          ) : null,
+        )}
+      </g>
+    </svg>
+  );
+}
+
+export function VersionTab({
+  banks,
+  bank,
+  onBank,
+  from,
+  to,
+}: {
+  banks: BankId[];
+  bank: BankId;
+  onBank: (bank: BankId) => void;
+  from: string;
+  to: string;
+}) {
+  const [sentiment, setSentiment] = useState<SentimentFilter>("ALL");
+  const { ref, width } = useWidth();
+  const daily = useVersionDaily(bank, from, to, sentiment);
+  const versions = useVersions(bank);
+  const active = useMemo(
+    () =>
+      (versions.data?.rows ?? []).filter(
+        (r) => r.release !== OTHER && r.last_seen >= from && r.first_seen <= to,
+      ),
+    [versions.data, from, to],
+  );
+  const label = SENTIMENTS.find((s) => s.key === sentiment)?.label ?? "";
   return (
     <div className="grid gap-6">
       <h2 className="font-serif text-2xl font-semibold text-green-800">
@@ -50,144 +201,182 @@ export function VersionTab({ bank }: { bank: BankId }) {
         versiones se comparan dentro de un banco porque cada banco numera las
         suyas de otra manera.
       </Callout>
-      <p className="text-sm text-text-muted">
-        El <span className="tabular">{formatPct(coverage)}</span> de las reseñas
-        tiene versión reconocida.
-      </p>
+      {versions.data ? (
+        <p className="text-sm text-text-muted">
+          El{" "}
+          <span className="tabular">{formatPct(versions.data.coverage)}</span>{" "}
+          de las reseñas tiene versión reconocida.
+        </p>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <BankPicker
+          banks={banks}
+          value={bank}
+          onChange={onBank}
+          label="Banco de la vista por versión"
+        />
+        <fieldset className="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
+          <legend className="sr-only">Sentimiento</legend>
+          <span className="text-sm text-text-muted">Reseñas:</span>
+          {SENTIMENTS.map(({ key, label: text }) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={key === sentiment ? "primary" : "secondary"}
+              aria-pressed={key === sentiment}
+              onClick={() => setSentiment(key)}
+            >
+              {text}
+            </Button>
+          ))}
+        </fieldset>
+      </div>
       <ChartFrame
         kicker="Por versión"
-        title="Reseñas negativas por versión de la app"
-        subtitle="En orden cronológico; las versiones con menos de 50 negativas van en OTRAS"
+        title="Reseñas por día y versión de la app"
+        subtitle={`${label} · del ${formatDate(from)} al ${formatDate(to)}`}
         method="raw"
+        actions={
+          <OpenInExplorer
+            filters={{
+              banks: [bank],
+              from,
+              to,
+              sentimiento: sentiment === "ALL" ? null : sentiment,
+            }}
+          />
+        }
         howToRead={
           <p>
-            El punto es la proporción de reseñas negativas de cada versión y la
-            barra, su rango al 95 %. La línea punteada es la mediana del banco.
-            El rombo es la proporción de negativas que hablan de actualizar la
-            app.
+            Cada barra es un día y cada color, una versión de la app: donde un
+            color releva a otro hubo un despliegue (las líneas punteadas marcan
+            la primera vez que aparece cada versión). Se muestran las 8
+            versiones con más reseñas del rango; el resto y las reseñas sin
+            versión reconocida van en gris. Cambia el sentimiento para ver solo
+            las negativas, por ejemplo.
           </p>
         }
         provenance={{ note: "conteo del modelo, sin ajustar" }}
         data={{
-          columns: ["Versión", "Reseñas", "Negativas", "Rango", "Marca u"],
-          rows: rows.map((r) => [
-            r.release,
-            r.filas,
-            formatPct(r.neg_share),
-            formatPctRange(r.neg_ci_low, r.neg_ci_high),
-            formatPct(r.u_share),
-          ]),
+          columns: ["Día", "Versión", "Reseñas"],
+          rows: (daily.data?.days ?? []).flatMap((d) =>
+            Object.entries(d.counts).map(([release, n]) => [d.dia, release, n]),
+          ),
         }}
       >
-        {rows.length === 0 ? (
-          <p className="text-sm text-text-muted">
-            Este banco no tiene versiones reconocidas.
-          </p>
-        ) : (
-          <svg
-            viewBox={`0 0 ${W} ${H}`}
-            className="w-full"
-            role="img"
-            aria-label="Proporción de negativas por versión"
-          >
-            <g transform={`translate(${M.left},${M.top})`}>
-              <GridLines scale={y} width={W - M.left - M.right} />
-              <Axis
-                scale={y}
-                orientation="left"
-                length={H - M.top - M.bottom}
-                format={(v) => formatPct(v as number, 0)}
-              />
-              {median != null ? (
-                <ReferenceLine
-                  y={median}
-                  width={W - M.left - M.right}
-                  scale={y}
-                  label={`mediana ${formatPct(median)}`}
-                />
-              ) : null}
-              {rows.map((r) => {
-                const cx = (x(r.release) ?? 0) + x.bandwidth() / 2;
-                return (
-                  <g key={r.release}>
-                    <line
-                      x1={cx}
-                      x2={cx}
-                      y1={y(r.neg_ci_low)}
-                      y2={y(r.neg_ci_high)}
-                      stroke="var(--color-green-700)"
+        {daily.isPending ? <LoadingBlock /> : null}
+        {daily.isError ? (
+          <ErrorState error={daily.error} onRetry={() => daily.refetch()} />
+        ) : null}
+        {daily.data ? (
+          daily.data.days.length === 0 ? (
+            <p className="text-sm text-text-muted">
+              No hay reseñas de ese tipo en el rango.
+            </p>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+              <div ref={ref} className="min-w-0">
+                <Stacked data={daily.data} width={width} />
+              </div>
+              <ul className="grid content-start gap-1" aria-label="Versiones">
+                {daily.data.releases.map((r, i) => (
+                  <li
+                    key={r.release}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{
+                        background: `var(${releaseColor(r.release, i)})`,
+                      }}
                     />
-                    <circle
-                      cx={cx}
-                      cy={y(r.neg_share)}
-                      r={4}
-                      fill="var(--color-green-700)"
-                    >
-                      <title>{`${r.release}: ${formatPct(r.neg_share)} ${formatPctRange(r.neg_ci_low, r.neg_ci_high)}`}</title>
-                    </circle>
-                    <rect
-                      x={cx - 4}
-                      y={y(r.u_share) - 4}
-                      width={8}
-                      height={8}
-                      fill="var(--color-gold-500)"
-                      transform={`rotate(45 ${cx} ${y(r.u_share)})`}
-                    >
-                      <title>{`${r.release}, marca u: ${formatPct(r.u_share)}`}</title>
-                    </rect>
-                    <text
-                      x={cx}
-                      y={H - M.top - M.bottom + 16}
-                      textAnchor="middle"
-                      fontSize={11}
-                      fill="var(--color-neutral-700)"
-                    >
-                      {r.release}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-        )}
+                    <span className="flex-1">
+                      {r.release === OTHER ? "Otras o sin versión" : r.release}
+                    </span>
+                    <span className="tabular text-xs text-text-muted">
+                      {r.release === OTHER
+                        ? formatInt(r.filas)
+                        : `desde ${shortDay(r.first_day)} · ${formatInt(r.filas)}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        ) : null}
       </ChartFrame>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead scope="col">Versión</TableHead>
-            <TableHead scope="col">Fechas</TableHead>
-            <TableHead scope="col">Reseñas</TableHead>
-            <TableHead scope="col">Negativas</TableHead>
-            <TableHead scope="col">Marca u</TableHead>
-            <TableHead scope="col">Familias principales</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((r) => (
-            <TableRow key={r.release}>
-              <TableCell>{r.release}</TableCell>
-              <TableCell>
-                {formatDate(r.first_seen)} – {formatDate(r.last_seen)}
-              </TableCell>
-              <TableCell className="tabular">{formatInt(r.filas)}</TableCell>
-              <TableCell className="tabular">
-                {formatPct(r.neg_share)} (
-                {formatPctRange(r.neg_ci_low, r.neg_ci_high)})
-              </TableCell>
-              <TableCell className="tabular">{formatPct(r.u_share)}</TableCell>
-              <TableCell>
-                {Object.entries(r.families)
-                  .slice(0, 3)
-                  .map(
-                    ([code, share]) =>
-                      `${familyName(code)} ${formatPct(share, 0)}`,
-                  )
-                  .join(" · ") || "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <section aria-label="Tabla de versiones" className="grid gap-2">
+        <h3 className="font-serif text-xl font-semibold">
+          Versiones activas en el rango
+        </h3>
+        {versions.data?.median_neg_share != null ? (
+          <p className="text-sm text-text-muted">
+            Mediana del banco entre todas sus versiones:{" "}
+            <span className="tabular">
+              {formatPct(versions.data.median_neg_share)}
+            </span>{" "}
+            de negativas y{" "}
+            <span className="tabular">
+              {formatPct(versions.data.median_u_share)}
+            </span>{" "}
+            de ellas hablan de una actualización. Las cifras de la tabla son de
+            toda la vida de cada versión.
+          </p>
+        ) : null}
+        {versions.isPending ? <LoadingBlock /> : null}
+        {versions.isError ? (
+          <ErrorState
+            error={versions.error}
+            onRetry={() => versions.refetch()}
+          />
+        ) : null}
+        {versions.data ? (
+          <div className="max-h-96 overflow-auto rounded-sm border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col">Versión</TableHead>
+                  <TableHead scope="col">Fechas</TableHead>
+                  <TableHead scope="col">Reseñas</TableHead>
+                  <TableHead scope="col">Negativas</TableHead>
+                  <TableHead scope="col">Marca u</TableHead>
+                  <TableHead scope="col">Familias principales</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {active.map((r) => (
+                  <TableRow key={r.release}>
+                    <TableCell>{r.release}</TableCell>
+                    <TableCell>
+                      {formatDate(r.first_seen)} – {formatDate(r.last_seen)}
+                    </TableCell>
+                    <TableCell className="tabular">
+                      {formatInt(r.filas)}
+                    </TableCell>
+                    <TableCell className="tabular">
+                      {formatPct(r.neg_share)} (
+                      {formatPctRange(r.neg_ci_low, r.neg_ci_high)})
+                    </TableCell>
+                    <TableCell className="tabular">
+                      {formatPct(r.u_share)}
+                    </TableCell>
+                    <TableCell>
+                      {Object.entries(r.families)
+                        .slice(0, 3)
+                        .map(
+                          ([code, share]) =>
+                            `${familyName(code)} ${formatPct(share, 0)}`,
+                        )
+                        .join(" · ") || "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }

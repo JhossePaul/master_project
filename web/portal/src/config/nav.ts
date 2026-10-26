@@ -7,6 +7,7 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   Waypoints,
 } from "lucide-react";
 
@@ -113,6 +114,15 @@ export const NAV_ITEMS: NavItem[] = [
     role: "lector",
     audience: "academico",
     purpose: "La tesis con sus cifras vigentes.",
+  },
+  {
+    path: "/gobernanza",
+    label: "Gobernanza",
+    group: "Documentación",
+    icon: ShieldCheck,
+    role: "lector",
+    audience: "academico",
+    purpose: "Fichas de los datos y del modelo, y matriz de riesgos.",
   },
 ];
 

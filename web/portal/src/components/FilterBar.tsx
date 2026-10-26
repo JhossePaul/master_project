@@ -1,4 +1,5 @@
 import { RotateCcw } from "lucide-react";
+import { SectionMenu } from "@/components/SectionNav";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,6 +31,15 @@ function rangeFor(days: number | null): { from: string; to: string } {
   return { from: isoDay(from), to: isoDay(today) };
 }
 
+/** El atajo está activo si el rango termina hoy y empieza donde él lo pone. */
+function isActive(
+  days: number | null,
+  filters: { from: string; to: string },
+): boolean {
+  const range = rangeFor(days);
+  return range.from === filters.from && range.to === filters.to;
+}
+
 export function FilterBar() {
   const [filters, update] = useGlobalFilters();
 
@@ -44,12 +54,12 @@ export function FilterBar() {
   return (
     <search
       aria-label="Filtros globales"
-      className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-muted px-8 py-2"
+      className="sticky top-14 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-surface-muted px-8 py-2"
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="sm">
-            Bancos ({filters.banks.length} de {BANK_IDS.length})
+            {filters.banks.length} de {BANK_IDS.length} bancos seleccionados
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -75,8 +85,9 @@ export function FilterBar() {
         {SHORTCUTS.map(({ label, days }) => (
           <Button
             key={label}
-            variant="ghost"
+            variant={isActive(days, filters) ? "primary" : "ghost"}
             size="sm"
+            aria-pressed={isActive(days, filters)}
             onClick={() => update(rangeFor(days))}
           >
             {label}
@@ -113,6 +124,7 @@ export function FilterBar() {
         <RotateCcw aria-hidden="true" />
         Restablecer
       </Button>
+      <SectionMenu />
     </search>
   );
 }

@@ -7,6 +7,8 @@ export interface TimeSeriesItem {
   label: string;
   colorVar: string;
   dash?: number[];
+  /** Línea de fondo: más fina y translúcida. */
+  faint?: boolean;
   points: [Date, number | null][];
 }
 
@@ -21,6 +23,14 @@ export interface TimeSeriesProps {
   onRangeChange?: (from: Date, to: Date) => void;
 }
 
+/** ``#rrggbb`` con transparencia. */
+function withAlpha(color: string, alpha: number): string {
+  const hex = /^#([0-9a-f]{6})$/i.exec(color)?.[1];
+  if (!hex) return color;
+  const n = Number.parseInt(hex, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 /** Envoltorio de dygraphs para series diarias largas. */
 export function TimeSeries({
   series,
@@ -33,6 +43,7 @@ export function TimeSeries({
   onRangeChange,
 }: TimeSeriesProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const legend = useRef<HTMLDivElement>(null);
   const callbacks = useRef({ onSelectDate, onRangeChange });
   callbacks.current = { onSelectDate, onRangeChange };
 
@@ -51,7 +62,14 @@ export function TimeSeries({
     ]);
     const options: dygraphs.Options = {
       labels: ["día (UTC)", ...series.map((s) => s.label)],
-      colors: series.map((s) => cssVar(s.colorVar)),
+      colors: series.map((s) =>
+        s.faint ? withAlpha(cssVar(s.colorVar), 0.35) : cssVar(s.colorVar),
+      ),
+      // La leyenda y los valores al pasar el cursor van en su franja, no
+      // encima del eje.
+      labelsDiv: legend.current ?? undefined,
+      labelsSeparateLines: false,
+      legend: "always",
       height,
       strokeWidth: 1.5,
       axisLabelFontSize: 12,
@@ -83,14 +101,13 @@ export function TimeSeries({
       clickCallback: (_event, x) =>
         callbacks.current.onSelectDate?.(new Date(x)),
     };
-    series.forEach((s, i) => {
-      if (s.dash?.length) {
-        (options as Record<string, unknown>)[s.label] = {
-          strokePattern: s.dash,
-        };
-      }
-      void i;
-    });
+    for (const s of series) {
+      const own: Record<string, unknown> = {};
+      if (s.dash?.length) own.strokePattern = s.dash;
+      if (s.faint) own.strokeWidth = 0.8;
+      if (Object.keys(own).length > 0)
+        (options as Record<string, unknown>)[s.label] = own;
+    }
     const graph = new Dygraph(el, data, options);
     graph.ready(() => {
       graph.setAnnotations(
@@ -107,10 +124,17 @@ export function TimeSeries({
   }, [series, bands, markers, valueFormatter, height, selectedDate]);
 
   return (
-    <div
-      ref={ref}
-      role="img"
-      aria-label={`Serie de tiempo: ${series.map((s) => s.label).join(", ")}`}
-    />
+    <div>
+      <div
+        ref={legend}
+        aria-hidden="true"
+        className="tabular mb-1 min-h-6 rounded-sm bg-surface-muted px-2 py-1 text-sm"
+      />
+      <div
+        ref={ref}
+        role="img"
+        aria-label={`Serie de tiempo: ${series.map((s) => s.label).join(", ")}`}
+      />
+    </div>
   );
 }

@@ -8,19 +8,20 @@ import { ErrorState } from "@/components/ErrorState";
 import { GlossaryTerm } from "@/components/GlossaryTerm";
 import { Button } from "@/components/ui/button";
 import type { BankId } from "@/config/banks";
-import { formatInt, formatMonth } from "@/lib/format";
+import { formatInt, formatMonth, formatPct } from "@/lib/format";
 import {
   FAMILY_COLORS,
   FAMILY_ORDER,
   familyName,
   LoadingBlock,
   OpenInExplorer,
+  useWidth,
 } from "./shared";
 
-const W = 640;
-const H = 280;
-const M = { top: 22, right: 12, bottom: 30, left: 48 };
-const CODES = [...FAMILY_ORDER, "u"] as const;
+const WINDOW_MONTHS = 24;
+const HEIGHT = 260;
+const M = { top: 30, right: 8, bottom: 28, left: 48 };
+const MARK_LABEL = "Marca u";
 
 export function zFill(z: number | null): string {
   if (z === null) return "var(--color-neutral-100)";
@@ -31,14 +32,17 @@ export function zFill(z: number | null): string {
 
 function Stacked({
   rows,
+  periods,
   familia,
   changes,
+  width,
 }: {
   rows: FamilyMonth[];
+  periods: string[];
   familia: string | null;
   changes: { prompt_version: string; first_labeled_at: string }[];
+  width: number;
 }) {
-  const periods = [...new Set(rows.map((r) => r.period))].sort();
   const count = (p: string, f: string) =>
     rows.find((r) => r.period === p && r.family === f)?.neg_count ?? 0;
   const totals = periods.map((p) =>
@@ -46,30 +50,31 @@ function Stacked({
   );
   const x = scaleBand<string>()
     .domain(periods)
-    .range([0, W - M.left - M.right])
-    .padding(0.2);
+    .range([0, width - M.left - M.right])
+    .padding(0.15);
   const y = scaleLinear()
     .domain([0, Math.max(1, ...totals)])
-    .range([H - M.top - M.bottom, 0]);
+    .range([HEIGHT - M.top - M.bottom, 0]);
   const marks = changes
     .map((c) => ({
       label: c.prompt_version,
       period: c.first_labeled_at.slice(0, 7),
     }))
     .filter((c) => periods.includes(c.period));
+  const step = Math.ceil(periods.length / Math.max(2, Math.floor(width / 70)));
   return (
     <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full"
+      width={width}
+      height={HEIGHT}
       role="img"
       aria-label="Negativas por familia y mes"
     >
       <g transform={`translate(${M.left},${M.top})`}>
-        <GridLines scale={y} width={W - M.left - M.right} />
+        <GridLines scale={y} width={width - M.left - M.right} />
         <Axis
           scale={y}
           orientation="left"
-          length={H - M.top - M.bottom}
+          length={HEIGHT - M.top - M.bottom}
           format={(v) => formatInt(v as number)}
         />
         {periods.map((p) => {
@@ -98,11 +103,11 @@ function Stacked({
           );
         })}
         {periods.map((p, i) =>
-          i % Math.ceil(periods.length / 8) === 0 ? (
+          i % step === 0 ? (
             <text
               key={p}
               x={(x(p) ?? 0) + x.bandwidth() / 2}
-              y={H - M.top - M.bottom + 18}
+              y={HEIGHT - M.top - M.bottom + 18}
               textAnchor="middle"
               fontSize={11}
               fill="var(--color-neutral-700)"
@@ -114,28 +119,16 @@ function Stacked({
         {marks.map((m) => (
           <g key={m.label} transform={`translate(${x(m.period) ?? 0},0)`}>
             <line
-              y2={H - M.top - M.bottom}
+              y1={-6}
+              y2={HEIGHT - M.top - M.bottom}
               stroke="var(--color-neutral-900)"
               strokeDasharray="2 3"
             />
-            <text y={-6} fontSize={11} fill="var(--color-neutral-700)">
+            <text x={4} y={-12} fontSize={11} fill="var(--color-neutral-700)">
               {m.label}
             </text>
           </g>
         ))}
-        {familia === "u" || !familia ? (
-          <polyline
-            fill="none"
-            stroke={`var(${FAMILY_COLORS.u})`}
-            strokeWidth={2}
-            strokeDasharray="4 3"
-            points={periods
-              .map(
-                (p) => `${(x(p) ?? 0) + x.bandwidth() / 2},${y(count(p, "u"))}`,
-              )
-              .join(" ")}
-          />
-        ) : null}
       </g>
     </svg>
   );
@@ -143,79 +136,193 @@ function Stacked({
 
 function Heat({
   rows,
+  periods,
   familia,
+  width,
 }: {
   rows: FamilyMonth[];
+  periods: string[];
   familia: string | null;
+  width: number;
 }) {
-  const periods = [...new Set(rows.map((r) => r.period))].sort();
   const cell = (p: string, f: string) =>
     rows.find((r) => r.period === p && r.family === f);
-  const cw = Math.max(18, Math.min(44, 560 / Math.max(periods.length, 1)));
-  const ch = 24;
-  const left = 150;
+  const left = 210;
+  const cw = Math.max(
+    24,
+    Math.floor((width - left) / Math.max(periods.length, 1)),
+  );
+  const ch = 26;
+  const gap = 12;
+  const codes = [...FAMILY_ORDER, "u"] as const;
+  const rowY = (i: number) =>
+    22 + i * ch + (i === FAMILY_ORDER.length ? gap : 0);
+  const labelEvery = Math.ceil(
+    periods.length / Math.max(2, Math.floor((cw * periods.length) / 60)),
+  );
   return (
-    <svg
-      viewBox={`0 0 ${left + cw * periods.length + 10} ${ch * CODES.length + 40}`}
-      className="w-full"
-      role="img"
-      aria-label="Anomalía de cada familia por mes"
-    >
-      {periods.map((p, i) => (
-        <text
-          key={p}
-          x={left + cw * i + cw / 2}
-          y={14}
-          textAnchor="middle"
-          fontSize={10}
-          fill="var(--color-neutral-700)"
-        >
-          {i % Math.ceil(periods.length / 12) === 0 ? formatMonth(p) : ""}
-        </text>
-      ))}
-      {CODES.map((f, r) => (
-        <g key={f} transform={`translate(0,${24 + r * ch})`}>
-          <text
-            x={left - 8}
-            y={ch / 2}
-            dy="0.32em"
-            textAnchor="end"
-            fontSize={12}
-            fontWeight={familia === f ? 700 : 400}
-            fill="var(--color-neutral-900)"
-          >
-            {f === "u" ? "Marca u (actualización)" : familyName(f)}
-          </text>
-          {periods.map((p, i) => {
-            const c = cell(p, f);
-            const flagged =
-              !!c &&
-              c.z !== null &&
-              c.threshold !== null &&
-              (c.alert === true || c.z >= c.threshold);
-            return (
+    <div className="overflow-x-auto">
+      <svg
+        width={left + cw * periods.length + 8}
+        height={rowY(codes.length) + 8}
+        role="img"
+        aria-label="Anomalía de cada familia por mes"
+      >
+        {periods.map((p, i) =>
+          i % labelEvery === 0 ? (
+            <text
+              key={p}
+              x={left + cw * i + cw / 2}
+              y={14}
+              textAnchor="middle"
+              fontSize={11}
+              fill="var(--color-neutral-700)"
+            >
+              {formatMonth(p)}
+            </text>
+          ) : null,
+        )}
+        {codes.map((f, r) => (
+          <g key={f} transform={`translate(0,${rowY(r)})`}>
+            <text
+              x={left - 8}
+              y={ch / 2}
+              dy="0.32em"
+              textAnchor="end"
+              fontSize={12}
+              fontWeight={familia === f ? 700 : 400}
+              fill="var(--color-neutral-900)"
+            >
+              {f === "u" ? "Habla de una actualización (u)" : familyName(f)}
+            </text>
+            {periods.map((p, i) => {
+              const c = cell(p, f);
+              const flagged =
+                !!c &&
+                c.z !== null &&
+                c.threshold !== null &&
+                (c.alert === true || c.z >= c.threshold);
+              return (
+                <rect
+                  key={p}
+                  x={left + cw * i + 1}
+                  y={1}
+                  width={cw - 2}
+                  height={ch - 2}
+                  fill={zFill(c?.z ?? null)}
+                  stroke={flagged ? "var(--color-neutral-950)" : "none"}
+                  strokeWidth={2}
+                  opacity={familia && familia !== f ? 0.4 : 1}
+                >
+                  <title>
+                    {c?.z != null
+                      ? `${formatMonth(p)} · ${familyName(f)}: z = ${c.z.toFixed(1)}${c.threshold != null ? ` (umbral ${c.threshold})` : " (sin umbral)"}`
+                      : `${formatMonth(p)} · ${familyName(f)}: sin z`}
+                  </title>
+                </rect>
+              );
+            })}
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function ZLegend() {
+  const steps = [-4, -2, 0, 2, 4];
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-text-muted">
+      <span>z robusto:</span>
+      <span>menos de lo habitual</span>
+      <span className="flex" aria-hidden="true">
+        {steps.map((z) => (
+          <span
+            key={z}
+            className="h-4 w-8 border border-border"
+            style={{ background: zFill(z) }}
+          />
+        ))}
+      </span>
+      <span>más de lo habitual</span>
+      <span>
+        (−4 a +4; un valor fuera de ese rango se pinta igual de intenso)
+      </span>
+    </div>
+  );
+}
+
+function MarkU({
+  rows,
+  periods,
+  width,
+}: {
+  rows: FamilyMonth[];
+  periods: string[];
+  width: number;
+}) {
+  const h = 110;
+  const m = { top: 8, right: 8, bottom: 22, left: 48 };
+  const values = periods.map(
+    (p) => rows.find((r) => r.period === p && r.family === "u")?.share ?? 0,
+  );
+  const x = scaleBand<string>()
+    .domain(periods)
+    .range([0, width - m.left - m.right])
+    .padding(0.15);
+  const y = scaleLinear()
+    .domain([0, Math.max(0.05, ...values)])
+    .range([h - m.top - m.bottom, 0]);
+  const step = Math.ceil(periods.length / Math.max(2, Math.floor(width / 70)));
+  return (
+    <figure className="m-0">
+      <figcaption className="mb-1 text-sm font-semibold">
+        <GlossaryTerm id="marca_u">Habla de una actualización</GlossaryTerm>{" "}
+        <span className="font-normal text-text-muted">
+          (parte de las negativas de cada mes)
+        </span>
+      </figcaption>
+      <svg
+        width={width}
+        height={h}
+        role="img"
+        aria-label="Negativas que hablan de una actualización, por mes"
+      >
+        <g transform={`translate(${m.left},${m.top})`}>
+          <GridLines scale={y} width={width - m.left - m.right} />
+          <Axis
+            scale={y}
+            orientation="left"
+            length={h - m.top - m.bottom}
+            format={(v) => formatPct(v as number, 0)}
+          />
+          {periods.map((p, i) => (
+            <g key={p}>
               <rect
-                key={p}
-                x={left + cw * i + 1}
-                y={1}
-                width={cw - 2}
-                height={ch - 2}
-                fill={zFill(c?.z ?? null)}
-                stroke={flagged ? "var(--color-neutral-950)" : "none"}
-                strokeWidth={2}
-                opacity={familia && familia !== f ? 0.4 : 1}
+                x={x(p)}
+                y={y(values[i] ?? 0)}
+                width={x.bandwidth()}
+                height={h - m.top - m.bottom - y(values[i] ?? 0)}
+                fill={`var(${FAMILY_COLORS.u})`}
               >
-                <title>
-                  {c?.z != null
-                    ? `${formatMonth(p)} · ${familyName(f)}: z = ${c.z.toFixed(1)}${c.threshold != null ? ` (umbral ${c.threshold})` : " (sin umbral)"}`
-                    : `${formatMonth(p)} · ${familyName(f)}: sin z`}
-                </title>
+                <title>{`${formatMonth(p)}: ${formatPct(values[i])}`}</title>
               </rect>
-            );
-          })}
+              {i % step === 0 ? (
+                <text
+                  x={(x(p) ?? 0) + x.bandwidth() / 2}
+                  y={h - m.top - m.bottom + 15}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill="var(--color-neutral-700)"
+                >
+                  {formatMonth(p)}
+                </text>
+              ) : null}
+            </g>
+          ))}
         </g>
-      ))}
-    </svg>
+      </svg>
+    </figure>
   );
 }
 
@@ -236,16 +343,24 @@ export function FamiliesBlock({
 }) {
   const families = useFamilies(banks);
   const [view, setView] = useState<"nivel" | "anomalia">("nivel");
+  const { ref, width } = useWidth();
   const rows = useMemo(
     () => (families.data?.series ?? []).filter((r) => r.bank_id === bank),
     [families.data, bank],
+  );
+  const periods = useMemo(
+    () => [...new Set(rows.map((r) => r.period))].sort().slice(-WINDOW_MONTHS),
+    [rows],
   );
   if (families.isPending) return <LoadingBlock />;
   if (families.isError)
     return (
       <ErrorState error={families.error} onRetry={() => families.refetch()} />
     );
-  const unflagged = rows.some((r) => r.z !== null && r.threshold === null);
+  const shown = rows.filter((r) => periods.includes(r.period));
+  const unflagged = shown.some((r) => r.z !== null && r.threshold === null);
+  const last = periods.at(-1);
+  const prompt = families.data.prompt_changes.at(-1)?.prompt_version;
   return (
     <ChartFrame
       kicker="Familias"
@@ -254,6 +369,7 @@ export function FamiliesBlock({
           ? "Negativas por familia y mes"
           : "Qué familias se salen de lo habitual"
       }
+      subtitle={`Últimos ${WINDOW_MONTHS} meses`}
       method="raw"
       actions={
         <OpenInExplorer
@@ -264,28 +380,28 @@ export function FamiliesBlock({
         <p>
           Las <GlossaryTerm id="familia_aspectos">familias</GlossaryTerm> son
           los temas de las reseñas negativas. En "Nivel" cada barra suma las
-          negativas del mes; la línea punteada es la{" "}
-          <GlossaryTerm id="marca_u">marca u</GlossaryTerm>. En "Anomalía" el
-          color indica cuánto se aleja el mes de lo habitual y el borde marca
-          los meses que pasan el umbral del monitor.
+          negativas del mes. En "Anomalía" el color indica cuánto se aleja el
+          mes de lo habitual (z robusto del monitor); si hubiera umbral, el
+          borde marcaría los meses que lo pasan. Pulsa una familia para
+          resaltarla en todo el cockpit.
         </p>
       }
       provenance={{
-        prompt: families.data.prompt_changes.at(-1)?.prompt_version,
+        prompt,
         note: "conteo del modelo, sin ajustar",
       }}
       data={{
         columns: ["Mes", "Familia", "Negativas", "Participación", "z"],
-        rows: rows.map((r) => [
+        rows: shown.map((r) => [
           r.period,
-          familyName(r.family),
+          r.family === "u" ? MARK_LABEL : familyName(r.family),
           r.neg_count,
           `${(r.share * 100).toFixed(1)} %`,
           r.z === null ? null : r.z.toFixed(1),
         ]),
       }}
     >
-      <div className="mb-3 flex flex-wrap items-center gap-3">
+      <div className="mb-3">
         <fieldset className="m-0 flex gap-1 border-0 p-0">
           <legend className="sr-only">Vista</legend>
           {(
@@ -305,51 +421,76 @@ export function FamiliesBlock({
             </Button>
           ))}
         </fieldset>
-        <fieldset className="m-0 flex flex-wrap gap-1 border-0 p-0">
-          <legend className="sr-only">Familia resaltada</legend>
-          {CODES.map((f) => (
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+        <div ref={ref} className="min-w-0">
+          {view === "nivel" ? (
+            <>
+              <Stacked
+                rows={shown}
+                periods={periods}
+                familia={familia}
+                changes={families.data.prompt_changes}
+                width={width}
+              />
+              <p className="mt-2 text-sm text-text-muted">
+                Las familias de cada tramo vienen del prompt con el que se
+                etiquetaron.
+              </p>
+            </>
+          ) : (
+            <>
+              <Heat
+                rows={shown}
+                periods={periods}
+                familia={familia}
+                width={width}
+              />
+              <ZLegend />
+              {unflagged ? (
+                <div className="mt-2">
+                  <Callout variant="info">
+                    Estas series aún no tienen umbral: se muestra cuánto se
+                    aleja cada mes de lo habitual, sin marcar alertas.
+                  </Callout>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+        <fieldset className="m-0 grid content-start gap-1 border-0 p-0">
+          <legend className="mb-1 text-sm font-semibold">
+            Familia resaltada
+          </legend>
+          {FAMILY_ORDER.map((f) => (
             <button
               key={f}
               type="button"
               aria-pressed={familia === f}
               onClick={() => onFamilia(familia === f ? null : f)}
-              className="inline-flex items-center gap-1 rounded-full border border-border-strong px-2 py-0.5 text-xs aria-pressed:border-brand aria-pressed:bg-green-100"
+              className="flex items-center gap-2 rounded-sm border border-transparent px-2 py-1 text-left text-sm hover:bg-neutral-100 aria-pressed:border-brand aria-pressed:bg-green-100"
             >
               <span
                 aria-hidden="true"
-                className="size-2 rounded-full"
+                className="size-2.5 shrink-0 rounded-full"
                 style={{ background: `var(${FAMILY_COLORS[f]})` }}
               />
-              {f === "u" ? "u" : familyName(f)}
+              <span className="flex-1">{familyName(f)}</span>
+              {last ? (
+                <span className="tabular text-xs text-text-muted">
+                  {formatInt(
+                    rows.find((r) => r.period === last && r.family === f)
+                      ?.neg_count ?? 0,
+                  )}
+                </span>
+              ) : null}
             </button>
           ))}
         </fieldset>
       </div>
-      {view === "nivel" ? (
-        <>
-          <Stacked
-            rows={rows}
-            familia={familia}
-            changes={families.data.prompt_changes}
-          />
-          <p className="mt-2 text-sm text-text-muted">
-            Las familias de cada tramo vienen del prompt con el que se
-            etiquetaron.
-          </p>
-        </>
-      ) : (
-        <>
-          <Heat rows={rows} familia={familia} />
-          {unflagged ? (
-            <div className="mt-2">
-              <Callout variant="info">
-                Los meses anteriores a la política vigente no tienen umbral: se
-                muestran sin borde.
-              </Callout>
-            </div>
-          ) : null}
-        </>
-      )}
+      <div className="mt-6 border-t border-border pt-4">
+        <MarkU rows={shown} periods={periods} width={width} />
+      </div>
     </ChartFrame>
   );
 }

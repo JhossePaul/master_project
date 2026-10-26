@@ -8,8 +8,15 @@ import {
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
+import {
+  syntheticDaily,
+  syntheticMonthly,
+  syntheticTopics,
+  syntheticVersionDaily,
+} from "@/test/handlers";
 import { renderApp } from "@/test/render";
 import { server } from "@/test/server";
+import { shiftMonths } from "./MonthlyBlock";
 import { explorerUrl } from "./shared";
 
 const graphs = vi.hoisted(() => ({
@@ -208,18 +215,78 @@ describe("cockpit, pestaña Diario", () => {
 });
 
 describe("cockpit, pestaña Por versión", () => {
-  it("muestra el aviso descriptivo, la cobertura y la tabla", async () => {
+  it("el aviso va antes que los filtros de banco y trae la cobertura", async () => {
+    renderApp("/cockpit?vista=version");
+
+    const notice = await screen.findByText(
+      /no hay pruebas de cambio de nivel entre versiones/,
+    );
+    const picker = screen.getByRole("group", {
+      name: "Banco de la vista por versión",
+    });
+
+    expect(
+      notice.compareDocumentPosition(picker) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(await screen.findByText(/90\.9 %/)).toBeInTheDocument();
+  });
+
+  it("muestra las versiones por día con su leyenda y la tabla del banco", async () => {
     renderApp("/cockpit?vista=version");
 
     expect(
-      await screen.findByText(
-        /no hay pruebas de cambio de nivel entre versiones/,
-      ),
+      await screen.findByRole("img", {
+        name: "Reseñas por día y versión de la app",
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/90\.9 %/)).toBeInTheDocument();
-    const table = screen.getByRole("table", { name: "" });
+    const legend = screen.getByRole("list", { name: "Versiones" });
+    expect(within(legend).getByText("26.80.9")).toBeInTheDocument();
+    expect(within(legend).getByText("Otras o sin versión")).toBeInTheDocument();
+    const table = await screen.findByRole("table", { name: "" });
     expect(within(table).getByText("11.33")).toBeInTheDocument();
-    expect(within(table).getByText("OTRAS")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Mediana del banco entre todas sus versiones/),
+    ).toBeInTheDocument();
+  });
+
+  it("filtrar el sentimiento vuelve a pedir las reseñas de ese tipo", async () => {
+    const seen: string[] = [];
+    server.use(
+      http.get("*/api/v1/kpis/versions/daily", ({ request }) => {
+        const url = new URL(request.url);
+        seen.push(
+          `${url.searchParams.get("bank")}:${url.searchParams.get("sentiment")}`,
+        );
+        return HttpResponse.json(syntheticVersionDaily());
+      }),
+    );
+    renderApp("/cockpit?vista=version");
+    await screen.findByRole("img", {
+      name: "Reseñas por día y versión de la app",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Negativas" }));
+
+    await waitFor(() => expect(seen).toContain("BBVA:NEG"));
+    expect(seen[0]).toBe("BBVA:ALL");
+  });
+
+  it("cambiar de banco pide ese banco", async () => {
+    const seen: string[] = [];
+    server.use(
+      http.get("*/api/v1/kpis/versions/daily", ({ request }) => {
+        seen.push(new URL(request.url).searchParams.get("bank") ?? "");
+        return HttpResponse.json(syntheticVersionDaily());
+      }),
+    );
+    renderApp("/cockpit?vista=version");
+    await screen.findByRole("img", {
+      name: "Reseñas por día y versión de la app",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Banco Verde" }));
+
+    await waitFor(() => expect(seen).toContain("AZTECA"));
   });
 
   it("cambiar de pestaña escribe vista en la URL", async () => {
@@ -233,8 +300,92 @@ describe("cockpit, pestaña Por versión", () => {
 
   it("no tiene violaciones de axe", async () => {
     const { container } = renderApp("/cockpit?vista=version");
-    await screen.findByText("OTRAS", { selector: "td" });
+    await screen.findByRole("img", {
+      name: "Reseñas por día y versión de la app",
+    });
+    await screen.findByText("11.33", { selector: "td" });
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe("cockpit, suavizado de la serie diaria", () => {
+  beforeEach(() => {
+    graphs.options.length = 0;
+  });
+
+  it("trae el suavizado de 7 días y lo cambia sin otra petición", async () => {
+    let calls = 0;
+    server.use(
+      http.get("*/api/v1/kpis/daily", () => {
+        calls += 1;
+        return HttpResponse.json(syntheticDaily());
+      }),
+    );
+    renderApp("/cockpit");
+    const seven = await screen.findByRole("button", { name: "7 días" });
+    expect(seven).toHaveAttribute("aria-pressed", "true");
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
+    const before = graphs.options.length;
+
+    await userEvent.click(screen.getByRole("button", { name: "28 días" }));
+
+    expect(screen.getByRole("button", { name: "28 días" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(before));
+    expect(calls).toBe(1);
+  });
+
+  it("pide 27 días de más al inicio para completar la primera ventana", async () => {
+    const seen: string[] = [];
+    server.use(
+      http.get("*/api/v1/kpis/daily", ({ request }) => {
+        seen.push(new URL(request.url).searchParams.get("date_from") ?? "");
+        return HttpResponse.json(syntheticDaily());
+      }),
+    );
+    renderApp("/cockpit?desde=2026-09-28&hasta=2026-10-26");
+
+    await waitFor(() => expect(seen).toHaveLength(1));
+
+    expect(seen[0]).toBe("2026-09-01");
+  });
+
+  it("con un banco deja el dato diario como línea de fondo", async () => {
+    renderApp("/cockpit?bancos=BBVA");
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
+
+    const labels = lastOptions().labels as unknown as string[];
+
+    expect(labels).toEqual(["día (UTC)", "Banco Azul (día)", "Banco Azul"]);
+  });
+
+  it("con cinco bancos solo hay una línea por banco y una franja de leyenda", async () => {
+    renderApp("/cockpit");
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
+
+    const options = lastOptions();
+
+    expect((options.labels as unknown as string[]).length).toBe(6);
+    expect(options.legend).toBe("always");
+    expect(options.labelsDiv).toBeInstanceOf(HTMLElement);
+  });
+
+  it("el panel aclara que el día no es el promedio", async () => {
+    renderApp("/cockpit");
+    await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
+
+    act(() => {
+      lastOptions().clickCallback?.(
+        {},
+        new Date("2026-10-12T00:00:00Z").getTime(),
+      );
+    });
+
+    expect(
+      await screen.findByText(/no del promedio de 7 días/),
+    ).toBeInTheDocument();
   });
 });
 
@@ -256,6 +407,185 @@ describe("explorerUrl", () => {
       }),
     ).toBe(
       "/explorador?bancos=BBVA&desde=2026-01-01&hasta=2026-02-01&familia=FA&sentimiento=NEG",
+    );
+  });
+});
+
+describe("cockpit, barra fija y secciones", () => {
+  beforeEach(() => {
+    graphs.options.length = 0;
+  });
+
+  it("la barra dice cuántos bancos hay y marca el atajo activo", async () => {
+    renderApp("/cockpit?bancos=BBVA,AZTECA");
+
+    expect(
+      await screen.findByRole("button", {
+        name: "2 de 5 bancos seleccionados",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "90 días" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "30 días" }));
+
+    expect(screen.getByRole("button", { name: "30 días" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "90 días" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("el menú sigue la sección que está a la vista al hacer scroll", async () => {
+    renderApp("/cockpit");
+    const menu = await screen.findByRole("button", { name: /Sección:/ });
+    const tops: Record<string, number> = {
+      resumen: -900,
+      serie: -600,
+      mensual: -300,
+      familias: 120,
+      topicos: 700,
+    };
+    const spy = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: tops[this.id] ?? 2000 } as DOMRect;
+      });
+
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+
+    await waitFor(() => expect(menu).toHaveTextContent("Familias"));
+    spy.mockRestore();
+  });
+
+  it("la barra es fija y trae el menú de secciones", async () => {
+    renderApp("/cockpit");
+
+    const menu = await screen.findByRole("button", { name: /Sección:/ });
+    const bar = menu.closest("search") as HTMLElement;
+    expect(bar.className).toContain("sticky");
+    expect(menu).toHaveTextContent("Último mes por banco");
+
+    await userEvent.click(menu);
+
+    for (const name of [
+      "Serie diaria",
+      "Gráficas mensuales",
+      "Familias",
+      "Tópicos",
+      "Estrellas × texto",
+      "Comparación entre bancos",
+    ]) {
+      expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
+    }
+  });
+});
+
+describe("cockpit, ajustes de la primera pasada", () => {
+  it("las tarjetas comparan con el mes anterior si se pide", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("heading", { name: "Banco Azul" });
+    expect((await screen.findAllByText(/frente a sep 2025/)).length).toBe(15);
+
+    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
+
+    expect(screen.getAllByText(/frente a ago 2026/)).toHaveLength(15);
+  });
+
+  it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
+    renderApp("/cockpit");
+
+    const item = (
+      await screen.findByText("Inicio de sesión que falla")
+    ).closest("li") as HTMLElement;
+
+    expect(within(item).getByText("Ingeniería")).toBeInTheDocument();
+    expect(
+      within(item).getByText("Acceso y autenticación"),
+    ).toBeInTheDocument();
+    expect(item).not.toHaveTextContent("sin familia");
+  });
+
+  it("un tópico sin familias lo dice", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () =>
+        HttpResponse.json(
+          syntheticTopics().map((t) => ({ ...t, families: [] })),
+        ),
+      ),
+    );
+    renderApp("/cockpit");
+
+    expect(
+      (await screen.findAllByText("sin familia asociada")).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("la anomalía de familias muestra el z de cada mes", async () => {
+    const { container } = renderApp("/cockpit");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Anomalía" }),
+    );
+
+    const titles = [...container.querySelectorAll("svg title")].map(
+      (t) => t.textContent,
+    );
+
+    expect(titles.some((t) => t?.includes("z = 4.6"))).toBe(true);
+    expect(screen.getByText(/menos de lo habitual/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Habla de una actualización (u)"),
+    ).toBeInTheDocument();
+  });
+
+  it("las gráficas mensuales ocultan los meses con pocas reseñas", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/monthly", () =>
+        HttpResponse.json(
+          syntheticMonthly().flatMap((r) => [
+            r,
+            {
+              ...r,
+              period: "2024-01",
+              ppi: r.ppi && { ...r.ppi, n_unlabeled: 5 },
+              raw: r.raw && { ...r.raw, n_unlabeled: 5 },
+            },
+          ]),
+        ),
+      ),
+    );
+    renderApp("/cockpit");
+    const frame = (
+      await screen.findByText("Reseñas negativas por mes")
+    ).closest("div")?.parentElement?.parentElement as HTMLElement;
+
+    await userEvent.click(
+      within(frame).getByRole("button", { name: "Ver datos" }),
+    );
+
+    expect(within(frame).queryByText("2024-01")).not.toBeInTheDocument();
+    expect(within(frame).getAllByText("2026-09").length).toBeGreaterThan(0);
+    expect(screen.getByText(/menos de 100 reseñas/)).toBeInTheDocument();
+  });
+
+  it("shiftMonths cruza el año", () => {
+    expect(shiftMonths("2026-02", -3)).toBe("2025-11");
+    expect(shiftMonths("2026-09", -23)).toBe("2024-10");
+  });
+
+  it("los encabezados de las tablas se quedan fijos", async () => {
+    renderApp("/cockpit?vista=version");
+    const table = await screen.findByRole("table");
+
+    expect(within(table).getAllByRole("columnheader")[0]?.className).toContain(
+      "sticky",
     );
   });
 });

@@ -16,8 +16,10 @@ from ml_inference.load_local import (
     Loader,
     LocalBackfill,
     aspects_sql,
+    curation_families,
     curation_rows,
     load_backfill,
+    load_curation,
     predictions_sql,
 )
 from voc_common.constants import SentimentLabel
@@ -199,7 +201,7 @@ def _files(tmp_path: Path) -> LocalBackfill:
         "topico,grupo,terminos,peso_neg_pct,familia_mayoritaria,pureza,"
         "nombre_propuesto,coherencia_1a5,util_para_producto_si_no,"
         "familia_correcta,tema_nuevo_si_no,comentario\n"
-        "4,principal,t,1,AC,0.5,Token,4,Si,AC,No,\n"
+        "4,principal,t,1,AC,0.5,Token,4,Si,AC | UX | u,No,\n"
         "7,principal,t,1,TR,0.5,Cajeros,3,No,MEZCLA,Si,\n"
         "9,principal,t,1,OT,0.5,,1,No,,No,\n"
     )
@@ -370,11 +372,45 @@ def test_curation_audience_rule(tmp_path: Path) -> None:
         for r in curation_rows(_files(tmp_path).curation_csv, ACTOR, NOW)
     }
     assert rows[4].audience.value == "producto"
-    assert [f.value for f in rows[4].families] == ["AC"]
+    assert [f.value for f in rows[4].families] == ["AC", "UX"]
     assert rows[7].audience.value == "ingenieria" and rows[7].families == []
     assert rows[7].is_new_theme
     assert rows[9].audience.value == "sin_valor"
     assert rows[9].curated_name == "tópico 9"
+
+
+@pytest.mark.parametrize(
+    ("correct", "majority", "expected"),
+    [
+        ("PR | UX | TR | u", "PR", ["PR", "UX", "TR"]),
+        ("u | SIN | AC | LE | FA", "FA", ["AC", "LE", "FA"]),
+        ("DI | PR | TR | s", "PR", ["DI", "PR", "TR"]),
+        ("UX | CO | TR | FQ | u", "FA", ["UX", "CO", "TR"]),
+        ("FA", "FA", ["FA"]),
+        ("AC, UX,AC", "AC", ["AC", "UX"]),
+        ("MEZCLA", "AC", []),
+        ("", "TR", ["TR"]),
+        ("", "SIN", []),
+        ("u | s", "AC", []),
+    ],
+)
+def test_curation_families(
+    correct: str, majority: str, expected: list[str]
+) -> None:
+    assert curation_families(correct, majority) == expected
+
+
+def test_load_curation_only_writes_the_curation(tmp_path: Path) -> None:
+    bq = LoadBigQuery(_tds(), _state())
+
+    count = load_curation(_settings(), bq, _files(tmp_path), ACTOR, NOW)
+
+    assert count == 3
+    assert set(bq.merged) == {"curation_topics"}
+    rows = {r["topic_id"]: r for r in bq.merged["curation_topics"]}
+    assert rows[4]["families"] == ["AC", "UX"]
+    assert rows[7]["families"] == []
+    assert "curated_at" in Loader.CURATION_KEY
 
 
 def test_topic_tables_and_gold(tmp_path: Path) -> None:

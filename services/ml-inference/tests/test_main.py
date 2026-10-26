@@ -213,6 +213,22 @@ def test_load_local_dispatch(
     assert (tmp_path / "w").is_dir()
 
 
+def test_load_curation_dispatch(
+    env: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import ml_inference.load_local as load
+
+    monkeypatch.setattr(
+        load, "load_curation", lambda *a: env.setdefault("files", a[2]) and 3
+    )
+    args = ["load-curation", "--actor-hash", ACTOR, "--data", str(tmp_path)]
+
+    assert cli.main(args) == 0
+    assert env["files"].curation_csv == (
+        tmp_path / "topics" / "phase4_v0" / "revision_topicos.csv"
+    )
+
+
 def test_register_and_promote_dispatch(
     env: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, world: Any
 ) -> None:
