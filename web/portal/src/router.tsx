@@ -26,7 +26,19 @@ export const routes: RouteObject[] = [
       {
         path: "cockpit",
         lazy: async () => ({
-          Component: (await import("@/sections/cockpit/Cockpit")).default,
+          Component: (await import("@/sections/cockpit/CockpitView")).default,
+        }),
+      },
+      {
+        path: "evolucion",
+        lazy: async () => ({
+          Component: (await import("@/sections/cockpit/EvolutionView")).default,
+        }),
+      },
+      {
+        path: "topicos",
+        lazy: async () => ({
+          Component: (await import("@/sections/cockpit/TopicsView")).default,
         }),
       },
       { path: "explorador", element: guarded("analista", "Explorador") },

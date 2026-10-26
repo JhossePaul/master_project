@@ -244,3 +244,56 @@ El autor revisó el cockpit en dev con datos reales. Esta sección guarda los co
 * **Pestaña Por versión rediseñada:** el aviso "Descriptivo" y la cobertura van primero; debajo, el selector de banco (uno siempre elegido) y el filtro de sentimiento; barras apiladas por día coloreadas por versión (los cambios de color son los despliegues, con líneas punteadas en la primera aparición de cada versión) y una leyenda con "desde" y reseñas. Debajo, la tabla de las versiones activas en el rango (con IC de Wilson, marca `u` y familias principales, encabezado fijo) y la mediana del banco escrita en el texto. El rango es el de la barra de filtros (90 días por defecto). Se quitó la gráfica de puntos por versión.
 * **Pruebas:** 106 en el portal (14 nuevas: ponderación del promedio, ventana, 27 días de más, línea de fondo, leyenda, panel del día, aviso antes de los filtros, leyenda y tabla, filtro de sentimiento y de banco que vuelven a pedir los datos, `axe`) y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.
 * **Pendiente:** la ventana de temas de varios días (necesitaría una consulta nueva de unos 600 MB) y el SVG oficial del logotipo.
+
+## Segunda revisión del autor y rediseño en tres vistas (2026-10-26)
+
+Tras ver la primera y la segunda pasada en dev, el autor pidió más ajustes y una reorganización. Decisiones:
+
+### Reorganización
+
+* El grupo del sidebar pasa a llamarse **Dashboard** y el cockpit se divide en tres vistas, cada una con su ruta y su entrada en el sidebar (`/cockpit` se conserva para la primera, porque la landing y el Explorador ya apuntan a ella):
+  * **Cockpit** (`/cockpit`): la tabla de comparación (con mancuerna) y la matriz estrellas × texto.
+  * **Evolución** (`/evolucion`): serie diaria (dygraphs, suavizado y panel de temas del día), mensual con PPI y por versión.
+  * **Tópicos** (`/topicos`): familias y tópicos.
+* "Inicio" sigue en su grupo. El título "Cockpit" sale del cuerpo de la pantalla (queda solo en el sidebar; se conserva un `h1` oculto para lectores de pantalla). Se descarta poner el título en el encabezado.
+* Se quita el menú "Sección:" de la barra de filtros (con dos o tres bloques por vista ya no hace falta). La barra de filtros sigue fija.
+* El sidebar queda **fijo** al hacer scroll.
+* La navegación del sidebar conserva solo los parámetros globales (`bancos`, `desde`, `hasta`) y `kpi`; `dia`, `familia`, `banco` y `mes` son de cada vista.
+
+### Cambios por bloque
+
+* **KPI global (`?kpi=`):** botones "Reseñas negativas / Brecha en estrellas / Quejas con 4–5★" en la tabla, la serie diaria y el mensual, ligados a un solo estado (cada bloque muestra sus botones). `GET /api/v1/kpis/monthly` admite además `estrellas_POS_texto_NEG` (los datos ya están en `kpi_estimates`).
+* **Tabla en vez de tarjetas** (solo en Cockpit; la landing conserva las suyas): bancos en filas, un KPI a la vez con columnas referencia `[lo, hi]`, actual `[lo, hi]`, diferencia (sin intervalo propio), una **mancuerna** (referencia → actual, con bigotes de cada intervalo, escala compartida por KPI) y alertas abiertas. Botones "vs. mes anterior / vs. año anterior", el texto "Comparando vs ago 2026" debajo y "Con revisión humana" como subtítulo de la tabla. Sin colores de bueno o malo, solo flecha. Se quita el bloque "Comparación entre bancos".
+* **Mensual con PPI** (se conserva, con sus intervalos): un solo bloque con botones por KPI en lugar de dos bloques apilados.
+* **Serie diaria:** leyenda propia en una sola línea (los valores al pasar el cursor siguen en la franja de dygraphs); el panel de temas sigue siendo de un solo día. El suavizado se queda como está.
+* **Tópicos:** filtro de bancos con casillas (por defecto los del filtro global) y matriz **3 × 2** con paginador (‹ ›, "1–6 de 19", flechas del teclado), ordenada por volumen; cada panel es un tópico con una línea por banco (parte de las negativas por mes). La familia resaltada atenúa los paneles que no la tienen.
+* **Versiones:** tooltip del día (fecha, total y detalle por versión, con la columna resaltada) y gráfica a todo el ancho.
+* **Textos:** "Habla de una actualización (u)" y "Marca u" pasan a "Relacionada con una actualización" en toda la interfaz (el nombre técnico queda en el glosario).
+
+### Errores propios que se corrigen
+
+* `useChartSize` mide el contenedor solo al montar; las gráficas que aparecen después de que llegan los datos se quedaban con el ancho de respaldo (la de versiones a 640 px). Se corrige el hook.
+* El mapa de calor de anomalías medía 8 px más que su contenedor y mostraba un scroll horizontal.
+
+### Descartado
+
+* Título del cockpit en el encabezado (redundante con el sidebar fijo).
+* Niveles de agregación (día, semana, mes) en las gráficas mensuales: el PPI solo existe por mes y la diaria ya cubre el dato crudo.
+* Fusionar la serie diaria con la mensual: primero se ve si estos cambios mejoran la lectura.
+* Intervalo propio de la diferencia entre dos estimaciones.
+
+### Plan
+
+1. Correcciones y división en tres vistas (rutas, sidebar, parámetros).
+2. Cockpit: KPI global, tabla y mancuerna.
+3. Evolución: mensual con botones por KPI.
+4. Tópicos: filtro de bancos y matriz con paginador.
+
+### Avance de la reorganización (2026-10-26)
+
+* **Tres vistas** (`CockpitView`, `EvolutionView`, `TopicsView`; rutas `/cockpit`, `/evolucion`, `/topicos`) en el grupo **Dashboard** del sidebar, que ahora es fijo y solo conserva `bancos`, `desde`, `hasta` y `kpi` al navegar. Se quitaron el menú "Sección:" (`SectionNav`) y el título del cuerpo (queda un `h1` oculto por vista). Los títulos de cada gráfica pasan a `h2`.
+* **Correcciones:** `useWidth` mide con una referencia por función (la gráfica de versiones ya ocupa todo el ancho y las de familias y tópicos se ajustan a su contenedor), el mapa de anomalías ya no tiene scroll, la serie diaria tiene leyenda propia en una línea (los valores al pasar el cursor siguen en la franja de dygraphs, con una indicación cuando no hay cursor), la gráfica de versiones tiene tooltip del día (fecha, total y detalle por versión, con la columna resaltada) y "marca u" pasa a "Relacionada con una actualización" en la interfaz.
+* **Cockpit:** `ComparisonTable` sustituye a las tarjetas y al bloque de comparación: KPI a la vez con botones (`?kpi=`, compartido con la serie diaria y el mensual), referencia y actual con `[lo, hi]`, diferencia sin intervalo propio, mancuerna (escala compartida entre bancos, bigotes más claros para la referencia), alertas abiertas, "Comparando sep 2026 vs sep 2025", y botones "mismo mes del año anterior / mes anterior" y "ordenar por banco / valor actual". El mes elegido (`?mes=`) lo comparten la tabla y la matriz y viaja a `/kpis/cards`. La landing conserva sus tarjetas.
+* **Evolución:** el mensual con PPI es un solo bloque con botones por KPI (`GET /kpis/monthly` admite `estrellas_POS_texto_NEG`) y conserva intervalos, la línea cruda y la ventana de 12 / 24 meses o todo.
+* **Tópicos:** filtro de bancos con casillas (los del filtro general al empezar, siempre queda uno) y matriz 3 × 2 con paginador (botones y flechas del teclado, "1–6 de 19 tópicos"); cada panel es un tópico con una línea por banco y su propia escala. Los botones del paginador usan `aria-disabled` para no perder el foco al llegar al límite.
+* **Pruebas:** 113 en el portal y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.

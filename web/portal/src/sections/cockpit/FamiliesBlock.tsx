@@ -21,7 +21,7 @@ import {
 const WINDOW_MONTHS = 24;
 const HEIGHT = 260;
 const M = { top: 30, right: 8, bottom: 28, left: 48 };
-const MARK_LABEL = "Marca u";
+const MARK_LABEL = "Relacionada con una actualización";
 
 export function zFill(z: number | null): string {
   if (z === null) return "var(--color-neutral-100)";
@@ -147,9 +147,9 @@ function Heat({
 }) {
   const cell = (p: string, f: string) =>
     rows.find((r) => r.period === p && r.family === f);
-  const left = 210;
+  const left = 240;
   const cw = Math.max(
-    24,
+    16,
     Math.floor((width - left) / Math.max(periods.length, 1)),
   );
   const ch = 26;
@@ -163,7 +163,7 @@ function Heat({
   return (
     <div className="overflow-x-auto">
       <svg
-        width={left + cw * periods.length + 8}
+        width={left + cw * periods.length}
         height={rowY(codes.length) + 8}
         role="img"
         aria-label="Anomalía de cada familia por mes"
@@ -193,7 +193,7 @@ function Heat({
               fontWeight={familia === f ? 700 : 400}
               fill="var(--color-neutral-900)"
             >
-              {f === "u" ? "Habla de una actualización (u)" : familyName(f)}
+              {f === "u" ? MARK_LABEL : familyName(f)}
             </text>
             {periods.map((p, i) => {
               const c = cell(p, f);
@@ -277,7 +277,7 @@ function MarkU({
   return (
     <figure className="m-0">
       <figcaption className="mb-1 text-sm font-semibold">
-        <GlossaryTerm id="marca_u">Habla de una actualización</GlossaryTerm>{" "}
+        <GlossaryTerm id="marca_u">{MARK_LABEL}</GlossaryTerm>{" "}
         <span className="font-normal text-text-muted">
           (parte de las negativas de cada mes)
         </span>
@@ -286,7 +286,7 @@ function MarkU({
         width={width}
         height={h}
         role="img"
-        aria-label="Negativas que hablan de una actualización, por mes"
+        aria-label="Negativas relacionadas con una actualización, por mes"
       >
         <g transform={`translate(${m.left},${m.top})`}>
           <GridLines scale={y} width={width - m.left - m.right} />

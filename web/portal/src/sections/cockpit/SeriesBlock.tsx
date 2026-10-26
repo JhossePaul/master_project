@@ -13,6 +13,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatDate, formatPct, formatStars } from "@/lib/format";
+import { KpiButtons, useKpi } from "./kpi";
 import { BankPicker, familyName, LoadingBlock, OpenInExplorer } from "./shared";
 import {
   dayShift,
@@ -209,7 +210,8 @@ export function SeriesBlock({
   onDay: (day: string | null) => void;
   onRange: (from: string, to: string) => void;
 }) {
-  const [metric, setMetric] = useState<SeriesMetric>("neg");
+  const [kpi] = useKpi();
+  const metric: SeriesMetric = kpi === "quejas" ? "neg45" : kpi;
   const [smoothing, setSmoothing] = useState<SmoothingWindow>(7);
   // Siempre se piden 27 días de más al inicio para que el promedio móvil
   // del primer día del rango ya tenga su ventana completa.
@@ -334,20 +336,7 @@ export function SeriesBlock({
         }}
       >
         <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <fieldset className="m-0 flex flex-wrap gap-1 border-0 p-0">
-            <legend className="sr-only">Medida</legend>
-            {(Object.keys(METRICS) as SeriesMetric[]).map((key) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={key === metric ? "primary" : "secondary"}
-                aria-pressed={key === metric}
-                onClick={() => setMetric(key)}
-              >
-                {METRICS[key].label}
-              </Button>
-            ))}
-          </fieldset>
+          <KpiButtons />
           <fieldset className="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
             <legend className="sr-only">Suavizado</legend>
             <span className="text-sm text-text-muted">Suavizado:</span>

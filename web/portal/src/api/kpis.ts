@@ -25,12 +25,12 @@ function required<T>(data: T | undefined, name: string): T {
   return data;
 }
 
-export function useCards(banks: BankId[]) {
+export function useCards(banks: BankId[], period: string | null = null) {
   return useQuery({
-    queryKey: ["kpis", "cards", banks],
+    queryKey: ["kpis", "cards", banks, period],
     queryFn: async () => {
       const { data } = await api.GET("/api/v1/kpis/cards", {
-        params: { query: { banks } },
+        params: { query: { banks, period } },
       });
       return required(data, "/kpis/cards");
     },
@@ -70,7 +70,12 @@ export function useMonthly(banks: BankId[]) {
     queryKey: ["kpis", "monthly", banks],
     queryFn: async () => {
       const { data } = await api.GET("/api/v1/kpis/monthly", {
-        params: { query: { banks, metrics: "neg,gap_estrellas" } },
+        params: {
+          query: {
+            banks,
+            metrics: "neg,gap_estrellas,estrellas_POS_texto_NEG",
+          },
+        },
       });
       return required(data, "/kpis/monthly");
     },

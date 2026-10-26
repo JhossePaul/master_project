@@ -1,5 +1,5 @@
 import { scaleBand, scaleLinear } from "d3-scale";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   type SentimentFilter,
   useVersionDaily,
@@ -92,77 +92,145 @@ function Stacked({
     .range([HEIGHT - M.top - M.bottom, 0]);
   const step = Math.ceil(days.length / Math.max(2, Math.floor(width / 80)));
   const firstDay = days[0];
+  const [hover, setHover] = useState<number | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+
+  function move(event: React.MouseEvent<SVGSVGElement>) {
+    const left = event.currentTarget.getBoundingClientRect().left;
+    const offset = event.clientX - left - M.left;
+    const index = Math.floor(
+      (offset / (width - M.left - M.right)) * days.length,
+    );
+    setHover(index >= 0 && index < days.length ? index : null);
+  }
+
+  const point = hover === null ? null : data.days[hover];
+  const tipLeft =
+    hover === null
+      ? 0
+      : Math.min(
+          M.left + (x(days[hover] as string) ?? 0) + x.bandwidth() + 8,
+          Math.max(width - 230, 0),
+        );
   return (
-    <svg
-      width={width}
-      height={HEIGHT}
-      role="img"
-      aria-label="Reseñas por día y versión de la app"
-    >
-      <g transform={`translate(${M.left},${M.top})`}>
-        <GridLines scale={y} width={width - M.left - M.right} />
-        <Axis
-          scale={y}
-          orientation="left"
-          length={HEIGHT - M.top - M.bottom}
-          format={(v) => formatInt(v as number)}
-        />
-        {data.days.map((d) => {
-          let acc = 0;
-          return (
-            <g key={d.dia} transform={`translate(${x(d.dia)},0)`}>
-              {data.releases.map((r) => {
-                const n = d.counts[r.release] ?? 0;
-                if (n === 0) return null;
-                const top = y(acc + n);
-                const h = y(acc) - top;
-                acc += n;
-                return (
-                  <rect
-                    key={r.release}
-                    y={top}
-                    width={x.bandwidth()}
-                    height={Math.max(h, 0)}
-                    fill={`var(${colors.get(r.release)})`}
-                  >
-                    <title>{`${formatDate(d.dia)} · ${r.release}: ${formatInt(n)}`}</title>
-                  </rect>
-                );
-              })}
-            </g>
-          );
-        })}
-        {/* Despliegues: la primera vez que aparece cada versión del rango. */}
-        {data.releases
-          .filter((r) => r.release !== OTHER && r.first_day !== firstDay)
-          .map((r) => (
-            <line
-              key={r.release}
-              x1={x(r.first_day) ?? 0}
-              x2={x(r.first_day) ?? 0}
-              y1={0}
-              y2={HEIGHT - M.top - M.bottom}
-              stroke="var(--color-neutral-900)"
-              strokeDasharray="2 3"
-              opacity={0.6}
+    <div ref={box} className="relative">
+      <svg
+        width={width}
+        height={HEIGHT}
+        role="img"
+        aria-label="Reseñas por día y versión de la app"
+        onMouseMove={move}
+        onMouseLeave={() => setHover(null)}
+      >
+        <g transform={`translate(${M.left},${M.top})`}>
+          <GridLines scale={y} width={width - M.left - M.right} />
+          <Axis
+            scale={y}
+            orientation="left"
+            length={HEIGHT - M.top - M.bottom}
+            format={(v) => formatInt(v as number)}
+          />
+          {data.days.map((d) => {
+            let acc = 0;
+            return (
+              <g key={d.dia} transform={`translate(${x(d.dia)},0)`}>
+                {data.releases.map((r) => {
+                  const n = d.counts[r.release] ?? 0;
+                  if (n === 0) return null;
+                  const top = y(acc + n);
+                  const h = y(acc) - top;
+                  acc += n;
+                  return (
+                    <rect
+                      key={r.release}
+                      y={top}
+                      width={x.bandwidth()}
+                      height={Math.max(h, 0)}
+                      fill={`var(${colors.get(r.release)})`}
+                    >
+                      <title>{`${formatDate(d.dia)} · ${r.release}: ${formatInt(n)}`}</title>
+                    </rect>
+                  );
+                })}
+              </g>
+            );
+          })}
+          {/* Despliegues: la primera vez que aparece cada versión del rango. */}
+          {data.releases
+            .filter((r) => r.release !== OTHER && r.first_day !== firstDay)
+            .map((r) => (
+              <line
+                key={r.release}
+                x1={x(r.first_day) ?? 0}
+                x2={x(r.first_day) ?? 0}
+                y1={0}
+                y2={HEIGHT - M.top - M.bottom}
+                stroke="var(--color-neutral-900)"
+                strokeDasharray="2 3"
+                opacity={0.6}
+              />
+            ))}
+          {days.map((d, i) =>
+            i % step === 0 ? (
+              <text
+                key={d}
+                x={(x(d) ?? 0) + x.bandwidth() / 2}
+                y={HEIGHT - M.top - M.bottom + 18}
+                textAnchor="middle"
+                fontSize={11}
+                fill="var(--color-neutral-700)"
+              >
+                {shortDay(d)}
+              </text>
+            ) : null,
+          )}
+          {hover !== null ? (
+            <rect
+              x={(x(days[hover] as string) ?? 0) - 1}
+              y={0}
+              width={x.bandwidth() + 2}
+              height={HEIGHT - M.top - M.bottom}
+              fill="none"
+              stroke="var(--color-neutral-950)"
+              strokeWidth={1}
+              pointerEvents="none"
             />
-          ))}
-        {days.map((d, i) =>
-          i % step === 0 ? (
-            <text
-              key={d}
-              x={(x(d) ?? 0) + x.bandwidth() / 2}
-              y={HEIGHT - M.top - M.bottom + 18}
-              textAnchor="middle"
-              fontSize={11}
-              fill="var(--color-neutral-700)"
-            >
-              {shortDay(d)}
-            </text>
-          ) : null,
-        )}
-      </g>
-    </svg>
+          ) : null}
+        </g>
+      </svg>
+      {point ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-2 z-10 w-56 rounded-md border border-border bg-surface p-2 text-xs shadow-sm"
+          style={{ left: tipLeft }}
+        >
+          <p className="font-semibold">{formatDate(point.dia)}</p>
+          <p className="tabular text-text-muted">
+            {formatInt(Object.values(point.counts).reduce((a, b) => a + b, 0))}{" "}
+            reseñas
+          </p>
+          <ul className="mt-1 grid gap-0.5">
+            {data.releases
+              .filter((r) => (point.counts[r.release] ?? 0) > 0)
+              .map((r) => (
+                <li key={r.release} className="flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: `var(${colors.get(r.release)})` }}
+                  />
+                  <span className="flex-1">
+                    {r.release === OTHER ? "Otras o sin versión" : r.release}
+                  </span>
+                  <span className="tabular">
+                    {formatInt(point.counts[r.release])}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -340,7 +408,9 @@ export function VersionTab({
                   <TableHead scope="col">Fechas</TableHead>
                   <TableHead scope="col">Reseñas</TableHead>
                   <TableHead scope="col">Negativas</TableHead>
-                  <TableHead scope="col">Marca u</TableHead>
+                  <TableHead scope="col">
+                    Relacionada con una actualización
+                  </TableHead>
                   <TableHead scope="col">Familias principales</TableHead>
                 </TableRow>
               </TableHeader>

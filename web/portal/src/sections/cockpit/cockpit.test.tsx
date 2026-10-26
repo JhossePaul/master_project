@@ -1,14 +1,9 @@
-import {
-  act,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
 import {
+  syntheticCards,
   syntheticDaily,
   syntheticMonthly,
   syntheticTopics,
@@ -45,23 +40,93 @@ describe("cockpit, pestaña Diario", () => {
     graphs.options.length = 0;
   });
 
-  it("las tarjetas muestran la insignia, el intervalo y el cambio anual", async () => {
+  it("la tabla compara cada banco con su referencia y su intervalo", async () => {
     renderApp("/cockpit");
 
-    const title = await screen.findByRole("heading", { name: "Banco Azul" });
-    const card = title.closest("div")?.parentElement as HTMLElement;
-    expect(within(card).getAllByText("Con revisión humana")).toHaveLength(3);
-    expect(within(card).getByText("entre 14.0 % y 16.0 %")).toBeInTheDocument();
-    expect(within(card).getByText("entre −0.35 y −0.25")).toBeInTheDocument();
-    expect(within(card).getAllByText(/frente a sep 2025/)).toHaveLength(3);
-    expect(within(card).getByText(/Modelo sintetico_v1/)).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(
-      5,
+    const row = (await screen.findByRole("row", {
+      name: /Banco Azul/,
+    })) as HTMLElement;
+
+    expect(within(row).getByText("15.0 %")).toBeInTheDocument();
+    expect(within(row).getByText("[14.0, 16.0]")).toBeInTheDocument();
+    expect(
+      within(row).getByText("12.0 %", { selector: "p" }),
+    ).toBeInTheDocument();
+    expect(within(row).getByText("+3.0 pts")).toBeInTheDocument();
+    expect(
+      within(row).getByRole("img", { name: "Banco Azul: 12.0 % a 15.0 %" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Comparando sep 2026 vs sep 2025"),
+    ).toBeInTheDocument();
+    // Una insignia para la tabla y otra para la matriz, no una por banco.
+    expect(screen.getAllByText("Con revisión humana")).toHaveLength(2);
+    expect(screen.getByText(/Modelo sintetico_v1/)).toBeInTheDocument();
+    expect(
+      within(row.closest("table") as HTMLElement).getAllByRole("row"),
+    ).toHaveLength(6);
+  });
+
+  it("el KPI se elige con botones y queda en la URL", async () => {
+    const { router } = renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Brecha en estrellas" }),
     );
+
+    const row = screen.getByRole("row", { name: /Banco Azul/ });
+    expect(within(row).getByText("−0.30 ★")).toBeInTheDocument();
+    expect(within(row).getByText("[−0.35, −0.25]")).toBeInTheDocument();
+    expect(router.state.location.search).toContain("kpi=gap");
+    expect(
+      screen.getByRole("button", { name: "Brecha en estrellas" }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("compara con el mes anterior si se pide", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
+
+    expect(
+      screen.getByText("Comparando sep 2026 vs ago 2026"),
+    ).toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /Banco Azul/ });
+    expect(
+      within(row).getByText(/14\.0 %/, { selector: "p" }),
+    ).toBeInTheDocument();
+  });
+
+  it("ordena por el valor actual", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Valor actual" }));
+
+    const table = screen
+      .getByRole("row", { name: /Banco Azul/ })
+      .closest("table") as HTMLElement;
+    const first = within(table).getAllByRole("row")[1] as HTMLElement;
+    expect(first).toHaveTextContent("Banco Gris");
+  });
+
+  it("el mes elegido viaja a la API", async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      http.get("*/api/v1/kpis/cards", ({ request }) => {
+        seen.push(new URL(request.url).searchParams.get("period"));
+        return HttpResponse.json(syntheticCards());
+      }),
+    );
+    renderApp("/cockpit?mes=2026-08");
+
+    await waitFor(() => expect(seen).toContain("2026-08"));
   });
 
   it("la serie diaria se marca como cruda", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const frame = (await screen.findByText("Serie diaria")).closest("div")
       ?.parentElement?.parentElement as HTMLElement;
     expect(within(frame).getByText("Solo modelo")).toBeInTheDocument();
@@ -69,7 +134,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("elegir un día abre el panel con las dos listas y el aviso", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -101,7 +166,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("arrastrar un rango cambia desde y hasta en la URL", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -123,7 +188,7 @@ describe("cockpit, pestaña Diario", () => {
         return HttpResponse.json(syntheticFamilies());
       }),
     );
-    renderApp("/cockpit");
+    renderApp("/topicos");
     expect(
       await screen.findByRole("img", { name: "Negativas por familia y mes" }),
     ).toBeInTheDocument();
@@ -140,7 +205,7 @@ describe("cockpit, pestaña Diario", () => {
   });
 
   it("pulsar una familia escribe ?familia= en la URL", async () => {
-    const { router } = renderApp("/cockpit");
+    const { router } = renderApp("/topicos");
     const group = await screen.findByRole("group", {
       name: "Familia resaltada",
     });
@@ -154,20 +219,22 @@ describe("cockpit, pestaña Diario", () => {
 
   it("Abrir en el Explorador arma la URL con los filtros", async () => {
     renderApp(
-      "/cockpit?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30&familia=AC",
+      "/topicos?bancos=BBVA,AZTECA&desde=2026-08-01&hasta=2026-09-30&familia=AC",
     );
 
+    await screen.findByRole("img", { name: "Negativas por familia y mes" });
     await waitFor(() =>
       expect(
         screen.getAllByRole("link", { name: /Abrir en el Explorador/ }).length,
-      ).toBeGreaterThanOrEqual(5),
+      ).toBeGreaterThanOrEqual(2),
     );
-    const links = screen.getAllByRole("link", {
-      name: /Abrir en el Explorador/,
-    });
-    const href = links[0]?.getAttribute("href") ?? "";
+    const href =
+      screen
+        .getAllByRole("link", { name: /Abrir en el Explorador/ })[0]
+        ?.getAttribute("href") ?? "";
     const params = new URL(href, "http://x").searchParams;
-    expect(params.get("bancos")).toBe("BBVA,AZTECA");
+
+    expect(params.get("bancos")).toBe("BBVA");
     expect(params.get("desde")).toBe("2026-08-01");
     expect(params.get("hasta")).toBe("2026-09-30");
     expect(params.get("familia")).toBe("AC");
@@ -205,18 +272,34 @@ describe("cockpit, pestaña Diario", () => {
     expect(within(table).getByText("4–5 ★")).toBeInTheDocument();
   });
 
-  it("no tiene violaciones de axe", async () => {
+  it("Cockpit no tiene violaciones de axe", async () => {
     const { container } = renderApp("/cockpit");
     await screen.findByRole("table", { name: /Proporción de reseñas/ });
+    await screen.findByRole("row", { name: /Banco Azul/ });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("Tópicos no tiene violaciones de axe", async () => {
+    const { container } = renderApp("/topicos");
     await screen.findByRole("img", { name: "Negativas por familia y mes" });
     await screen.findByText("Inicio de sesión que falla");
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("Evolución no tiene violaciones de axe", async () => {
+    const { container } = renderApp("/evolucion");
+    await screen.findByRole("img", {
+      name: "Reseñas por día y versión de la app",
+    });
+    await screen.findByText("Reseñas negativas por mes");
+    await screen.findByText("11.33", { selector: "td" });
     expect(await axe(container)).toHaveNoViolations();
   });
 });
 
 describe("cockpit, pestaña Por versión", () => {
   it("el aviso va antes que los filtros de banco y trae la cobertura", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
 
     const notice = await screen.findByText(
       /no hay pruebas de cambio de nivel entre versiones/,
@@ -232,7 +315,7 @@ describe("cockpit, pestaña Por versión", () => {
   });
 
   it("muestra las versiones por día con su leyenda y la tabla del banco", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
 
     expect(
       await screen.findByRole("img", {
@@ -260,7 +343,7 @@ describe("cockpit, pestaña Por versión", () => {
         return HttpResponse.json(syntheticVersionDaily());
       }),
     );
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -279,7 +362,7 @@ describe("cockpit, pestaña Por versión", () => {
         return HttpResponse.json(syntheticVersionDaily());
       }),
     );
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -289,17 +372,8 @@ describe("cockpit, pestaña Por versión", () => {
     await waitFor(() => expect(seen).toContain("AZTECA"));
   });
 
-  it("cambiar de pestaña escribe vista en la URL", async () => {
-    const { router } = renderApp("/cockpit");
-    await userEvent.click(
-      await screen.findByRole("tab", { name: "Por versión" }),
-    );
-    expect(router.state.location.search).toContain("vista=version");
-    fireEvent.click(screen.getByRole("tab", { name: "Diario" }));
-  });
-
   it("no tiene violaciones de axe", async () => {
-    const { container } = renderApp("/cockpit?vista=version");
+    const { container } = renderApp("/evolucion");
     await screen.findByRole("img", {
       name: "Reseñas por día y versión de la app",
     });
@@ -321,7 +395,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
         return HttpResponse.json(syntheticDaily());
       }),
     );
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const seven = await screen.findByRole("button", { name: "7 días" });
     expect(seven).toHaveAttribute("aria-pressed", "true");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
@@ -345,7 +419,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
         return HttpResponse.json(syntheticDaily());
       }),
     );
-    renderApp("/cockpit?desde=2026-09-28&hasta=2026-10-26");
+    renderApp("/evolucion?desde=2026-09-28&hasta=2026-10-26");
 
     await waitFor(() => expect(seen).toHaveLength(1));
 
@@ -353,7 +427,7 @@ describe("cockpit, suavizado de la serie diaria", () => {
   });
 
   it("con un banco deja el dato diario como línea de fondo", async () => {
-    renderApp("/cockpit?bancos=BBVA");
+    renderApp("/evolucion?bancos=BBVA");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     const labels = lastOptions().labels as unknown as string[];
@@ -362,18 +436,18 @@ describe("cockpit, suavizado de la serie diaria", () => {
   });
 
   it("con cinco bancos solo hay una línea por banco y una franja de leyenda", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     const options = lastOptions();
 
     expect((options.labels as unknown as string[]).length).toBe(6);
-    expect(options.legend).toBe("always");
+    expect(options.legend).toBe("onmouseover");
     expect(options.labelsDiv).toBeInstanceOf(HTMLElement);
   });
 
   it("el panel aclara que el día no es el promedio", async () => {
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     await waitFor(() => expect(graphs.options.length).toBeGreaterThan(0));
 
     act(() => {
@@ -440,67 +514,118 @@ describe("cockpit, barra fija y secciones", () => {
       "false",
     );
   });
+});
 
-  it("el menú sigue la sección que está a la vista al hacer scroll", async () => {
-    renderApp("/cockpit");
-    const menu = await screen.findByRole("button", { name: /Sección:/ });
-    const tops: Record<string, number> = {
-      resumen: -900,
-      serie: -600,
-      mensual: -300,
-      familias: 120,
-      topicos: 700,
-    };
-    const spy = vi
-      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(function (this: HTMLElement) {
-        return { top: tops[this.id] ?? 2000 } as DOMRect;
-      });
+describe("tópicos, filtro de bancos y paginador", () => {
+  function manyTopics(n: number) {
+    const base = syntheticTopics();
+    return Array.from({ length: n }, (_, i) =>
+      base.map((t) => ({
+        ...t,
+        topic_id: i,
+        nombre: `Tópico ${i}`,
+        filas: t.filas + (n - i),
+      })),
+    ).flat();
+  }
 
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
+  it("empieza con los bancos del filtro general y deja quitar uno", async () => {
+    const { container } = renderApp("/topicos?bancos=BBVA,AZTECA");
+    const filter = await screen.findByRole("group", {
+      name: "Bancos de los tópicos",
     });
+    const azul = within(filter).getByRole("button", { name: "Banco Azul" });
+    expect(azul).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(filter).getByRole("button", { name: "Banco Verde" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    const titles = () =>
+      [...container.querySelectorAll("li svg title")].map((t) => t.textContent);
+    expect(titles().some((t) => t?.startsWith("Banco Azul"))).toBe(true);
 
-    await waitFor(() => expect(menu).toHaveTextContent("Familias"));
-    spy.mockRestore();
+    await userEvent.click(azul);
+
+    expect(azul).toHaveAttribute("aria-pressed", "false");
+    expect(titles().some((t) => t?.startsWith("Banco Azul"))).toBe(false);
+    expect(titles().some((t) => t?.startsWith("Banco Verde"))).toBe(true);
   });
 
-  it("la barra es fija y trae el menú de secciones", async () => {
-    renderApp("/cockpit");
+  it("siempre queda al menos un banco", async () => {
+    renderApp("/topicos?bancos=BBVA");
+    const filter = await screen.findByRole("group", {
+      name: "Bancos de los tópicos",
+    });
+    const azul = within(filter).getByRole("button", { name: "Banco Azul" });
 
-    const menu = await screen.findByRole("button", { name: /Sección:/ });
-    const bar = menu.closest("search") as HTMLElement;
-    expect(bar.className).toContain("sticky");
-    expect(menu).toHaveTextContent("Último mes por banco");
+    await userEvent.click(azul);
 
-    await userEvent.click(menu);
+    expect(azul).toHaveAttribute("aria-pressed", "true");
+  });
 
-    for (const name of [
-      "Serie diaria",
-      "Gráficas mensuales",
-      "Familias",
-      "Tópicos",
-      "Estrellas × texto",
-      "Comparación entre bancos",
-    ]) {
-      expect(await screen.findByRole("menuitem", { name })).toBeInTheDocument();
-    }
+  it("muestra seis tópicos por página y se pagina", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(9))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+
+    const region = await screen.findByRole("region", { name: "Tópicos" });
+    expect(within(region).getAllByRole("listitem")).toHaveLength(6);
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+    const prev = within(region).getByRole("button", {
+      name: "Tópicos anteriores",
+    });
+    const next = within(region).getByRole("button", {
+      name: "Tópicos siguientes",
+    });
+    expect(prev).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(next);
+
+    expect(within(region).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(region).getByText(/7–9 de 9 tópicos/)).toBeInTheDocument();
+    expect(next).toHaveAttribute("aria-disabled", "true");
+    expect(within(region).getByText("Tópico 8")).toBeInTheDocument();
+
+    await userEvent.click(prev);
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+  });
+
+  it("las flechas del teclado cambian de página", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(9))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+    const region = await screen.findByRole("region", { name: "Tópicos" });
+    const next = within(region).getByRole("button", {
+      name: "Tópicos siguientes",
+    });
+    next.focus();
+
+    await userEvent.keyboard("{ArrowRight}");
+    expect(within(region).getByText(/7–9 de 9 tópicos/)).toBeInTheDocument();
+
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(within(region).getByText(/1–6 de 9 tópicos/)).toBeInTheDocument();
+  });
+
+  it("ordena los tópicos por volumen", async () => {
+    server.use(
+      http.get("*/api/v1/kpis/topics", () => HttpResponse.json(manyTopics(3))),
+    );
+    renderApp("/topicos?bancos=BBVA");
+
+    const items = await within(
+      await screen.findByRole("region", { name: "Tópicos" }),
+    ).findAllByRole("listitem");
+
+    expect(items[0]).toHaveTextContent("Tópico 0");
+    expect(items[2]).toHaveTextContent("Tópico 2");
   });
 });
 
 describe("cockpit, ajustes de la primera pasada", () => {
-  it("las tarjetas comparan con el mes anterior si se pide", async () => {
-    renderApp("/cockpit");
-    await screen.findByRole("heading", { name: "Banco Azul" });
-    expect((await screen.findAllByText(/frente a sep 2025/)).length).toBe(15);
-
-    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
-
-    expect(screen.getAllByText(/frente a ago 2026/)).toHaveLength(15);
-  });
-
   it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
-    renderApp("/cockpit");
+    renderApp("/topicos");
 
     const item = (
       await screen.findByText("Inicio de sesión que falla")
@@ -521,7 +646,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
         ),
       ),
     );
-    renderApp("/cockpit");
+    renderApp("/topicos");
 
     expect(
       (await screen.findAllByText("sin familia asociada")).length,
@@ -529,7 +654,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
   });
 
   it("la anomalía de familias muestra el z de cada mes", async () => {
-    const { container } = renderApp("/cockpit");
+    const { container } = renderApp("/topicos");
     await userEvent.click(
       await screen.findByRole("button", { name: "Anomalía" }),
     );
@@ -541,7 +666,9 @@ describe("cockpit, ajustes de la primera pasada", () => {
     expect(titles.some((t) => t?.includes("z = 4.6"))).toBe(true);
     expect(screen.getByText(/menos de lo habitual/)).toBeInTheDocument();
     expect(
-      screen.getByText("Habla de una actualización (u)"),
+      screen.getAllByText(
+        "Relacionada con una actualización",
+      )[0] as HTMLElement,
     ).toBeInTheDocument();
   });
 
@@ -561,7 +688,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
         ),
       ),
     );
-    renderApp("/cockpit");
+    renderApp("/evolucion");
     const frame = (
       await screen.findByText("Reseñas negativas por mes")
     ).closest("div")?.parentElement?.parentElement as HTMLElement;
@@ -581,7 +708,7 @@ describe("cockpit, ajustes de la primera pasada", () => {
   });
 
   it("los encabezados de las tablas se quedan fijos", async () => {
-    renderApp("/cockpit?vista=version");
+    renderApp("/evolucion");
     const table = await screen.findByRole("table");
 
     expect(within(table).getAllByRole("columnheader")[0]?.className).toContain(

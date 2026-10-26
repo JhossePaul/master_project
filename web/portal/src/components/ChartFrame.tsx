@@ -48,7 +48,7 @@ export function ChartFrame({
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-800">
             {kicker}
           </p>
-          <h3 className="font-serif text-xl font-semibold">{title}</h3>
+          <h2 className="font-serif text-xl font-semibold">{title}</h2>
           {subtitle ? (
             <p className="text-sm text-text-muted">{subtitle}</p>
           ) : null}

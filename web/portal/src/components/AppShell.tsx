@@ -7,7 +7,6 @@ import { hasRole } from "@/auth/roles";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { FilterBar } from "@/components/FilterBar";
-import { SectionNavProvider } from "@/components/SectionNav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +16,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FILTER_PATHS, NAV_GROUPS, NAV_ITEMS, PORTAL_NAME } from "@/config/nav";
+import {
+  FILTER_PATHS,
+  NAV_GROUPS,
+  NAV_ITEMS,
+  PORTAL_NAME,
+  SHARED_PARAMS,
+} from "@/config/nav";
 import { cn } from "@/lib/utils";
+
+/** Solo los parámetros que valen en cualquier sección. */
+function sharedSearch(search: string): string {
+  const from = new URLSearchParams(search);
+  const out = new URLSearchParams();
+  for (const name of SHARED_PARAMS) {
+    const value = from.get(name);
+    if (value) out.set(name, value);
+  }
+  const text = out.toString();
+  return text ? `?${text}` : "";
+}
 
 const COLLAPSE_KEY = "voc.nav.collapsed";
 
@@ -68,121 +85,117 @@ export function AppShell() {
   const showFilters = FILTER_PATHS.some((p) => location.pathname.startsWith(p));
 
   return (
-    <SectionNavProvider>
-      <div className="flex min-h-screen flex-col">
-        <a
-          href="#contenido"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-surface focus:p-2"
+    <div className="flex min-h-screen flex-col">
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-surface focus:p-2"
+      >
+        Saltar al contenido
+      </a>
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-green-900 px-6 text-neutral-0">
+        <Link to="/" className="font-serif text-lg font-semibold">
+          {PORTAL_NAME}
+        </Link>
+        <div className="flex items-center gap-4 text-sm">
+          {user.environment !== "prod" ? (
+            <Badge className="bg-gold-400 text-neutral-950">
+              {user.environment}
+            </Badge>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-neutral-0 hover:bg-green-800"
+              >
+                Cuenta
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-1">
+                <UserRound className="size-3" aria-hidden="true" />
+                Roles: {user.roles.join(", ")}
+              </DropdownMenuLabel>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      <div className="flex flex-1">
+        <nav
+          aria-label="Secciones"
+          className={cn(
+            "sticky top-14 h-[calc(100vh-3.5rem)] shrink-0 self-start overflow-y-auto border-r border-border bg-surface p-3 transition-[width]",
+            collapsed ? "w-16" : "w-60",
+          )}
         >
-          Saltar al contenido
-        </a>
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-green-900 px-6 text-neutral-0">
-          <Link to="/" className="font-serif text-lg font-semibold">
-            {PORTAL_NAME}
-          </Link>
-          <div className="flex items-center gap-4 text-sm">
-            {user.environment !== "prod" ? (
-              <Badge className="bg-gold-400 text-neutral-950">
-                {user.environment}
-              </Badge>
-            ) : null}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-0 hover:bg-green-800"
-                >
-                  Cuenta
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                <DropdownMenuLabel className="flex items-center gap-1">
-                  <UserRound className="size-3" aria-hidden="true" />
-                  Roles: {user.roles.join(", ")}
-                </DropdownMenuLabel>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        <div className="flex flex-1">
-          <nav
-            aria-label="Secciones"
-            className={cn(
-              "shrink-0 border-r border-border bg-surface p-3 transition-[width]",
-              collapsed ? "w-16" : "w-60",
-            )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mb-2"
+            aria-label={collapsed ? "Expandir navegación" : "Plegar navegación"}
+            onClick={() => setCollapsed((v) => !v)}
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mb-2"
-              aria-label={
-                collapsed ? "Expandir navegación" : "Plegar navegación"
-              }
-              onClick={() => setCollapsed((v) => !v)}
-            >
-              {collapsed ? (
-                <PanelLeftOpen aria-hidden="true" />
-              ) : (
-                <PanelLeftClose aria-hidden="true" />
-              )}
-            </Button>
-            {NAV_GROUPS.map((group) => {
-              const items = NAV_ITEMS.filter(
-                (i) => i.group === group && hasRole(user, i.role),
-              );
-              if (items.length === 0) return null;
-              return (
-                <div key={group} className="mb-3">
-                  {collapsed ? null : (
-                    <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-800">
-                      {group}
-                    </p>
-                  )}
-                  <ul>
-                    {items.map(({ path, label, icon: Icon }) => (
-                      <li key={path}>
-                        <NavLink
-                          to={{ pathname: path, search: location.search }}
-                          end={path === "/"}
-                          title={label}
-                          className={({ isActive }) =>
-                            cn(
-                              "flex items-center gap-3 border-l-[3px] border-transparent px-3 py-2 text-sm",
-                              isActive
-                                ? "border-green-600 bg-green-50 font-semibold text-green-800"
-                                : "hover:bg-neutral-100",
-                            )
-                          }
-                        >
-                          <Icon
-                            className="size-4 shrink-0"
-                            aria-hidden="true"
-                          />
-                          <span className={collapsed ? "sr-only" : undefined}>
-                            {label}
-                          </span>
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </nav>
-          <div className="min-w-0 flex-1">
-            {showFilters ? <FilterBar /> : null}
-            <main
-              id="contenido"
-              className="mx-auto w-full max-w-[1440px] px-6 py-6 xl:px-8"
-            >
-              <Outlet context={user} />
-            </main>
-          </div>
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden="true" />
+            ) : (
+              <PanelLeftClose aria-hidden="true" />
+            )}
+          </Button>
+          {NAV_GROUPS.map((group) => {
+            const items = NAV_ITEMS.filter(
+              (i) => i.group === group && hasRole(user, i.role),
+            );
+            if (items.length === 0) return null;
+            return (
+              <div key={group} className="mb-3">
+                {collapsed ? null : (
+                  <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-800">
+                    {group}
+                  </p>
+                )}
+                <ul>
+                  {items.map(({ path, label, icon: Icon }) => (
+                    <li key={path}>
+                      <NavLink
+                        to={{
+                          pathname: path,
+                          search: sharedSearch(location.search),
+                        }}
+                        end={path === "/"}
+                        title={label}
+                        className={({ isActive }) =>
+                          cn(
+                            "flex items-center gap-3 border-l-[3px] border-transparent px-3 py-2 text-sm",
+                            isActive
+                              ? "border-green-600 bg-green-50 font-semibold text-green-800"
+                              : "hover:bg-neutral-100",
+                          )
+                        }
+                      >
+                        <Icon className="size-4 shrink-0" aria-hidden="true" />
+                        <span className={collapsed ? "sr-only" : undefined}>
+                          {label}
+                        </span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </nav>
+        <div className="min-w-0 flex-1">
+          {showFilters ? <FilterBar /> : null}
+          <main
+            id="contenido"
+            className="mx-auto w-full max-w-[1440px] px-6 py-6 xl:px-8"
+          >
+            <Outlet context={user} />
+          </main>
         </div>
       </div>
-    </SectionNavProvider>
+    </div>
   );
 }
