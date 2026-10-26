@@ -136,13 +136,14 @@ class LandingResponse(BaseModel):
 
 ### 7.2 Pantalla (`src/sections/landing/`)
 
-1. ***Hero*** (`green-900`, tahalí en `gold-400`): el nombre del portal (pregunta `B-02`), una línea de qué es y la fecha de los datos ("Datos al 24 oct 2026").
-2. **Frescura:** última ingesta, último delta (con su estado) y último monitor, cada uno con `StatusPill` (`ok` si ocurrió en las últimas 36 horas, o 8 días para el monitor; `aviso` si no).
-3. **Una tarjeta por banco** (`KpiCard`, con el color del banco en el filete superior): proporción de `NEG` con PPI e intervalo, *gap* en estrellas con PPI e intervalo, mes y procedencia. Al pulsarla abre el cockpit filtrado por ese banco.
-4. **Alertas de deriva abiertas**, por banco; para analistas, enlace a `/alertas`.
-5. **Casos HITL pendientes** (solo revisores), con enlace a su cola.
-6. **Accesos** a las secciones que permite el rol, con una línea de para qué sirve cada una.
-7. **Pie:** enlace a gobernanza, versión del portal (`commit`), Universidad Panamericana, programa de posgrado y autor (pregunta `B-04`).
+1. ***Hero*** (`green-900`, tahalí en `gold-400`): el logotipo de Posgrados y, a su lado, el nombre del portal (pregunta `B-02`) con una línea de qué es.
+2. **Fila de estado** (tres tarjetas en una fila desde `lg`; dos si el rol no revisa):
+   * **Última actualización:** la fecha de los datos ("Datos al 24 oct 2026"), la última ingesta, el último delta (con su estado) y el último monitor, cada uno con `StatusPill` (`ok` si ocurrió en las últimas 36 horas, o 8 días para el monitor; `aviso` si no).
+   * **Alertas de deriva abiertas:** el total y, debajo, los bancos con alertas; para analistas, enlace a `/alertas`.
+   * **Casos HITL pendientes** (solo revisores), con enlace a su cola.
+3. **Resumen:** una tabla estática con un banco por fila: proporción de `NEG` y *gap* en estrellas, cada uno con su valor, su intervalo en palabras y un punto con su rango sobre una escala compartida por columna. El mes, la insignia de método y el "Cómo se calculó" van una vez en el encabezado; un banco con otro mes o sin PPI lo marca en su fila. Cada fila abre el cockpit filtrado por ese banco.
+4. **Accesos** a las secciones que permite el rol, con una línea de para qué sirve cada una.
+5. **Pie:** enlace a gobernanza, versión del portal (`commit`), Universidad Panamericana, programa de posgrado y autor (pregunta `B-04`).
 
 ## 8. Pruebas
 
@@ -152,7 +153,7 @@ class LandingResponse(BaseModel):
   * `useGlobalFilters.test.tsx`: la URL va y vuelve; un banco desconocido se descarta; valores por defecto;
   * `nav.test.tsx`: cada rol ve exactamente sus secciones;
   * `banks.test.ts`: cinco bancos, cada `colorVar` existe en `tokens.css`, ningún `label` es un nombre real;
-  * `landing.test.tsx`: con MSW, se ven las cinco tarjetas con su intervalo, la frescura y las alertas; un error muestra `ErrorState` con el `request_id`;
+  * `landing.test.tsx`: con MSW, se ven las cinco filas del resumen con su intervalo, la frescura y las alertas; un error muestra `ErrorState` con el `request_id`;
   * `a11y.test.tsx`: `axe` sin violaciones en la landing y en el *shell*.
 
 ## Terminado cuando
@@ -180,6 +181,7 @@ class LandingResponse(BaseModel):
   * **Registros de lenguaje** por sección (ejecutivo, analista, académico y técnico; guía visual, sección 10) y la propiedad `audience` en `nav.ts`. En la landing: "Última actualización" con "Reseñas nuevas", "Análisis de reseñas" y "Revisión del modelo", cada una con una sola insignia (`ok`, `aviso`, `falló` o `en curso`) y su "hace cuánto"; los rangos se escriben "entre 16.5 % y 19.5 %"; la insignia de método dice "Con revisión humana" o "Solo modelo" (no "verificada", porque la revisión es de una muestra); la procedencia técnica queda en un "Cómo se calculó" desplegable; el menú dice "Revisión" y no "HITL".
   * La tarjeta de banco usa un enlace extendido en el título (no un enlace que envuelve controles interactivos).
 * **Gobernanza en el menú (2026-10-26):** los enlaces de Gobernanza del encabezado y del pie de la landing pasan al grupo "Documentación" del menú lateral, junto al Reporte (rol lector); menos ruido visual.
+* **Landing compacta (2026-10-26):** el *hero* lleva el logotipo y el texto en una fila; la fecha de los datos pasa a la tarjeta "Última actualización", que va en una fila con las alertas y los casos por revisar; las cinco tarjetas de banco se sustituyen por "Resumen", una tabla estática con un banco por fila y un punto con su rango por métrica (el mes, el método y el "Cómo se calculó" una sola vez en el encabezado). `KpiCardFrame` queda como componente base sin uso en pantallas.
 * **Sin `Skeleton` propio ni `KeyboardHint`/`DataTable`:** el primero es el de shadcn; los otros dos llegan con los pasos 4 y 6, como dice el paso.
 * **Logotipo oficial (`B-01`):** no se descargó el paquete de la UP porque la descarga necesita la aprobación del autor; el encabezado lleva el nombre del portal en serif, que es el sustituto previsto.
 
