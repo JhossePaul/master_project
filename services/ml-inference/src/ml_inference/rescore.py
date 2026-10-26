@@ -154,13 +154,25 @@ class KaggleApiClient:  # pragma: no cover - red real
     def create_dataset(self, folder: Path) -> None:
         raise_on_error(
             self.api.dataset_create_new(
-                str(folder), public=False, quiet=True, dir_mode="skip"
+                str(folder), public=False, quiet=True, dir_mode="zip"
             ),
             "dataset creation",
         )
 
     def dataset_status(self, ref: str) -> str:
-        return str(self.api.dataset_status(ref)).lower()
+        from requests.exceptions import HTTPError
+
+        try:
+            return str(self.api.dataset_status(ref)).lower()
+        except HTTPError as error:
+            # Recién creado, el dataset contesta 403 un par de segundos
+            # (medido el 2026-10-25); se sigue esperando hasta el tiempo máximo.
+            response = error.response
+            code = None if response is None else response.status_code
+            if code in (403, 404):
+                log.info("kaggle: dataset %s aún no visible (%s)", ref, code)
+                return "pending"
+            raise
 
     def push_kernel(self, folder: Path) -> None:
         raise_on_error(self.api.kernels_push(str(folder)), "kernel push")
