@@ -35,7 +35,7 @@ describe("banks", () => {
   });
 
   it("bankLabel devuelve el id desconocido tal cual", () => {
-    expect(bankLabel("BBVA")).toBe("Banco Índigo");
+    expect(bankLabel("BBVA")).toBe("Banco Azul");
     expect(bankLabel("OTRO")).toBe("OTRO");
   });
 

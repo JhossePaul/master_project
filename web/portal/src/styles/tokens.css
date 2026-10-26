@@ -71,8 +71,8 @@
   --color-bank-azteca: #3e8e2f;
   --color-bank-santander: #d0261c;
   --color-bank-nubank: #7b2fc9;
-  --color-bank-banorte: #2f2b28;
-  --color-bank-all: var(--color-neutral-600);
+  --color-bank-banorte: #6a6867;
+  --color-bank-all: var(--color-neutral-950);
 
   /* Datos: sentimiento (sección 4.2) */
   --color-sent-neg: #b23a2e;

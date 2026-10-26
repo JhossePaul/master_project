@@ -47,7 +47,7 @@ describe("KpiCard", () => {
     );
     expect(screen.getByText("12.3 %")).toBeInTheDocument();
     expect(screen.getByText("[11.0, 13.6]")).toBeInTheDocument();
-    expect(screen.getByText("PPI")).toBeInTheDocument();
+    expect(screen.getByText("Con revisión humana")).toBeInTheDocument();
     expect(screen.getByText("Modelo m1")).toBeInTheDocument();
   });
 });

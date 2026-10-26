@@ -1,18 +1,26 @@
+import { Info } from "lucide-react";
 import type { ReactNode } from "react";
 import { MethodBadge } from "@/components/MethodBadge";
 import { Provenance, type ProvenanceProps } from "@/components/Provenance";
 import { Card } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export interface KpiCardProps {
   label: ReactNode;
   value: string;
-  /** Intervalo ya formateado, p. ej. "[11.0, 13.6]". */
+  /** Rango ya escrito en palabras, p. ej. "entre 11.0 % y 13.6 %". */
   interval?: string;
   method?: "ppi" | "raw";
   /** Cambio contra el periodo anterior. */
   delta?: ReactNode;
   sparkline?: ReactNode;
   provenance?: ProvenanceProps;
+  /** Procedencia dentro de un "Cómo se calculó" desplegable (vistas ejecutivas). */
+  collapsedProvenance?: { provenance: ProvenanceProps; explanation: ReactNode };
 }
 
 export function KpiCard({
@@ -23,6 +31,7 @@ export function KpiCard({
   delta,
   sparkline,
   provenance,
+  collapsedProvenance,
 }: KpiCardProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -37,6 +46,23 @@ export function KpiCard({
       {delta ? <div className="text-sm">{delta}</div> : null}
       {sparkline}
       {provenance ? <Provenance {...provenance} /> : null}
+      {collapsedProvenance ? (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="relative z-10 flex w-fit items-center gap-1 text-xs font-semibold text-green-600"
+            >
+              <Info className="size-3" aria-hidden="true" />
+              Cómo se calculó
+            </button>
+          </PopoverTrigger>
+          <PopoverContent>
+            <div className="mb-2">{collapsedProvenance.explanation}</div>
+            <Provenance {...collapsedProvenance.provenance} />
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </div>
   );
 }
@@ -51,7 +77,7 @@ export function KpiCardFrame({
 }) {
   return (
     <Card
-      className="overflow-hidden border-t-4 p-5"
+      className="relative overflow-hidden border-t-4 p-5 hover:border-x-green-200 hover:shadow-sm"
       style={colorVar ? { borderTopColor: `var(${colorVar})` } : undefined}
     >
       {children}

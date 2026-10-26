@@ -7,7 +7,10 @@ import {
   formatKappa,
   formatMonth,
   formatPct,
+  formatPctRange,
+  formatRelative,
   formatStars,
+  formatStarsRange,
 } from "@/lib/format";
 
 describe("formatInt", () => {
@@ -90,4 +93,20 @@ describe("formatBytes", () => {
     expect(formatBytes(5 * 1024 ** 3)).toBe("5.0 GB");
   });
   it("nulo", () => expect(formatBytes(null)).toBe("—"));
+});
+
+describe("rangos en palabras y tiempo relativo", () => {
+  it("rango de proporciones y de estrellas", () => {
+    expect(formatPctRange(0.165, 0.195)).toBe("entre 16.5 % y 19.5 %");
+    expect(formatStarsRange(-0.35, -0.25)).toBe("entre −0.35 y −0.25");
+    expect(formatPctRange(null, 0.2)).toBe("");
+  });
+  it("hace cuánto", () => {
+    const now = Date.parse("2026-10-26T12:00:00Z");
+    expect(formatRelative("2026-10-26T11:59:40Z", now)).toBe("ahora");
+    expect(formatRelative("2026-10-26T11:30:00Z", now)).toBe("hace 30 min");
+    expect(formatRelative("2026-10-26T07:00:00Z", now)).toBe("hace 5 h");
+    expect(formatRelative("2026-10-20T12:00:00Z", now)).toBe("hace 6 días");
+    expect(formatRelative(null, now)).toBe("—");
+  });
 });

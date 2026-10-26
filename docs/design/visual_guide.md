@@ -110,7 +110,7 @@ Se usa solo dentro de gráficas, tablas de datos y la explicación por palabras.
 
 ### 4.1 Bancos
 
-Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos se eligieron por color (cuestionario, pregunta `D-03`): Banco Índigo (BBVA), Banco Jade (AZTECA), Banco Carmín (SANTANDER), Banco Violeta (NUBANK) y Banco Ónix (BANORTE). El mapa vive en un solo archivo (`web/portal/src/config/banks.ts`), indexado por `bank_id`.
+Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color representativo, iguales en todo el portal. Los seudónimos se eligieron por color (cuestionario, pregunta `D-03`): Banco Azul (BBVA), Banco Verde (AZTECA), Banco Rojo (SANTANDER), Banco Morado (NUBANK) y Banco Gris (BANORTE). Se simplificaron el 2026-10-26: el nombre del color es más directo que un sinónimo. El mapa vive en un solo archivo (`web/portal/src/config/banks.ts`), indexado por `bank_id`.
 
 | `bank_id` | Color | Hex | Contraste | Trazo de respaldo |
 | :--- | :--- | :--- | :---: | :--- |
@@ -118,8 +118,8 @@ Decisión del autor (2026-10-24): cada banco lleva un seudónimo fijo y su color
 | `AZTECA` | Verde | `#3E8E2F` | 4.11 | Guiones largos |
 | `SANTANDER` | Rojo | `#D0261C` | 5.28 | Punteado |
 | `NUBANK` | Morado | `#7B2FC9` | 6.79 | Guion y punto |
-| `BANORTE` | Negro | `#2F2B28` | 14.03 | Guiones cortos |
-| Los cinco juntos | Gris | `neutral-600` | 5.58 | Continuo, más grueso |
+| `BANORTE` | Gris | `#6A6867` | 5.54 | Guiones cortos |
+| Los cinco juntos | Casi negro | `neutral-950` | 18.69 | Continuo, más grueso |
 
 * El rojo y el verde se confunden con deuteranopía: toda gráfica de líneas por banco lleva la **etiqueta directa** al final de cada línea y el trazo de respaldo de la tabla.
 * El verde de AZTECA es amarillento a propósito, para no confundirse con el verde azulado de la marca.
@@ -202,7 +202,7 @@ Base de 16 px; razón aproximada de 1.25.
 Es el principio "cada número con su procedencia" hecho componente. Toda cifra y toda gráfica llevan:
 
 * **Línea de procedencia** (`<Provenance />`, `text-xs`, `neutral-600`) al pie: `Modelo robertuito_sentiment_v1 · política risk_policy_v1 · prompt aspects_v2_1 · datos al 24 oct 2026`. Solo los campos que aplican.
-* **Insignia de método** (`<MethodBadge />`): `PPI` (verde, con el intervalo) o `crudo` (gris, con el texto "proporción sin corregir"). Al pasar el cursor, una línea explica la diferencia y enlaza el glosario.
+* **Insignia de método** (`<MethodBadge />`): "Con revisión humana" (verde, con su rango; es la estimación PPI) o "Solo modelo" (gris; es la proporción cruda). Al pasar el cursor, una línea explica la diferencia sin juzgar la cifra "sin revisión" como mala, y el glosario enlaza los términos técnicos.
 * **Estado** (`<StatusPill />`): `ok`, `aviso`, `reentrenar`, `rechazado`, `abierta`, `confirmada`, `descartada`, `en curso`, `falló`, con ícono y color semántico.
 * **Aviso de descripción** (`<Callout variant="info">`) en las vistas de temas por día y por versión: "Describe lo que dicen las reseñas; no es un diagnóstico ni una detección de incidentes".
 
@@ -214,7 +214,7 @@ Es el principio "cada número con su procedencia" hecho componente. Toda cifra y
 * **Navegación lateral** (240 px, plegable a 64 px con solo íconos), agrupada:
   * **Consultar:** Inicio, Reporte, Cockpit.
   * **Investigar:** Explorador, Alertas.
-  * **Revisar:** HITL.
+  * **Revisar:** Revisión (HITL).
   * **Operar:** MLOps y AIOps.
   * **Configurar:** Administración.
   * Solo aparecen las secciones que permite el rol; la activa lleva una barra de 3 px en `green-600` y fondo `green-50`.
@@ -255,6 +255,16 @@ Se construyen una vez en `src/components/` y todas las secciones los reutilizan.
 * **Idioma:** español, en segunda persona de cortesía implícita ("Elige un banco"), frases cortas, sin jerga del backlog: "RoBERTuito ajustado con la plata de Gemini", no códigos de decisión.
 * **Números:** `Intl.NumberFormat('es-MX')`: punto decimal y coma de miles (`2,654,106`). Porcentajes con un decimal y espacio antes del signo (`12.3 %`); intervalos como `12.3 % [11.0, 13.6]`; κ y F1 con tres decimales.
 * **Fechas:** `25 oct 2026`; meses `oct 2026`; horas con zona (`09:30 CDMX`). Los días de las series son días UTC, como los calcula BigQuery, y el eje lo dice (cuestionario, `L-05`).
+* **Registros de lenguaje** (decisión del autor, 2026-10-26). Cada sección se escribe para su público (`audience` en `config/nav.ts`):
+
+  | Registro | Secciones | Cómo se escribe |
+  | :--- | :--- | :--- |
+  | Ejecutivo | Inicio | Palabras comunes y sin siglas; cada cifra con su rango en palabras ("entre 16.5 % y 19.5 %"); la procedencia técnica va en un "Cómo se calculó" desplegable |
+  | Analista y decisor | Cockpit, Explorador, Alertas, Revisión | Lenguaje común a la vista; el cómo se calculó y los términos técnicos van en tooltips y en un "Cómo se calculó" |
+  | Académico | Reporte, Gobernanza | Términos precisos (PPI, κ, deriva) con su definición del glosario la primera vez |
+  | Técnico | MLOps y AIOps, Administración | Términos técnicos sin traducir |
+
+  Equivalencias para los registros no técnicos: ingesta → "reseñas nuevas"; delta → "análisis de reseñas"; monitor → "revisión del modelo"; deriva → "cambios"; intervalo → "rango"; HITL → "revisión"; *gap* → "brecha". Un término técnico nunca desaparece: se explica en el glosario.
 * **Vacíos:** se dice qué falta y por qué ("Sin revisiones en este trimestre: la muestra de monitoreo tiene 0 de 300"), nunca un cero engañoso.
 
 ## 11. Accesibilidad

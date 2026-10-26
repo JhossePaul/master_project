@@ -166,7 +166,7 @@ class LandingResponse(BaseModel):
 
 * **Versiones (instaladas el 2026-10-26):** React 19.3, React Router 8.5, TanStack Query 5.104, TanStack Table 9.3 (aún sin uso), Vite 8, Vitest 5, Tailwind 4.3 y Zod 4. **TypeScript queda en `~5.9`**: `openapi-typescript` 7.13 declara `typescript@^5` como dependencia de pares y `npm` no resuelve con la 7.0.
 * **shadcn/ui a mano.** No se corrió `npx shadcn init`: los componentes (`button`, `card`, `dialog`, `dropdown-menu`, `popover`, `select`, `tabs`, `tooltip`, `badge`, `checkbox`, `radio-group`, `textarea`, `input`, `label`, `separator`, `skeleton`, `sonner`, `table`) se escribieron en `src/components/ui/` con el mismo patrón (Radix + `cva` + `cn`) y los tokens de la guía, sin `components.json`. Los que aún no usa ninguna pantalla (`select`, `radio-group`, `tabs`, `table` fuera de `ChartFrame`) llegan con su primera sección.
-* **Seudónimos:** `D-03` ya está respondida (por color), así que `banks.ts` usa Banco Índigo, Jade, Carmín, Violeta y Ónix, no "Banco A" a "Banco E".
+* **Seudónimos:** `D-03` ya estaba respondida (por color), así que `banks.ts` no usa "Banco A" a "Banco E". Tras ver la landing en dev el autor los simplificó a Banco Azul, Verde, Rojo, Morado y Gris (BANORTE pasa a `#6A6867` y "Los cinco bancos" a `neutral-950`).
 * **Tipografías solo en latino.** Con el CSS de Fontsource completo, `dist/` pesaba 645 KB comprimido (19 archivos de tipografía de alfabetos que nadie usa); con `@font-face` solo del subconjunto latino, 285 KB.
 * **Cliente de la API.** `createClient` usa `location.origin` como base (no `""`) y resuelve `fetch` al llamar: el `fetch` de Node no acepta rutas relativas y MSW sustituye `fetch` después de importar el módulo.
 * **Repositorio de la landing.** Cada sección tiene su `Protocol`, su repositorio de BigQuery y uno en memoria; el router toma el de `app.state.landing_repository` si existe (pruebas), el de muestra con `PORTAL_DATA=fixtures` y el de BigQuery si no. `bq/deps.py` crea un solo `BigQueryReader` por proceso. Los datos de muestra de la landing son sintéticos y relativos a la fecha actual.
@@ -174,6 +174,11 @@ class LandingResponse(BaseModel):
 * **Frescura.** `ok` si ocurrió en las últimas 36 horas (ingesta y delta) u 8 días (monitor); un delta fallido es `aviso` aunque sea reciente.
 * **`hitl_pending`** cuenta los casos sin evento o en `queued` de las tareas del revisor; un administrador que no es revisor recibe `null` (decisión `S-02`).
 * **Barra de filtros.** Aparece solo en `/cockpit`, `/explorador` y `/alertas` (`FILTER_PATHS`); la landing no la usa. Los valores por defecto (cinco bancos y 90 días) no se escriben en la URL.
+* **Ajustes tras ver la landing en dev (2026-10-26).**
+  * Nombre del portal: "VoC Analyzer" (`B-02`).
+  * El tahalí del *hero* solo aparece desde 1 024 px y el texto le reserva su margen, para que no lo tape en pantallas medianas.
+  * **Registros de lenguaje** por sección (ejecutivo, analista, académico y técnico; guía visual, sección 10) y la propiedad `audience` en `nav.ts`. En la landing: "Última actualización" con "Reseñas nuevas", "Análisis de reseñas" y "Revisión del modelo", cada una con una sola insignia (`ok`, `aviso`, `falló` o `en curso`) y su "hace cuánto"; los rangos se escriben "entre 16.5 % y 19.5 %"; la insignia de método dice "Con revisión humana" o "Solo modelo" (no "verificada", porque la revisión es de una muestra); la procedencia técnica queda en un "Cómo se calculó" desplegable; el menú dice "Revisión" y no "HITL".
+  * La tarjeta de banco usa un enlace extendido en el título (no un enlace que envuelve controles interactivos).
 * **Sin `Skeleton` propio ni `KeyboardHint`/`DataTable`:** el primero es el de shadcn; los otros dos llegan con los pasos 4 y 6, como dice el paso.
 * **Logotipo oficial (`B-01`):** no se descargó el paquete de la UP porque la descarga necesita la aprobación del autor; el encabezado lleva el nombre del portal en serif, que es el sustituto previsto.
 

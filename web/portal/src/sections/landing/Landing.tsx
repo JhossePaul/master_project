@@ -6,6 +6,7 @@ import { hasRole, type Me } from "@/auth/roles";
 import { Callout } from "@/components/Callout";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { GlossaryTerm } from "@/components/GlossaryTerm";
 import { KpiCard, KpiCardFrame } from "@/components/KpiCard";
 import { StatusPill } from "@/components/StatusPill";
 import { Tahali } from "@/components/Tahali";
@@ -19,9 +20,10 @@ import {
   formatInt,
   formatMonth,
   formatPct,
-  formatPctInterval,
+  formatPctRange,
+  formatRelative,
   formatStars,
-  formatStarsInterval,
+  formatStarsRange,
 } from "@/lib/format";
 
 type LandingData = components["schemas"]["LandingResponse"];
@@ -40,26 +42,31 @@ export function isFresh(
   return now - new Date(iso).getTime() <= maxHours * HOUR;
 }
 
+type Tone = "ok" | "aviso" | "fallo" | "en_curso";
+
 function FreshnessRow({
   label,
   when,
-  ok,
-  extra,
+  status,
+  now,
 }: {
   label: string;
   when: string | null;
-  ok: boolean;
-  extra?: React.ReactNode;
+  status: Tone;
+  now: number;
 }) {
   return (
     <li className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0">
       <span className="text-sm">{label}</span>
-      <span className="flex items-center gap-2 text-sm">
-        <span className="tabular text-text-muted">
-          {when ? formatDateTime(when) : "sin registro"}
-        </span>
-        {extra}
-        <StatusPill status={ok ? "ok" : "aviso"} />
+      <span className="flex items-center gap-3 text-sm">
+        <time
+          dateTime={when ?? undefined}
+          title={when ? formatDateTime(when) : undefined}
+          className="tabular text-text-muted"
+        >
+          {when ? formatRelative(when, now) : "sin registro"}
+        </time>
+        <StatusPill status={status} />
       </span>
     </li>
   );
@@ -73,51 +80,41 @@ function Freshness({
   now: number;
 }) {
   const delta = data.last_delta;
-  const deltaOk =
-    delta !== null &&
-    delta.status !== "failed" &&
-    isFresh(delta.started_at, FRESH_HOURS, now);
+  let analysis: Tone = "aviso";
+  if (delta?.status === "failed") analysis = "fallo";
+  else if (delta?.status === "running") analysis = "en_curso";
+  else if (delta && isFresh(delta.started_at, FRESH_HOURS, now))
+    analysis = "ok";
   return (
     <Card>
       <CardHeader>
-        <CardTitle as="h2">Frescura de los datos</CardTitle>
+        <CardTitle as="h2">Última actualización</CardTitle>
       </CardHeader>
       <CardContent>
         <ul>
           <FreshnessRow
-            label="Última ingesta"
+            label="Reseñas nuevas"
             when={data.last_ingestion_at}
-            ok={isFresh(data.last_ingestion_at, FRESH_HOURS, now)}
-          />
-          <FreshnessRow
-            label="Último delta"
-            when={delta?.started_at ?? null}
-            ok={deltaOk}
-            extra={
-              delta ? (
-                <StatusPill
-                  status={
-                    delta.status === "failed"
-                      ? "fallo"
-                      : delta.status === "running"
-                        ? "en_curso"
-                        : "ok"
-                  }
-                  label={
-                    delta.status === "failed"
-                      ? "falló"
-                      : delta.status === "running"
-                        ? "en curso"
-                        : "terminó"
-                  }
-                />
-              ) : null
+            status={
+              isFresh(data.last_ingestion_at, FRESH_HOURS, now) ? "ok" : "aviso"
             }
+            now={now}
           />
           <FreshnessRow
-            label="Último monitor"
+            label="Análisis de reseñas"
+            when={delta?.started_at ?? null}
+            status={analysis}
+            now={now}
+          />
+          <FreshnessRow
+            label="Revisión del modelo"
             when={data.last_monitor_at}
-            ok={isFresh(data.last_monitor_at, MONITOR_DAYS * 24, now)}
+            status={
+              isFresh(data.last_monitor_at, MONITOR_DAYS * 24, now)
+                ? "ok"
+                : "aviso"
+            }
+            now={now}
           />
         </ul>
       </CardContent>
@@ -128,39 +125,49 @@ function Freshness({
 function BankCard({ bank }: { bank: Headline }) {
   const style = BANKS[bank.bank_id as keyof typeof BANKS];
   return (
-    <Link
-      to={{ pathname: "/cockpit", search: `?bancos=${bank.bank_id}` }}
-      aria-label={`${bankLabel(bank.bank_id)}: abrir el cockpit`}
-      className="block rounded-md hover:shadow-sm"
-    >
-      <KpiCardFrame colorVar={style?.colorVar}>
-        <h3 className="mb-3 font-serif text-xl font-semibold">
+    <KpiCardFrame colorVar={style?.colorVar}>
+      <h3 className="mb-3 font-serif text-xl font-semibold">
+        <Link
+          to={{ pathname: "/cockpit", search: `?bancos=${bank.bank_id}` }}
+          className="after:absolute after:inset-0"
+        >
           {bankLabel(bank.bank_id)}
-        </h3>
-        <div className="grid gap-4">
-          <KpiCard
-            label="Reseñas negativas"
-            value={formatPct(bank.neg.estimate)}
-            interval={formatPctInterval(bank.neg.ci_low, bank.neg.ci_high)}
-            method={bank.neg.method}
-          />
-          <KpiCard
-            label="Gap en estrellas"
-            value={formatStars(bank.gap_estrellas.estimate)}
-            interval={formatStarsInterval(
-              bank.gap_estrellas.ci_low,
-              bank.gap_estrellas.ci_high,
-            )}
-            method={bank.gap_estrellas.method}
-            provenance={{
-              model: bank.model_version,
-              gold: bank.gold_version,
-              note: formatMonth(bank.period),
-            }}
-          />
-        </div>
-      </KpiCardFrame>
-    </Link>
+        </Link>
+      </h3>
+      <div className="grid gap-4">
+        <KpiCard
+          label="Reseñas negativas"
+          value={formatPct(bank.neg.estimate)}
+          interval={formatPctRange(bank.neg.ci_low, bank.neg.ci_high)}
+          method={bank.neg.method}
+        />
+        <KpiCard
+          label={
+            <span className="relative z-10">
+              <GlossaryTerm id="gap_estrellas">
+                Brecha en estrellas
+              </GlossaryTerm>
+            </span>
+          }
+          value={formatStars(bank.gap_estrellas.estimate)}
+          interval={formatStarsRange(
+            bank.gap_estrellas.ci_low,
+            bank.gap_estrellas.ci_high,
+          )}
+          method={bank.gap_estrellas.method}
+          collapsedProvenance={{
+            explanation: (
+              <p className="text-sm">
+                Cifras de {formatMonth(bank.period)}. Un modelo clasifica todas
+                las reseñas y personas revisaron una muestra para ajustar el
+                cálculo.
+              </p>
+            ),
+            provenance: { model: bank.model_version, gold: bank.gold_version },
+          }}
+        />
+      </div>
+    </KpiCardFrame>
   );
 }
 
@@ -169,8 +176,8 @@ function MissingBankCard({ id }: { id: string }) {
     <KpiCardFrame colorVar={BANKS[id as keyof typeof BANKS]?.colorVar}>
       <h3 className="mb-2 font-serif text-xl font-semibold">{bankLabel(id)}</h3>
       <p className="text-sm text-text-muted">
-        Sin estimación con PPI en un mes cerrado: aún no hay muestra revisada
-        suficiente.
+        Sin cifra con revisión humana en un mes cerrado: aún no hay suficientes
+        reseñas revisadas.
       </p>
     </KpiCardFrame>
   );
@@ -179,20 +186,25 @@ function MissingBankCard({ id }: { id: string }) {
 function Hero({ dataUntil }: { dataUntil: string | null }) {
   return (
     <section className="relative overflow-hidden rounded-md bg-green-900 px-8 py-10 text-neutral-0">
-      <Tahali className="absolute top-0 right-8 h-full w-48" />
-      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
-        Maestría en Ciencia de Datos BBVA
-      </p>
-      <h1 className="mt-2 max-w-2xl font-serif text-5xl font-semibold">
-        {PORTAL_NAME}
-      </h1>
-      <p className="mt-3 max-w-xl text-lg text-green-100">
-        Qué dicen los usuarios de cinco apps bancarias, con cada cifra
-        acompañada de su método y su intervalo.
-      </p>
-      <p className="mt-4 text-sm text-gold-300">
-        {dataUntil ? `Datos al ${formatDate(dataUntil)}` : "Sin fecha de datos"}
-      </p>
+      {/* La franja solo aparece donde cabe sin tocar el texto. */}
+      <Tahali className="absolute top-0 right-8 hidden h-full w-48 lg:block" />
+      <div className="lg:pr-56">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-400">
+          Maestría en Ciencia de Datos BBVA
+        </p>
+        <h1 className="mt-2 font-serif text-5xl font-semibold">
+          {PORTAL_NAME}
+        </h1>
+        <p className="mt-3 max-w-xl text-lg text-green-100">
+          Voz del cliente en apps bancarias: qué opinan los usuarios de cinco
+          apps, con cada cifra acompañada de qué tan segura es.
+        </p>
+        <p className="mt-4 text-sm text-gold-300">
+          {dataUntil
+            ? `Datos al ${formatDate(dataUntil)}`
+            : "Sin fecha de datos"}
+        </p>
+      </div>
     </section>
   );
 }
@@ -228,7 +240,7 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
         <Card>
           <CardHeader>
             <CardTitle as="h2" id="alertas">
-              Alertas de deriva abiertas
+              Alertas de cambios abiertas
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -274,7 +286,7 @@ function Content({ data, me }: { data: LandingData; me: Me }) {
                 to="/hitl"
                 className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-green-600"
               >
-                Ir a la cola{" "}
+                Ir a revisión{" "}
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </CardContent>

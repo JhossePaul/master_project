@@ -5,7 +5,7 @@ import { renderApp } from "@/test/render";
 describe("accesibilidad", () => {
   it("la landing no tiene violaciones de axe", async () => {
     const { container } = renderApp("/");
-    await screen.findByRole("heading", { name: "Banco Índigo" });
+    await screen.findByRole("heading", { name: "Banco Azul" });
     expect(await axe(container)).toHaveNoViolations();
   });
 
