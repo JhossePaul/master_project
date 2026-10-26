@@ -69,6 +69,19 @@ def test_artifacts_round_trip(tmp_path: Path) -> None:
 
     out = artifacts.download_prefix(_Storage(), "b", "p/x/", tmp_path / "d")
     assert (out / "a" / "b.bin").read_text() == "x"
+
+    class _TwoFiles(_Storage):
+        def list_blobs(self, bucket: str, prefix: str) -> list[Any]:
+            return [
+                _Blob(f"{prefix}model.safetensors"),
+                _Blob(f"{prefix}tf.h5"),
+            ]
+
+    skipped = artifacts.download_prefix(
+        _TwoFiles(), "b", "p/x/", tmp_path / "s", skip=("tf.h5",)
+    )
+    assert (skipped / "model.safetensors").exists()
+    assert not (skipped / "tf.h5").exists()
     with pytest.raises(FileNotFoundError):
         artifacts.download_prefix(_Storage(), "b", "p/vacio/", tmp_path / "e")
     with pytest.raises(FileNotFoundError):

@@ -110,6 +110,9 @@ def parser() -> argparse.ArgumentParser:
     trn.add_argument("--run", default=None, help="por defecto, la fecha y hora")
     trn.add_argument("--actor-hash", type=_actor, default=None)
     trn.add_argument("--reason", default=None)
+    sub.add_parser(
+        "kaggle-check", help="prueba la clave y el dataset de Kaggle"
+    )
     gold = sub.add_parser("upload-gold-ids", help="sube los ids del oro")
     gold.add_argument(
         "--labels",
@@ -429,6 +432,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             lambda: datetime.now(UTC),
         )
         return 0 if row.status.value == "succeeded" else 1
+    if args.command == "kaggle-check":
+        import tempfile
+
+        from ml_inference.kaggle_check import run_check
+        from ml_inference.rescore import KaggleApiClient
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_check(KaggleApiClient(), Path(tmp), f"{now:%Y%m%d%H%M}")
+        return 0
     if args.command == "upload-gold-ids":
         from ml_inference.load_local import upload_gold_ids
 

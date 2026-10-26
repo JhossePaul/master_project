@@ -6,6 +6,7 @@ Disposición: ``sentiment/<model_version>/`` (pesos de RoBERTuito),
 cargarlos; nada se descarga de Hugging Face en producción.
 """
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Final
 
@@ -26,11 +27,23 @@ def gcs_uri(bucket: str, prefix: str) -> str:
 
 
 def download_prefix(
-    client: storage.Client, bucket: str, prefix: str, dest: Path
+    client: storage.Client,
+    bucket: str,
+    prefix: str,
+    dest: Path,
+    skip: Sequence[str] = (),
 ) -> Path:
-    """Baja todos los objetos de ``prefix`` a ``dest``; falla si no hay."""
+    """Baja los objetos de ``prefix`` a ``dest``; falla si no hay.
+
+    ``skip`` son nombres de archivo que no se bajan (por ejemplo, los pesos
+    duplicados en otros formatos).
+    """
     blobs = [b for b in client.list_blobs(bucket, prefix=prefix)]
-    files = [b for b in blobs if not b.name.endswith("/")]
+    files = [
+        b
+        for b in blobs
+        if not b.name.endswith("/") and b.name.rsplit("/", 1)[-1] not in skip
+    ]
     if not files:
         raise FileNotFoundError(f"no artifacts under gs://{bucket}/{prefix}")
     for blob in files:

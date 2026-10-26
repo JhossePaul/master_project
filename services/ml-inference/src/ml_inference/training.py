@@ -112,6 +112,16 @@ DATASET_PREFIX: Final = "voc-training"
 GOLD_IDS_FILE: Final = "gold_ids.parquet"
 MANIFEST_FILE: Final = "training_manifest.json"
 BASE_NAME: Final = "base"
+# Pesos duplicados en otros formatos y archivos del repositorio original que
+# el kernel no lee: el modelo base trae safetensors, y subir los tres formatos
+# triplica un dataset de 1.3 GB.
+BASE_UNUSED: Final = (
+    "tf_model.h5",
+    "pytorch_model.bin",
+    "training_args.bin",
+    "test_results.json",
+    "README.md",
+)
 TRAIN_SPLIT: Final = "entrenamiento"
 LICENSE: Final = "pysentimiento: uso no comercial e investigación"
 VERSION_PREFIX: Final = "robertuito_sentiment_v"
@@ -471,6 +481,7 @@ class Training:
                 BASE_NAME,
             ),
             base,
+            skip=BASE_UNUSED,
         )
         tokenizer = load_tokenizer(base)
         examples = self.data.examples

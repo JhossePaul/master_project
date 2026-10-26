@@ -127,6 +127,17 @@ class KaggleClient(Protocol):
     def delete_dataset(self, ref: str) -> None: ...
 
 
+def raise_on_error(result: Any, action: str) -> None:
+    """La librería de Kaggle devuelve el fallo en ``error`` en vez de lanzarlo.
+
+    Sin esto, un dataset que no se creó solo se nota en la consulta de estado,
+    que contesta 403 y no dice por qué.
+    """
+    error = getattr(result, "error", None)
+    if error:
+        raise RescoreError(f"Kaggle {action} failed: {error}")
+
+
 class KaggleApiClient:  # pragma: no cover - red real
     """Adaptador de ``kaggle`` (``KAGGLE_API_TOKEN`` del entorno)."""
 
@@ -141,15 +152,30 @@ class KaggleApiClient:  # pragma: no cover - red real
         self.user = self.api.get_config_value(self.api.CONFIG_NAME_USER)
 
     def create_dataset(self, folder: Path) -> None:
-        self.api.dataset_create_new(
-            str(folder), public=False, quiet=True, dir_mode="skip"
+        raise_on_error(
+            self.api.dataset_create_new(
+                str(folder), public=False, quiet=True, dir_mode="zip"
+            ),
+            "dataset creation",
         )
 
     def dataset_status(self, ref: str) -> str:
-        return str(self.api.dataset_status(ref)).lower()
+        from requests.exceptions import HTTPError
+
+        try:
+            return str(self.api.dataset_status(ref)).lower()
+        except HTTPError as error:
+            # Recién creado, el dataset contesta 403 un par de segundos
+            # (medido el 2026-10-25); se sigue esperando hasta el tiempo máximo.
+            response = error.response
+            code = None if response is None else response.status_code
+            if code in (403, 404):
+                log.info("kaggle: dataset %s aún no visible (%s)", ref, code)
+                return "pending"
+            raise
 
     def push_kernel(self, folder: Path) -> None:
-        self.api.kernels_push(str(folder))
+        raise_on_error(self.api.kernels_push(str(folder)), "kernel push")
 
     def kernel_status(self, ref: str) -> str:
         status = self.api.kernels_status(ref)
