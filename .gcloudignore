@@ -17,7 +17,16 @@ evidence/
 web/portal/node_modules/
 web/portal/dist/
 experiments/
-docs/
+docs/*
+# Guías de revisión que la imagen de api-backend copia a /app/guidelines.
+!docs/analytics/
+docs/analytics/*
+!docs/analytics/labeling/
+docs/analytics/labeling/*
+!docs/analytics/labeling/annotation_guideline.md
+!docs/analytics/eda/
+docs/analytics/eda/*
+!docs/analytics/eda/eda_aspects_guideline.md
 # Los Dockerfiles copian infra/pyproject.toml (miembro del workspace uv).
 infra/*
 !infra/pyproject.toml
