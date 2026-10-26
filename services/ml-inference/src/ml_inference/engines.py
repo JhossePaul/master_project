@@ -19,7 +19,9 @@ from voc_common.operations_v3 import TokenAttribution
 
 class SentimentEngine(Protocol):
     def predict(self, texts: Sequence[str]) -> NDArray[np.floating]: ...
-    def explain(self, text: str) -> list[TokenAttribution]: ...
+    def explain(
+        self, text: str, temperature: float
+    ) -> list[TokenAttribution]: ...
 
 
 class Embedder(Protocol):
@@ -46,10 +48,10 @@ class _RobertuitoEngine:
 
         return predict_proba(self.model, texts, self.batch_size)
 
-    def explain(self, text: str) -> list[TokenAttribution]:
-        from voc_nlp.explain import occlusion
+    def explain(self, text: str, temperature: float) -> list[TokenAttribution]:
+        from voc_nlp.explain import occlusion_v2
 
-        return occlusion(self.model, text, self.batch_size)
+        return occlusion_v2(self.model, text, temperature, self.batch_size)
 
 
 class _MiniLmEmbedder:

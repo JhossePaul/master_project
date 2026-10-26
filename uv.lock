@@ -2376,6 +2376,7 @@ name = "ml-inference"
 version = "0.1.0"
 source = { editable = "services/ml-inference" }
 dependencies = [
+    { name = "fastapi" },
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery" },
     { name = "google-cloud-pubsub" },
@@ -2383,12 +2384,14 @@ dependencies = [
     { name = "kaggle" },
     { name = "pyarrow" },
     { name = "pydantic-settings" },
+    { name = "uvicorn" },
     { name = "voc-common" },
     { name = "voc-nlp", extra = ["gemini", "sentiment", "topics"] },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", specifier = ">=0.143,<1" },
     { name = "google-cloud-aiplatform", specifier = ">=1.70,<2" },
     { name = "google-cloud-bigquery", specifier = ">=3.27,<4" },
     { name = "google-cloud-pubsub", specifier = ">=2.23,<3" },
@@ -2396,6 +2399,7 @@ requires-dist = [
     { name = "kaggle", specifier = ">=2.2,<3" },
     { name = "pyarrow", specifier = ">=17" },
     { name = "pydantic-settings", specifier = ">=2.7,<3" },
+    { name = "uvicorn", specifier = ">=0.54,<1" },
     { name = "voc-common", editable = "packages/voc-common" },
     { name = "voc-nlp", extras = ["sentiment", "gemini", "topics"], editable = "packages/voc-nlp" },
 ]

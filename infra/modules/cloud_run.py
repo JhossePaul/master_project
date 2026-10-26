@@ -25,6 +25,7 @@ from infra.modules.storage_bq import StorageAndBqResources
 
 ARTIFACT_REPOSITORY_ID: Final = "voc-containers-repo"
 API_SERVICE_NAME: Final = "voc-api-backend"
+ML_ONLINE_SERVICE_NAME: Final = "voc-ml-online"
 # Solo digest inmutable: un tag mutable (p. ej. :latest) no dispara redeploys.
 DigestImage = Annotated[
     str,
@@ -97,6 +98,9 @@ class CloudRunResources:
     # cada persona de portal_users recibe iap.httpsResourceAccessor.
     iap_invoker: gcp.cloudrunv2.ServiceIamMember | None = None
     iap_accessors: tuple[gcp.iap.WebCloudRunServiceIamMember, ...] = ()
+    # Servicio privado de explicación y embeddings (EPIC-7, paso 6).
+    ml_online: gcp.cloudrunv2.Service | None = None
+    ml_online_invoker: gcp.cloudrunv2.ServiceIamMember | None = None
 
 
 @dataclass(frozen=True)
@@ -393,6 +397,8 @@ def create_cloud_run_resources(
         max_instances: int = 2,
         ingress: str | None = None,
         iap_enabled: bool | None = None,
+        args: Sequence[str] | None = None,
+        concurrency: int | None = None,
     ) -> gcp.cloudrunv2.Service:
         # ingress e iap_enabled solo se declaran cuando se piden: los
         # servicios existentes no deben cambiar en `pulumi preview`.
@@ -420,9 +426,15 @@ def create_cloud_run_resources(
                     "max_instance_count": max_instances,
                 },
                 "timeout": f"{timeout_sec}s",
+                **(
+                    {"max_instance_request_concurrency": concurrency}
+                    if concurrency is not None
+                    else {}
+                ),
                 "containers": [
                     {
                         "image": image,
+                        **({"args": list(args)} if args is not None else {}),
                         "resources": {
                             "limits": {"cpu": cpu, "memory": memory},
                             "cpu_idle": True,
@@ -491,6 +503,41 @@ def create_cloud_run_resources(
         },
         opts=opts,
     )
+    # Explicación y embeddings bajo pedido (EPIC-7, paso 6): la imagen de
+    # ml-inference con el comando `serve`. Sin IAP: solo la cuenta de la API
+    # puede invocarlo (IAM). El ingress sigue abierto porque la API no tiene
+    # acceso a la VPC; un ingress interno la dejaría fuera.
+    online = None
+    online_invoker = None
+    if images.ml_inference is not None and images.api_backend is not None:
+        online = service(
+            ML_ONLINE_SERVICE_NAME,
+            images.ml_inference,
+            security.sa_ml_online.email,
+            {
+                **ml_env,
+                "TORCH_THREADS": "2",
+                "SENTIMENT_BATCH_SIZE": "16",
+            },
+            timeout_sec=120,
+            cpu="2",
+            memory="4Gi",
+            min_instances=0,
+            max_instances=1,
+            args=["serve"],
+            concurrency=4,
+        )
+        online_invoker = gcp.cloudrunv2.ServiceIamMember(
+            "voc-ml-online-api-invoker",
+            project=project_id,
+            location=region,
+            name=online.name,
+            role="roles/run.invoker",
+            member=security.sa_portal_api.email.apply(
+                lambda email: f"serviceAccount:{email}"
+            ),
+            opts=opts,
+        )
     # La API y el portal (EPIC-7) son opcionales para activar la ingesta.
     backend = None
     iap_invoker = None
@@ -521,6 +568,7 @@ def create_cloud_run_resources(
             ),
             "DLP_INSPECT_TEMPLATE": dlp.inspect_template.id,
             "DLP_DEIDENTIFY_TEMPLATE": dlp.deidentify_template.id,
+            **({"ML_ONLINE_URL": online.uri} if online is not None else {}),
         }
         backend = service(
             API_SERVICE_NAME,
@@ -701,4 +749,6 @@ def create_cloud_run_resources(
         ml_executors=tuple(ml_executors),
         iap_invoker=iap_invoker,
         iap_accessors=tuple(iap_accessors),
+        ml_online=online,
+        ml_online_invoker=online_invoker,
     )

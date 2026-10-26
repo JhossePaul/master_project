@@ -374,8 +374,10 @@ class _Steps:
                 ReviewExplanation(
                     text_key=key,
                     model_version=self.state.model.model_version,
-                    method="occlusion_v1",
-                    attributions=engine.explain(texts[key]),
+                    method="occlusion_v2",
+                    attributions=engine.explain(
+                        texts[key], self.state.model.calibration_t
+                    ),
                     source=ExplanationSource.PRECOMPUTED_HITL,
                     computed_at=self.now,
                 )

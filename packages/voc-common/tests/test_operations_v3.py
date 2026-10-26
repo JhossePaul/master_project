@@ -212,10 +212,55 @@ def test_review_explanation_stores_offsets_not_text() -> None:
         source="precomputed_hitl",
         computed_at="2026-10-21T07:06:00Z",
     )
-    assert set(TokenAttribution.model_fields) == {"start", "end", "weight"}
+    assert set(TokenAttribution.model_fields) == {
+        "start",
+        "end",
+        "weight",
+        "d_neg",
+        "d_neu",
+        "d_pos",
+    }
     assert explanation.attributions[0].end == 4
     with pytest.raises(ValidationError, match="greater than start"):
         TokenAttribution(start=3, end=3, weight=0.1)
+
+
+def test_occlusion_v2_attributions_carry_the_direction() -> None:
+    explanation = ReviewExplanation(
+        text_key=KEY,
+        model_version="M4_synthetic",
+        method="occlusion_v2",
+        attributions=[
+            {"start": 0, "end": 4, "d_neg": 0.4, "d_neu": -0.1, "d_pos": -0.3}
+        ],
+        source="on_demand",
+        computed_at="2026-10-26T07:06:00Z",
+    )
+    assert explanation.attributions[0].d_neg == 0.4
+    with pytest.raises(ValidationError, match="wrong fields"):
+        ReviewExplanation(
+            text_key=KEY,
+            model_version="M4_synthetic",
+            method="occlusion_v2",
+            attributions=[{"start": 0, "end": 4, "weight": 0.7}],
+            source="on_demand",
+            computed_at="2026-10-26T07:06:00Z",
+        )
+    with pytest.raises(ValidationError, match="wrong fields"):
+        ReviewExplanation(
+            text_key=KEY,
+            model_version="M4_synthetic",
+            method="occlusion_v1",
+            attributions=[
+                {"start": 0, "end": 4, "d_neg": 0, "d_neu": 0, "d_pos": 0}
+            ],
+            source="on_demand",
+            computed_at="2026-10-26T07:06:00Z",
+        )
+    with pytest.raises(ValidationError, match="weight or all"):
+        TokenAttribution(start=0, end=4, d_neg=0.1)
+    with pytest.raises(ValidationError, match="excludes"):
+        TokenAttribution(start=0, end=4, weight=0.1, d_pos=0.1)
 
 
 def _quality(**overrides: Any) -> ModelQuality:

@@ -27,6 +27,8 @@
 * ``monitor``: el Job semanal (por ahora, deriva, cierre de subidas,
   muestras humanas, calidad y KPI).
 * ``build-vocab``: sube una vez el vocabulario de entrenamiento.
+* ``serve``: el servicio privado ``voc-ml-online`` (explicación y embeddings
+  bajo pedido para el portal).
 """
 
 import argparse
@@ -56,6 +58,7 @@ def parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser("delta", help="delta diario")
     sub.add_parser("monitor", help="monitor semanal")
+    sub.add_parser("serve", help="servicio privado de explicación y embeddings")
     seed = sub.add_parser("seed", help="versiones iniciales")
     seed.add_argument("--actor-hash", type=_actor, required=True)
     seed.add_argument("--reason", required=True)
@@ -226,6 +229,25 @@ def _monitor_state(settings: InferenceSettings, bigquery, storage):
     return state, vocab
 
 
+def _serve(
+    settings: InferenceSettings, bigquery, storage
+) -> int:  # pragma: no cover
+    import os
+
+    import uvicorn
+
+    from ml_inference.online import OnlineModels, create_app, real_loaders
+
+    app = create_app(OnlineModels(real_loaders(settings, storage, bigquery)))
+    uvicorn.run(
+        app,
+        host="0.0.0.0",  # noqa: S104  # nosec B104 - Cloud Run, ingress interno
+        port=int(os.environ.get("PORT", "8080")),
+        access_log=False,
+    )
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     p = parser()
@@ -236,6 +258,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     now = datetime.now(UTC)
     settings = InferenceSettings()  # type: ignore[call-arg]
     bigquery, storage = _clients(settings)
+    if args.command == "serve":
+        return _serve(settings, bigquery, storage)  # pragma: no cover
     from ml_inference.bq_io import StagingMergeWriter
 
     writer = StagingMergeWriter(bigquery, settings.dataset)

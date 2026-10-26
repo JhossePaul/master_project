@@ -26,11 +26,13 @@ def test_robertuito_engine(
         "predict_proba",
         lambda m, t, b: np.full((len(t), 3), b / 100),
     )
-    monkeypatch.setattr(explain, "occlusion", lambda m, t, b: [m, t, b])
+    monkeypatch.setattr(
+        explain, "occlusion_v2", lambda m, t, temp, b: [m, t, temp, b]
+    )
     engine = engines.EngineLoaders().sentiment(tmp_path / "w", 32, 2)
     assert threads == [2]
     assert engine.predict(["a", "b"]).shape == (2, 3)
-    assert engine.explain("hola") == ["model:w", "hola", 32]
+    assert engine.explain("hola", 1.4) == ["model:w", "hola", 1.4, 32]
 
 
 def test_embedder_and_topics(

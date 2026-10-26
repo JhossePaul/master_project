@@ -204,3 +204,26 @@ def create_portal_data_access(
             )
         )
     return grants
+
+
+def create_ml_online_data_access(
+    project: str,
+    dataset: gcp.bigquery.Dataset,
+    analytics: AnalyticsBqResources,
+    account: gcp.serviceaccount.Account,
+    *,
+    deps: list[pulumi.Resource] | None = None,
+) -> list[pulumi.Resource]:
+    """``voc-ml-online`` solo lee ``model_versions`` (la temperatura)."""
+    table = analytics.tables["model_versions"]
+    return [
+        gcp.bigquery.IamMember(
+            "voc-ml-online-model-versions-viewer",
+            project=project,
+            dataset_id=dataset.dataset_id,
+            table_id=table.table_id,
+            role="roles/bigquery.dataViewer",
+            member=account.email.apply(lambda email: f"serviceAccount:{email}"),
+            opts=pulumi.ResourceOptions(depends_on=[table, *(deps or [])]),
+        )
+    ]
