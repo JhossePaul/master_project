@@ -1,6 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { toast } from "sonner";
 import { axe } from "vitest-axe";
 import { syntheticHitlCase } from "@/test/handlers";
 import { renderApp } from "@/test/render";
@@ -10,16 +11,33 @@ type Body = Record<string, unknown>;
 
 const nextCalls = { count: 0 };
 
-/** Cola de un solo caso; cada guardado queda en `saved`. */
+interface Options {
+  /** Respuesta propia a la revisión número `n` (desde 1); `undefined` = éxito. */
+  review?: (n: number) => Response | undefined;
+  /** La llamada número `n` a `/next` falla (la precarga es la 2). */
+  failNext?: number;
+}
+
+/** Cola de casos; cada guardado y cada petición a `/next` quedan anotados. */
 function serve(
   cases: ReturnType<typeof syntheticHitlCase>[],
-  review?: () => Response,
+  options: Options = {},
 ) {
+  nextCalls.count = 0;
   const saved: Body[] = [];
+  const nexts: Body[] = [];
+  const released: string[] = [];
   const queue = [...cases];
+  let reviews = 0;
   server.use(
-    http.post("*/api/v1/hitl/next", () => {
+    http.post("*/api/v1/hitl/next", async ({ request }) => {
       nextCalls.count += 1;
+      nexts.push((await request.json()) as Body);
+      if (options.failNext === nextCalls.count)
+        return HttpResponse.json(
+          { error: { code: "upstream", message: "x", request_id: "r" } },
+          { status: 502 },
+        );
       const next = queue.shift();
       return next
         ? HttpResponse.json(next)
@@ -27,20 +45,50 @@ function serve(
     }),
     http.post("*/api/v1/hitl/items/:id/review", async ({ request }) => {
       const body = (await request.json()) as Body;
-      if (review) return review();
+      reviews += 1;
+      const custom = options.review?.(reviews);
+      if (custom) return custom;
       saved.push(body);
       return HttpResponse.json({
         review_id: body.review_id,
-        next: queue.shift() ?? null,
+        next: body.claim_next === false ? null : (queue.shift() ?? null),
       });
     }),
     http.post(
       "*/api/v1/hitl/items/:id/skip",
       () => new HttpResponse(null, { status: 204 }),
     ),
+    http.post("*/api/v1/hitl/items/:id/release", ({ params }) => {
+      released.push(String(params.id));
+      return new HttpResponse(null, { status: 204 });
+    }),
   );
-  return saved;
+  return Object.assign(saved, { nexts, released });
 }
+
+const conflict = () =>
+  HttpResponse.json(
+    {
+      error: {
+        code: "conflict",
+        message: "El caso volvió a la cola; pide el siguiente",
+        request_id: "r1",
+      },
+    },
+    { status: 409 },
+  );
+const dlpDown = () =>
+  HttpResponse.json(
+    { error: { code: "upstream", message: "dlp", request_id: "r2" } },
+    { status: 502 },
+  );
+const second = () =>
+  syntheticHitlCase({
+    item_id: "b".repeat(32),
+    display_mode: "blind",
+    proposal: null,
+    text: "Segundo caso de la cola.",
+  });
 
 const blind = () =>
   syntheticHitlCase({ display_mode: "blind", proposal: null });
@@ -111,14 +159,16 @@ describe("revisión de sentimiento", () => {
     await user.keyboard("f");
     await user.keyboard("n");
     expect(
-      screen.getByRole("checkbox", { name: /Menciona falla/ }),
+      screen.getByRole("checkbox", { name: /Menciona una falla concreta/ }),
     ).toBeChecked();
     expect(
       screen.getByRole("checkbox", { name: /nombre propio/ }),
     ).toBeChecked();
     await user.keyboard("d");
     await user.keyboard("d");
-    expect(screen.getByRole("checkbox", { name: /Duda/ })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: /Tengo dudas con esta etiqueta/ }),
+    ).not.toBeChecked();
     await user.keyboard("{Enter}");
 
     await waitFor(() => expect(saved).toHaveLength(1));
@@ -135,20 +185,74 @@ describe("revisión de sentimiento", () => {
     ).toBeInTheDocument();
   });
 
-  it("guardar muestra el siguiente caso sin pedirlo otra vez", async () => {
+  it("precarga el siguiente caso sin repetir el que se está revisando", async () => {
     nextCalls.count = 0;
-    serve([blind(), blind()]);
+    const saved = serve([blind(), second()]);
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+
+    await waitFor(() => expect(nextCalls.count).toBe(2));
+    expect(saved.nexts[0]).toEqual({ task: "sentiment", exclude: [] });
+    expect(saved.nexts[1]).toEqual({
+      task: "sentiment",
+      exclude: ["a".repeat(32)],
+    });
+  });
+
+  it("guardar muestra el siguiente al instante y guarda en segundo plano", async () => {
+    nextCalls.count = 0;
+    const saved = serve([blind(), second()]);
     const user = userEvent.setup();
     renderApp("/hitl/sentimiento");
     await screen.findByText(/Caso 1 de esta sesión/);
+    await waitFor(() => expect(nextCalls.count).toBe(2));
 
     await user.keyboard("1");
     await user.keyboard("{Enter}");
 
     expect(
-      await screen.findByText(/Caso 2 de esta sesión/),
+      await screen.findByText("Segundo caso de la cola."),
     ).toBeInTheDocument();
-    expect(nextCalls.count).toBe(1); // solo la primera apertura
+    expect(screen.getByText(/Caso 2 de esta sesión/)).toBeInTheDocument();
+    await waitFor(() => expect(saved).toHaveLength(1));
+    // No pide otro caso: ya tenía el siguiente (más la precarga del nuevo).
+    expect(saved[0]).toMatchObject({
+      claim_next: false,
+      validated_label: "NEG",
+    });
+    await waitFor(() => expect(nextCalls.count).toBe(3));
+  });
+
+  it("si la precarga falla, guarda de la forma clásica y toma el siguiente en la respuesta", async () => {
+    nextCalls.count = 0;
+    const saved = serve([blind(), second()], { failNext: 2 });
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+    await waitFor(() => expect(nextCalls.count).toBe(2));
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText("Segundo caso de la cola."),
+    ).toBeInTheDocument();
+    expect(saved[0]).toMatchObject({ claim_next: true });
+  });
+
+  it("sin más casos, guardar muestra el estado vacío", async () => {
+    const saved = serve([blind()]);
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/modo a ciegas/);
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText("No quedan casos pendientes en esta cola"),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(saved).toHaveLength(1));
   });
 
   it("no ofrece el campo ticket", async () => {
@@ -214,22 +318,33 @@ describe("revisión de sentimiento", () => {
     });
   });
 
-  it("un 409 avisa que el caso volvió a la cola y ofrece el siguiente", async () => {
-    serve([blind(), blind()], () =>
-      HttpResponse.json(
-        {
-          error: {
-            code: "conflict",
-            message: "El caso volvió a la cola; pide el siguiente",
-            request_id: "r1",
-          },
-        },
-        { status: 409 },
+  it("un 409 al guardar en segundo plano avisa con un mensaje y no detiene la revisión", async () => {
+    const error = vi.spyOn(toast, "error").mockImplementation(() => "");
+    serve([blind(), second()], { review: () => conflict() });
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText("Segundo caso de la cola."),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining("volvió a la cola"),
       ),
     );
+    error.mockRestore();
+  });
+
+  it("un 409 con la forma clásica ofrece pedir el siguiente", async () => {
+    serve([blind(), second()], { failNext: 2, review: () => conflict() });
     const user = userEvent.setup();
     renderApp("/hitl/sentimiento");
     await screen.findByText(/modo a ciegas/);
+    await waitFor(() => expect(nextCalls.count).toBeGreaterThan(1));
 
     await user.keyboard("1");
     await user.keyboard("{Enter}");
@@ -240,19 +355,55 @@ describe("revisión de sentimiento", () => {
     await user.click(
       screen.getByRole("button", { name: "Pedir el siguiente" }),
     );
-    expect(await screen.findByText(/modo a ciegas/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Caso 2 de esta sesión/),
+    ).toBeInTheDocument();
   });
 
-  it("un 502 de DLP conserva el formulario y lo explica", async () => {
-    serve([blind()], () =>
-      HttpResponse.json(
-        { error: { code: "upstream", message: "dlp", request_id: "r2" } },
-        { status: 502 },
-      ),
+  it("un 502 de DLP avisa y permite volver al caso con su formulario", async () => {
+    const saved = serve([blind(), second()], {
+      review: (n) => (n === 1 ? dlpDown() : undefined),
+    });
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+
+    await user.type(screen.getByLabelText("Comentario (opcional)"), "hola");
+    await user.keyboard("{Control>}1{/Control}"); // sin efecto en el comentario
+    await user.click(screen.getByRole("radio", { name: "NEG" }));
+    await user.click(screen.getByRole("button", { name: "Guardar y seguir" }));
+
+    expect(
+      await screen.findByText("Segundo caso de la cola."),
+    ).toBeInTheDocument();
+    const banner = await screen.findByRole("alert");
+    expect(banner).toHaveTextContent(
+      "No se guardó la revisión del caso anterior",
     );
+    expect(banner).toHaveTextContent("No se pudo sanitizar el comentario");
+
+    await user.click(screen.getByRole("button", { name: "Volver a ese caso" }));
+
+    expect(screen.getByLabelText("Comentario (opcional)")).toHaveValue("hola");
+    expect(screen.getByRole("radio", { name: "NEG" })).toBeChecked();
+    expect(
+      screen.queryByText("Segundo caso de la cola."),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Guardar y seguir" }));
+    // El caso que se estaba viendo no se perdió: vuelve como el siguiente.
+    expect(
+      await screen.findByText("Segundo caso de la cola."),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(saved).toHaveLength(1));
+    expect(saved[0]).toMatchObject({ comment: "hola" });
+  });
+
+  it("un 502 con la forma clásica conserva el formulario y lo explica", async () => {
+    serve([blind()], { failNext: 2, review: () => dlpDown() });
     const user = userEvent.setup();
     renderApp("/hitl/sentimiento");
     await screen.findByText(/modo a ciegas/);
+    await waitFor(() => expect(nextCalls.count).toBeGreaterThan(1));
 
     await user.keyboard("1");
     await user.type(screen.getByLabelText("Comentario (opcional)"), "hola");
@@ -263,6 +414,23 @@ describe("revisión de sentimiento", () => {
     );
     expect(screen.getByLabelText("Comentario (opcional)")).toHaveValue("hola");
     expect(screen.getByRole("radio", { name: "NEG" })).toBeChecked();
+  });
+
+  it("salir suelta el caso abierto y el precargado", async () => {
+    const saved = serve([blind(), second()]);
+    const user = userEvent.setup();
+    const { router } = renderApp("/hitl/sentimiento");
+    await screen.findByText(/Caso 1 de esta sesión/);
+    await waitFor(() => expect(saved.nexts).toHaveLength(2));
+    await new Promise((r) => setTimeout(r, 20)); // llega la respuesta precargada
+
+    await user.click(screen.getByRole("button", { name: "Salir" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/hitl"));
+    // (el cierre de la prueba anterior también puede soltar el suyo)
+    expect(saved.released).toEqual(
+      expect.arrayContaining(["a".repeat(32), "b".repeat(32)]),
+    );
   });
 
   it("sin casos pendientes muestra el estado vacío", async () => {

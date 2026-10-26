@@ -795,9 +795,12 @@ def test_la_cola_en_memoria_vence(make_kit: Callable[..., Kit]) -> None:
     ana = kit.client("ana")
     assert take(ana) is not None
 
-    ticks[0] += 16
+    ticks[0] += 299
     assert take(ana) is not None
+    assert inner.queue_reads == 1  # una revisión larga no la vence
 
+    ticks[0] += 2
+    assert take(ana) is not None
     assert inner.queue_reads == 2
 
 
@@ -837,14 +840,12 @@ def test_un_caso_revisado_por_otra_instancia_no_se_vuelve_a_tomar(
     case = take(ana)
 
     assert case is not None and "número 2" in case["text"]
+    # No lo tomó: se releyó su estado antes de escribir nada.
     last = [e for e in inner.events if e.item_id == first.item_id][-1]
-    assert last.status is HitlStatus.SUBMITTED  # quedó cerrado otra vez
+    assert last.status is HitlStatus.SUBMITTED and last.actor_hash == other
     assert [
         e.status for e in inner.events if e.actor_hash == kit.actor("ana")
-    ] == [
-        HitlStatus.IN_REVIEW,
-        HitlStatus.IN_REVIEW,
-    ]
+    ] == [HitlStatus.IN_REVIEW]
 
 
 def make_review(item: HitlItem, reviewer: str, review_id: str) -> Any:
@@ -865,4 +866,93 @@ def make_review(item: HitlItem, reviewer: str, review_id: str) -> Any:
         opened_at=T0 - timedelta(minutes=30),
         submitted_at=T0 - timedelta(minutes=29),
         seconds_spent=60,
+    )
+
+
+def test_un_caso_que_otra_instancia_acaba_de_tomar_no_se_toma(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit, inner, cached, _ = cached_kit(
+        make_kit, make_item(1, priority=0.9), make_item(2, priority=0.1)
+    )
+    ana = kit.client("ana")
+    cached.entries(HitlTask.SENTIMENT, kit.clock())  # la memoria se llena
+    # Otra instancia lo tomó hace un minuto: la memoria no lo sabe.
+    inner.add_event(
+        HitlEvent(
+            event_id="y1",
+            item_id=inner.items[0].item_id,
+            status=HitlStatus.IN_REVIEW,
+            actor_hash=kit.actor("beto"),
+            at=T0 - timedelta(minutes=1),
+        )
+    )
+
+    case = take(ana)
+
+    assert case is not None and "número 2" in case["text"]
+    assert [e.actor_hash for e in inner.events if e.event_id == "y1"] == [
+        kit.actor("beto")
+    ]
+    # Y la cola en memoria ya lo sabe: la siguiente vez no lo vuelve a probar.
+    held = [e for e in cached.entries(HitlTask.SENTIMENT, kit.clock())]
+    assert any(e.actor_hash == kit.actor("beto") for e in held)
+
+
+def test_precargar_no_devuelve_el_caso_que_ya_se_esta_revisando(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit = make_kit(make_item(1, priority=0.9), make_item(2, priority=0.1))
+    ana, beto = kit.client("ana"), kit.client("beto")
+    current = take(ana)
+    assert current is not None and "número 1" in current["text"]
+
+    ahead = ana.post(
+        "/api/v1/hitl/next",
+        json={"task": "sentiment", "exclude": [current["item_id"]]},
+    )
+
+    assert ahead.status_code == 200 and "número 2" in ahead.json()["text"]
+    assert take(beto) is None  # los dos casos son de ana
+    # Sin nada más que dar, la precarga no devuelve el que ya tiene.
+    again = ana.post(
+        "/api/v1/hitl/next",
+        json={
+            "task": "sentiment",
+            "exclude": [current["item_id"], ahead.json()["item_id"]],
+        },
+    )
+    assert again.status_code == 204
+
+
+def test_guardar_con_el_siguiente_precargado_no_toma_otro(
+    make_kit: Callable[..., Kit],
+) -> None:
+    kit = make_kit(
+        make_item(1, priority=0.9),
+        make_item(2, priority=0.5),
+        make_item(3, priority=0.1),
+    )
+    ana, beto = kit.client("ana"), kit.client("beto")
+    current = take(ana)
+    assert current is not None
+    ahead = ana.post(
+        "/api/v1/hitl/next",
+        json={"task": "sentiment", "exclude": [current["item_id"]]},
+    ).json()
+
+    out = ana.post(
+        f"/api/v1/hitl/items/{current['item_id']}/review",
+        json={**body(current), "claim_next": False},
+    ).json()
+
+    assert out["next"] is None
+    # El caso precargado sigue siendo de ana; el tercero lo toma beto.
+    other = take(beto)
+    assert other is not None and "número 3" in other["text"]
+    assert (
+        review(
+            ana, ahead, review_id="77777777-7777-4777-8777-777777777777"
+        ).json()["next"]
+        is None
     )

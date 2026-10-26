@@ -36,9 +36,10 @@ MEDIAN_DAYS = 30
 MONITOR_WINDOW_DAYS = 200
 QUEUE_LIMIT = 500
 PUBLIC_ID_LENGTH = 32
-# Memoria del proceso: la cola cambia poco entre dos peticiones del mismo
-# revisor y los textos del TDS casi no cambian (la edición se detecta al tomar).
-QUEUE_CACHE_SECONDS = 15.0
+# Memoria del proceso: una revisión dura más de 15 s, así que la cola debe
+# sobrevivir entre dos peticiones del mismo revisor. Los textos del TDS casi
+# no cambian (la edición se detecta al tomar un caso).
+QUEUE_CACHE_SECONDS = 300.0
 TEXT_CACHE_SECONDS = 900.0
 
 
@@ -529,7 +530,25 @@ class CachedHitlRepository:
         return list(found)
 
     def entry(self, ref: str, now: datetime) -> QueueEntry | None:
-        return self._inner.entry(ref, now)
+        """Siempre fresco; de paso corrige la cola guardada."""
+        fresh = self._inner.entry(ref, now)
+        if fresh is not None:
+            for task, (loaded, entries) in list(self._queues.items()):
+                self._queues[task] = (
+                    loaded,
+                    [
+                        fresh
+                        for e in entries
+                        if e.item.item_id == fresh.item.item_id
+                        and not is_closed(fresh)
+                    ]
+                    + [
+                        e
+                        for e in entries
+                        if e.item.item_id != fresh.item.item_id
+                    ],
+                )
+        return fresh
 
     def _text(self, key: tuple[str, str]) -> tuple[bool, str | None]:
         hit = self._texts.get(key)

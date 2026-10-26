@@ -35,10 +35,15 @@ export function useGuideline(task: "sentiment") {
   });
 }
 
-/** Toma el siguiente caso; `null` si no quedan pendientes (204). */
-export async function nextCase(): Promise<HitlCase | null> {
+/**
+ * Toma el siguiente caso; `null` si no quedan pendientes (204). Con `exclude`
+ * (los casos que ya tengo abiertos) sirve para precargarlo.
+ */
+export async function nextCase(
+  exclude: string[] = [],
+): Promise<HitlCase | null> {
   const { data } = await api.POST("/api/v1/hitl/next", {
-    body: { task: "sentiment" },
+    body: { task: "sentiment", exclude },
   });
   return data ?? null;
 }
