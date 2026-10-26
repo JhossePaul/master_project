@@ -22,7 +22,7 @@ Aparece en el encabezado, en el título de la pestaña y en el *hero* de la land
 
 * **Opciones:** (a) "Observatorio de reseñas de apps bancarias"; (b) "Voz del cliente en apps bancarias"; (c) el nombre del proyecto, *App Store Label Noise & Incident Analyzer* (habla de incidentes, que quedaron fuera del alcance); (d) otro.
 * **Recomendación:** (a), descriptivo y en español, sin prometer detección de incidentes.
-* **Respuesta:** (a) "Observatorio de reseñas de apps bancarias" (2026-10-25).
+* **Respuesta:** (a) "Observatorio de reseñas de apps bancarias" (2026-10-25). **Cambiada el 2026-10-26 a "VoC Analyzer"**, más corto; el *hero* lo explica como "voz del cliente en apps bancarias".
 
 ### C-02. Color del sentimiento negativo
 
@@ -36,9 +36,7 @@ Propuesta de la guía (sección 4.1): BBVA azul `#1F64B0`, AZTECA verde `#3E8E2F
 
 * **Opciones:** (a) aprobar; (b) ajustar algún color.
 * **Recomendación:** (a).
-* **Respuesta:** (a) recomendación aprobada (2026-10-25).
-
-### C-04. Modo oscuro
+* **Respuesta:** (a) recomendación aprobada (2026-10-25). **Ajuste del 2026-10-26:** BANORTE pasa de negro a gris `#6A6867` (contraste 5.54) y "Los cinco bancos" a casi negro (`neutral-950`), para que no se confundan entre sí.. Modo oscuro
 
 * **Opciones:** (a) solo modo claro en esta versión; (b) claro y oscuro.
 * **Recomendación:** (a). El modo oscuro duplica la revisión de contraste de cada gráfica, y el portal se va a proyectar.
@@ -367,7 +365,7 @@ Tope semanal, subida por deriva y doble revisión están nulos desde la primera 
 
 * **Opciones:** (a) por su color: Banco Índigo (BBVA), Banco Jade (AZTECA), Banco Carmín (SANTANDER), Banco Violeta (NUBANK) y Banco Ónix (BANORTE); (b) letras: Banco A a Banco E; (c) otros.
 * **Recomendación:** (a): se recuerdan mejor y van con el color que ya se decidió. Mientras no haya respuesta, el portal usa (b).
-* **Respuesta:** (a) por su color (2026-10-25).
+* **Respuesta:** (a) por su color (2026-10-25). **Simplificado el 2026-10-26:** Banco Azul, Verde, Rojo, Morado y Gris (en vez de Índigo, Jade, Carmín, Violeta y Ónix).
 
 ## Tesis (paso 12, prioridad mínima)
 
