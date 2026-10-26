@@ -13,7 +13,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatDate, formatPct, formatStars } from "@/lib/format";
-import { KpiButtons, useKpi } from "./kpi";
+import { useKpi } from "./kpi";
 import { BankPicker, familyName, LoadingBlock, OpenInExplorer } from "./shared";
 import {
   dayShift,
@@ -336,7 +336,6 @@ export function SeriesBlock({
         }}
       >
         <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <KpiButtons />
           <fieldset className="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
             <legend className="sr-only">Suavizado</legend>
             <span className="text-sm text-text-muted">Suavizado:</span>

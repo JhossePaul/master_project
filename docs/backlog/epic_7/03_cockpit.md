@@ -297,3 +297,10 @@ Tras ver la primera y la segunda pasada en dev, el autor pidió más ajustes y u
 * **Evolución:** el mensual con PPI es un solo bloque con botones por KPI (`GET /kpis/monthly` admite `estrellas_POS_texto_NEG`) y conserva intervalos, la línea cruda y la ventana de 12 / 24 meses o todo.
 * **Tópicos:** filtro de bancos con casillas (los del filtro general al empezar, siempre queda uno) y matriz 3 × 2 con paginador (botones y flechas del teclado, "1–6 de 19 tópicos"); cada panel es un tópico con una línea por banco y su propia escala. Los botones del paginador usan `aria-disabled` para no perder el foco al llegar al límite.
 * **Pruebas:** 113 en el portal y 157 en la API; `check`, `tsc`, `build`, `ruff`, `pyrefly` y `bandit` en verde. Revisado en local con datos de dev.
+
+### Tercera revisión del autor (2026-10-26)
+
+* **Leyenda de la serie diaria:** una sola, de altura fija y una línea (`legendFormatter` de dygraphs con `legend: "always"`): sin cursor muestra los nombres con un guion, y con cursor la fecha ("26 oct 2026") y el valor de cada banco en el mismo lugar, así que la página ya no salta. Se quitó la leyenda aparte.
+* **Familias con selección múltiple** (decisión del autor, contra mi propuesta de una sola): se eligen una o varias familias (`?familia=AC,FA`); en "Nivel" solo se apilan las elegidas y la escala se ajusta a lo que queda, para comparar la distribución de los temas que le importan al equipo; en "Anomalía" se conserva el atenuado. Los tópicos que no tienen ninguna de las familias elegidas se atenúan y el enlace al Explorador lleva la lista. Hay un botón "Quitar la selección".
+* **KPI:** no se sube a los filtros globales (solo responden la tabla, la serie diaria y el mensual). En Evolución, un solo selector "Medida", fijo dentro del grupo de la serie diaria y el mensual (se va al llegar a las versiones, que no dependen de él), sustituye a los botones repetidos de cada bloque.
+* **Pruebas:** 118 en el portal. **Pendiente de revisar con el autor:** las familias elegidas con tonos vecinos (por ejemplo, falla general y lentitud, ambas verdes) se distinguen poco al apilarlas; puede hacer falta una paleta con más contraste.

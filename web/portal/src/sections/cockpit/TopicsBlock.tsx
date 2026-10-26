@@ -161,12 +161,12 @@ function Panel({
 
 export function TopicsBlock({
   banks,
-  familia,
+  familias,
   from,
   to,
 }: {
   banks: BankId[];
-  familia: string | null;
+  familias: string[];
   from: string;
   to: string;
 }) {
@@ -240,7 +240,13 @@ export function TopicsBlock({
       method="raw"
       actions={
         <OpenInExplorer
-          filters={{ banks: shown, from, to, familia, sentimiento: "NEG" }}
+          filters={{
+            banks: shown,
+            from,
+            to,
+            familia: familias.join(",") || null,
+            sentimiento: "NEG",
+          }}
         />
       }
       howToRead={
@@ -309,7 +315,10 @@ export function TopicsBlock({
                 group={g}
                 banks={shown}
                 periods={periods}
-                dim={!!familia && !g.head.families.includes(familia)}
+                dim={
+                  familias.length > 0 &&
+                  !g.head.families.some((f) => familias.includes(f))
+                }
               />
             ))}
           </ol>

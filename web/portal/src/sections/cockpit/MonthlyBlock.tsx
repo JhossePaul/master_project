@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
 import { formatMonth } from "@/lib/format";
-import { KPIS, type Kpi, KpiButtons, useKpi } from "./kpi";
+import { KPIS, type Kpi, useKpi } from "./kpi";
 import { LoadingBlock, monthDate, OpenInExplorer } from "./shared";
 
 const MIN_REVIEWS = 100;
@@ -213,7 +213,6 @@ export function MonthlyBlock({
   );
   return (
     <div className="grid gap-6">
-      <KpiButtons />
       <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
         <legend className="sr-only">Ventana de las gráficas mensuales</legend>
         <span className="text-sm text-text-muted">Meses a mostrar:</span>

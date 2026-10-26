@@ -23,6 +23,35 @@ export interface TimeSeriesProps {
   onRangeChange?: (from: Date, to: Date) => void;
 }
 
+function longDay(ms: number): string {
+  return new Date(ms).toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * HTML de la leyenda de dygraphs. Sin cursor (``x`` indefinido) trae los
+ * nombres con su trazo y un guion; con cursor, la fecha y el valor de cada
+ * serie. Las líneas de fondo (dato diario) no aparecen.
+ */
+export function legendHtml(data: dygraphs.LegendData): string {
+  const hover = data.x !== undefined && data.x !== null;
+  const items = data.series
+    .filter((s) => !s.label.endsWith(" (día)"))
+    .map(
+      (s) =>
+        `<span style="color:${s.color};font-weight:600;margin-right:20px;display:inline-flex;align-items:center;gap:6px">${s.dashHTML}${s.labelHTML}<span style="color:var(--color-neutral-700);font-weight:400">${hover && s.yHTML ? s.yHTML : "—"}</span></span>`,
+    )
+    .join("");
+  const date = hover
+    ? `<span style="margin-right:16px;color:var(--color-neutral-700)">${data.xHTML}</span>`
+    : "";
+  return date + items;
+}
+
 /** ``#rrggbb`` con transparencia. */
 function withAlpha(color: string, alpha: number): string {
   const hex = /^#([0-9a-f]{6})$/i.exec(color)?.[1];
@@ -65,11 +94,11 @@ export function TimeSeries({
       colors: series.map((s) =>
         s.faint ? withAlpha(cssVar(s.colorVar), 0.35) : cssVar(s.colorVar),
       ),
-      // La leyenda y los valores al pasar el cursor van en su franja, no
-      // encima del eje.
+      // Una sola leyenda, en su franja de altura fija: sin cursor muestra los
+      // nombres y con cursor, la fecha y los valores. Así la página no salta.
       labelsDiv: legend.current ?? undefined,
-      labelsSeparateLines: false,
-      legend: "onmouseover",
+      legend: "always",
+      legendFormatter: legendHtml,
       height,
       strokeWidth: 1.5,
       axisLabelFontSize: 12,
@@ -77,6 +106,7 @@ export function TimeSeries({
       axisLineColor: cssVar("--color-neutral-400"),
       connectSeparatedPoints: false,
       axes: {
+        x: { valueFormatter: (ms: number) => longDay(ms) },
         y: {
           valueFormatter: (v: number) => valueFormatter(v),
           axisLabelFormatter: (v) => valueFormatter(v as number),
@@ -125,37 +155,10 @@ export function TimeSeries({
 
   return (
     <div>
-      <ul
-        aria-hidden="true"
-        className="mb-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold"
-      >
-        {series
-          .filter((s) => !s.faint)
-          .map((s) => (
-            <li
-              key={s.id}
-              className="flex items-center gap-2"
-              style={{ color: `var(${s.colorVar})` }}
-            >
-              <svg width="28" height="8" aria-hidden="true">
-                <line
-                  x1="0"
-                  x2="28"
-                  y1="4"
-                  y2="4"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeDasharray={s.dash?.join(" ") || undefined}
-                />
-              </svg>
-              {s.label}
-            </li>
-          ))}
-      </ul>
       <div
         ref={legend}
         aria-hidden="true"
-        className="tabular mb-1 min-h-7 rounded-sm bg-surface-muted px-2 py-1 text-sm empty:before:text-text-muted empty:before:content-['Pasa_el_cursor_sobre_la_gráfica_para_ver_los_valores']"
+        className="tabular mb-2 h-8 overflow-hidden whitespace-nowrap rounded-sm bg-surface-muted px-2 text-sm leading-8"
       />
       <div
         ref={ref}
