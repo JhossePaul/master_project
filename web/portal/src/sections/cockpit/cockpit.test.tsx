@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { axe } from "vitest-axe";
 import {
+  syntheticCards,
   syntheticDaily,
   syntheticMonthly,
   syntheticTopics,
@@ -39,17 +40,89 @@ describe("cockpit, pestaña Diario", () => {
     graphs.options.length = 0;
   });
 
-  it("las tarjetas muestran la insignia, el intervalo y el cambio anual", async () => {
+  it("la tabla compara cada banco con su referencia y su intervalo", async () => {
     renderApp("/cockpit");
 
-    const title = await screen.findByRole("heading", { name: "Banco Azul" });
-    const card = title.closest("div")?.parentElement as HTMLElement;
-    expect(within(card).getAllByText("Con revisión humana")).toHaveLength(3);
-    expect(within(card).getByText("entre 14.0 % y 16.0 %")).toBeInTheDocument();
-    expect(within(card).getByText("entre −0.35 y −0.25")).toBeInTheDocument();
-    expect(within(card).getAllByText(/frente a sep 2025/)).toHaveLength(3);
-    expect(within(card).getByText(/Modelo sintetico_v1/)).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(5);
+    const row = (await screen.findByRole("row", {
+      name: /Banco Azul/,
+    })) as HTMLElement;
+
+    expect(within(row).getByText("15.0 %")).toBeInTheDocument();
+    expect(within(row).getByText("[14.0, 16.0]")).toBeInTheDocument();
+    expect(
+      within(row).getByText("12.0 %", { selector: "p" }),
+    ).toBeInTheDocument();
+    expect(within(row).getByText("+3.0 pts")).toBeInTheDocument();
+    expect(
+      within(row).getByRole("img", { name: "Banco Azul: 12.0 % a 15.0 %" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Comparando sep 2026 vs sep 2025"),
+    ).toBeInTheDocument();
+    // Una insignia para la tabla y otra para la matriz, no una por banco.
+    expect(screen.getAllByText("Con revisión humana")).toHaveLength(2);
+    expect(screen.getByText(/Modelo sintetico_v1/)).toBeInTheDocument();
+    expect(
+      within(row.closest("table") as HTMLElement).getAllByRole("row"),
+    ).toHaveLength(6);
+  });
+
+  it("el KPI se elige con botones y queda en la URL", async () => {
+    const { router } = renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Brecha en estrellas" }),
+    );
+
+    const row = screen.getByRole("row", { name: /Banco Azul/ });
+    expect(within(row).getByText("−0.30 ★")).toBeInTheDocument();
+    expect(within(row).getByText("[−0.35, −0.25]")).toBeInTheDocument();
+    expect(router.state.location.search).toContain("kpi=gap");
+    expect(
+      screen.getByRole("button", { name: "Brecha en estrellas" }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("compara con el mes anterior si se pide", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
+
+    expect(
+      screen.getByText("Comparando sep 2026 vs ago 2026"),
+    ).toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /Banco Azul/ });
+    expect(
+      within(row).getByText(/14\.0 %/, { selector: "p" }),
+    ).toBeInTheDocument();
+  });
+
+  it("ordena por el valor actual", async () => {
+    renderApp("/cockpit");
+    await screen.findByRole("row", { name: /Banco Azul/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Valor actual" }));
+
+    const table = screen
+      .getByRole("row", { name: /Banco Azul/ })
+      .closest("table") as HTMLElement;
+    const first = within(table).getAllByRole("row")[1] as HTMLElement;
+    expect(first).toHaveTextContent("Banco Gris");
+  });
+
+  it("el mes elegido viaja a la API", async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      http.get("*/api/v1/kpis/cards", ({ request }) => {
+        seen.push(new URL(request.url).searchParams.get("period"));
+        return HttpResponse.json(syntheticCards());
+      }),
+    );
+    renderApp("/cockpit?mes=2026-08");
+
+    await waitFor(() => expect(seen).toContain("2026-08"));
   });
 
   it("la serie diaria se marca como cruda", async () => {
@@ -202,7 +275,7 @@ describe("cockpit, pestaña Diario", () => {
   it("Cockpit no tiene violaciones de axe", async () => {
     const { container } = renderApp("/cockpit");
     await screen.findByRole("table", { name: /Proporción de reseñas/ });
-    await screen.findByRole("heading", { name: "Banco Azul" });
+    await screen.findByRole("row", { name: /Banco Azul/ });
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -444,16 +517,6 @@ describe("cockpit, barra fija y secciones", () => {
 });
 
 describe("cockpit, ajustes de la primera pasada", () => {
-  it("las tarjetas comparan con el mes anterior si se pide", async () => {
-    renderApp("/cockpit");
-    await screen.findByRole("heading", { name: "Banco Azul" });
-    expect((await screen.findAllByText(/frente a sep 2025/)).length).toBe(15);
-
-    await userEvent.click(screen.getByRole("button", { name: "Mes anterior" }));
-
-    expect(screen.getAllByText(/frente a ago 2026/)).toHaveLength(15);
-  });
-
   it("los tópicos muestran la audiencia junto al nombre y sus familias", async () => {
     renderApp("/topicos");
 

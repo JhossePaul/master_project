@@ -7,13 +7,8 @@ import { ChartFrame } from "@/components/ChartFrame";
 import { ErrorState } from "@/components/ErrorState";
 import { Button } from "@/components/ui/button";
 import { BANKS, type BankId, bankLabel } from "@/config/banks";
-import {
-  formatMonth,
-  formatPct,
-  formatPctInterval,
-  formatStars,
-  formatStarsInterval,
-} from "@/lib/format";
+import { formatMonth } from "@/lib/format";
+import { KPIS, type Kpi, KpiButtons, useKpi } from "./kpi";
 import { LoadingBlock, monthDate, OpenInExplorer } from "./shared";
 
 const MIN_REVIEWS = 100;
@@ -23,44 +18,30 @@ const WINDOWS = [
   { key: 0, label: "Todo" },
 ] as const;
 
+function specFor(kpi: Kpi) {
+  return {
+    title: `${KPIS[kpi].label} por mes`,
+    format: (v: number) => KPIS[kpi].format(v),
+    interval: KPIS[kpi].interval,
+  };
+}
+
 const W = 300;
 const H = 150;
 const M = { top: 10, right: 10, bottom: 24, left: 44 };
-
-type Metric = "neg" | "gap_estrellas";
-
-const SPEC: Record<
-  Metric,
-  {
-    title: string;
-    format: (v: number) => string;
-    interval: (lo?: number | null, hi?: number | null) => string;
-  }
-> = {
-  neg: {
-    title: "Reseñas negativas por mes",
-    format: (v) => formatPct(v),
-    interval: formatPctInterval,
-  },
-  gap_estrellas: {
-    title: "Brecha en estrellas por mes",
-    format: (v) => formatStars(v),
-    interval: formatStarsInterval,
-  },
-};
 
 function MiniChart({
   bank,
   rows,
   domain,
-  metric,
+  kpi,
 }: {
   bank: BankId;
   rows: MonthlyKpi[];
   domain: [number, number];
-  metric: Metric;
+  kpi: Kpi;
 }) {
-  const spec = SPEC[metric];
+  const spec = specFor(kpi);
   const colorVar = BANKS[bank].colorVar;
   const dates = rows.map((r) => monthDate(r.period));
   const [d0, d1] = extent(dates) as [Date, Date];
@@ -131,20 +112,20 @@ function MiniChart({
 }
 
 function MonthlyChart({
-  metric,
+  kpi,
   banks,
   rows,
   from,
   to,
 }: {
-  metric: Metric;
+  kpi: Kpi;
   banks: BankId[];
   rows: MonthlyKpi[];
   from: string;
   to: string;
 }) {
-  const spec = SPEC[metric];
-  const mine = rows.filter((r) => r.metric === metric);
+  const spec = specFor(kpi);
+  const mine = rows.filter((r) => r.metric === KPIS[kpi].metric);
   const values = mine.flatMap((r) =>
     [r.ppi?.ci_low, r.ppi?.ci_high, r.ppi?.estimate, r.raw?.estimate].filter(
       (v): v is number => typeof v === "number",
@@ -154,7 +135,7 @@ function MonthlyChart({
     Math.min(0, ...values),
     Math.max(...values, 0.01),
   ];
-  if (metric === "gap_estrellas") domain[1] = Math.max(0, domain[1]);
+  if (kpi === "gap") domain[1] = Math.max(0, domain[1]);
   const model = mine.find((r) => r.ppi)?.model_version;
   return (
     <ChartFrame
@@ -195,7 +176,7 @@ function MonthlyChart({
             bank={bank}
             rows={mine.filter((r) => r.bank_id === bank)}
             domain={domain}
-            metric={metric}
+            kpi={kpi}
           />
         ))}
       </div>
@@ -213,6 +194,7 @@ export function MonthlyBlock({
   to: string;
 }) {
   const monthly = useMonthly(banks);
+  const [kpi] = useKpi();
   const [months, setMonths] = useState<12 | 24 | 0>(24);
   if (monthly.isPending) return <LoadingBlock />;
   if (monthly.isError)
@@ -231,6 +213,7 @@ export function MonthlyBlock({
   );
   return (
     <div className="grid gap-6">
+      <KpiButtons />
       <fieldset className="m-0 flex flex-wrap items-center gap-2 border-0 p-0">
         <legend className="sr-only">Ventana de las gráficas mensuales</legend>
         <span className="text-sm text-text-muted">Meses a mostrar:</span>
@@ -249,16 +232,7 @@ export function MonthlyBlock({
           Se ocultan los meses con menos de {MIN_REVIEWS} reseñas.
         </span>
       </fieldset>
-      {(["neg", "gap_estrellas"] as const).map((metric) => (
-        <MonthlyChart
-          key={metric}
-          metric={metric}
-          banks={banks}
-          rows={rows}
-          from={from}
-          to={to}
-        />
-      ))}
+      <MonthlyChart kpi={kpi} banks={banks} rows={rows} from={from} to={to} />
     </div>
   );
 }

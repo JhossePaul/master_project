@@ -165,3 +165,14 @@ export function useWidth() {
   }, [element]);
   return { ref: setElement, width: width > 0 ? width : FALLBACK_WIDTH };
 }
+
+/** Meses con estimación con revisión humana de ``neg``, de menor a mayor. */
+export function months(
+  rows: { period: string; ppi?: unknown; metric: string }[],
+): string[] {
+  return [
+    ...new Set(
+      rows.filter((r) => r.ppi && r.metric === "neg").map((r) => r.period),
+    ),
+  ].sort();
+}

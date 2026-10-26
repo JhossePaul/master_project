@@ -2,12 +2,11 @@ import { useMonthly } from "@/api/kpis";
 import type { BankId } from "@/config/banks";
 import { isBankId } from "@/config/banks";
 import { useGlobalFilters } from "@/filters/useGlobalFilters";
-import { CardsBlock } from "./CardsBlock";
-import { months } from "./ComparisonBlock";
+import { ComparisonTable } from "./ComparisonTable";
 import { MatrixBlock } from "./MatrixBlock";
 import { MonthPicker } from "./MonthPicker";
 import { BANK, MONTH, useParam } from "./params";
-import { BankPicker } from "./shared";
+import { BankPicker, months } from "./shared";
 
 /** Cockpit: la comparación entre bancos y la matriz estrellas × texto. */
 export default function CockpitView() {
@@ -24,7 +23,12 @@ export default function CockpitView() {
   return (
     <div className="flex flex-col gap-8">
       <h1 className="sr-only">Cockpit</h1>
-      <CardsBlock banks={banks} />
+      <MonthPicker
+        options={months(monthly.data ?? [])}
+        value={mes}
+        onChange={setMes}
+      />
+      <ComparisonTable banks={banks} period={mes} />
       <section aria-label="Estrellas por texto" className="grid gap-4">
         <div className="flex flex-wrap items-center gap-4">
           {banks.length > 1 ? (
@@ -35,11 +39,6 @@ export default function CockpitView() {
               label="Banco de la matriz"
             />
           ) : null}
-          <MonthPicker
-            options={months(monthly.data ?? [])}
-            value={mes}
-            onChange={setMes}
-          />
         </div>
         <MatrixBlock bank={detail} period={mes} {...common} />
       </section>

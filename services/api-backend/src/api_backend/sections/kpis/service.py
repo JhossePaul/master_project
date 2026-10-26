@@ -33,7 +33,13 @@ from api_backend.sections.kpis.versions import OTHER, group_small, normalize
 from api_backend.sections.landing.schemas import Estimate
 
 CARD_METRICS = ("neg", "gap_estrellas", "estrellas_POS_texto_NEG")
-MONTHLY_METRICS = ("neg", "gap_estrellas", "texto_peor", "texto_mejor")
+MONTHLY_METRICS = (
+    "neg",
+    "gap_estrellas",
+    "texto_peor",
+    "texto_mejor",
+    "estrellas_POS_texto_NEG",
+)
 MATRIX_METRICS = tuple(
     f"estrellas_{a}_texto_{b}" for a in MATRIX_CLASSES for b in MATRIX_CLASSES
 )

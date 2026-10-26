@@ -1695,7 +1695,7 @@
             "name": "metrics",
             "required": false,
             "schema": {
-              "default": "neg,gap_estrellas,texto_peor,texto_mejor",
+              "default": "neg,gap_estrellas,texto_peor,texto_mejor,estrellas_POS_texto_NEG",
               "title": "Metrics",
               "type": "string"
             }
