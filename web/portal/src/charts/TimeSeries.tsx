@@ -64,11 +64,9 @@ export function TimeSeries({
           axisLabelFormatter: (v) => valueFormatter(v as number),
         },
       },
-      drawCallback: (g, initial) => {
-        if (initial) return;
-        const [from, to] = g.xAxisRange();
-        callbacks.current.onRangeChange?.(new Date(from), new Date(to));
-      },
+      // Solo cuando la persona arrastra para acercar, no en cada redibujo.
+      zoomCallback: (min: number, max: number) =>
+        callbacks.current.onRangeChange?.(new Date(min), new Date(max)),
       underlayCallback: (ctx, area, g) => {
         for (const band of bands) {
           const left = g.toDomXCoord(band.from.getTime());

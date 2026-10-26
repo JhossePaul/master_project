@@ -1,6 +1,6 @@
 # Paso 3. Feature 7.5: Cockpit diario de KPIs
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Implementado y probado con datos sintéticos; faltan las verificaciones contra BigQuery de dev (ver "Terminado cuando").
 * **Nivel:** imprescindible; la pestaña por versión, importante.
 * **Depende de:** paso 2.
 * **Objetivo:** el seguimiento diario de los cinco bancos, con solo agregados (rol lector): tarjetas con PPI, series diarias crudas con los temas del día, familias y marca `u` en nivel y en anomalía, tópicos vigentes, la matriz estrellas × texto, la comparación entre bancos y la pestaña por versión de la app.
@@ -108,16 +108,29 @@ Cada bloque va en un `ChartFrame` con "Cómo leerla". Desde cualquier bloque, el
 
 ## Terminado cuando
 
-* [ ] Las tarjetas y las series se recalculan después de cada delta (la caché vence en 10 minutos) y cada cifra muestra su versión de modelo y si es cruda o PPI.
+* [x] Las tarjetas y las series se recalculan después de cada delta (la caché vence en 10 minutos) y cada cifra muestra su versión de modelo y si es cruda o PPI. (Todas las consultas usan `cache=True`; cada bloque lleva la insignia "Con revisión humana" o "Solo modelo" y su procedencia.)
 * [ ] La serie diaria de 12 meses de los cinco bancos carga en menos de 3 segundos con la caché vacía, y su consulta factura menos de 1 GB (anotar la cifra).
-* [ ] El panel del día muestra las dos listas con el aviso de descripción.
+* [x] El panel del día muestra las dos listas con el aviso de descripción.
 * [ ] La pestaña por versión reproduce las medianas por banco del reporte de 5.9 (BBVA: 39.7 % `NEG` y 18.5 % `u`), con la diferencia explicada si el corte de datos cambió.
 * [ ] F-19 (lectura de un pico como incidente) queda calificada en la FMEA con los controles de esta pantalla (aviso, sin umbrales, participación habitual al lado); se anota en el paso 10.
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **Un repositorio por sección.** `sections/kpis/` sigue el patrón de la landing: `Protocol`, repositorio de BigQuery, repositorio en memoria y datos de muestra para `PORTAL_DATA=fixtures`. Las consultas agregan en SQL y el servicio arma las respuestas; `versions.py` (port de `normalize`) y `stats.py` (Wilson) son Python puro con su prueba.
+* **Una ruta más que la tabla de la sección 2:** `GET /api/v1/kpis/model-changes` (versiones del modelo con `promoted_at`), que alimenta las anotaciones de la serie diaria. Sale de `model_versions` (la última fila de cada versión con `promoted_at`).
+* **Tarjetas.** El mes objetivo es `period` o el último mes con PPI de `neg`; cada banco toma su último mes con PPI hasta ese mes (un banco sin PPI sale con `period: null`). `previous_year` solo existe si el banco tiene PPI de `neg` en el mismo mes del año anterior.
+* **Serie diaria.** El rango se compara con `fecha` sin envolverla en `DATE()` (`fecha >= TIMESTAMP(@date_from) AND fecha < TIMESTAMP(DATE_ADD(@date_to, INTERVAL 1 DAY))`) para no estorbar la poda de particiones. Sin fechas, los últimos 90 días; más de 800 días da 422.
+* **Base de las familias.** Nivel y participación usan las negativas de dos palabras o más con etiqueta de aspectos (la misma base que `daily_topic_labels`); la marca `u` es la parte de esas negativas con `flag_update`. En la pestaña por versión, `neg_share` es negativas entre predichas y `u_share` es la marca `u` entre las negativas de la versión (definición propia: el reporte de 5.9 es la referencia a comparar).
+* **Tópicos.** Solo `curation_topics` de la versión vigente con audiencia producto o ingeniería (siempre traen nombre curado, así que `topic_catalog` no hace falta como respaldo del nombre). `share` es reseñas del tópico entre las negativas del mes.
+* **Familias y tópicos no usan el rango global:** traen todo el historial de los bancos filtrados (las gráficas mensuales son de largo plazo); solo la serie diaria y los enlaces al Explorador usan `desde` y `hasta`.
+* **Matriz.** La respuesta de `matrix` trae `period` en cada celda (se pide un banco a la vez desde la pantalla).
+* **Pantalla.** Se conserva dygraphs para la serie diaria: el clic y el *brush* funcionan (el rango se escribe en la URL con `zoomCallback`, solo cuando la persona acerca; con `drawCallback` cada redibujo reescribía `desde` y `hasta`). Si más adelante se complica, queda abierta la opción de pasarla a D3. El resto de las gráficas son SVG con las primitivas de `charts/`.
+* **Estado en la URL:** `vista` (`version`), `dia`, `familia`, `banco` (banco del detalle y de la vista por versión) y `mes` (matriz y comparación), además de los filtros globales.
+* **Colores de las familias:** once tonos de la paleta de `tokens.css` (verdes, dorados y neutros); la marca `u` usa `--color-sent-neg`.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **API (2026-10-26):** `GET /api/v1/kpis/{cards,daily,daily-topics,monthly,families,topics,matrix,versions,model-changes}` (todas de rol lector, en `ROUTE_ROLES` y en `SAMPLE_PARAMS` del centinela), `openapi.json` y `schema.d.ts` regenerados. 35 pruebas nuevas en `test_kpis.py` (último mes con respaldo, año anterior, día UTC, signo del *gap* contra `voc_nlp.ppi.targets`, ejemplos de `versions.py`, Wilson, `OTRAS`, cobertura, SQL con un lector falso). `pytest services/api-backend` (153 pasan, 40 omitidas de BigQuery), `ruff`, `pyrefly` y `bandit` en verde.
+* **Portal (2026-10-26):** `/cockpit` con las pestañas Diario y Por versión y los siete bloques de la sección 3.1; 16 pruebas nuevas (insignia e intervalo, panel del día, *brush*, conmutador sin otra petición, URL del Explorador, matriz, versión y `axe` en las dos pestañas). `npm run check`, `npm test` (82) y `npm run build` pasan; el cockpit es un trozo perezoso de 64 KB comprimido.
+* **Vista previa local** (`PORTAL_DATA=fixtures`): se revisaron las tarjetas, la serie, el panel del día, las gráficas mensuales, familias, tópicos, matriz y comparación.
+* **Pendiente (necesita BigQuery de dev):** medir con `dry_run` la serie diaria de 12 meses (debe facturar menos de 1 GB y cargar en menos de 3 s con la caché vacía; si no, se propone la tabla de agregados diarios), comparar las medianas de BBVA con el reporte de 5.9 (39.7 % `NEG` y 18.5 % `u`) y anotar F-19 en la FMEA en el paso 10.

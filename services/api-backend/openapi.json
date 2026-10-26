@@ -1,6 +1,104 @@
 {
   "components": {
     "schemas": {
+      "BankCard": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "gap_estrellas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gold_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gold Version"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "neg": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "open_alerts": {
+            "title": "Open Alerts",
+            "type": "integer"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "previous_year": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardValues"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quejas_4_5": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "neg",
+          "gap_estrellas",
+          "quejas_4_5",
+          "previous_year",
+          "model_version",
+          "gold_version",
+          "open_alerts"
+        ],
+        "title": "BankCard",
+        "type": "object"
+      },
       "BankHeadline": {
         "properties": {
           "bank_id": {
@@ -42,6 +140,239 @@
           "gold_version"
         ],
         "title": "BankHeadline",
+        "type": "object"
+      },
+      "CardValues": {
+        "properties": {
+          "gap_estrellas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "neg": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "quejas_4_5": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "period",
+          "neg",
+          "gap_estrellas",
+          "quejas_4_5"
+        ],
+        "title": "CardValues",
+        "type": "object"
+      },
+      "DailyPoint": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "dia": {
+            "format": "date",
+            "title": "Dia",
+            "type": "string"
+          },
+          "filas": {
+            "title": "Filas",
+            "type": "integer"
+          },
+          "gap_crudo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Crudo"
+          },
+          "neg": {
+            "title": "Neg",
+            "type": "integer"
+          },
+          "neg_4_5": {
+            "title": "Neg 4 5",
+            "type": "integer"
+          },
+          "neu": {
+            "title": "Neu",
+            "type": "integer"
+          },
+          "no_predichas": {
+            "title": "No Predichas",
+            "type": "integer"
+          },
+          "pos": {
+            "title": "Pos",
+            "type": "integer"
+          },
+          "predichas": {
+            "title": "Predichas",
+            "type": "integer"
+          },
+          "texto_mejor": {
+            "title": "Texto Mejor",
+            "type": "integer"
+          },
+          "texto_peor": {
+            "title": "Texto Peor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bank_id",
+          "dia",
+          "filas",
+          "predichas",
+          "neg",
+          "neu",
+          "pos",
+          "no_predichas",
+          "gap_crudo",
+          "texto_peor",
+          "texto_mejor",
+          "neg_4_5"
+        ],
+        "title": "DailyPoint",
+        "type": "object"
+      },
+      "DailyTheme": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "filas": {
+            "title": "Filas",
+            "type": "integer"
+          },
+          "habitual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Habitual"
+          },
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre"
+          },
+          "participacion": {
+            "title": "Participacion",
+            "type": "number"
+          }
+        },
+        "required": [
+          "codigo",
+          "nombre",
+          "filas",
+          "participacion",
+          "habitual"
+        ],
+        "title": "DailyTheme",
+        "type": "object"
+      },
+      "DailyTopics": {
+        "properties": {
+          "aspects_prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspects Prompt Version"
+          },
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "dia": {
+            "format": "date",
+            "title": "Dia",
+            "type": "string"
+          },
+          "familias": {
+            "items": {
+              "$ref": "#/components/schemas/DailyTheme"
+            },
+            "title": "Familias",
+            "type": "array"
+          },
+          "n_neg": {
+            "title": "N Neg",
+            "type": "integer"
+          },
+          "topic_model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Model Version"
+          },
+          "topicos": {
+            "items": {
+              "$ref": "#/components/schemas/DailyTheme"
+            },
+            "title": "Topicos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bank_id",
+          "dia",
+          "n_neg",
+          "familias",
+          "topicos",
+          "aspects_prompt_version",
+          "topic_model_version"
+        ],
+        "title": "DailyTopics",
         "type": "object"
       },
       "Estimate": {
@@ -114,6 +445,99 @@
         "title": "Estimate",
         "type": "object"
       },
+      "FamiliesResponse": {
+        "properties": {
+          "prompt_changes": {
+            "items": {
+              "$ref": "#/components/schemas/PromptChange"
+            },
+            "title": "Prompt Changes",
+            "type": "array"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/FamilyMonth"
+            },
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "series",
+          "prompt_changes"
+        ],
+        "title": "FamiliesResponse",
+        "type": "object"
+      },
+      "FamilyMonth": {
+        "properties": {
+          "alert": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert"
+          },
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "neg_count": {
+            "title": "Neg Count",
+            "type": "integer"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "family",
+          "neg_count",
+          "share",
+          "z",
+          "threshold",
+          "alert"
+        ],
+        "title": "FamilyMonth",
+        "type": "object"
+      },
       "Freshness": {
         "properties": {
           "data_until": {
@@ -172,6 +596,19 @@
         "title": "Freshness",
         "type": "object"
       },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "HitlTask": {
         "enum": [
           "sentiment",
@@ -221,6 +658,66 @@
         "title": "LandingResponse",
         "type": "object"
       },
+      "MatrixCell": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "ppi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stars_class": {
+            "enum": [
+              "NEG",
+              "NEU",
+              "POS"
+            ],
+            "title": "Stars Class",
+            "type": "string"
+          },
+          "text_class": {
+            "enum": [
+              "NEG",
+              "NEU",
+              "POS"
+            ],
+            "title": "Text Class",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "stars_class",
+          "text_class",
+          "ppi",
+          "raw"
+        ],
+        "title": "MatrixCell",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "actor_hash": {
@@ -263,6 +760,94 @@
           "commit"
         ],
         "title": "MeResponse",
+        "type": "object"
+      },
+      "ModelChange": {
+        "properties": {
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "promoted_at": {
+            "format": "date-time",
+            "title": "Promoted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_version",
+          "promoted_at"
+        ],
+        "title": "ModelChange",
+        "type": "object"
+      },
+      "MonthlyKpi": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "ppi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "raw": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "metric",
+          "ppi",
+          "raw",
+          "model_version"
+        ],
+        "title": "MonthlyKpi",
+        "type": "object"
+      },
+      "PromptChange": {
+        "properties": {
+          "first_labeled_at": {
+            "format": "date-time",
+            "title": "First Labeled At",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt_version",
+          "first_labeled_at"
+        ],
+        "title": "PromptChange",
         "type": "object"
       },
       "Role": {
@@ -348,6 +933,215 @@
         ],
         "title": "RunSummary",
         "type": "object"
+      },
+      "TopicMonth": {
+        "properties": {
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "filas": {
+            "title": "Filas",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          },
+          "topic_model_version": {
+            "title": "Topic Model Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "topic_id",
+          "nombre",
+          "audience",
+          "families",
+          "filas",
+          "share",
+          "topic_model_version"
+        ],
+        "title": "TopicMonth",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionRow": {
+        "properties": {
+          "families": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Families",
+            "type": "object"
+          },
+          "filas": {
+            "title": "Filas",
+            "type": "integer"
+          },
+          "first_seen": {
+            "format": "date",
+            "title": "First Seen",
+            "type": "string"
+          },
+          "last_seen": {
+            "format": "date",
+            "title": "Last Seen",
+            "type": "string"
+          },
+          "neg": {
+            "title": "Neg",
+            "type": "integer"
+          },
+          "neg_ci_high": {
+            "title": "Neg Ci High",
+            "type": "number"
+          },
+          "neg_ci_low": {
+            "title": "Neg Ci Low",
+            "type": "number"
+          },
+          "neg_share": {
+            "title": "Neg Share",
+            "type": "number"
+          },
+          "release": {
+            "title": "Release",
+            "type": "string"
+          },
+          "u_share": {
+            "title": "U Share",
+            "type": "number"
+          }
+        },
+        "required": [
+          "release",
+          "first_seen",
+          "last_seen",
+          "filas",
+          "neg",
+          "neg_share",
+          "neg_ci_low",
+          "neg_ci_high",
+          "u_share",
+          "families"
+        ],
+        "title": "VersionRow",
+        "type": "object"
+      },
+      "VersionsResponse": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "median_neg_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Neg Share"
+          },
+          "median_u_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median U Share"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/VersionRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bank_id",
+          "rows",
+          "coverage",
+          "median_neg_share",
+          "median_u_share"
+        ],
+        "title": "VersionsResponse",
+        "type": "object"
       }
     }
   },
@@ -357,6 +1151,634 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/kpis/cards": {
+      "get": {
+        "description": "Tarjetas por banco con PPI, el mismo mes del año anterior y alertas.",
+        "operationId": "cards_api_v1_kpis_cards_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BankCard"
+                  },
+                  "title": "Response Cards Api V1 Kpis Cards Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cards",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/daily": {
+      "get": {
+        "description": "Serie diaria cruda (sin PPI) por banco y día UTC.",
+        "operationId": "daily_api_v1_kpis_daily_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DailyPoint"
+                  },
+                  "title": "Response Daily Api V1 Kpis Daily Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Daily",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/daily-topics": {
+      "get": {
+        "description": "Familias y tópicos de las negativas de un día, con su participación.",
+        "operationId": "daily_topics_api_v1_kpis_daily_topics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bank",
+            "required": true,
+            "schema": {
+              "enum": [
+                "BBVA",
+                "AZTECA",
+                "SANTANDER",
+                "NUBANK",
+                "BANORTE"
+              ],
+              "title": "Bank",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyTopics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Daily Topics",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/families": {
+      "get": {
+        "description": "Negativas por familia y marca ``u``, en nivel y en anomalía (z).",
+        "operationId": "families_api_v1_kpis_families_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamiliesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Families",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/matrix": {
+      "get": {
+        "description": "Matriz estrellas × texto de un mes.",
+        "operationId": "matrix_api_v1_kpis_matrix_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MatrixCell"
+                  },
+                  "title": "Response Matrix Api V1 Kpis Matrix Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Matrix",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/model-changes": {
+      "get": {
+        "description": "Versiones del modelo de sentimiento promovidas, para anotar la serie.",
+        "operationId": "model_changes_api_v1_kpis_model_changes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelChange"
+                  },
+                  "title": "Response Model Changes Api V1 Kpis Model Changes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Model Changes",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/monthly": {
+      "get": {
+        "description": "KPI mensuales con PPI y la proporción cruda al lado.",
+        "operationId": "monthly_api_v1_kpis_monthly_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "metrics",
+            "required": false,
+            "schema": {
+              "default": "neg,gap_estrellas,texto_peor,texto_mejor",
+              "title": "Metrics",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MonthlyKpi"
+                  },
+                  "title": "Response Monthly Api V1 Kpis Monthly Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Monthly",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/topics": {
+      "get": {
+        "description": "Tópicos útiles de la versión vigente, por banco y mes.",
+        "operationId": "topics_api_v1_kpis_topics_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "banks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "BBVA",
+                      "AZTECA",
+                      "SANTANDER",
+                      "NUBANK",
+                      "BANORTE"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Banks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TopicMonth"
+                  },
+                  "title": "Response Topics Api V1 Kpis Topics Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Topics",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
+    "/api/v1/kpis/versions": {
+      "get": {
+        "description": "Proporción de negativas por versión de la app, con IC de Wilson.",
+        "operationId": "versions_api_v1_kpis_versions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bank",
+            "required": true,
+            "schema": {
+              "enum": [
+                "BBVA",
+                "AZTECA",
+                "SANTANDER",
+                "NUBANK",
+                "BANORTE"
+              ],
+              "title": "Bank",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Versions",
+        "tags": [
+          "kpis"
+        ]
+      }
+    },
     "/api/v1/landing": {
       "get": {
         "description": "Frescura, KPI con PPI por banco, alertas abiertas y casos pendientes.",

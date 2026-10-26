@@ -4,6 +4,186 @@
  */
 
 export interface paths {
+    "/api/v1/kpis/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cards
+         * @description Tarjetas por banco con PPI, el mismo mes del año anterior y alertas.
+         */
+        get: operations["cards_api_v1_kpis_cards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daily
+         * @description Serie diaria cruda (sin PPI) por banco y día UTC.
+         */
+        get: operations["daily_api_v1_kpis_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/daily-topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daily Topics
+         * @description Familias y tópicos de las negativas de un día, con su participación.
+         */
+        get: operations["daily_topics_api_v1_kpis_daily_topics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/families": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Families
+         * @description Negativas por familia y marca ``u``, en nivel y en anomalía (z).
+         */
+        get: operations["families_api_v1_kpis_families_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Matrix
+         * @description Matriz estrellas × texto de un mes.
+         */
+        get: operations["matrix_api_v1_kpis_matrix_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/model-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Model Changes
+         * @description Versiones del modelo de sentimiento promovidas, para anotar la serie.
+         */
+        get: operations["model_changes_api_v1_kpis_model_changes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly
+         * @description KPI mensuales con PPI y la proporción cruda al lado.
+         */
+        get: operations["monthly_api_v1_kpis_monthly_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Topics
+         * @description Tópicos útiles de la versión vigente, por banco y mes.
+         */
+        get: operations["topics_api_v1_kpis_topics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpis/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versions
+         * @description Proporción de negativas por versión de la app, con IC de Wilson.
+         */
+        get: operations["versions_api_v1_kpis_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/landing": {
         parameters: {
             query?: never;
@@ -65,6 +245,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BankCard */
+        BankCard: {
+            /** Bank Id */
+            bank_id: string;
+            gap_estrellas: components["schemas"]["Estimate"] | null;
+            /** Gold Version */
+            gold_version: string | null;
+            /** Model Version */
+            model_version: string | null;
+            neg: components["schemas"]["Estimate"] | null;
+            /** Open Alerts */
+            open_alerts: number;
+            /** Period */
+            period: string | null;
+            previous_year: components["schemas"]["CardValues"] | null;
+            quejas_4_5: components["schemas"]["Estimate"] | null;
+        };
         /** BankHeadline */
         BankHeadline: {
             /** Bank Id */
@@ -77,6 +274,77 @@ export interface components {
             neg: components["schemas"]["Estimate"];
             /** Period */
             period: string;
+        };
+        /** CardValues */
+        CardValues: {
+            gap_estrellas: components["schemas"]["Estimate"] | null;
+            neg: components["schemas"]["Estimate"] | null;
+            /** Period */
+            period: string;
+            quejas_4_5: components["schemas"]["Estimate"] | null;
+        };
+        /** DailyPoint */
+        DailyPoint: {
+            /** Bank Id */
+            bank_id: string;
+            /**
+             * Dia
+             * Format: date
+             */
+            dia: string;
+            /** Filas */
+            filas: number;
+            /** Gap Crudo */
+            gap_crudo: number | null;
+            /** Neg */
+            neg: number;
+            /** Neg 4 5 */
+            neg_4_5: number;
+            /** Neu */
+            neu: number;
+            /** No Predichas */
+            no_predichas: number;
+            /** Pos */
+            pos: number;
+            /** Predichas */
+            predichas: number;
+            /** Texto Mejor */
+            texto_mejor: number;
+            /** Texto Peor */
+            texto_peor: number;
+        };
+        /** DailyTheme */
+        DailyTheme: {
+            /** Codigo */
+            codigo: string;
+            /** Filas */
+            filas: number;
+            /** Habitual */
+            habitual: number | null;
+            /** Nombre */
+            nombre: string | null;
+            /** Participacion */
+            participacion: number;
+        };
+        /** DailyTopics */
+        DailyTopics: {
+            /** Aspects Prompt Version */
+            aspects_prompt_version: string | null;
+            /** Bank Id */
+            bank_id: string;
+            /**
+             * Dia
+             * Format: date
+             */
+            dia: string;
+            /** Familias */
+            familias: components["schemas"]["DailyTheme"][];
+            /** N Neg */
+            n_neg: number;
+            /** Topic Model Version */
+            topic_model_version: string | null;
+            /** Topicos */
+            topicos: components["schemas"]["DailyTheme"][];
         };
         /** Estimate */
         Estimate: {
@@ -96,6 +364,32 @@ export interface components {
             /** N Unlabeled */
             n_unlabeled: number | null;
         };
+        /** FamiliesResponse */
+        FamiliesResponse: {
+            /** Prompt Changes */
+            prompt_changes: components["schemas"]["PromptChange"][];
+            /** Series */
+            series: components["schemas"]["FamilyMonth"][];
+        };
+        /** FamilyMonth */
+        FamilyMonth: {
+            /** Alert */
+            alert: boolean | null;
+            /** Bank Id */
+            bank_id: string;
+            /** Family */
+            family: string;
+            /** Neg Count */
+            neg_count: number;
+            /** Period */
+            period: string;
+            /** Share */
+            share: number;
+            /** Threshold */
+            threshold: number | null;
+            /** Z */
+            z: number | null;
+        };
         /** Freshness */
         Freshness: {
             /** Data Until */
@@ -105,6 +399,11 @@ export interface components {
             last_ingestion_at: string | null;
             /** Last Monitor At */
             last_monitor_at: string | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /**
          * HitlTask
@@ -123,6 +422,25 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** MatrixCell */
+        MatrixCell: {
+            /** Bank Id */
+            bank_id: string;
+            /** Period */
+            period: string;
+            ppi: components["schemas"]["Estimate"] | null;
+            raw: components["schemas"]["Estimate"] | null;
+            /**
+             * Stars Class
+             * @enum {string}
+             */
+            stars_class: "NEG" | "NEU" | "POS";
+            /**
+             * Text Class
+             * @enum {string}
+             */
+            text_class: "NEG" | "NEU" | "POS";
+        };
         /** MeResponse */
         MeResponse: {
             /** Actor Hash */
@@ -137,6 +455,39 @@ export interface components {
             reviewer_tasks: components["schemas"]["HitlTask"][];
             /** Roles */
             roles: components["schemas"]["Role"][];
+        };
+        /** ModelChange */
+        ModelChange: {
+            /** Model Version */
+            model_version: string;
+            /**
+             * Promoted At
+             * Format: date-time
+             */
+            promoted_at: string;
+        };
+        /** MonthlyKpi */
+        MonthlyKpi: {
+            /** Bank Id */
+            bank_id: string;
+            /** Metric */
+            metric: string;
+            /** Model Version */
+            model_version: string;
+            /** Period */
+            period: string;
+            ppi: components["schemas"]["Estimate"] | null;
+            raw: components["schemas"]["Estimate"] | null;
+        };
+        /** PromptChange */
+        PromptChange: {
+            /**
+             * First Labeled At
+             * Format: date-time
+             */
+            first_labeled_at: string;
+            /** Prompt Version */
+            prompt_version: string;
         };
         /**
          * Role
@@ -174,6 +525,84 @@ export interface components {
             started_at: string;
             status: components["schemas"]["RunStatus"];
         };
+        /** TopicMonth */
+        TopicMonth: {
+            /** Audience */
+            audience: string;
+            /** Bank Id */
+            bank_id: string;
+            /** Families */
+            families: string[];
+            /** Filas */
+            filas: number;
+            /** Nombre */
+            nombre: string;
+            /** Period */
+            period: string;
+            /** Share */
+            share: number;
+            /** Topic Id */
+            topic_id: number;
+            /** Topic Model Version */
+            topic_model_version: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** VersionRow */
+        VersionRow: {
+            /** Families */
+            families: {
+                [key: string]: number;
+            };
+            /** Filas */
+            filas: number;
+            /**
+             * First Seen
+             * Format: date
+             */
+            first_seen: string;
+            /**
+             * Last Seen
+             * Format: date
+             */
+            last_seen: string;
+            /** Neg */
+            neg: number;
+            /** Neg Ci High */
+            neg_ci_high: number;
+            /** Neg Ci Low */
+            neg_ci_low: number;
+            /** Neg Share */
+            neg_share: number;
+            /** Release */
+            release: string;
+            /** U Share */
+            u_share: number;
+        };
+        /** VersionsResponse */
+        VersionsResponse: {
+            /** Bank Id */
+            bank_id: string;
+            /** Coverage */
+            coverage: number;
+            /** Median Neg Share */
+            median_neg_share: number | null;
+            /** Median U Share */
+            median_u_share: number | null;
+            /** Rows */
+            rows: components["schemas"]["VersionRow"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -183,6 +612,282 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    cards_api_v1_kpis_cards_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                period?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankCard"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    daily_api_v1_kpis_daily_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    daily_topics_api_v1_kpis_daily_topics_get: {
+        parameters: {
+            query: {
+                bank: "BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE";
+                day: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyTopics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    families_api_v1_kpis_families_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamiliesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    matrix_api_v1_kpis_matrix_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                period?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatrixCell"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_changes_api_v1_kpis_model_changes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelChange"][];
+                };
+            };
+        };
+    };
+    monthly_api_v1_kpis_monthly_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+                metrics?: string;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyKpi"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    topics_api_v1_kpis_topics_get: {
+        parameters: {
+            query?: {
+                banks?: ("BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicMonth"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versions_api_v1_kpis_versions_get: {
+        parameters: {
+            query: {
+                bank: "BBVA" | "AZTECA" | "SANTANDER" | "NUBANK" | "BANORTE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     landing_api_v1_landing_get: {
         parameters: {
             query?: never;
