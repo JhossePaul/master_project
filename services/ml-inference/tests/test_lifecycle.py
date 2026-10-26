@@ -59,6 +59,26 @@ def synthetic_gold(n: int = 300, wrong: int = 30, seed: int = 0):
     return out
 
 
+def test_coverage_never_exceeds_one_by_rounding() -> None:
+    """Con estos pesos, cumsum entre sum da 1.0000000000000002."""
+    weights = [31.109, 25.364, 33.784, 23.204, 39.447, 44.647, 5.388, 53.39]
+    assert np.cumsum(weights)[-1] / np.sum(np.array(weights)) > 1.0
+    gold = [
+        GoldPrediction(
+            id_resena=f"r{i}",
+            label=LABELS[0],
+            weight=weight,
+            stratum="B0|2023-2024",
+            predicted=LABELS[0],
+            confidence=0.99 - i * 0.01,
+        )
+        for i, weight in enumerate(weights)
+    ]
+    points = lifecycle.curve_points(gold, 100.0, 7.0, n_boot=20)
+    assert points[-1].coverage == 1.0
+    assert all(p.coverage <= 1.0 for p in points)
+
+
 def model_row(version: str = MODEL) -> ModelVersion:
     return ModelVersion(
         model_version=version,

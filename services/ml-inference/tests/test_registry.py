@@ -181,3 +181,13 @@ def test_resolve_reads_the_promoted_version(world: Any) -> None:
         registry.resolve(world.bq, world.settings).model_version
         == "robertuito_sentiment_v1"
     )
+
+
+def test_vertex_image_keeps_the_digest_without_the_tag() -> None:
+    from ml_inference.registry import vertex_image
+
+    digest = "sha256:" + "a" * 64
+    repo = "us-central1-docker.pkg.dev/p/r/ml-inference"
+    assert vertex_image(f"{repo}:{'b' * 40}@{digest}") == f"{repo}@{digest}"
+    assert vertex_image(f"{repo}@{digest}") == f"{repo}@{digest}"
+    assert vertex_image(f"{repo}:latest") == f"{repo}:latest"
