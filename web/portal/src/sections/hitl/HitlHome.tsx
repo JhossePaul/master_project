@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import { type TaskSummary, useHitlSummary } from "@/api/hitl";
+import { type TaskSummary, useHitlSummary, useTopicVersions } from "@/api/hitl";
+import { useMe } from "@/api/me";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { buttonVariants } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const TASKS: Record<string, { title: string; path: string }> = {
   sentiment: { title: "Sentimiento", path: "/hitl/sentimiento" },
+  aspects: { title: "Aspectos", path: "/hitl/aspectos" },
 };
 
 export function formatSeconds(seconds: number | null): string {
@@ -75,8 +77,42 @@ function QueueCard({ summary }: { summary: TaskSummary }) {
   );
 }
 
+function TopicsCard() {
+  const versions = useTopicVersions();
+  const pending = (versions.data?.versions ?? []).filter(
+    (v) => v.decided < v.paired,
+  );
+  const open = pending.reduce((n, v) => n + (v.paired - v.decided), 0);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle as="h2">Curaduría de tópicos</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-5">
+        <p className="text-sm">
+          {versions.isPending
+            ? "Buscando versiones nuevas…"
+            : pending.length === 0
+              ? "No hay versiones de tópicos por decidir."
+              : `${formatInt(open)} tópicos por decidir en ${pending.length === 1 ? "una versión nueva" : `${pending.length} versiones nuevas`}.`}
+        </p>
+        <div>
+          <Link
+            to="/hitl/topicos"
+            className={cn(buttonVariants({ variant: "primary" }))}
+          >
+            Empezar
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function HitlHome() {
   const summary = useHitlSummary();
+  const me = useMe();
+  const curatesTopics = me.data?.reviewer_tasks.includes("topic") ?? false;
   if (summary.isPending) {
     return (
       <div className="grid gap-4" aria-busy="true">
@@ -93,15 +129,18 @@ export default function HitlHome() {
   return (
     <div className="grid gap-6">
       <h1 className="font-serif text-3xl font-semibold">Revisión</h1>
-      {summary.data.tasks.length === 0 ? (
+      {summary.data.tasks.length === 0 && !curatesTopics ? (
         <EmptyState
           title="No tienes colas asignadas"
           description="Pide al autor que te asigne una tarea de revisión."
         />
       ) : (
-        summary.data.tasks.map((task) => (
-          <QueueCard key={task.task} summary={task} />
-        ))
+        <>
+          {summary.data.tasks.map((task) => (
+            <QueueCard key={task.task} summary={task} />
+          ))}
+          {curatesTopics ? <TopicsCard /> : null}
+        </>
       )}
     </div>
   );

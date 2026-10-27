@@ -16,6 +16,8 @@ function guarded(role: Role, title: string): RouteObject["element"] {
 
 const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
 const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
+const AspectsReview = lazy(() => import("@/sections/hitl/AspectsReview"));
+const TopicsCuration = lazy(() => import("@/sections/hitl/TopicsCuration"));
 const AlertsInbox = lazy(() => import("@/sections/alerts/AlertsInbox"));
 const AlertDetail = lazy(() => import("@/sections/alerts/AlertDetail"));
 const AdminView = lazy(() => import("@/sections/admin/AdminView"));
@@ -110,6 +112,22 @@ export const routes: RouteObject[] = [
         element: (
           <ReviewerOnly>
             <SentimentReview />
+          </ReviewerOnly>
+        ),
+      },
+      {
+        path: "hitl/aspectos",
+        element: (
+          <ReviewerOnly>
+            <AspectsReview />
+          </ReviewerOnly>
+        ),
+      },
+      {
+        path: "hitl/topicos",
+        element: (
+          <ReviewerOnly>
+            <TopicsCuration />
           </ReviewerOnly>
         ),
       },

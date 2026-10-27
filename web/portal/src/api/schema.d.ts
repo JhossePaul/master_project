@@ -158,6 +158,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Samples
+         * @description Los lotes de muestras de aspectos y su avance.
+         */
+        get: operations["samples_api_v1_admin_samples_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/samples/aspects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Samples
+         * @description Crea un lote de casos de aspectos, a ciegas, con cuota por banco.
+         */
+        post: operations["create_samples_api_v1_admin_samples_aspects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/alerts": {
         parameters: {
             query?: never;
@@ -313,6 +353,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hitl/items/{item_id}/review-aspects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Aspects */
+        post: operations["review_aspects_api_v1_hitl_items__item_id__review_aspects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hitl/items/{item_id}/skip": {
         parameters: {
             query?: never;
@@ -362,6 +419,77 @@ export interface paths {
          * @description Por cola permitida: solo conteos.
          */
         get: operations["summary_api_v1_hitl_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Versions
+         * @description Versiones desde la vigente en adelante, con su avance de curaduría.
+         */
+        get: operations["list_versions_api_v1_hitl_topics_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version Detail */
+        get: operations["version_detail_api_v1_hitl_topics__version__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}/{topic_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Curate Topic */
+        post: operations["curate_topic_api_v1_hitl_topics__version___topic_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}/{topic_id}/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Topic Examples */
+        get: operations["topic_examples_api_v1_hitl_topics__version___topic_id__examples_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -790,6 +918,56 @@ export interface components {
             };
         };
         /**
+         * AspectFamily
+         * @description Las 11 familias de ``aspects_v2_1`` (guía ``v2.1``).
+         * @enum {string}
+         */
+        AspectFamily: "AC" | "TR" | "DI" | "PR" | "AT" | "FA" | "LE" | "CO" | "DV" | "UX" | "OT";
+        /**
+         * AspectsReviewIn
+         * @description Codificación de familias y marcas de una reseña negativa.
+         *
+         *     Sin familias quiere decir "sin problema concreto". El elogio no se guarda:
+         *     ``hitl_reviews`` no tiene columna para él y nada lo consume.
+         */
+        AspectsReviewIn: {
+            /**
+             * Claim Next
+             * @default true
+             */
+            claim_next: boolean;
+            /** Comment */
+            comment?: string | null;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Flag Security */
+            flag_security: boolean;
+            /** Flag Update */
+            flag_update: boolean;
+            /** Guideline Version */
+            guideline_version: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+        };
+        /** AspectsSampleIn */
+        AspectsSampleIn: {
+            /**
+             * Months
+             * @default 3
+             */
+            months: number;
+            /** Reason */
+            reason: string;
+            /**
+             * Size
+             * @default 50
+             */
+            size: number;
+        };
+        /**
          * Attribution
          * @description Posiciones en ``texto_sanitizado``; sin copiar texto.
          */
@@ -972,6 +1150,25 @@ export interface components {
             /** Topicos */
             topicos: components["schemas"]["DailyTheme"][];
         };
+        /** DecisionOut */
+        DecisionOut: {
+            audience: components["schemas"]["TopicAudience"];
+            /** Coherence 1 5 */
+            coherence_1_5: number;
+            /**
+             * Curated At
+             * Format: date-time
+             */
+            curated_at: string;
+            /** Curated Name */
+            curated_name: string;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Is New Theme */
+            is_new_theme: boolean;
+            /** Mapping Confirmed */
+            mapping_confirmed: boolean;
+        };
         /**
          * DriftPolicy
          * @description Fila de ``drift_policy`` (por banco).
@@ -1097,6 +1294,18 @@ export interface components {
             n_gold: number | null;
             /** N Unlabeled */
             n_unlabeled: number | null;
+        };
+        /** ExampleOut */
+        ExampleOut: {
+            /** Text */
+            text: string;
+        };
+        /** ExamplesResponse */
+        ExamplesResponse: {
+            /** Examples */
+            examples: components["schemas"]["ExampleOut"][];
+            /** Topic Id */
+            topic_id: number;
         };
         /** ExplainIn */
         ExplainIn: {
@@ -1420,9 +1629,9 @@ export interface components {
             review_round: 1 | 2;
             /**
              * Task
-             * @constant
+             * @enum {string}
              */
-            task: "sentiment";
+            task: "sentiment" | "aspects";
             /** Text */
             text: string;
         };
@@ -1551,9 +1760,17 @@ export interface components {
             exclude?: string[];
             /**
              * Task
-             * @constant
+             * @enum {string}
              */
-            task: "sentiment";
+            task: "sentiment" | "aspects";
+        };
+        /** PreviousTopicOut */
+        PreviousTopicOut: {
+            /** Centroid Similarity */
+            centroid_similarity: number;
+            curation: components["schemas"]["DecisionOut"] | null;
+            /** Topic Id */
+            topic_id: number;
         };
         /** PromptChange */
         PromptChange: {
@@ -1799,6 +2016,37 @@ export interface components {
             started_at: string;
             status: components["schemas"]["RunStatus"];
         };
+        /** SampleBatchOut */
+        SampleBatchOut: {
+            /** Batch */
+            batch: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Reviewed */
+            reviewed: number;
+            /** Size */
+            size: number;
+            task: components["schemas"]["HitlTask"];
+        };
+        /** SampleCreatedOut */
+        SampleCreatedOut: {
+            /** Batch */
+            batch: string;
+            /** Created */
+            created: number;
+            /** Per Bank */
+            per_bank: {
+                [key: string]: number;
+            };
+        };
+        /** SamplesResponse */
+        SamplesResponse: {
+            /** Batches */
+            batches: components["schemas"]["SampleBatchOut"][];
+        };
         /** SearchHit */
         SearchHit: {
             /** Bank Id */
@@ -1921,6 +2169,35 @@ export interface components {
             /** Team This Week */
             team_this_week: number;
         };
+        /**
+         * TopicAudience
+         * @description Audiencia de un tópico curado.
+         * @enum {string}
+         */
+        TopicAudience: "producto" | "ingenieria" | "sin_valor";
+        /** TopicCurationIn */
+        TopicCurationIn: {
+            audience: components["schemas"]["TopicAudience"];
+            /** Coherence 1 5 */
+            coherence_1_5: number;
+            /** Curated Name */
+            curated_name: string;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Is New Theme */
+            is_new_theme: boolean;
+            /** Mapping Confirmed */
+            mapping_confirmed: boolean;
+        };
+        /** TopicCurationOut */
+        TopicCurationOut: {
+            /** Completed */
+            completed: boolean;
+            /** Decided */
+            decided: number;
+            /** Paired */
+            paired: number;
+        };
         /** TopicMonth */
         TopicMonth: {
             /** Audience */
@@ -1942,6 +2219,17 @@ export interface components {
             /** Topic Model Version */
             topic_model_version: string;
         };
+        /** TopicOut */
+        TopicOut: {
+            decision: components["schemas"]["DecisionOut"] | null;
+            previous: components["schemas"]["PreviousTopicOut"] | null;
+            /** Size */
+            size: number;
+            /** Terms */
+            terms: string[];
+            /** Topic Id */
+            topic_id: number;
+        };
         /** TopicRef */
         TopicRef: {
             /** Name */
@@ -1955,6 +2243,49 @@ export interface components {
          * @enum {string}
          */
         TopicRefitTrigger: "scheduled" | "manual";
+        /** TopicVersionDetail */
+        TopicVersionDetail: {
+            /** Decided */
+            decided: number;
+            /**
+             * Fitted At
+             * Format: date-time
+             */
+            fitted_at: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Paired */
+            paired: number;
+            /** Topic Model Version */
+            topic_model_version: string;
+            /** Topics */
+            topics: components["schemas"]["TopicOut"][];
+        };
+        /** TopicVersionOut */
+        TopicVersionOut: {
+            /** Activates On Completion */
+            activates_on_completion: boolean;
+            /** Decided */
+            decided: number;
+            /**
+             * Fitted At
+             * Format: date-time
+             */
+            fitted_at: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Paired */
+            paired: number;
+            /** Topic Model Version */
+            topic_model_version: string;
+            /** Topics */
+            topics: number;
+        };
+        /** TopicVersionsResponse */
+        TopicVersionsResponse: {
+            /** Versions */
+            versions: components["schemas"]["TopicVersionOut"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2409,6 +2740,59 @@ export interface operations {
             };
         };
     };
+    samples_api_v1_admin_samples_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamplesResponse"];
+                };
+            };
+        };
+    };
+    create_samples_api_v1_admin_samples_aspects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AspectsSampleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SampleCreatedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_alerts_api_v1_alerts_get: {
         parameters: {
             query?: {
@@ -2690,6 +3074,41 @@ export interface operations {
             };
         };
     };
+    review_aspects_api_v1_hitl_items__item_id__review_aspects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AspectsReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     skip_api_v1_hitl_items__item_id__skip_post: {
         parameters: {
             query?: never;
@@ -2775,6 +3194,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HitlSummary"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_hitl_topics_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicVersionsResponse"];
+                };
+            };
+        };
+    };
+    version_detail_api_v1_hitl_topics__version__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicVersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    curate_topic_api_v1_hitl_topics__version___topic_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicCurationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicCurationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    topic_examples_api_v1_hitl_topics__version___topic_id__examples_get: {
+        parameters: {
+            query?: {
+                n?: number;
+            };
+            header?: never;
+            path: {
+                version: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamplesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
