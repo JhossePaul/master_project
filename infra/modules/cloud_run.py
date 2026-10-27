@@ -94,6 +94,8 @@ class CloudRunResources:
     ml_promote_job: gcp.cloudrunv2.Job | None = None
     ml_invokers: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
     ml_executors: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
+    # La API del portal lanza estos Jobs con argumentos (botones de MLOps).
+    portal_executors: tuple[gcp.cloudrunv2.JobIamMember, ...] = ()
     # IAP directo en voc-api-backend: el agente de IAP invoca el servicio y
     # cada persona de portal_users recibe iap.httpsResourceAccessor.
     iap_invoker: gcp.cloudrunv2.ServiceIamMember | None = None
@@ -121,6 +123,9 @@ class MlJobSpec:
     # de ML recibe roles/run.developer solo sobre él (run.invoker no deja
     # cambiar los argumentos).
     executed_by_ml: bool = False
+    # Los lanza la API del portal con argumentos propios (MLOps): la cuenta
+    # de la API recibe roles/run.jobsExecutorWithOverrides solo sobre él.
+    executed_by_portal: bool = False
 
 
 # Un solo Job en serie. Con 2 GiB el primer delta se quedó sin memoria al
@@ -137,6 +142,7 @@ ML_TOPICS_REFIT_JOB = MlJobSpec(
     cpu="2",
     timeout_sec=3600,
     max_retries=0,
+    executed_by_portal=True,
 )
 # Re-scoring de una candidata en Kaggle, a mano y antes de promoverla:
 #   gcloud run jobs execute voc-ml-rescoring \
@@ -153,6 +159,7 @@ ML_RESCORING_JOB = MlJobSpec(
     scheduled=False,
     secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
     executed_by_ml=True,
+    executed_by_portal=True,
 )
 # Reentrenamiento en Kaggle desde el modelo base, a mano o desde el monitor
 # con retrain_trigger = auto:
@@ -169,6 +176,7 @@ ML_TRAINING_JOB = MlJobSpec(
     scheduled=False,
     secrets=(("KAGGLE_API_TOKEN", KAGGLE_SECRET_ID),),
     executed_by_ml=True,
+    executed_by_portal=True,
 )
 # Re-asignación del histórico de tópicos sobre segment_embeddings, en Cloud
 # Run y sin Kaggle (el texto no sale de GCP); la lanza el delta cuando la
@@ -204,6 +212,7 @@ ML_PROMOTE_JOB = MlJobSpec(
     "promote",
     max_retries=0,
     scheduled=False,
+    executed_by_portal=True,
 )
 
 
@@ -557,6 +566,8 @@ def create_cloud_run_resources(
             "GCP_PROJECT_ID": project_id,
             "GCP_REGION": region,
             "BQ_DATASET_ID": storage_bq.dataset.dataset_id,
+            # Manifiestos de entrenamiento de ml_artifacts/ (solo lectura).
+            "GCS_RAW_DATALAKE_BUCKET": storage_bq.datalake_bucket.name,
             "PORTAL_AUTH_MODE": "iap",
             "PORTAL_DATA": "bigquery",
             "PORTAL_ROLES_SECRET": PORTAL_ROLES_SECRET_ID,
@@ -629,6 +640,7 @@ def create_cloud_run_resources(
     ml_jobs: dict[str, gcp.cloudrunv2.Job] = {}
     ml_invokers: list[gcp.cloudrunv2.JobIamMember] = []
     ml_executors: list[gcp.cloudrunv2.JobIamMember] = []
+    portal_executors: list[gcp.cloudrunv2.JobIamMember] = []
     ml_member = security.sa_ml_and_backend.email.apply(
         lambda email: f"serviceAccount:{email}"
     )
@@ -715,6 +727,20 @@ def create_cloud_run_resources(
                         opts=opts,
                     )
                 )
+            if spec.executed_by_portal:
+                portal_executors.append(
+                    gcp.cloudrunv2.JobIamMember(
+                        f"{spec.name}-portal-api-executor",
+                        project=project_id,
+                        location=region,
+                        name=job.name,
+                        role="roles/run.jobsExecutorWithOverrides",
+                        member=security.sa_portal_api.email.apply(
+                            lambda email: f"serviceAccount:{email}"
+                        ),
+                        opts=opts,
+                    )
+                )
             if not spec.scheduled:
                 continue
             ml_invokers.append(
@@ -747,6 +773,7 @@ def create_cloud_run_resources(
         ml_promote_job=ml_jobs.get(ML_PROMOTE_JOB.command),
         ml_invokers=tuple(ml_invokers),
         ml_executors=tuple(ml_executors),
+        portal_executors=tuple(portal_executors),
         iap_invoker=iap_invoker,
         iap_accessors=tuple(iap_accessors),
         ml_online=online,

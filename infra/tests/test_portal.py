@@ -128,6 +128,7 @@ def test_el_servicio_va_con_iap_y_su_propia_cuenta(
     assert env["PORTAL_ROLES_SECRET"] == PORTAL_ROLES_SECRET_ID
     assert env["GCP_PROJECT_ID"] == PROJECT
     assert env["BQ_DATASET_ID"] == "bbva_voc_tds"
+    assert env["GCS_RAW_DATALAKE_BUCKET"] == "voc-datalake-test-voc-project"
     assert env["IAP_AUDIENCE"] == (
         "/projects/123/locations/us-central1/services/voc-api-backend"
     )

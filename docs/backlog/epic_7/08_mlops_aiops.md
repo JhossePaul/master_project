@@ -1,6 +1,6 @@
 # Paso 8. Feature 7.9: MLOps y AIOps
 
-* **Estado (2026-10-25):** Pendiente.
+* **Estado (2026-10-26):** Implementado y probado en local (API, `ml-inference`, `voc-common`, infraestructura en código y portal). Falta lo que exige dev y la aprobación del autor: aplicar la infraestructura, mirar el registro contra dev y re-ajustar tópicos desde el botón. Detalle en "Avance".
 * **Nivel:** importante.
 * **Depende de:** pasos 2 y 5 (componentes de la curva y lógica movida a `voc-nlp`), y la decisión B5.3 del paso 0 (autoría del re-ajuste de tópicos).
 * **Objetivo:** vigilar el modelo, las familias, los tópicos y el pipeline (lo que mide el monitor de EPIC-6), cada señal con su umbral vigente y su estado; ver el registro de modelos, y que un administrador lance desde aquí reentrenar, *re-scoring*, promover, *rollback* y re-ajustar tópicos, con quién y por qué.
@@ -97,14 +97,36 @@ Pestañas:
 
 ## Terminado cuando
 
-* [ ] Cada señal del monitor tiene su gráfica con el umbral vigente y el estado (`ok`, `warning`, `retrain`).
-* [ ] En dev, con aprobación del autor: re-ajustar tópicos desde el botón deja su corrida en `inference_runs` con quién y por qué (costo $0). Si el paso 14 de 6.6 ya dejó un candidato, se prueba su promoción o se pospone por decisión del autor.
-* [ ] El registro de modelos muestra `robertuito_sentiment_v1` promovido con sus métricas.
+* [x] Cada señal del monitor tiene su gráfica con el umbral vigente y el estado (`ok`, `warning`, `retrain`). (Probado con datos de muestra en la API y en el portal.)
+* [ ] En dev, con aprobación del autor: re-ajustar tópicos desde el botón deja su corrida en `inference_runs` con quién y por qué (costo $0). Si el paso 14 de 6.6 ya dejó un candidato, se prueba su promoción o se pospone por decisión del autor. (Pendiente 14 de [EPIC-8](../epic_8.md): necesita la infraestructura aplicada y la aprobación del autor. La prueba de `ml-inference` ya cubre las filas de inicio y cierre con `topic_refit`.)
+* [ ] El registro de modelos muestra `robertuito_sentiment_v1` promovido con sus métricas. (La lectura del registro y la calibración desde los experimentos están probadas con datos de muestra y con el JSON real; falta mirarlo contra `model_versions` de dev, pendiente 14 de EPIC-8.)
 
 ## Decisiones al implementar
 
-_(Se llena al ejecutar.)_
+* **La API de lectura es de rol analista y las acciones de administrador**, como dice la tabla; el portal muestra los botones al analista, deshabilitados con "Solo el rol administrador lanza acciones".
+* **Las reglas de las acciones viven en la API, no en el portal.** `GET /mlops/models` devuelve por versión (`rescore`, `promote`, `rollback`) y en global (`retrain`, `topics_refit`) si está habilitada y el motivo si no; `POST /mlops/actions/{action}` las revisa de nuevo (409) y la pantalla solo pinta lo que recibe. Las reglas que no estaban en la tabla:
+  * **Promover** exige que el `promotion_checks` se haya calculado contra la versión vigente de hoy (`current_version`); si la vigente cambió, pide volver a re-puntuar.
+  * **Reentrenar** mira el último periodo de `kappa_monitor` **del modelo vigente**, no el de otras versiones.
+  * **Una corrida `running` más vieja que el tiempo máximo de su Job** (4 h el entrenamiento, 3 h el re-scoring, 1 h el re-ajuste) no cuenta como en curso, como en `ml-inference` (`runs.py`).
+  * **`FORZAR`:** con veredicto `worse` falta la palabra → 422; con ella se agrega `--force`. El *rollback* nunca lleva `--force`, aunque el cliente mande la palabra.
+  * `retrain_trigger` nulo equivale a `manual` y `topic_refit_trigger` nulo a `scheduled`, como dice el contrato (`retrain_mode` y `topic_refit_mode`).
+  * **Re-ajuste programado:** la próxima fecha es hoy si el último ajuste es de un trimestre anterior (el Job toca en su próxima corrida) y el primer día del trimestre siguiente si ya hay uno de este.
+* **Lista cerrada de Jobs en dos capas.** `jobs.py` solo conoce `voc-ml-training`, `voc-ml-rescoring`, `voc-ml-promote` y `voc-ml-topics-refit`, cada uno con su único subcomando; la API arma los argumentos con el hash del principal y el motivo, y el cuerpo de la petición no tiene dónde meter argumentos ni el Job. La prueba de `jobs.py` fija la misma petición que la de `ml-inference`.
+* **Permisos en `infra/`:** la cuenta de la API recibe `roles/run.jobsExecutorWithOverrides` (la misma que usa la ingesta histórica: cambia los argumentos pero no edita el Job) solo sobre esos cuatro Jobs, `roles/storage.objectViewer` condicionado a `ml_artifacts/` (la misma condición del servicio en línea) y la variable `GCS_RAW_DATALAKE_BUCKET`. El paso 1 no los había dejado: solo existían para el servicio en línea.
+* **Calibración.** Se lee `training_manifest.json` de `ml_artifacts/sentiment/<versión>/` con `google-cloud-storage` (dependencia nueva de la API). Sin manifiesto, la única versión que se resuelve es la sembrada (`robertuito_sentiment_v1` → `M4_robertuito_s1_ppi` del JSON de calibración, que la imagen copia en `/app/calibration/`) y la respuesta dice de dónde sale (`source = docs`). Cualquier otra versión sin manifiesto da 404 y la pantalla lo explica.
+* **La curva vigente la sirve MLOps con el mismo servicio de Administración** (`GET /mlops/coverage-curve`, rol analista): el endpoint de administración es de rol administrador. Acepta `model_version` para mostrar la curva de una candidata ("la curva nueva") antes de promoverla; si la candidata no la tiene, la pantalla lo dice.
+* **Frescura.** `GET /mlops/runs` agrega `freshness` (última ingesta completa, último delta exitoso y último monitor, inferido de `kpi_estimates`) y `memory_limit_mib` (4 096, el límite del Job del delta); la tabla de endpoints no los listaba, pero evita dos rutas más.
+* **Series de deriva.** La lista de series excluye las de tópicos (no tienen umbral y salen en `topics-context`); `topics-context` trae los tópicos y, junto, las familias (`family_*`) y la marca `u` (`flag_update_share`) de los mismos meses. La ventana es de 24 meses.
+* **El mapa de calor** pinta el z; el PSI de la longitud se lleva a la misma escala con su umbral (`psi / umbral × 4`) para no tener dos escalas. El borde dorado marca la alerta que escribió el monitor (`alert`), no una comparación del portal. Cada celda trae el número escrito: el color no es el único canal.
+* **Elegir la versión.** La tabla de versiones tiene un botón "Elegir" por versión no vigente; sobre la elegida se ven la regla de promoción, la calibración y la curva, y se arman los botones de *re-scoring*, *promover* y *rollback*. Así el *rollback* se lanza desde la versión retirada.
+* **`topics-refit` y `inference_runs`.** `RunKind.TOPIC_REFIT` es nuevo en `voc-common` (y en el contrato). El Job escribe la fila de inicio y la de cierre solo cuando corre (toca o va con `--force`); si no toca, no escribe nada, para no llenar el registro con corridas mensuales vacías. Una corrida forzada con pocos textos cierra `failed`. Cuesta $0 (`cost_usd = 0`), con la memoria pico, y `actor_hash` y `reason` nulos en la corrida programada. `ended_at` nunca es anterior a `started_at`.
+* **FMEA:** ningún texto sale por un camino nuevo: el botón lanza Jobs que ya existían y que ya tienen su fila (el entrenamiento y el *re-scoring* mandan texto a Kaggle, y el diálogo lo avisa). No se agregó una fila.
 
 ## Avance
 
-_(Se llena al ejecutar.)_
+* **`voc-common` y `ml-inference` (2026-10-26):** `RunKind.TOPIC_REFIT`; `topics-refit` acepta `--actor-hash` y `--reason` y escribe inicio y cierre en `inference_runs`. Pruebas nuevas: quién y por qué, corrida programada sin actor, cierre `failed` con pocos textos, no escribe si no toca.
+* **API (2026-10-26):** `api_backend/jobs.py` y `sections/mlops/` (`router`, `schemas`, `service`, `repository`, `calibration`, `sample`), registrada en `main.py`; `openapi.json` y `schema.d.ts` regenerados. Pruebas nuevas (`test_jobs.py`, `test_mlops.py`, `test_mlops_bigquery.py`): lectura de analista y 403 de lector, reglas de habilitación de cada acción (sin aviso, entrenamiento en curso o muerto, modo automático, candidata sin verificación, verificación contra otra vigente, `worse` sin `FORZAR`, *rollback* a la vigente o a una nunca promovida), argumentos exactos de cada Job con el `actor_hash` del principal, lista cerrada, 502 si el Job no se lanza, y la ingesta deduplicada por `audit_event_id` antes de agrupar.
+* **Infraestructura (2026-10-26):** permisos de la cuenta de la API sobre los cuatro Jobs y sobre `ml_artifacts/`, y la variable del bucket; pruebas de Pulumi actualizadas. **No se aplicó** ni se construyó la imagen: queda para el despliegue con la aprobación del autor.
+* **Portal (2026-10-26):** `/mlops` con cuatro pestañas en `?tab=` (Modelo, Deriva, Registro y acciones, Pipeline), cada una un trozo perezoso. 15 pruebas nuevas, entre ellas el umbral y el estado de cada tarjeta, los botones deshabilitados con su motivo, *promover* con `worse` que pide `FORZAR`, el *rollback* y `axe` sin violaciones en las pestañas Modelo, Registro y Pipeline. Dos pruebas viejas (`a11y` y `cockpit`) usaban `/mlops` como sección en construcción; ahora usan `/gobernanza`.
+* **Revisada en local** (`PORTAL_DATA=fixtures`): se abrieron las pestañas Modelo y Registro; las gráficas se cortaban a la derecha en la rejilla de dos columnas hasta que las tarjetas recibieron `min-w-0`. Las pestañas Deriva y Pipeline solo se probaron con las pruebas del portal, no a ojo.
+* **Pendiente:** aplicar la infraestructura, mirar el registro y las señales contra dev y probar el botón de tópicos con la aprobación del autor (pendiente 14 de [EPIC-8](../epic_8.md)). Los huecos conocidos (el monitor sin `inference_runs` y la ingesta sin costo) son los pendientes 8 y 9 de EPIC-8.

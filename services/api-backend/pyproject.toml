@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn[standard]>=0.54,<1",
     "pydantic-settings>=2.16,<3",
     "google-cloud-bigquery>=3.46,<4",
+    "google-cloud-storage>=2.19,<4",
     "google-cloud-secret-manager>=2.20,<3",
     "google-cloud-dlp>=3.40,<4",
     "google-auth>=2.62,<3",

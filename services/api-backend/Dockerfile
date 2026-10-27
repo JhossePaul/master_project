@@ -60,6 +60,9 @@ COPY --chown=root:root docs/analytics/labeling/annotation_guideline.md \
     /app/guidelines/docs/analytics/labeling/annotation_guideline.md
 COPY --chown=root:root docs/analytics/eda/eda_aspects_guideline.md \
     /app/guidelines/docs/analytics/eda/eda_aspects_guideline.md
+# Calibración de los experimentos (la versión sembrada no tiene manifiesto).
+COPY --chown=root:root docs/analytics/calibration/calibration_v0_metrics.json \
+    /app/calibration/calibration_v0_metrics.json
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

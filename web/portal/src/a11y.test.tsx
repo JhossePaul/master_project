@@ -10,7 +10,7 @@ describe("accesibilidad", () => {
   });
 
   it("el shell con una sección en construcción no tiene violaciones", async () => {
-    const { container } = renderApp("/mlops");
+    const { container } = renderApp("/gobernanza");
     await screen.findByText("En construcción");
     expect(await axe(container)).toHaveNoViolations();
   });

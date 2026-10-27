@@ -48,6 +48,12 @@ class ApiSettings(BaseSettings):
     dlp_inspect_template: str = ""
     dlp_deidentify_template: str = ""
 
+    # Pesos y manifiestos de entrenamiento (``ml_artifacts/``); vacío en local.
+    gcs_raw_datalake_bucket: str = ""
+    ml_artifacts_prefix: str = "ml_artifacts"
+    # Métricas de calibración de los experimentos (copia la imagen).
+    calibration_docs_path: str = "/app/calibration/calibration_v0_metrics.json"
+
     # Guías de revisión: ``<guidelines_dir>/<content_uri>`` (copia la imagen).
     guidelines_dir: str = "/app/guidelines"
     static_dir: str = "/app/static"
