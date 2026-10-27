@@ -9,7 +9,7 @@ from typing import Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
-from voc_common import HitlTask, ReviewFlag
+from voc_common import AspectFamily, HitlTask, ReviewFlag
 
 
 class SentimentProposal(BaseModel):
@@ -21,10 +21,11 @@ class SentimentProposal(BaseModel):
 
 class HitlCase(BaseModel):
     item_id: str
-    task: Literal["sentiment"]
+    task: Literal["sentiment", "aspects"]
     text: str  # texto_sanitizado del TDS
     display_mode: Literal["blind", "assisted"]
-    # Solo si ``assisted``: nunca en la muestra de monitoreo ni en el oro.
+    # Solo si ``assisted``: nunca en la muestra de monitoreo, en el oro ni en
+    # aspectos (siempre a ciegas).
     proposal: SentimentProposal | None
     guideline_version: str
     opened_at: datetime  # el ``at`` del evento in_review
@@ -32,7 +33,7 @@ class HitlCase(BaseModel):
 
 
 class NextIn(BaseModel):
-    task: Literal["sentiment"]
+    task: Literal["sentiment", "aspects"]
     # Casos que el revisor ya tiene abiertos (``item_id`` del portal): al
     # precargar el siguiente no se le vuelve a dar el que está revisando.
     exclude: list[str] = Field(default_factory=list, max_length=60)
@@ -59,6 +60,28 @@ class SentimentReviewIn(BaseModel):
             raise ValueError(
                 "validated_label is null if and only if no_evaluable"
             )
+        return self
+
+
+class AspectsReviewIn(BaseModel):
+    """Codificación de familias y marcas de una reseña negativa.
+
+    Sin familias quiere decir "sin problema concreto". El elogio no se guarda:
+    ``hitl_reviews`` no tiene columna para él y nada lo consume.
+    """
+
+    review_id: UUID
+    families: list[AspectFamily]
+    flag_update: bool  # u
+    flag_security: bool  # s
+    comment: str | None = Field(default=None, max_length=500)
+    guideline_version: str
+    claim_next: bool = True
+
+    @model_validator(mode="after")
+    def _unique(self) -> Self:
+        if len(set(self.families)) != len(self.families):
+            raise ValueError("families must not repeat")
         return self
 
 

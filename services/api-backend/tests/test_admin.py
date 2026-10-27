@@ -491,7 +491,7 @@ def test_quien_no_es_administrador_recibe_403_en_todas_las_rutas(
     client, repo = kit(roles)
     routes = admin_routes()
 
-    assert len(routes) == 11
+    assert len(routes) == 13
     for method, path in routes:
         url = path.replace("{gold_version}", "gold_hitl_v1")
         response = client.request(method, url, json={})

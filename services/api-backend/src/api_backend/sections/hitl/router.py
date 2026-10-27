@@ -18,6 +18,7 @@ from api_backend.sections.hitl.repository import (
 )
 from api_backend.sections.hitl.sample import sample_repository
 from api_backend.sections.hitl.schemas import (
+    AspectsReviewIn,
     GuidelineOut,
     HitlCase,
     HitlSummary,
@@ -32,6 +33,7 @@ for _method, _route in (
     ("GET", "summary"),
     ("POST", "next"),
     ("POST", "items/{item_id}/review"),
+    ("POST", "items/{item_id}/review-aspects"),
     ("POST", "items/{item_id}/skip"),
     ("POST", "items/{item_id}/release"),
     ("GET", "guidelines/{task}"),
@@ -113,6 +115,20 @@ def review(  # noqa: PLR0913
     at: Now,
 ) -> ReviewOut:
     return service.save_review(repo, sanitizer, principal, item_id, body, at)
+
+
+@router.post("/items/{item_id}/review-aspects")
+def review_aspects(  # noqa: PLR0913
+    item_id: str,
+    body: AspectsReviewIn,
+    principal: Reviewer,
+    repo: Repo,
+    sanitizer: Annotated[CommentSanitizer, Depends(get_sanitizer)],
+    at: Now,
+) -> ReviewOut:
+    return service.save_aspects_review(
+        repo, sanitizer, principal, item_id, body, at
+    )
 
 
 @router.post("/items/{item_id}/skip", status_code=204)

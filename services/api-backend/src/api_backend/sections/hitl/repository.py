@@ -97,10 +97,19 @@ def public_id(item_id: str) -> str:
     ]
 
 
-def text_matches(item_id: str, text: str) -> bool:
-    """``item_id`` lleva los 16 primeros caracteres del ``text_key``."""
+def text_matches(
+    item_id: str, text: str, task: HitlTask = HitlTask.SENTIMENT
+) -> bool:
+    """``item_id`` lleva los 16 primeros caracteres del ``text_key``.
+
+    En sentimiento van antes de la versión del modelo; en las muestras de
+    aspectos (``aspects:manual:<lote>:<id_resena>:<text_key>``), al final.
+    """
     parts = item_id.split(":")
-    return len(parts) >= 2 and text_key(text).startswith(parts[-2])
+    if len(parts) < 2:  # noqa: PLR2004
+        return False
+    prefix = parts[-1] if task is HitlTask.ASPECTS else parts[-2]
+    return text_key(text).startswith(prefix)
 
 
 def week_start(now: datetime) -> datetime:
@@ -311,7 +320,25 @@ class BigQueryHitlRepository:
             ],
             name="hitl_median",
         )
-        monitor = self._reader.rows(
+        monitor = (
+            self._monitor_progress(task, now)
+            if task is HitlTask.SENTIMENT
+            else [{"target": 0, "done": 0}]
+        )
+        return TaskSummary(
+            task=task,
+            pending=int(pending[0]["n"]),  # type: ignore[call-overload]
+            mine_this_week=int(week[0]["mine"] or 0),  # type: ignore[call-overload]
+            team_this_week=int(week[0]["team"] or 0),  # type: ignore[call-overload]
+            median_seconds=_float(median[0]["m"]) if median else None,
+            monitor_done=int(monitor[0]["done"] or 0),  # type: ignore[call-overload]
+            monitor_target=int(monitor[0]["target"] or 0),  # type: ignore[call-overload]
+        )
+
+    def _monitor_progress(
+        self, task: HitlTask, now: datetime
+    ) -> Sequence[Mapping[str, Any]]:
+        return self._reader.rows(
             "WITH s AS (SELECT item_id, SPLIT(item_id, ':')[SAFE_OFFSET(1)] "  # nosec B608
             f"AS quarter FROM {self._table('hitl_items')} "
             "WHERE task = @task AND reason = 'monitor_sample' "
@@ -334,15 +361,6 @@ class BigQueryHitlRepository:
                 ),
             ],
             name="hitl_monitor_progress",
-        )
-        return TaskSummary(
-            task=task,
-            pending=int(pending[0]["n"]),  # type: ignore[call-overload]
-            mine_this_week=int(week[0]["mine"] or 0),  # type: ignore[call-overload]
-            team_this_week=int(week[0]["team"] or 0),  # type: ignore[call-overload]
-            median_seconds=_float(median[0]["m"]) if median else None,
-            monitor_done=int(monitor[0]["done"] or 0),  # type: ignore[call-overload]
-            monitor_target=int(monitor[0]["target"] or 0),  # type: ignore[call-overload]
         )
 
 
