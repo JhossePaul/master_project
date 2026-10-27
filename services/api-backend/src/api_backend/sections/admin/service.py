@@ -324,6 +324,14 @@ def _alerts(
     ]
 
 
+def _alerts_on(thresholds: DriftThresholds, series: str) -> bool:
+    """La serie tiene un umbral (z o PSI) con el que puede alertar."""
+    return (
+        thresholds.z.get(series) is not None
+        or thresholds.psi.get(series) is not None
+    )
+
+
 def _rates(
     bank: str, months: list[DriftMonth], thresholds: DriftThresholds
 ) -> dict[str, Rate]:
@@ -343,6 +351,10 @@ def drift_rates(
     live = _rates(bank, months, current.thresholds)
     series = []
     for name in sorted(set(proposed) | set(live)):
+        if not (
+            _alerts_on(thresholds, name) or _alerts_on(current.thresholds, name)
+        ):
+            continue  # se mide y nunca alerta: no tiene tasa
         p, c = proposed.get(name), live.get(name)
         base = p or c
         assert base is not None  # noqa: S101  # el nombre sale de una de las dos

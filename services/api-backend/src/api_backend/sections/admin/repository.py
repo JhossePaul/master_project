@@ -206,7 +206,10 @@ class BigQueryAdminRepository:
             "SELECT metric, SUBSTR(CAST(period AS STRING), 1, 7) AS period, "  # nosec B608
             "z, psi "
             f"FROM {self._table('drift_metrics')} "
-            "WHERE bank_id = @bank AND threshold IS NOT NULL "
+            # Sin filtrar por el umbral guardado: el z y el PSI de cada mes se
+            # calculan siempre, y una serie que ganó umbral después (las
+            # familias con la política v2) no tiene historia evaluada con él.
+            "WHERE bank_id = @bank "
             "AND (z IS NOT NULL OR psi IS NOT NULL) "
             "QUALIFY ROW_NUMBER() OVER (PARTITION BY metric, period "
             "ORDER BY computed_at DESC) = 1"

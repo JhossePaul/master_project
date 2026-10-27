@@ -119,7 +119,10 @@ def test_deriva_lee_plantilla_politicas_y_meses() -> None:
         "2025-01",
         4.5,
     )
-    assert "threshold IS NOT NULL" in reader.calls[0][0]
+    # Sin filtrar por el umbral guardado: las familias ganaron umbral con la
+    # política v2 y su historia se calculó sin él.
+    assert "threshold IS NOT NULL" not in reader.calls[0][0]
+    assert "z IS NOT NULL OR psi IS NOT NULL" in reader.calls[0][0]
 
 
 def test_escribe_cada_version_con_su_clave() -> None:
