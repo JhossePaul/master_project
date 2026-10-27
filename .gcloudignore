@@ -27,6 +27,10 @@ docs/analytics/labeling/*
 !docs/analytics/eda/
 docs/analytics/eda/*
 !docs/analytics/eda/eda_aspects_guideline.md
+# Calibración de la versión sembrada, que la API muestra en MLOps.
+!docs/analytics/calibration/
+docs/analytics/calibration/*
+!docs/analytics/calibration/calibration_v0_metrics.json
 # Los Dockerfiles copian infra/pyproject.toml (miembro del workspace uv).
 infra/*
 !infra/pyproject.toml

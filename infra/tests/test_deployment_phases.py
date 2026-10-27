@@ -1,5 +1,6 @@
 """Despliegue por fases: base sin cargas e imágenes fijadas por digest."""
 
+import re
 import runpy
 from pathlib import Path
 from typing import Any
@@ -274,6 +275,21 @@ def test_cloud_build_upload_keeps_workspace_and_drops_sensitive_files() -> None:
         rules
     )
     assert "infra/" not in rules
+
+
+def test_cloud_build_upload_keeps_every_file_the_api_image_copies() -> None:
+    """Cada `COPY docs/...` pasa por .gcloudignore y .dockerignore."""
+    copied = re.findall(
+        r"^COPY (?:--\S+ )*(docs/\S+)",
+        (REPO / "services/api-backend/Dockerfile").read_text(),
+        flags=re.MULTILINE,
+    )
+    assert copied
+    gcloud = (REPO / ".gcloudignore").read_text().splitlines()
+    docker = (REPO / ".dockerignore").read_text().splitlines()
+    for path in copied:
+        assert f"!{path}" in gcloud, f"{path} no llega a Cloud Build"
+        assert f"!{path}" in docker, f"{path} no entra al contexto"
 
 
 def test_cd_workflow_never_runs_on_pull_requests() -> None:
