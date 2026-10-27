@@ -158,6 +158,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Samples
+         * @description Los lotes de muestras de aspectos y su avance.
+         */
+        get: operations["samples_api_v1_admin_samples_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/samples/aspects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Samples
+         * @description Crea un lote de casos de aspectos, a ciegas, con cuota por banco.
+         */
+        post: operations["create_samples_api_v1_admin_samples_aspects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/alerts": {
         parameters: {
             query?: never;
@@ -313,6 +353,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hitl/items/{item_id}/review-aspects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Aspects */
+        post: operations["review_aspects_api_v1_hitl_items__item_id__review_aspects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hitl/items/{item_id}/skip": {
         parameters: {
             query?: never;
@@ -362,6 +419,77 @@ export interface paths {
          * @description Por cola permitida: solo conteos.
          */
         get: operations["summary_api_v1_hitl_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Versions
+         * @description Versiones desde la vigente en adelante, con su avance de curaduría.
+         */
+        get: operations["list_versions_api_v1_hitl_topics_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version Detail */
+        get: operations["version_detail_api_v1_hitl_topics__version__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}/{topic_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Curate Topic */
+        post: operations["curate_topic_api_v1_hitl_topics__version___topic_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hitl/topics/{version}/{topic_id}/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Topic Examples */
+        get: operations["topic_examples_api_v1_hitl_topics__version___topic_id__examples_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -611,6 +739,188 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mlops/actions/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Action
+         * @description Lanza el Job de la acción; 409 si no está habilitada.
+         */
+        post: operations["run_action_api_v1_mlops_actions__action__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/coverage-curve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage Curve
+         * @description La curva del modelo promovido (o de una candidata), de solo lectura.
+         */
+        get: operations["coverage_curve_api_v1_mlops_coverage_curve_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/drift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drift */
+        get: operations["drift_api_v1_mlops_drift_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eligibility */
+        get: operations["eligibility_api_v1_mlops_eligibility_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/ingestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ingestion */
+        get: operations["ingestion_api_v1_mlops_ingestion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Models
+         * @description Versiones, su historia y qué acciones están habilitadas.
+         */
+        get: operations["models_api_v1_mlops_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/models/{model_version}/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calibration */
+        get: operations["calibration_api_v1_mlops_models__model_version__calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quality
+         * @description Serie de cada señal de ``model_quality`` con su umbral y estado.
+         */
+        get: operations["quality_api_v1_mlops_quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Runs */
+        get: operations["runs_api_v1_mlops_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mlops/topics-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Topics Context */
+        get: operations["topics_context_api_v1_mlops_topics_context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reviews": {
         parameters: {
             query?: never;
@@ -712,6 +1022,38 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Action
+         * @enum {string}
+         */
+        Action: "retrain" | "rescore" | "promote" | "rollback" | "topics_refit";
+        /** ActionIn */
+        ActionIn: {
+            /** Confirm Word */
+            confirm_word?: string | null;
+            /** Model Version */
+            model_version?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /** ActionOut */
+        ActionOut: {
+            action: components["schemas"]["Action"];
+            /** Job */
+            job: string;
+            /** Operation */
+            operation: string;
+        };
+        /** ActionState */
+        ActionState: {
+            action: components["schemas"]["Action"];
+            /** Enabled */
+            enabled: boolean;
+            /** Next Date */
+            next_date?: string | null;
+            /** Reason */
+            reason: string | null;
+        };
         /** AlertDetail */
         AlertDetail: {
             alert: components["schemas"]["AlertRow"];
@@ -790,6 +1132,56 @@ export interface components {
             };
         };
         /**
+         * AspectFamily
+         * @description Las 11 familias de ``aspects_v2_1`` (guía ``v2.1``).
+         * @enum {string}
+         */
+        AspectFamily: "AC" | "TR" | "DI" | "PR" | "AT" | "FA" | "LE" | "CO" | "DV" | "UX" | "OT";
+        /**
+         * AspectsReviewIn
+         * @description Codificación de familias y marcas de una reseña negativa.
+         *
+         *     Sin familias quiere decir "sin problema concreto". El elogio no se guarda:
+         *     ``hitl_reviews`` no tiene columna para él y nada lo consume.
+         */
+        AspectsReviewIn: {
+            /**
+             * Claim Next
+             * @default true
+             */
+            claim_next: boolean;
+            /** Comment */
+            comment?: string | null;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Flag Security */
+            flag_security: boolean;
+            /** Flag Update */
+            flag_update: boolean;
+            /** Guideline Version */
+            guideline_version: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+        };
+        /** AspectsSampleIn */
+        AspectsSampleIn: {
+            /**
+             * Months
+             * @default 3
+             */
+            months: number;
+            /** Reason */
+            reason: string;
+            /**
+             * Size
+             * @default 50
+             */
+            size: number;
+        };
+        /**
          * Attribution
          * @description Posiciones en ``texto_sanitizado``; sin copiar texto.
          */
@@ -866,6 +1258,28 @@ export interface components {
              */
             starts_at: string;
         };
+        /** CalibrationOut */
+        CalibrationOut: {
+            /** Calibrated */
+            calibrated: components["schemas"]["ReliabilityBin"][];
+            /** Ece Calibrated */
+            ece_calibrated: number | null;
+            /** Ece Raw */
+            ece_raw: number | null;
+            /** Model Version */
+            model_version: string;
+            /** Raw */
+            raw: components["schemas"]["ReliabilityBin"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manifest" | "docs";
+            /** Source Label */
+            source_label: string;
+            /** Temperature */
+            temperature: number | null;
+        };
         /** CardValues */
         CardValues: {
             gap_estrellas: components["schemas"]["Estimate"] | null;
@@ -873,6 +1287,13 @@ export interface components {
             /** Period */
             period: string;
             quejas_4_5: components["schemas"]["Estimate"] | null;
+        };
+        /** ContextSeries */
+        ContextSeries: {
+            /** Cells */
+            cells: components["schemas"]["DriftCell"][];
+            /** Metric */
+            metric: string;
         };
         /** CoverageCurveResponse */
         CoverageCurveResponse: {
@@ -972,6 +1393,44 @@ export interface components {
             /** Topicos */
             topicos: components["schemas"]["DailyTheme"][];
         };
+        /** DecisionOut */
+        DecisionOut: {
+            audience: components["schemas"]["TopicAudience"];
+            /** Coherence 1 5 */
+            coherence_1_5: number;
+            /**
+             * Curated At
+             * Format: date-time
+             */
+            curated_at: string;
+            /** Curated Name */
+            curated_name: string;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Is New Theme */
+            is_new_theme: boolean;
+            /** Mapping Confirmed */
+            mapping_confirmed: boolean;
+        };
+        /** DriftCell */
+        DriftCell: {
+            /** Alert */
+            alert: boolean;
+            /** Bank Id */
+            bank_id: string;
+            /** Baseline */
+            baseline: number | null;
+            /** Period */
+            period: string;
+            /** Psi */
+            psi: number | null;
+            /** Threshold */
+            threshold: number | null;
+            /** Value */
+            value: number;
+            /** Z */
+            z: number | null;
+        };
         /**
          * DriftPolicy
          * @description Fila de ``drift_policy`` (por banco).
@@ -1050,6 +1509,17 @@ export interface components {
             /** Series */
             series: components["schemas"]["SeriesRate"][];
         };
+        /** DriftResponse */
+        DriftResponse: {
+            /** Banks */
+            banks: string[];
+            /** Cells */
+            cells: components["schemas"]["DriftCell"][];
+            /** Metric */
+            metric: string;
+            /** Series */
+            series: string[];
+        };
         /** DriftSaveIn */
         DriftSaveIn: {
             /** Bank */
@@ -1080,6 +1550,17 @@ export interface components {
                 [key: string]: number | null;
             };
         };
+        /** EligibilityRow */
+        EligibilityRow: {
+            /** Bank Id */
+            bank_id: string;
+            /** Code */
+            code: string;
+            /** N */
+            n: number;
+            /** Period */
+            period: string;
+        };
         /** Estimate */
         Estimate: {
             /** Ci High */
@@ -1097,6 +1578,18 @@ export interface components {
             n_gold: number | null;
             /** N Unlabeled */
             n_unlabeled: number | null;
+        };
+        /** ExampleOut */
+        ExampleOut: {
+            /** Text */
+            text: string;
+        };
+        /** ExamplesResponse */
+        ExamplesResponse: {
+            /** Examples */
+            examples: components["schemas"]["ExampleOut"][];
+            /** Topic Id */
+            topic_id: number;
         };
         /** ExplainIn */
         ExplainIn: {
@@ -1220,16 +1713,6 @@ export interface components {
             before: unknown;
             /** Field */
             field: string;
-        };
-        /** Freshness */
-        Freshness: {
-            /** Data Until */
-            data_until: string | null;
-            last_delta: components["schemas"]["RunSummary"] | null;
-            /** Last Ingestion At */
-            last_ingestion_at: string | null;
-            /** Last Monitor At */
-            last_monitor_at: string | null;
         };
         /** GoldCount */
         GoldCount: {
@@ -1420,9 +1903,9 @@ export interface components {
             review_round: 1 | 2;
             /**
              * Task
-             * @constant
+             * @enum {string}
              */
-            task: "sentiment";
+            task: "sentiment" | "aspects";
             /** Text */
             text: string;
         };
@@ -1476,11 +1959,40 @@ export interface components {
          * @enum {string}
          */
         HitlTask: "sentiment" | "aspects" | "topic";
+        /** IngestionRunOut */
+        IngestionRunOut: {
+            /** Bank Id */
+            bank_id: string;
+            /** Duration Seconds */
+            duration_seconds: number;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Mode */
+            mode: string;
+            /** Reviews Discarded */
+            reviews_discarded: number | null;
+            /** Reviews Extracted */
+            reviews_extracted: number | null;
+            /** Reviews Published */
+            reviews_published: number | null;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Status */
+            status: string;
+        };
         /** LandingResponse */
         LandingResponse: {
             /** Banks */
             banks: components["schemas"]["BankHeadline"][];
-            freshness: components["schemas"]["Freshness"];
+            freshness: components["schemas"]["api_backend__sections__landing__schemas__Freshness"];
             /** Hitl Pending */
             hitl_pending: number | null;
             /** Open Alerts */
@@ -1532,6 +2044,58 @@ export interface components {
              */
             promoted_at: string;
         };
+        /** ModelOut */
+        ModelOut: {
+            /** Actions */
+            actions: components["schemas"]["ActionState"][];
+            /** Aurc Dev */
+            aurc_dev: number | null;
+            /** Base Checkpoint */
+            base_checkpoint: string;
+            /** Calibration T */
+            calibration_t: number;
+            /** Calibration Version */
+            calibration_version: string;
+            check: components["schemas"]["PromotionCheckOut"] | null;
+            /** Current */
+            current: boolean;
+            /** Ece Dev */
+            ece_dev: number | null;
+            /** Ever Promoted */
+            ever_promoted: boolean;
+            /** History */
+            history: components["schemas"]["StatusStep"][];
+            /** Kappa Dev */
+            kappa_dev: number | null;
+            /** License */
+            license: string;
+            /** Model Version */
+            model_version: string;
+            status: components["schemas"]["ModelStatus"];
+            /** Training Data */
+            training_data: string;
+            /** Training Data Hash */
+            training_data_hash: string | null;
+        };
+        /**
+         * ModelStatus
+         * @enum {string}
+         */
+        ModelStatus: "candidate" | "promoted" | "retired";
+        /** ModelsResponse */
+        ModelsResponse: {
+            /** Actions */
+            actions: components["schemas"]["ActionState"][];
+            /** Current Version */
+            current_version: string | null;
+            /**
+             * Force Word
+             * @default FORZAR
+             */
+            force_word: string;
+            /** Models */
+            models: components["schemas"]["ModelOut"][];
+        };
         /** MonthlyKpi */
         MonthlyKpi: {
             /** Bank Id */
@@ -1551,10 +2115,53 @@ export interface components {
             exclude?: string[];
             /**
              * Task
-             * @constant
+             * @enum {string}
              */
-            task: "sentiment";
+            task: "sentiment" | "aspects";
         };
+        /** PreviousTopicOut */
+        PreviousTopicOut: {
+            /** Centroid Similarity */
+            centroid_similarity: number;
+            curation: components["schemas"]["DecisionOut"] | null;
+            /** Topic Id */
+            topic_id: number;
+        };
+        /** PromotionCheckOut */
+        PromotionCheckOut: {
+            /** Candidate Version */
+            candidate_version: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Current Version */
+            current_version: string;
+            /** Gold Version */
+            gold_version: string;
+            /** Kappa Ci High */
+            kappa_ci_high: number;
+            /** Kappa Ci Low */
+            kappa_ci_low: number;
+            /** Kappa Diff */
+            kappa_diff: number;
+            /** Macro F1 Ci High */
+            macro_f1_ci_high: number;
+            /** Macro F1 Ci Low */
+            macro_f1_ci_low: number;
+            /** Macro F1 Diff */
+            macro_f1_diff: number;
+            /** N */
+            n: number;
+            verdict: components["schemas"]["PromotionVerdict"];
+        };
+        /**
+         * PromotionVerdict
+         * @description Regla de promoción: el candidato contra la versión vigente.
+         * @enum {string}
+         */
+        PromotionVerdict: "better" | "tie" | "worse";
         /** PromptChange */
         PromptChange: {
             /**
@@ -1564,6 +2171,69 @@ export interface components {
             first_labeled_at: string;
             /** Prompt Version */
             prompt_version: string;
+        };
+        /** QualityPoint */
+        QualityPoint: {
+            /** Ci High */
+            ci_high: number | null;
+            /** Ci Low */
+            ci_low: number | null;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Llm Model */
+            llm_model: string | null;
+            /** Model Version */
+            model_version: string | null;
+            /** N */
+            n: number;
+            /** Period */
+            period: string;
+            /** Prompt Version */
+            prompt_version: string | null;
+            status: components["schemas"]["QualityStatus"];
+            /** Threshold */
+            threshold: number | null;
+            /** Value */
+            value: number;
+        };
+        /** QualityResponse */
+        QualityResponse: {
+            /** Signals */
+            signals: components["schemas"]["QualitySeries"][];
+        };
+        /** QualitySeries */
+        QualitySeries: {
+            /** Points */
+            points: components["schemas"]["QualityPoint"][];
+            signal: components["schemas"]["QualitySignal"];
+        };
+        /**
+         * QualitySignal
+         * @enum {string}
+         */
+        QualitySignal: "kappa_monitor" | "correction_rate" | "gemini_agreement" | "families_validation";
+        /**
+         * QualityStatus
+         * @enum {string}
+         */
+        QualityStatus: "ok" | "warning" | "retrain" | "rejected";
+        /** ReliabilityBin */
+        ReliabilityBin: {
+            /** Accuracy */
+            accuracy: number;
+            /** Confidence */
+            confidence: number;
+            /** High */
+            high: number;
+            /** Low */
+            low: number;
+            /** N */
+            n: number;
+            /** Weight */
+            weight: number;
         };
         /**
          * RetrainTrigger
@@ -1769,10 +2439,48 @@ export interface components {
          */
         Role: "lector" | "analista" | "revisor" | "administrador";
         /**
+         * RunEnvironment
+         * @enum {string}
+         */
+        RunEnvironment: "kaggle" | "cloudrun" | "local";
+        /**
          * RunKind
          * @enum {string}
          */
-        RunKind: "backfill" | "delta" | "rescoring" | "training" | "topic_backfill" | "aspect_backfill";
+        RunKind: "backfill" | "delta" | "rescoring" | "training" | "topic_backfill" | "aspect_backfill" | "topic_refit";
+        /** RunOut */
+        RunOut: {
+            /** Actor */
+            actor: string | null;
+            /** Cost Usd */
+            cost_usd: number | null;
+            /** Duration Seconds */
+            duration_seconds: number | null;
+            /** Ended At */
+            ended_at: string | null;
+            environment: components["schemas"]["RunEnvironment"];
+            kind: components["schemas"]["RunKind"];
+            /** Model Version */
+            model_version: string | null;
+            /** Peak Memory Mib */
+            peak_memory_mib: number | null;
+            /** Reason */
+            reason: string | null;
+            /** Reviews */
+            reviews: number;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            status: components["schemas"]["RunStatus"];
+            /** Texts */
+            texts: number;
+            /** Topic Model Version */
+            topic_model_version: string | null;
+        };
         /**
          * RunStatus
          * @description Estado de una corrida (solo inserción).
@@ -1798,6 +2506,48 @@ export interface components {
              */
             started_at: string;
             status: components["schemas"]["RunStatus"];
+        };
+        /** RunsResponse */
+        RunsResponse: {
+            freshness: components["schemas"]["api_backend__sections__mlops__schemas__Freshness"];
+            /**
+             * Memory Limit Mib
+             * @default 4096
+             */
+            memory_limit_mib: number;
+            /** Runs */
+            runs: components["schemas"]["RunOut"][];
+        };
+        /** SampleBatchOut */
+        SampleBatchOut: {
+            /** Batch */
+            batch: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Reviewed */
+            reviewed: number;
+            /** Size */
+            size: number;
+            task: components["schemas"]["HitlTask"];
+        };
+        /** SampleCreatedOut */
+        SampleCreatedOut: {
+            /** Batch */
+            batch: string;
+            /** Created */
+            created: number;
+            /** Per Bank */
+            per_bank: {
+                [key: string]: number;
+            };
+        };
+        /** SamplesResponse */
+        SamplesResponse: {
+            /** Batches */
+            batches: components["schemas"]["SampleBatchOut"][];
         };
         /** SearchHit */
         SearchHit: {
@@ -1905,6 +2655,19 @@ export interface components {
             /** Series */
             series: string;
         };
+        /** StatusStep */
+        StatusStep: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Reason */
+            reason: string | null;
+            status: components["schemas"]["ModelStatus"];
+        };
         /** TaskSummary */
         TaskSummary: {
             /** Median Seconds */
@@ -1920,6 +2683,35 @@ export interface components {
             task: components["schemas"]["HitlTask"];
             /** Team This Week */
             team_this_week: number;
+        };
+        /**
+         * TopicAudience
+         * @description Audiencia de un tópico curado.
+         * @enum {string}
+         */
+        TopicAudience: "producto" | "ingenieria" | "sin_valor";
+        /** TopicCurationIn */
+        TopicCurationIn: {
+            audience: components["schemas"]["TopicAudience"];
+            /** Coherence 1 5 */
+            coherence_1_5: number;
+            /** Curated Name */
+            curated_name: string;
+            /** Families */
+            families: components["schemas"]["AspectFamily"][];
+            /** Is New Theme */
+            is_new_theme: boolean;
+            /** Mapping Confirmed */
+            mapping_confirmed: boolean;
+        };
+        /** TopicCurationOut */
+        TopicCurationOut: {
+            /** Completed */
+            completed: boolean;
+            /** Decided */
+            decided: number;
+            /** Paired */
+            paired: number;
         };
         /** TopicMonth */
         TopicMonth: {
@@ -1942,6 +2734,17 @@ export interface components {
             /** Topic Model Version */
             topic_model_version: string;
         };
+        /** TopicOut */
+        TopicOut: {
+            decision: components["schemas"]["DecisionOut"] | null;
+            previous: components["schemas"]["PreviousTopicOut"] | null;
+            /** Size */
+            size: number;
+            /** Terms */
+            terms: string[];
+            /** Topic Id */
+            topic_id: number;
+        };
         /** TopicRef */
         TopicRef: {
             /** Name */
@@ -1955,6 +2758,59 @@ export interface components {
          * @enum {string}
          */
         TopicRefitTrigger: "scheduled" | "manual";
+        /** TopicVersionDetail */
+        TopicVersionDetail: {
+            /** Decided */
+            decided: number;
+            /**
+             * Fitted At
+             * Format: date-time
+             */
+            fitted_at: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Paired */
+            paired: number;
+            /** Topic Model Version */
+            topic_model_version: string;
+            /** Topics */
+            topics: components["schemas"]["TopicOut"][];
+        };
+        /** TopicVersionOut */
+        TopicVersionOut: {
+            /** Activates On Completion */
+            activates_on_completion: boolean;
+            /** Decided */
+            decided: number;
+            /**
+             * Fitted At
+             * Format: date-time
+             */
+            fitted_at: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Paired */
+            paired: number;
+            /** Topic Model Version */
+            topic_model_version: string;
+            /** Topics */
+            topics: number;
+        };
+        /** TopicVersionsResponse */
+        TopicVersionsResponse: {
+            /** Versions */
+            versions: components["schemas"]["TopicVersionOut"][];
+        };
+        /**
+         * TopicsContextResponse
+         * @description Las series de tópicos, sin umbral, junto a las familias y la marca u.
+         */
+        TopicsContextResponse: {
+            /** Families */
+            families: components["schemas"]["ContextSeries"][];
+            /** Topics */
+            topics: components["schemas"]["ContextSeries"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2068,6 +2924,25 @@ export interface components {
             date_to: string;
             /** Months */
             months: number;
+        };
+        /** Freshness */
+        api_backend__sections__landing__schemas__Freshness: {
+            /** Data Until */
+            data_until: string | null;
+            last_delta: components["schemas"]["RunSummary"] | null;
+            /** Last Ingestion At */
+            last_ingestion_at: string | null;
+            /** Last Monitor At */
+            last_monitor_at: string | null;
+        };
+        /** Freshness */
+        api_backend__sections__mlops__schemas__Freshness: {
+            /** Last Delta At */
+            last_delta_at: string | null;
+            /** Last Ingestion At */
+            last_ingestion_at: string | null;
+            /** Last Monitor At */
+            last_monitor_at: string | null;
         };
     };
     responses: never;
@@ -2409,6 +3284,59 @@ export interface operations {
             };
         };
     };
+    samples_api_v1_admin_samples_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamplesResponse"];
+                };
+            };
+        };
+    };
+    create_samples_api_v1_admin_samples_aspects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AspectsSampleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SampleCreatedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_alerts_api_v1_alerts_get: {
         parameters: {
             query?: {
@@ -2690,6 +3618,41 @@ export interface operations {
             };
         };
     };
+    review_aspects_api_v1_hitl_items__item_id__review_aspects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AspectsReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     skip_api_v1_hitl_items__item_id__skip_post: {
         parameters: {
             query?: never;
@@ -2775,6 +3738,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HitlSummary"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_hitl_topics_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicVersionsResponse"];
+                };
+            };
+        };
+    };
+    version_detail_api_v1_hitl_topics__version__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicVersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    curate_topic_api_v1_hitl_topics__version___topic_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicCurationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicCurationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    topic_examples_api_v1_hitl_topics__version___topic_id__examples_get: {
+        parameters: {
+            query?: {
+                n?: number;
+            };
+            header?: never;
+            path: {
+                version: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamplesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3125,6 +4209,277 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    run_action_api_v1_mlops_actions__action__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action: components["schemas"]["Action"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    coverage_curve_api_v1_mlops_coverage_curve_get: {
+        parameters: {
+            query?: {
+                model_version?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageCurveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_api_v1_mlops_drift_get: {
+        parameters: {
+            query?: {
+                metric?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eligibility_api_v1_mlops_eligibility_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EligibilityRow"][];
+                };
+            };
+        };
+    };
+    ingestion_api_v1_mlops_ingestion_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestionRunOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    models_api_v1_mlops_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsResponse"];
+                };
+            };
+        };
+    };
+    calibration_api_v1_mlops_models__model_version__calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quality_api_v1_mlops_quality_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityResponse"];
+                };
+            };
+        };
+    };
+    runs_api_v1_mlops_runs_get: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["RunKind"] | null;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    topics_context_api_v1_mlops_topics_context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicsContextResponse"];
                 };
             };
         };

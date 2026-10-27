@@ -556,6 +556,10 @@ export const handlers = [
     "*/api/v1/hitl/items/:id/release",
     () => new HttpResponse(null, { status: 204 }),
   ),
+  http.get("*/api/v1/hitl/topics/versions", () =>
+    HttpResponse.json({ versions: [] }),
+  ),
+  http.get("*/api/v1/admin/samples", () => HttpResponse.json({ batches: [] })),
   http.get("*/api/v1/reviews/facets", () =>
     HttpResponse.json(syntheticFacets()),
   ),

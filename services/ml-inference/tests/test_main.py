@@ -366,10 +366,16 @@ def test_topics_refit_dispatch(
     monkeypatch.setattr(
         refit.TopicsRefit,
         "run",
-        lambda self, p, v, n, force: env.setdefault("refit", (p, v, force)),
+        lambda self, p, v, n, force: env.setdefault(
+            "refit", (p, v, force, self.actor_hash, self.reason)
+        ),
     )
     assert cli.main(["topics-refit", "--force"]) == 0
-    assert env["refit"] == ("p", "topics_v1", True)
+    assert env["refit"] == ("p", "topics_v1", True, None, None)
+    env.pop("refit")
+    args = ["topics-refit", "--force", "--actor-hash", ACTOR]
+    assert cli.main([*args, "--reason", "vocabulario nuevo"]) == 0
+    assert env["refit"] == ("p", "topics_v1", True, ACTOR, "vocabulario nuevo")
 
 
 def test_aspects_backfill_needs_a_cap_to_approve(env: dict) -> None:

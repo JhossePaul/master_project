@@ -106,6 +106,8 @@ def parser() -> argparse.ArgumentParser:
     top.add_argument(
         "--force", action="store_true", help="ajusta aunque no toque"
     )
+    top.add_argument("--actor-hash", type=_actor, default=None)
+    top.add_argument("--reason", default=None)
     sub.add_parser("topics-backfill", help="re-asigna el histórico de tópicos")
     asp = sub.add_parser(
         "aspects-backfill", help="familias del histórico con costo aprobado"
@@ -416,9 +418,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         from ml_inference.topics_refit import TopicsRefit
 
         state = load_state(bigquery, settings.dataset)
-        TopicsRefit(settings, bigquery, storage, writer).run(
-            state.policy, state.topic_model_version, now, force=args.force
-        )
+        TopicsRefit(
+            settings,
+            bigquery,
+            storage,
+            writer,
+            actor_hash=args.actor_hash,
+            reason=args.reason,
+        ).run(state.policy, state.topic_model_version, now, force=args.force)
         return 0
     if args.command == "topics-backfill":
         from ml_inference.state import load_state

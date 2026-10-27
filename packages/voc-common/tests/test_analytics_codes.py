@@ -105,6 +105,7 @@ _RULES_DOC = (
                 "training",
                 "topic_backfill",
                 "aspect_backfill",
+                "topic_refit",
             ],
         ),
         (RunEnvironment, ["kaggle", "cloudrun", "local"]),

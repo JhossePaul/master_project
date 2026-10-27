@@ -99,6 +99,32 @@ def test_los_valores_viajan_como_parametros_con_su_tipo() -> None:
     assert client.calls[0][1].maximum_bytes_billed == 2_000_000_000
 
 
+def test_insert_many_va_en_una_sola_sentencia_con_parametros_por_fila() -> None:
+    other = EVENT.model_copy(update={"event_id": "e2"})
+    client = FakeClient(affected=[2])
+
+    created = writer(client).insert_many(
+        "hitl_events", [EVENT, other], ["event_id"]
+    )
+
+    assert created == 2
+    assert len(client.calls) == 1
+    sql, config = client.calls[0]
+    assert sql.count("SELECT @event_id__") == 2
+    assert " UNION ALL " in sql
+    assert sql.count("INSERT INTO") == 1
+    params = {p.name: p.value for p in config.query_parameters}
+    assert params["event_id__0"] == "e1"
+    assert params["event_id__1"] == "e2"
+
+
+def test_insert_many_sin_filas_no_consulta() -> None:
+    client = FakeClient()
+
+    assert writer(client).insert_many("hitl_events", [], ["event_id"]) == 0
+    assert client.calls == []
+
+
 def test_segundo_insert_con_la_misma_clave_da_false() -> None:
     client = FakeClient(affected=[1, 0])
     w = writer(client)

@@ -13,6 +13,15 @@ from api_backend.sections.admin.repository import (
     BigQueryAdminRepository,
 )
 from api_backend.sections.admin.sample import sample_repository
+from api_backend.sections.admin.samples import (
+    AspectsSampleIn,
+    BigQuerySamplesRepository,
+    SampleCreatedOut,
+    SamplesRepository,
+    SamplesResponse,
+    create_aspects_sample,
+    sample_samples_repository,
+)
 from api_backend.sections.admin.schemas import (
     CoverageCurveResponse,
     DriftPolicyResponse,
@@ -44,6 +53,8 @@ for _method, _route in (
     ("POST", "gold-versions/preview"),
     ("POST", "gold-versions"),
     ("GET", "gold-versions/{gold_version}/items"),
+    ("GET", "samples"),
+    ("POST", "samples/aspects"),
 ):
     ROUTE_ROLES[(_method, f"/api/v1/admin/{_route}")] = Role.ADMINISTRADOR
 
@@ -64,12 +75,31 @@ def get_repository(request: Request, settings: Settings) -> AdminRepository:
     return repo
 
 
+def get_samples_repository(
+    request: Request, settings: Settings
+) -> SamplesRepository:
+    state = request.app.state
+    repo = getattr(state, "samples_repository", None)
+    if repo is None:
+        if settings.portal_data == "fixtures":
+            repo = sample_samples_repository()
+        else:
+            repo = BigQuerySamplesRepository(
+                reader_for(request, settings),
+                writer_for(request, settings),
+                settings,
+            )
+        state.samples_repository = repo
+    return repo
+
+
 def now() -> datetime:
     return datetime.now(UTC)
 
 
 Admin = Annotated[Principal, Depends(require(Role.ADMINISTRADOR))]
 Repo = Annotated[AdminRepository, Depends(get_repository)]
+SamplesRepo = Annotated[SamplesRepository, Depends(get_samples_repository)]
 Now = Annotated[datetime, Depends(now)]
 
 
@@ -156,3 +186,17 @@ def create_gold(
 @router.get("/gold-versions/{gold_version}/items")
 def gold_items(gold_version: str, _: Admin, repo: Repo) -> GoldItemsResponse:
     return service.gold_items(repo, gold_version)
+
+
+@router.get("/samples")
+def samples(_: Admin, repo: SamplesRepo) -> SamplesResponse:
+    """Los lotes de muestras de aspectos y su avance."""
+    return SamplesResponse(batches=repo.batches())
+
+
+@router.post("/samples/aspects", status_code=201)
+def create_samples(
+    body: AspectsSampleIn, principal: Admin, repo: SamplesRepo, at: Now
+) -> SampleCreatedOut:
+    """Crea un lote de casos de aspectos, a ciegas, con cuota por banco."""
+    return create_aspects_sample(repo, principal, body, at)

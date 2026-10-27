@@ -10,9 +10,11 @@ from api_backend.sections.explanations.router import (
     router as explanations_router,
 )
 from api_backend.sections.hitl.router import router as hitl_router
+from api_backend.sections.hitl.topics import router as topics_router
 from api_backend.sections.kpis.router import router as kpis_router
 from api_backend.sections.landing.router import router as landing_router
 from api_backend.sections.me.router import router as me_router
+from api_backend.sections.mlops.router import router as mlops_router
 from api_backend.sections.reviews.router import router as reviews_router
 from api_backend.settings import ApiSettings, get_settings
 from api_backend.static import install_static
@@ -42,10 +44,12 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     app.include_router(landing_router)
     app.include_router(kpis_router)
     app.include_router(hitl_router)
+    app.include_router(topics_router)
     app.include_router(reviews_router)
     app.include_router(explanations_router)
     app.include_router(alerts_router)
     app.include_router(admin_router)
+    app.include_router(mlops_router)
     install_static(app, settings.static_dir)
     return app
 

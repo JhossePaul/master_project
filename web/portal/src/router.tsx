@@ -16,9 +16,12 @@ function guarded(role: Role, title: string): RouteObject["element"] {
 
 const HitlHome = lazy(() => import("@/sections/hitl/HitlHome"));
 const SentimentReview = lazy(() => import("@/sections/hitl/SentimentReview"));
+const AspectsReview = lazy(() => import("@/sections/hitl/AspectsReview"));
+const TopicsCuration = lazy(() => import("@/sections/hitl/TopicsCuration"));
 const AlertsInbox = lazy(() => import("@/sections/alerts/AlertsInbox"));
 const AlertDetail = lazy(() => import("@/sections/alerts/AlertDetail"));
 const AdminView = lazy(() => import("@/sections/admin/AdminView"));
+const MlopsView = lazy(() => import("@/sections/mlops/MlopsView"));
 const REVIEWER: Role = "revisor";
 const ANALYST: Role = "analista";
 const ADMIN: Role = "administrador";
@@ -113,7 +116,30 @@ export const routes: RouteObject[] = [
           </ReviewerOnly>
         ),
       },
-      { path: "mlops", element: guarded("analista", "MLOps y AIOps") },
+      {
+        path: "mlops",
+        element: (
+          <AnalystOnly>
+            <MlopsView />
+          </AnalystOnly>
+        ),
+      },
+      {
+        path: "hitl/aspectos",
+        element: (
+          <ReviewerOnly>
+            <AspectsReview />
+          </ReviewerOnly>
+        ),
+      },
+      {
+        path: "hitl/topicos",
+        element: (
+          <ReviewerOnly>
+            <TopicsCuration />
+          </ReviewerOnly>
+        ),
+      },
       {
         path: "admin",
         element: (

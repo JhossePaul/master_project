@@ -153,6 +153,8 @@ class RunKind(StrEnum):
     TOPIC_BACKFILL = "topic_backfill"
     # Familias del histórico con Gemini, solo con aprobación y tope de costo.
     ASPECT_BACKFILL = "aspect_backfill"
+    # Re-ajuste del modelo de tópicos (programado o desde MLOps).
+    TOPIC_REFIT = "topic_refit"
 
 
 class RunEnvironment(StrEnum):
