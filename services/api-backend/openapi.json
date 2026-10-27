@@ -341,6 +341,108 @@
         "title": "AlertSummary",
         "type": "object"
       },
+      "AspectFamily": {
+        "description": "Las 11 familias de ``aspects_v2_1`` (guía ``v2.1``).",
+        "enum": [
+          "AC",
+          "TR",
+          "DI",
+          "PR",
+          "AT",
+          "FA",
+          "LE",
+          "CO",
+          "DV",
+          "UX",
+          "OT"
+        ],
+        "title": "AspectFamily",
+        "type": "string"
+      },
+      "AspectsReviewIn": {
+        "description": "Codificación de familias y marcas de una reseña negativa.\n\nSin familias quiere decir \"sin problema concreto\". El elogio no se guarda:\n``hitl_reviews`` no tiene columna para él y nada lo consume.",
+        "properties": {
+          "claim_next": {
+            "default": true,
+            "title": "Claim Next",
+            "type": "boolean"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "families": {
+            "items": {
+              "$ref": "#/components/schemas/AspectFamily"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "flag_security": {
+            "title": "Flag Security",
+            "type": "boolean"
+          },
+          "flag_update": {
+            "title": "Flag Update",
+            "type": "boolean"
+          },
+          "guideline_version": {
+            "title": "Guideline Version",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "review_id",
+          "families",
+          "flag_update",
+          "flag_security",
+          "guideline_version"
+        ],
+        "title": "AspectsReviewIn",
+        "type": "object"
+      },
+      "AspectsSampleIn": {
+        "properties": {
+          "months": {
+            "default": 3,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Months",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 10,
+            "title": "Reason",
+            "type": "string"
+          },
+          "size": {
+            "default": 50,
+            "maximum": 300.0,
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "AspectsSampleIn",
+        "type": "object"
+      },
       "Attribution": {
         "description": "Posiciones en ``texto_sanitizado``; sin copiar texto.",
         "properties": {
@@ -1074,6 +1176,52 @@
         "title": "DailyTopics",
         "type": "object"
       },
+      "DecisionOut": {
+        "properties": {
+          "audience": {
+            "$ref": "#/components/schemas/TopicAudience"
+          },
+          "coherence_1_5": {
+            "title": "Coherence 1 5",
+            "type": "integer"
+          },
+          "curated_at": {
+            "format": "date-time",
+            "title": "Curated At",
+            "type": "string"
+          },
+          "curated_name": {
+            "title": "Curated Name",
+            "type": "string"
+          },
+          "families": {
+            "items": {
+              "$ref": "#/components/schemas/AspectFamily"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "is_new_theme": {
+            "title": "Is New Theme",
+            "type": "boolean"
+          },
+          "mapping_confirmed": {
+            "title": "Mapping Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "curated_name",
+          "coherence_1_5",
+          "audience",
+          "families",
+          "is_new_theme",
+          "mapping_confirmed",
+          "curated_at"
+        ],
+        "title": "DecisionOut",
+        "type": "object"
+      },
       "DriftCell": {
         "properties": {
           "alert": {
@@ -1561,6 +1709,40 @@
           "n_unlabeled"
         ],
         "title": "Estimate",
+        "type": "object"
+      },
+      "ExampleOut": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExampleOut",
+        "type": "object"
+      },
+      "ExamplesResponse": {
+        "properties": {
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExampleOut"
+            },
+            "title": "Examples",
+            "type": "array"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "topic_id",
+          "examples"
+        ],
+        "title": "ExamplesResponse",
         "type": "object"
       },
       "ExplainIn": {
@@ -2312,7 +2494,10 @@
             "type": "integer"
           },
           "task": {
-            "const": "sentiment",
+            "enum": [
+              "sentiment",
+              "aspects"
+            ],
             "title": "Task",
             "type": "string"
           },
@@ -2933,7 +3118,10 @@
             "type": "array"
           },
           "task": {
-            "const": "sentiment",
+            "enum": [
+              "sentiment",
+              "aspects"
+            ],
             "title": "Task",
             "type": "string"
           }
@@ -2942,6 +3130,35 @@
           "task"
         ],
         "title": "NextIn",
+        "type": "object"
+      },
+      "PreviousTopicOut": {
+        "properties": {
+          "centroid_similarity": {
+            "title": "Centroid Similarity",
+            "type": "number"
+          },
+          "curation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "topic_id",
+          "centroid_similarity",
+          "curation"
+        ],
+        "title": "PreviousTopicOut",
         "type": "object"
       },
       "PromotionCheckOut": {
@@ -4118,6 +4335,81 @@
         "title": "RunsResponse",
         "type": "object"
       },
+      "SampleBatchOut": {
+        "properties": {
+          "batch": {
+            "title": "Batch",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "reviewed": {
+            "title": "Reviewed",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "task": {
+            "$ref": "#/components/schemas/HitlTask"
+          }
+        },
+        "required": [
+          "batch",
+          "task",
+          "created_at",
+          "size",
+          "reviewed"
+        ],
+        "title": "SampleBatchOut",
+        "type": "object"
+      },
+      "SampleCreatedOut": {
+        "properties": {
+          "batch": {
+            "title": "Batch",
+            "type": "string"
+          },
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "per_bank": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Per Bank",
+            "type": "object"
+          }
+        },
+        "required": [
+          "batch",
+          "created",
+          "per_bank"
+        ],
+        "title": "SampleCreatedOut",
+        "type": "object"
+      },
+      "SamplesResponse": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/SampleBatchOut"
+            },
+            "title": "Batches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "batches"
+        ],
+        "title": "SamplesResponse",
+        "type": "object"
+      },
       "SearchHit": {
         "properties": {
           "bank_id": {
@@ -4542,6 +4834,83 @@
         "title": "TaskSummary",
         "type": "object"
       },
+      "TopicAudience": {
+        "description": "Audiencia de un tópico curado.",
+        "enum": [
+          "producto",
+          "ingenieria",
+          "sin_valor"
+        ],
+        "title": "TopicAudience",
+        "type": "string"
+      },
+      "TopicCurationIn": {
+        "properties": {
+          "audience": {
+            "$ref": "#/components/schemas/TopicAudience"
+          },
+          "coherence_1_5": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Coherence 1 5",
+            "type": "integer"
+          },
+          "curated_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Curated Name",
+            "type": "string"
+          },
+          "families": {
+            "items": {
+              "$ref": "#/components/schemas/AspectFamily"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "is_new_theme": {
+            "title": "Is New Theme",
+            "type": "boolean"
+          },
+          "mapping_confirmed": {
+            "title": "Mapping Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "curated_name",
+          "coherence_1_5",
+          "audience",
+          "families",
+          "is_new_theme",
+          "mapping_confirmed"
+        ],
+        "title": "TopicCurationIn",
+        "type": "object"
+      },
+      "TopicCurationOut": {
+        "properties": {
+          "completed": {
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "decided": {
+            "title": "Decided",
+            "type": "integer"
+          },
+          "paired": {
+            "title": "Paired",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "paired",
+          "decided",
+          "completed"
+        ],
+        "title": "TopicCurationOut",
+        "type": "object"
+      },
       "TopicMonth": {
         "properties": {
           "audience": {
@@ -4598,6 +4967,54 @@
         "title": "TopicMonth",
         "type": "object"
       },
+      "TopicOut": {
+        "properties": {
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousTopicOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Terms",
+            "type": "array"
+          },
+          "topic_id": {
+            "title": "Topic Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "topic_id",
+          "terms",
+          "size",
+          "previous",
+          "decision"
+        ],
+        "title": "TopicOut",
+        "type": "object"
+      },
       "TopicRef": {
         "properties": {
           "name": {
@@ -4631,6 +5048,108 @@
         ],
         "title": "TopicRefitTrigger",
         "type": "string"
+      },
+      "TopicVersionDetail": {
+        "properties": {
+          "decided": {
+            "title": "Decided",
+            "type": "integer"
+          },
+          "fitted_at": {
+            "format": "date-time",
+            "title": "Fitted At",
+            "type": "string"
+          },
+          "is_current": {
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "paired": {
+            "title": "Paired",
+            "type": "integer"
+          },
+          "topic_model_version": {
+            "title": "Topic Model Version",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicOut"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "topic_model_version",
+          "fitted_at",
+          "is_current",
+          "topics",
+          "paired",
+          "decided"
+        ],
+        "title": "TopicVersionDetail",
+        "type": "object"
+      },
+      "TopicVersionOut": {
+        "properties": {
+          "activates_on_completion": {
+            "title": "Activates On Completion",
+            "type": "boolean"
+          },
+          "decided": {
+            "title": "Decided",
+            "type": "integer"
+          },
+          "fitted_at": {
+            "format": "date-time",
+            "title": "Fitted At",
+            "type": "string"
+          },
+          "is_current": {
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "paired": {
+            "title": "Paired",
+            "type": "integer"
+          },
+          "topic_model_version": {
+            "title": "Topic Model Version",
+            "type": "string"
+          },
+          "topics": {
+            "title": "Topics",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "topic_model_version",
+          "fitted_at",
+          "topics",
+          "paired",
+          "decided",
+          "is_current",
+          "activates_on_completion"
+        ],
+        "title": "TopicVersionOut",
+        "type": "object"
+      },
+      "TopicVersionsResponse": {
+        "properties": {
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/TopicVersionOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "versions"
+        ],
+        "title": "TopicVersionsResponse",
+        "type": "object"
       },
       "TopicsContextResponse": {
         "description": "Las series de tópicos, sin umbral, junto a las familias y la marca u.",
@@ -5468,6 +5987,70 @@
         ]
       }
     },
+    "/api/v1/admin/samples": {
+      "get": {
+        "description": "Los lotes de muestras de aspectos y su avance.",
+        "operationId": "samples_api_v1_admin_samples_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamplesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Samples",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/samples/aspects": {
+      "post": {
+        "description": "Crea un lote de casos de aspectos, a ciegas, con cuota por banco.",
+        "operationId": "create_samples_api_v1_admin_samples_aspects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AspectsSampleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SampleCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Samples",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "description": "Las alertas con su estado vigente, de la más reciente a la más vieja.",
@@ -5898,6 +6481,58 @@
         ]
       }
     },
+    "/api/v1/hitl/items/{item_id}/review-aspects": {
+      "post": {
+        "operationId": "review_aspects_api_v1_hitl_items__item_id__review_aspects_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AspectsReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Aspects",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
     "/api/v1/hitl/items/{item_id}/skip": {
       "post": {
         "operationId": "skip_api_v1_hitl_items__item_id__skip_post",
@@ -5995,6 +6630,194 @@
           }
         },
         "summary": "Summary",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/topics/versions": {
+      "get": {
+        "description": "Versiones desde la vigente en adelante, con su avance de curaduría.",
+        "operationId": "list_versions_api_v1_hitl_topics_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicVersionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/topics/{version}": {
+      "get": {
+        "operationId": "version_detail_api_v1_hitl_topics__version__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicVersionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Version Detail",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/topics/{version}/{topic_id}": {
+      "post": {
+        "operationId": "curate_topic_api_v1_hitl_topics__version___topic_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "topic_id",
+            "required": true,
+            "schema": {
+              "title": "Topic Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicCurationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicCurationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Curate Topic",
+        "tags": [
+          "hitl"
+        ]
+      }
+    },
+    "/api/v1/hitl/topics/{version}/{topic_id}/examples": {
+      "get": {
+        "operationId": "topic_examples_api_v1_hitl_topics__version___topic_id__examples_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "topic_id",
+            "required": true,
+            "schema": {
+              "title": "Topic Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "n",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "N",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamplesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Topic Examples",
         "tags": [
           "hitl"
         ]

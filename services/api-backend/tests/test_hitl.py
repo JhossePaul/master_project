@@ -587,7 +587,8 @@ def test_un_revisor_de_aspectos_no_recibe_casos_de_sentimiento(
         eva.post("/api/v1/hitl/next", json={"task": "sentiment"}).status_code
         == 403
     )
-    assert eva.get("/api/v1/hitl/summary").json() == {"tasks": []}
+    tasks = eva.get("/api/v1/hitl/summary").json()["tasks"]
+    assert [t["task"] for t in tasks] == ["aspects"]
     item_id = public_id(kit.repo.items[0].item_id)
     assert eva.post(f"/api/v1/hitl/items/{item_id}/skip").status_code == 403
 

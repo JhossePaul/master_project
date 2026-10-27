@@ -166,3 +166,34 @@ export function useGoldItems(version: string | null) {
     staleTime: 5 * 60_000,
   });
 }
+
+export type SampleBatch = components["schemas"]["SampleBatchOut"];
+
+export function useSampleBatches() {
+  return useQuery({
+    queryKey: ["admin", "samples"],
+    queryFn: async () => {
+      const { data } = await api.GET("/api/v1/admin/samples");
+      return required(data, "/admin/samples");
+    },
+    staleTime: 0,
+  });
+}
+
+export function useCreateAspectsSample() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      size: number;
+      months: number;
+      reason: string;
+    }) => {
+      const { data } = await api.POST("/api/v1/admin/samples/aspects", {
+        body,
+      });
+      return required(data, "/admin/samples/aspects");
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin", "samples"] }),
+  });
+}
