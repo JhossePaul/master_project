@@ -2376,7 +2376,7 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 10,
+            "maxItems": 60,
             "title": "Exclude",
             "type": "array"
           },

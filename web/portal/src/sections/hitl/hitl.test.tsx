@@ -149,7 +149,7 @@ describe("revisión de sentimiento", () => {
   });
 
   it("los atajos eligen, marcan y guardan", async () => {
-    const saved = serve([blind(), blind()]);
+    const saved = serve([blind(), second()]);
     const user = userEvent.setup();
     renderApp("/hitl/sentimiento");
     await screen.findByText(/modo a ciegas/);
@@ -443,7 +443,7 @@ describe("revisión de sentimiento", () => {
   });
 
   it("Saltar pide el siguiente caso", async () => {
-    serve([blind(), blind()]);
+    serve([blind(), second()]);
     const user = userEvent.setup();
     renderApp("/hitl/sentimiento");
     await screen.findByText(/Caso 1 de esta sesión/);
@@ -494,5 +494,102 @@ describe("revisión de sentimiento", () => {
     expect(
       await screen.findByText("No tienes acceso a esta sección"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("revisión de sentimiento: casos con guardado en camino", () => {
+  /**
+   * Un servidor que, como el real, sigue dando como abierto el caso cuyo
+   * guardado aún no llegó (el revisor lo conserva `in_review`) y respeta
+   * `exclude`.
+   */
+  function serveOpenCases(ids: string[], holdReviews: Promise<void>) {
+    const cases = ids.map((id, i) =>
+      syntheticHitlCase({
+        item_id: id.repeat(32),
+        display_mode: "blind",
+        proposal: null,
+        text: `Caso ${id}`,
+        opened_at: `2026-10-26T12:0${i}:00Z`,
+      }),
+    );
+    const open = new Set(cases.map((c) => c.item_id));
+    const nexts: string[][] = [];
+    server.use(
+      http.post("*/api/v1/hitl/next", async ({ request }) => {
+        const body = (await request.json()) as { exclude?: string[] };
+        nexts.push(body.exclude ?? []);
+        const next = cases.find(
+          (c) => open.has(c.item_id) && !body.exclude?.includes(c.item_id),
+        );
+        return next
+          ? HttpResponse.json(next)
+          : new HttpResponse(null, { status: 204 });
+      }),
+      http.post("*/api/v1/hitl/items/:id/review", async ({ params }) => {
+        await holdReviews; // el guardado tarda: el caso sigue abierto
+        open.delete(String(params.id));
+        return HttpResponse.json({ review_id: "x", next: null });
+      }),
+      http.post(
+        "*/api/v1/hitl/items/:id/release",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    return nexts;
+  }
+
+  it("la precarga no vuelve a dar un caso recién guardado", async () => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const nexts = serveOpenCases(["a", "b", "c", "d"], held);
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText("Caso a");
+    await screen.findByText(/Caso 1 de esta sesión/);
+    await waitFor(() => expect(nexts).toHaveLength(2)); // precarga de b
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}"); // guarda a (sin terminar) y muestra b
+    expect(await screen.findByText("Caso b")).toBeInTheDocument();
+    await waitFor(() => expect(nexts).toHaveLength(3));
+    // La precarga de c excluye lo que se está revisando y lo ya guardado.
+    expect(nexts[2]).toEqual(["b".repeat(32), "a".repeat(32)]);
+
+    await user.keyboard("2");
+    await user.keyboard("{Enter}"); // guarda b (sin terminar) y muestra c
+    expect(await screen.findByText("Caso c")).toBeInTheDocument();
+    await waitFor(() => expect(nexts).toHaveLength(4));
+    expect(nexts[3]).toEqual(
+      expect.arrayContaining(["c", "b", "a"].map((x) => x.repeat(32))),
+    );
+    // Nunca reapareció "Caso a" ni "Caso b".
+    expect(screen.queryByText("Caso a")).not.toBeInTheDocument();
+    expect(screen.queryByText("Caso b")).not.toBeInTheDocument();
+
+    release();
+  });
+
+  it("saltar tampoco deja volver al caso saltado", async () => {
+    const held = Promise.resolve();
+    const nexts = serveOpenCases(["a", "b", "c"], held);
+    server.use(
+      http.post(
+        "*/api/v1/hitl/items/:id/skip",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderApp("/hitl/sentimiento");
+    await screen.findByText("Caso a");
+    await waitFor(() => expect(nexts).toHaveLength(2));
+
+    await user.keyboard("s");
+
+    expect(await screen.findByText("Caso b")).toBeInTheDocument();
+    await waitFor(() => expect(nexts).toHaveLength(3));
+    expect(nexts[2]).toEqual(["b".repeat(32), "a".repeat(32)]);
   });
 });

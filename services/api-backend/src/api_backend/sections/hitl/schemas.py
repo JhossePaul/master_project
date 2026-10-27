@@ -35,7 +35,7 @@ class NextIn(BaseModel):
     task: Literal["sentiment"]
     # Casos que el revisor ya tiene abiertos (``item_id`` del portal): al
     # precargar el siguiente no se le vuelve a dar el que está revisando.
-    exclude: list[str] = Field(default_factory=list, max_length=10)
+    exclude: list[str] = Field(default_factory=list, max_length=60)
 
 
 class SentimentReviewIn(BaseModel):

@@ -280,6 +280,33 @@ def test_las_tasas_propuestas_coinciden_con_un_calculo_a_mano() -> None:
     assert row["reference"] == 1.1
 
 
+def test_una_serie_con_umbral_nuevo_tiene_tasa_sin_historia_con_umbral() -> (
+    None
+):
+    client, repo = kit()
+    # Familias: z calculado en todos los meses; el umbral llegó con la política
+    # v2, así que el historial guardado no lo trae (antes quedaban vacías).
+    repo.months["BBVA"] = [
+        DriftMonth("family_AC", f"2025-{i + 1:02d}", z, None)
+        for i, z in enumerate([5.0, 1.0, -4.2, 0.5])
+    ] + [
+        DriftMonth("topic_noise_share", f"2025-{i + 1:02d}", 9.0, None)
+        for i in range(4)
+    ]
+    response = client.post(
+        "/api/v1/admin/drift-policy/rates",
+        json={"bank": "BBVA", "thresholds": {"z": {"family_AC": 4.0}}},
+    )
+
+    rows = {r["series"]: r for r in response.json()["series"]}
+    assert set(rows) == {"family_AC"}  # la de tópicos nunca alerta: sin tasa
+    assert rows["family_AC"]["months"] == 4
+    assert rows["family_AC"]["proposed_alerts"] == 2
+    assert (
+        rows["family_AC"]["reference"] is None
+    )  # el análisis de escala no la cubre
+
+
 def test_guardar_deriva_crea_la_version_del_banco() -> None:
     client, repo = kit()
     response = client.post(

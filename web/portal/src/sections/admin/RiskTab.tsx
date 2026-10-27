@@ -240,10 +240,12 @@ function NumberField({
   form,
   name,
   disabled,
+  placeholder,
 }: {
   form: UseFormReturn<RiskForm>;
   name: NumberKey;
   disabled?: boolean;
+  placeholder?: string;
 }) {
   const help = RISK_HELP[name] as NumberHelp;
   const percent = isPercent(help);
@@ -254,6 +256,7 @@ function NumberField({
     type: "number" as const,
     inputMode: "decimal" as const,
     disabled,
+    placeholder,
     "aria-invalid": error ? true : undefined,
     "aria-describedby": help.unit ? unitId : undefined,
   };
@@ -372,6 +375,15 @@ function Group({
       <legend className="px-2 font-serif text-lg font-semibold">{title}</legend>
       {children}
     </fieldset>
+  );
+}
+
+/** Dice qué significa dejar un grupo en nulo, para no tener que adivinarlo. */
+function NullNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="col-span-full text-xs text-text-muted" role="note">
+      {children}
+    </p>
   );
 }
 
@@ -611,7 +623,11 @@ export default function RiskTab() {
       >
         <Group title="Revisión humana" columns="4">
           <CoverageControl form={form} />
-          <NumberField form={form} name="hitl_weekly_cap" />
+          <NumberField
+            form={form}
+            name="hitl_weekly_cap"
+            placeholder="Sin tope"
+          />
         </Group>
         <Group title="Reacción a la deriva" columns="4">
           <Toggle
@@ -630,6 +646,13 @@ export default function RiskTab() {
             name="drift_boost_weekly_cap"
             disabled={noBoost}
           />
+          {noBoost ? (
+            <NullNote>
+              Sin subida: una alerta de deriva no cambia la revisión. No hay
+              evidencia para fijarla; el valor vigente ya es "sin subida" y no
+              hace falta guardar nada.
+            </NullNote>
+          ) : null}
         </Group>
         <Group title="Muestras" columns="5">
           <NumberField form={form} name="monitor_sample_size" />
@@ -651,6 +674,13 @@ export default function RiskTab() {
             placeholder="Elige…"
             disabled={noAgreement}
           />
+          {noAgreement ? (
+            <NullNote>
+              Sin doble revisión: no se mide el acuerdo entre personas. No hay
+              evidencia para fijarla; para activarla, desmarca la casilla y
+              completa el tamaño y la frecuencia.
+            </NullNote>
+          ) : null}
         </Group>
         <Group title="Avisos" columns="5">
           <NumberField form={form} name="warn_correction_rate" />
@@ -692,6 +722,11 @@ export default function RiskTab() {
           ) : null}
         </Group>
 
+        <p className="text-xs text-text-muted">
+          Guardar solo se habilita cuando algo cambia: un parámetro que ya está
+          en nulo (sin tope, sin subida, sin doble revisión) es el valor vigente
+          y no crea una versión nueva.
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="secondary" disabled={checking}>
             Revisar cambios

@@ -73,6 +73,9 @@ type Phase =
   | { kind: "conflict" }
   | { kind: "error"; error: unknown };
 
+// Los que se recuerdan para no repetirlos (el servidor acepta hasta 60).
+const MAX_DONE = 40;
+
 const PROBABILITY: Record<"NEG" | "NEU" | "POS", "p_neg" | "p_neu" | "p_pos"> =
   { NEG: "p_neg", NEU: "p_neu", POS: "p_pos" };
 
@@ -156,6 +159,17 @@ export default function SentimentReview() {
   const ahead = useRef<Ahead | null>(null);
   const inFlight = useRef<Set<Promise<unknown>>>(new Set());
   const mounted = useRef(true);
+  /**
+   * Casos que ya guardé o salté en esta sesión. Mientras su guardado va en
+   * camino siguen "abiertos" para el servidor, y la precarga los devolvería
+   * (el caso recién revisado reaparecía como el siguiente).
+   */
+  const done = useRef<string[]>([]);
+  const markDone = useCallback((id: string) => {
+    done.current = [...done.current.filter((x) => x !== id), id].slice(
+      -MAX_DONE,
+    );
+  }, []);
 
   /** Pide el caso que sigue mientras se lee el actual: guardar ya no espera. */
   const prefetch = useCallback((current: HitlCase) => {
@@ -164,7 +178,7 @@ export default function SentimentReview() {
       held: null,
       outcome: Promise.resolve({ ok: false }),
     };
-    entry.outcome = nextCase([current.item_id]).then(
+    entry.outcome = nextCase([current.item_id, ...done.current]).then(
       (item): Outcome => {
         entry.held = item;
         return { ok: true, item };
@@ -201,7 +215,7 @@ export default function SentimentReview() {
     setPhase({ kind: "loading" });
     setFormError(null);
     try {
-      const item = await nextCase();
+      const item = await nextCase(done.current);
       if (item) show(item);
       else setPhase({ kind: "empty" });
     } catch (error) {
@@ -283,6 +297,11 @@ export default function SentimentReview() {
   const advance = useCallback(
     async (next: HitlCase | null) => {
       if (!mounted.current) return;
+      if (next && done.current.includes(next.item_id)) {
+        // Red de seguridad: nunca se vuelve a mostrar un caso ya revisado.
+        await load();
+        return;
+      }
       if (next) show(next);
       else {
         openItem.current = null;
@@ -290,7 +309,7 @@ export default function SentimentReview() {
         setPhase({ kind: "empty" });
       }
     },
-    [show],
+    [show, load],
   );
 
   const save = useCallback(async () => {
@@ -307,6 +326,7 @@ export default function SentimentReview() {
       // El siguiente ya está pedido: se muestra de inmediato y el guardado
       // sigue en segundo plano.
       openItem.current = null;
+      markDone(item.item_id);
       submitInBackground(item, draft);
       await advance(out.item);
       return;
@@ -315,6 +335,7 @@ export default function SentimentReview() {
     setFormError(null);
     try {
       const saved = await saveReview(item.item_id, payload(item, draft, true));
+      markDone(item.item_id);
       openItem.current = null;
       toast.success("Guardado");
       setBusy(false);
@@ -337,6 +358,7 @@ export default function SentimentReview() {
     fail,
     advance,
     submitInBackground,
+    markDone,
   ]);
 
   const skip = useCallback(async () => {
@@ -346,6 +368,7 @@ export default function SentimentReview() {
     const out = pre && pre.for === item.item_id ? await pre.outcome : null;
     if (out?.ok) {
       openItem.current = null;
+      markDone(item.item_id);
       void skipCase(item.item_id).catch(() => {
         if (mounted.current) toast.error("No se pudo saltar el caso anterior.");
       });
@@ -355,6 +378,7 @@ export default function SentimentReview() {
     setBusy(true);
     try {
       await skipCase(item.item_id);
+      markDone(item.item_id);
       openItem.current = null;
       setBusy(false);
       await load();
@@ -362,7 +386,7 @@ export default function SentimentReview() {
       setBusy(false);
       fail(error);
     }
-  }, [phase, busy, load, fail, advance]);
+  }, [phase, busy, load, fail, advance, markDone]);
 
   /** Vuelve al caso cuya revisión no se aceptó, con su formulario. */
   const restore = useCallback(() => {
