@@ -7,15 +7,17 @@ const RiskTab = lazy(() => import("./RiskTab"));
 const DriftTab = lazy(() => import("./DriftTab"));
 const HistoryTab = lazy(() => import("./HistoryTab"));
 const GoldTab = lazy(() => import("./GoldTab"));
+const SamplesTab = lazy(() => import("./SamplesTab"));
 
 const TABS = [
   ["riesgo", "Apetito de riesgo", RiskTab],
   ["deriva", "Deriva por banco", DriftTab],
   ["historial", "Historial", HistoryTab],
   ["oro", "Oro", GoldTab],
+  ["muestras", "Muestras", SamplesTab],
 ] as const;
 
-const TAB_PARAM = /^(riesgo|deriva|historial|oro)$/;
+const TAB_PARAM = /^(riesgo|deriva|historial|oro|muestras)$/;
 
 export default function AdminView() {
   const [tab, setTab] = useParam("tab", TAB_PARAM);

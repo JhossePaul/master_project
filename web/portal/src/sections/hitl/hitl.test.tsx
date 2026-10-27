@@ -105,7 +105,7 @@ describe("revisión de sentimiento", () => {
     expect(
       screen.getByText(/Muestra de monitoreo: 0 de 300/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Empezar" })).toHaveAttribute(
+    expect(screen.getAllByRole("link", { name: "Empezar" })[0]).toHaveAttribute(
       "href",
       "/hitl/sentimiento",
     );
