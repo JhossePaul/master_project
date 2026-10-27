@@ -1,6 +1,117 @@
 {
   "components": {
     "schemas": {
+      "Action": {
+        "enum": [
+          "retrain",
+          "rescore",
+          "promote",
+          "rollback",
+          "topics_refit"
+        ],
+        "title": "Action",
+        "type": "string"
+      },
+      "ActionIn": {
+        "properties": {
+          "confirm_word": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Word"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ActionIn",
+        "type": "object"
+      },
+      "ActionOut": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "job": {
+            "title": "Job",
+            "type": "string"
+          },
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "job",
+          "operation"
+        ],
+        "title": "ActionOut",
+        "type": "object"
+      },
+      "ActionState": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "next_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Date"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "action",
+          "enabled",
+          "reason"
+        ],
+        "title": "ActionState",
+        "type": "object"
+      },
       "AlertDetail": {
         "properties": {
           "alert": {
@@ -501,6 +612,85 @@
         "title": "BoostOut",
         "type": "object"
       },
+      "CalibrationOut": {
+        "properties": {
+          "calibrated": {
+            "items": {
+              "$ref": "#/components/schemas/ReliabilityBin"
+            },
+            "title": "Calibrated",
+            "type": "array"
+          },
+          "ece_calibrated": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece Calibrated"
+          },
+          "ece_raw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece Raw"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "raw": {
+            "items": {
+              "$ref": "#/components/schemas/ReliabilityBin"
+            },
+            "title": "Raw",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "manifest",
+              "docs"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "source_label": {
+            "title": "Source Label",
+            "type": "string"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          }
+        },
+        "required": [
+          "model_version",
+          "source",
+          "source_label",
+          "temperature",
+          "ece_raw",
+          "ece_calibrated",
+          "raw",
+          "calibrated"
+        ],
+        "title": "CalibrationOut",
+        "type": "object"
+      },
       "CardValues": {
         "properties": {
           "gap_estrellas": {
@@ -545,6 +735,27 @@
           "quejas_4_5"
         ],
         "title": "CardValues",
+        "type": "object"
+      },
+      "ContextSeries": {
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/DriftCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric",
+          "cells"
+        ],
+        "title": "ContextSeries",
         "type": "object"
       },
       "CoverageCurveResponse": {
@@ -863,6 +1074,82 @@
         "title": "DailyTopics",
         "type": "object"
       },
+      "DriftCell": {
+        "properties": {
+          "alert": {
+            "title": "Alert",
+            "type": "boolean"
+          },
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "value",
+          "baseline",
+          "z",
+          "psi",
+          "threshold",
+          "alert"
+        ],
+        "title": "DriftCell",
+        "type": "object"
+      },
       "DriftPolicy": {
         "additionalProperties": false,
         "description": "Fila de ``drift_policy`` (por banco).",
@@ -1069,6 +1356,43 @@
         "title": "DriftRatesResponse",
         "type": "object"
       },
+      "DriftResponse": {
+        "properties": {
+          "banks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Banks",
+            "type": "array"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/DriftCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Series",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metric",
+          "series",
+          "banks",
+          "cells"
+        ],
+        "title": "DriftResponse",
+        "type": "object"
+      },
       "DriftSaveIn": {
         "properties": {
           "bank": {
@@ -1139,6 +1463,34 @@
           }
         },
         "title": "DriftThresholds",
+        "type": "object"
+      },
+      "EligibilityRow": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bank_id",
+          "period",
+          "code",
+          "n"
+        ],
+        "title": "EligibilityRow",
         "type": "object"
       },
       "Estimate": {
@@ -1551,64 +1903,6 @@
           "after"
         ],
         "title": "FieldDiff",
-        "type": "object"
-      },
-      "Freshness": {
-        "properties": {
-          "data_until": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data Until"
-          },
-          "last_delta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RunSummary"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "last_ingestion_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Ingestion At"
-          },
-          "last_monitor_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Monitor At"
-          }
-        },
-        "required": [
-          "last_ingestion_at",
-          "last_delta",
-          "last_monitor_at",
-          "data_until"
-        ],
-        "title": "Freshness",
         "type": "object"
       },
       "GoldCount": {
@@ -2157,6 +2451,87 @@
         "title": "HitlTask",
         "type": "string"
       },
+      "IngestionRunOut": {
+        "properties": {
+          "bank_id": {
+            "title": "Bank Id",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "title": "Duration Seconds",
+            "type": "number"
+          },
+          "ended_at": {
+            "format": "date-time",
+            "title": "Ended At",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "reviews_discarded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviews Discarded"
+          },
+          "reviews_extracted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviews Extracted"
+          },
+          "reviews_published": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviews Published"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "bank_id",
+          "mode",
+          "started_at",
+          "ended_at",
+          "duration_seconds",
+          "status",
+          "reviews_extracted",
+          "reviews_published",
+          "reviews_discarded"
+        ],
+        "title": "IngestionRunOut",
+        "type": "object"
+      },
       "LandingResponse": {
         "properties": {
           "banks": {
@@ -2167,7 +2542,7 @@
             "type": "array"
           },
           "freshness": {
-            "$ref": "#/components/schemas/Freshness"
+            "$ref": "#/components/schemas/api_backend__sections__landing__schemas__Freshness"
           },
           "hitl_pending": {
             "anyOf": [
@@ -2320,6 +2695,183 @@
         "title": "ModelChange",
         "type": "object"
       },
+      "ModelOut": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionState"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "aurc_dev": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aurc Dev"
+          },
+          "base_checkpoint": {
+            "title": "Base Checkpoint",
+            "type": "string"
+          },
+          "calibration_t": {
+            "title": "Calibration T",
+            "type": "number"
+          },
+          "calibration_version": {
+            "title": "Calibration Version",
+            "type": "string"
+          },
+          "check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PromotionCheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "ece_dev": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ece Dev"
+          },
+          "ever_promoted": {
+            "title": "Ever Promoted",
+            "type": "boolean"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/StatusStep"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "kappa_dev": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kappa Dev"
+          },
+          "license": {
+            "title": "License",
+            "type": "string"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ModelStatus"
+          },
+          "training_data": {
+            "title": "Training Data",
+            "type": "string"
+          },
+          "training_data_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Data Hash"
+          }
+        },
+        "required": [
+          "model_version",
+          "status",
+          "current",
+          "ever_promoted",
+          "base_checkpoint",
+          "training_data",
+          "training_data_hash",
+          "calibration_version",
+          "calibration_t",
+          "kappa_dev",
+          "ece_dev",
+          "aurc_dev",
+          "license",
+          "history",
+          "check",
+          "actions"
+        ],
+        "title": "ModelOut",
+        "type": "object"
+      },
+      "ModelStatus": {
+        "enum": [
+          "candidate",
+          "promoted",
+          "retired"
+        ],
+        "title": "ModelStatus",
+        "type": "string"
+      },
+      "ModelsResponse": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionState"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
+          "force_word": {
+            "default": "FORZAR",
+            "title": "Force Word",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOut"
+            },
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "models",
+          "current_version",
+          "actions"
+        ],
+        "title": "ModelsResponse",
+        "type": "object"
+      },
       "MonthlyKpi": {
         "properties": {
           "bank_id": {
@@ -2392,6 +2944,84 @@
         "title": "NextIn",
         "type": "object"
       },
+      "PromotionCheckOut": {
+        "properties": {
+          "candidate_version": {
+            "title": "Candidate Version",
+            "type": "string"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "current_version": {
+            "title": "Current Version",
+            "type": "string"
+          },
+          "gold_version": {
+            "title": "Gold Version",
+            "type": "string"
+          },
+          "kappa_ci_high": {
+            "title": "Kappa Ci High",
+            "type": "number"
+          },
+          "kappa_ci_low": {
+            "title": "Kappa Ci Low",
+            "type": "number"
+          },
+          "kappa_diff": {
+            "title": "Kappa Diff",
+            "type": "number"
+          },
+          "macro_f1_ci_high": {
+            "title": "Macro F1 Ci High",
+            "type": "number"
+          },
+          "macro_f1_ci_low": {
+            "title": "Macro F1 Ci Low",
+            "type": "number"
+          },
+          "macro_f1_diff": {
+            "title": "Macro F1 Diff",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/PromotionVerdict"
+          }
+        },
+        "required": [
+          "candidate_version",
+          "current_version",
+          "gold_version",
+          "n",
+          "kappa_diff",
+          "kappa_ci_low",
+          "kappa_ci_high",
+          "macro_f1_diff",
+          "macro_f1_ci_low",
+          "macro_f1_ci_high",
+          "verdict",
+          "computed_at"
+        ],
+        "title": "PromotionCheckOut",
+        "type": "object"
+      },
+      "PromotionVerdict": {
+        "description": "Regla de promoción: el candidato contra la versión vigente.",
+        "enum": [
+          "better",
+          "tie",
+          "worse"
+        ],
+        "title": "PromotionVerdict",
+        "type": "string"
+      },
       "PromptChange": {
         "properties": {
           "first_labeled_at": {
@@ -2409,6 +3039,205 @@
           "first_labeled_at"
         ],
         "title": "PromptChange",
+        "type": "object"
+      },
+      "QualityPoint": {
+        "properties": {
+          "ci_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci High"
+          },
+          "ci_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Low"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "llm_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QualityStatus"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "period",
+          "value",
+          "ci_low",
+          "ci_high",
+          "n",
+          "threshold",
+          "status",
+          "model_version",
+          "llm_model",
+          "prompt_version",
+          "computed_at"
+        ],
+        "title": "QualityPoint",
+        "type": "object"
+      },
+      "QualityResponse": {
+        "properties": {
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/QualitySeries"
+            },
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "signals"
+        ],
+        "title": "QualityResponse",
+        "type": "object"
+      },
+      "QualitySeries": {
+        "properties": {
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/QualityPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/QualitySignal"
+          }
+        },
+        "required": [
+          "signal",
+          "points"
+        ],
+        "title": "QualitySeries",
+        "type": "object"
+      },
+      "QualitySignal": {
+        "enum": [
+          "kappa_monitor",
+          "correction_rate",
+          "gemini_agreement",
+          "families_validation"
+        ],
+        "title": "QualitySignal",
+        "type": "string"
+      },
+      "QualityStatus": {
+        "enum": [
+          "ok",
+          "warning",
+          "retrain",
+          "rejected"
+        ],
+        "title": "QualityStatus",
+        "type": "string"
+      },
+      "ReliabilityBin": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "n",
+          "weight",
+          "confidence",
+          "accuracy"
+        ],
+        "title": "ReliabilityBin",
         "type": "object"
       },
       "RetrainTrigger": {
@@ -3042,6 +3871,15 @@
         "title": "Role",
         "type": "string"
       },
+      "RunEnvironment": {
+        "enum": [
+          "kaggle",
+          "cloudrun",
+          "local"
+        ],
+        "title": "RunEnvironment",
+        "type": "string"
+      },
       "RunKind": {
         "enum": [
           "backfill",
@@ -3049,10 +3887,149 @@
           "rescoring",
           "training",
           "topic_backfill",
-          "aspect_backfill"
+          "aspect_backfill",
+          "topic_refit"
         ],
         "title": "RunKind",
         "type": "string"
+      },
+      "RunOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/RunEnvironment"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RunKind"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "peak_memory_mib": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Memory Mib"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "reviews": {
+            "title": "Reviews",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "texts": {
+            "title": "Texts",
+            "type": "integer"
+          },
+          "topic_model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Model Version"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "environment",
+          "status",
+          "started_at",
+          "ended_at",
+          "duration_seconds",
+          "reviews",
+          "texts",
+          "cost_usd",
+          "peak_memory_mib",
+          "model_version",
+          "topic_model_version",
+          "actor",
+          "reason"
+        ],
+        "title": "RunOut",
+        "type": "object"
       },
       "RunStatus": {
         "description": "Estado de una corrida (solo inserción).\n\nLas corridas largas escriben una fila ``running`` al empezar y otra con\nsu estado final al terminar, con el mismo ``run_id``; las demás, solo la\nfinal. La vista ``inference_runs_current`` da el estado vigente.",
@@ -3114,6 +4091,31 @@
           "model_version"
         ],
         "title": "RunSummary",
+        "type": "object"
+      },
+      "RunsResponse": {
+        "properties": {
+          "freshness": {
+            "$ref": "#/components/schemas/api_backend__sections__mlops__schemas__Freshness"
+          },
+          "memory_limit_mib": {
+            "default": 4096,
+            "title": "Memory Limit Mib",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/RunOut"
+            },
+            "title": "Runs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "runs",
+          "freshness"
+        ],
+        "title": "RunsResponse",
         "type": "object"
       },
       "SearchHit": {
@@ -3449,6 +4451,48 @@
         "title": "SeriesRate",
         "type": "object"
       },
+      "StatusStep": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ModelStatus"
+          }
+        },
+        "required": [
+          "status",
+          "at",
+          "actor",
+          "reason"
+        ],
+        "title": "StatusStep",
+        "type": "object"
+      },
       "TaskSummary": {
         "properties": {
           "median_seconds": {
@@ -3587,6 +4631,31 @@
         ],
         "title": "TopicRefitTrigger",
         "type": "string"
+      },
+      "TopicsContextResponse": {
+        "description": "Las series de tópicos, sin umbral, junto a las familias y la marca u.",
+        "properties": {
+          "families": {
+            "items": {
+              "$ref": "#/components/schemas/ContextSeries"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/ContextSeries"
+            },
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "topics",
+          "families"
+        ],
+        "title": "TopicsContextResponse",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -3860,6 +4929,111 @@
           "months"
         ],
         "title": "WindowApplied",
+        "type": "object"
+      },
+      "api_backend__sections__landing__schemas__Freshness": {
+        "properties": {
+          "data_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Until"
+          },
+          "last_delta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_ingestion_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingestion At"
+          },
+          "last_monitor_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Monitor At"
+          }
+        },
+        "required": [
+          "last_ingestion_at",
+          "last_delta",
+          "last_monitor_at",
+          "data_until"
+        ],
+        "title": "Freshness",
+        "type": "object"
+      },
+      "api_backend__sections__mlops__schemas__Freshness": {
+        "properties": {
+          "last_delta_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Delta At"
+          },
+          "last_ingestion_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingestion At"
+          },
+          "last_monitor_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Monitor At"
+          }
+        },
+        "required": [
+          "last_ingestion_at",
+          "last_delta_at",
+          "last_monitor_at"
+        ],
+        "title": "Freshness",
         "type": "object"
       }
     }
@@ -5595,6 +6769,399 @@
         "summary": "Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/api/v1/mlops/actions/{action}": {
+      "post": {
+        "description": "Lanza el Job de la acción; 409 si no está habilitada.",
+        "operationId": "run_action_api_v1_mlops_actions__action__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Action"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Action",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/coverage-curve": {
+      "get": {
+        "description": "La curva del modelo promovido (o de una candidata), de solo lectura.",
+        "operationId": "coverage_curve_api_v1_mlops_coverage_curve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "model_version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageCurveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coverage Curve",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/drift": {
+      "get": {
+        "operationId": "drift_api_v1_mlops_drift_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "metric",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metric"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Drift",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/eligibility": {
+      "get": {
+        "operationId": "eligibility_api_v1_mlops_eligibility_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EligibilityRow"
+                  },
+                  "title": "Response Eligibility Api V1 Mlops Eligibility Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Eligibility",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/ingestion": {
+      "get": {
+        "operationId": "ingestion_api_v1_mlops_ingestion_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IngestionRunOut"
+                  },
+                  "title": "Response Ingestion Api V1 Mlops Ingestion Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingestion",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/models": {
+      "get": {
+        "description": "Versiones, su historia y qué acciones están habilitadas.",
+        "operationId": "models_api_v1_mlops_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Models",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/models/{model_version}/calibration": {
+      "get": {
+        "operationId": "calibration_api_v1_mlops_models__model_version__calibration_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version",
+            "required": true,
+            "schema": {
+              "title": "Model Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalibrationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Calibration",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/quality": {
+      "get": {
+        "description": "Serie de cada señal de ``model_quality`` con su umbral y estado.",
+        "operationId": "quality_api_v1_mlops_quality_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Quality",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/runs": {
+      "get": {
+        "operationId": "runs_api_v1_mlops_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RunKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs",
+        "tags": [
+          "mlops"
+        ]
+      }
+    },
+    "/api/v1/mlops/topics-context": {
+      "get": {
+        "operationId": "topics_context_api_v1_mlops_topics_context_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicsContextResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Topics Context",
+        "tags": [
+          "mlops"
         ]
       }
     },

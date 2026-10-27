@@ -299,6 +299,15 @@ _EXECUTED_BY_ML = {
 }
 
 
+# Jobs que la API del portal lanza con argumentos (botones de MLOps).
+_EXECUTED_BY_PORTAL = {
+    "voc-ml-training",
+    "voc-ml-rescoring",
+    "voc-ml-promote",
+    "voc-ml-topics-refit",
+}
+
+
 def _check_manual_jobs(
     monitor: InfrastructureMonitor,
     states: dict[str, Any],
@@ -332,6 +341,20 @@ def _check_manual_jobs(
         if grant.get("role") == "roles/run.developer"
     }
     assert set(developers) == _EXECUTED_BY_ML
+    executors = {
+        name.removesuffix("-portal-api-executor"): grant
+        for name, grant in states.items()
+        if name.endswith("-portal-api-executor")
+    }
+    assert set(executors) == _EXECUTED_BY_PORTAL
+    for name, grant in executors.items():
+        # Con cambio de argumentos, pero sin editar el Job.
+        assert grant["role"] == "roles/run.jobsExecutorWithOverrides"
+        assert grant["name"] == name
+        assert grant["member"] == (
+            "serviceAccount:voc-sa-portal-api@"
+            "test-voc-project.iam.gserviceaccount.com"
+        )
     for name, grant in developers.items():
         assert grant["name"] == name
         assert grant["member"] == (

@@ -128,6 +128,15 @@ def create_security_resources(
     )
 
 
+def _artifacts_only(bucket_name: str) -> str:
+    """Condición IAM: el bucket (para listar) y los objetos de ml_artifacts/."""
+    return (
+        'resource.type == "storage.googleapis.com/Bucket" || '
+        "resource.name.startsWith("
+        f'"projects/_/buckets/{bucket_name}/objects/ml_artifacts/")'
+    )
+
+
 def create_datalake_access(
     bucket: gcp.storage.Bucket,
     security: SecurityResources,
@@ -155,29 +164,27 @@ def create_datalake_access(
                 opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
             )
         )
-    grants.append(
-        gcp.storage.BucketIAMMember(
-            "voc-datalake-ml-online-artifacts",
-            bucket=bucket.name,
-            role="roles/storage.objectViewer",
-            member=security.sa_ml_online.email.apply(
-                lambda email: f"serviceAccount:{email}"
-            ),
-            # Solo los pesos. Listar un prefijo se evalúa contra el bucket,
-            # por eso la condición también admite ese tipo de recurso.
-            condition=gcp.storage.BucketIAMMemberConditionArgs(
-                title="solo-ml-artifacts",
-                expression=bucket.name.apply(
-                    lambda name: (
-                        'resource.type == "storage.googleapis.com/Bucket" || '
-                        "resource.name.startsWith("
-                        f'"projects/_/buckets/{name}/objects/ml_artifacts/")'
-                    )
+    for label, account in (
+        ("ml-online", security.sa_ml_online),
+        ("portal-api", security.sa_portal_api),
+    ):
+        grants.append(
+            gcp.storage.BucketIAMMember(
+                f"voc-datalake-{label}-artifacts",
+                bucket=bucket.name,
+                role="roles/storage.objectViewer",
+                member=account.email.apply(
+                    lambda email: f"serviceAccount:{email}"
                 ),
-            ),
-            opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
+                # Solo los pesos. Listar un prefijo se evalúa contra el bucket,
+                # por eso la condición también admite ese tipo de recurso.
+                condition=gcp.storage.BucketIAMMemberConditionArgs(
+                    title="solo-ml-artifacts",
+                    expression=bucket.name.apply(_artifacts_only),
+                ),
+                opts=pulumi.ResourceOptions(depends_on=[bucket, *api_deps]),
+            )
         )
-    )
     return grants
 
 

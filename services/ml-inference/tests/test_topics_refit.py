@@ -1,6 +1,6 @@
 """Re-ajuste de tópicos: cuándo toca, muestra, pares y orden de escritura."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +16,7 @@ from ml_inference.topics_refit import (
     quarter_start,
     window,
 )
+from voc_common.analytics_codes import RunKind
 from voc_nlp.topics_refit import TopicParams
 
 pytest.importorskip("bertopic")
@@ -163,6 +164,35 @@ def job(bq: BigQuery, **kw: Any) -> tuple[TopicsRefit, Storage, Writer]:
     return refit, storage, writer
 
 
+def statuses(writer: Writer) -> list[str]:
+    return [rows[0].status.value for _, rows in writer.tables]
+
+
+def test_the_run_records_who_launched_it_and_why() -> None:
+    refit, _, writer = job(
+        BigQuery([]),
+        actor_hash="a" * 64,
+        reason="nuevo vocabulario tras la actualización",
+        clock=lambda: NOW + timedelta(minutes=7),
+    )
+    assert refit.run(policy(mode="manual"), None, NOW, force=True)
+    start, end = writer.tables[0][1][0], writer.tables[-1][1][0]
+    assert (start.status.value, end.status.value) == ("running", "succeeded")
+    assert start.run_id == end.run_id == "topics-refit-topics_v1"
+    assert end.kind is RunKind.TOPIC_REFIT
+    assert end.actor_hash == "a" * 64 and end.reason.startswith("nuevo")
+    assert end.ended_at == NOW + timedelta(minutes=7)
+    assert end.texts == 180 and end.cost_usd == 0.0
+    assert end.peak_memory_mib is not None
+
+
+def test_a_scheduled_run_has_no_actor() -> None:
+    refit, _, writer = job(BigQuery([]))
+    assert refit.run(policy(), None, NOW)
+    row = writer.tables[-1][1][0]
+    assert row.actor_hash is None and row.reason is None
+
+
 def test_refit_pairs_topics_and_writes_the_version_last() -> None:
     bq = BigQuery(
         [
@@ -177,17 +207,19 @@ def test_refit_pairs_topics_and_writes_the_version_last() -> None:
     assert bq.params["seed"] == SAMPLE_SEED and bq.params["total"] == 40_000
     assert bq.params["start"] == datetime(2025, 10, 1, tzinfo=UTC)
     assert [t for t, _ in writer.tables] == [
+        "inference_runs",
         "topic_catalog",
         "topic_model_versions",
+        "inference_runs",
     ]
-    catalog = writer.tables[0][1]
+    catalog = writer.tables[1][1]
     assert len(catalog) == 3
     # Cada tópico nuevo se empareja con el mismo tema de la versión vigente.
     by_previous = {c.previous_topic_id: c for c in catalog}
     assert set(by_previous) == {10, 11, 12}
     assert all(c.centroid_similarity > 0.9 for c in catalog)
     assert "spei" in " ".join(by_previous[10].terms)
-    version = writer.tables[1][1][0]
+    version = writer.tables[2][1][0]
     assert version.topic_model_version == "topics_v2"
     assert (
         version.params["topicos"] == 3
@@ -203,7 +235,7 @@ def test_refit_pairs_topics_and_writes_the_version_last() -> None:
 def test_first_version_has_no_pairs() -> None:
     refit, _, writer = job(BigQuery([]))
     assert refit.run(policy(), None, NOW) == "topics_v1"
-    assert all(c.previous_topic_id is None for c in writer.tables[0][1])
+    assert all(c.previous_topic_id is None for c in writer.tables[1][1])
 
 
 def test_not_due_or_too_small_writes_nothing() -> None:
@@ -216,9 +248,19 @@ def test_not_due_or_too_small_writes_nothing() -> None:
     refit, _, writer = job(BigQuery(recent))
     assert refit.run(policy(), "topics_v2", NOW) is None
     assert writer.tables == []
+
+
+def test_a_forced_run_with_too_few_texts_closes_as_failed() -> None:
+    recent = [
+        {
+            "topic_model_version": "topics_v2",
+            "fitted_at": datetime(2026, 10, 2, tzinfo=UTC),
+        }
+    ]
     small, _, writer = job(BigQuery(recent, texts=2))
     assert small.run(policy(), "topics_v2", NOW, force=True) is None
-    assert writer.tables == []
+    assert [t for t, _ in writer.tables] == ["inference_runs"] * 2
+    assert statuses(writer) == ["running", "failed"]
 
 
 def test_a_fit_without_topics_fails_before_writing() -> None:
@@ -233,7 +275,9 @@ def test_a_fit_without_topics_fails_before_writing() -> None:
     )
     with pytest.raises(RuntimeError, match="no topics"):
         refit.run(policy(), None, NOW)
-    assert writer.tables == [] and storage.uploaded == []
+    assert [t for t, _ in writer.tables] == ["inference_runs"] * 2
+    assert statuses(writer) == ["running", "failed"]
+    assert storage.uploaded == []
 
 
 def test_manual_mode_refits_only_with_force() -> None:

@@ -121,15 +121,23 @@ def test_watermark_storage_lifecycle_iam_and_consumers(
         "voc-datalake-sanitization-objects",
         "voc-datalake-ml-backend-objects",
         "voc-datalake-ml-online-artifacts",
+        "voc-datalake-portal-api-artifacts",
     }
     assert {r.state["member"] for r in grants.values()} == {
         f"serviceAccount:voc-sa-{actor}@test-voc-project.iam.gserviceaccount.com"
-        for actor in ("ingestion", "sanitization", "ml-backend", "ml-online")
+        for actor in (
+            "ingestion",
+            "sanitization",
+            "ml-backend",
+            "ml-online",
+            "portal-api",
+        )
     }
     for name, grant in grants.items():
         assert grant.state["bucket"] == bucket.state["name"]
-        # El servicio en línea solo ve los pesos, y solo los lee.
-        online = name == "voc-datalake-ml-online-artifacts"
+        # El servicio en línea y la API del portal solo ven los pesos y sus
+        # manifiestos (ml_artifacts/), y solo los leen.
+        online = name.endswith("-artifacts")
         assert grant.state["role"] == (
             "roles/storage.objectViewer"
             if online

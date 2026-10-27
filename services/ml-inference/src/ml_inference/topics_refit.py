@@ -36,7 +36,13 @@ from pathlib import Path
 from typing import Any, Final
 
 import numpy as np
-from voc_common.analytics_codes import TopicRefitTrigger
+from voc_common.analytics_codes import (
+    RunEnvironment,
+    RunKind,
+    RunStatus,
+    TopicRefitTrigger,
+)
+from voc_common.operations_v3 import InferenceRun
 from voc_common.policies import RiskPolicy
 from voc_common.predictions_v3 import TopicCatalogEntry, TopicModelVersion
 from voc_nlp.topics_refit import (
@@ -52,7 +58,9 @@ from voc_nlp.topics_refit import (
 from ml_inference import artifacts
 from ml_inference.bq_io import StagingMergeWriter, query_rows, render
 from ml_inference.config import InferenceSettings
+from ml_inference.delta import peak_memory_mib
 from ml_inference.engines import EngineLoaders
+from ml_inference.runs import write_run
 
 log = logging.getLogger(__name__)
 
@@ -180,6 +188,10 @@ class TopicsRefit:
     fit: Callable[..., Any] = refit
     sample_texts: int = SAMPLE_TEXTS
     min_texts: int = MIN_TEXTS
+    # Quién lo lanzó a mano y por qué; nulos en el Job programado.
+    actor_hash: str | None = None
+    reason: str | None = None
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     def _rows(self, sql: str, **params: Any) -> list[dict[str, Any]]:
         return query_rows(
@@ -203,7 +215,11 @@ class TopicsRefit:
         now: datetime,
         force: bool = False,
     ) -> str | None:
-        """Ajusta y registra una versión nueva; ``None`` si no toca."""
+        """Ajusta y registra una versión nueva; ``None`` si no toca.
+
+        Cuando corre (toca o va con ``force``), deja en ``inference_runs`` su
+        fila de inicio y la de cierre, también si falla o si no hay textos.
+        """
         versions = self._rows(VERSIONS_SQL)
         latest = versions[0] if versions else None
         latest_fit = latest["fitted_at"] if latest else None
@@ -214,25 +230,64 @@ class TopicsRefit:
         if not force and not is_due(policy, latest_fit, now):
             log.info("topics-refit: ya hay versión del trimestre")
             return None
-        start, end = window(now)
-        rows = self._rows(
-            SAMPLE_SQL,
-            start=start,
-            end=end,
-            seed=SAMPLE_SEED,
-            total=self.sample_texts,
-        )
-        if len(rows) < self.min_texts:
-            log.warning("topics-refit: %d textos, muy pocos", len(rows))
-            return None
         version = next_version(
             latest["topic_model_version"] if latest else None
         )
-        work = Path(tempfile.mkdtemp(prefix="topics-refit-"))
+        run_id = f"topics-refit-{version}"
+        write_run(self.writer, self._run_row(run_id, now, RunStatus.RUNNING))
+        status, texts = RunStatus.FAILED, 0
         try:
-            return self._fit(rows, version, current, start, end, now, work)
+            start, end = window(now)
+            rows = self._rows(
+                SAMPLE_SQL,
+                start=start,
+                end=end,
+                seed=SAMPLE_SEED,
+                total=self.sample_texts,
+            )
+            texts = len(rows)
+            if texts < self.min_texts:
+                log.warning("topics-refit: %d textos, muy pocos", texts)
+                return None
+            work = Path(tempfile.mkdtemp(prefix="topics-refit-"))
+            try:
+                fitted = self._fit(
+                    rows, version, current, start, end, now, work
+                )
+            finally:
+                shutil.rmtree(work, ignore_errors=True)
+            status = RunStatus.SUCCEEDED
+            return fitted
         finally:
-            shutil.rmtree(work, ignore_errors=True)
+            write_run(
+                self.writer,
+                self._run_row(run_id, now, status, texts, self.clock()),
+            )
+
+    def _run_row(
+        self,
+        run_id: str,
+        started: datetime,
+        status: RunStatus,
+        texts: int = 0,
+        ended: datetime | None = None,
+    ) -> InferenceRun:
+        closed = status is not RunStatus.RUNNING
+        return InferenceRun(
+            run_id=run_id,
+            kind=RunKind.TOPIC_REFIT,
+            environment=RunEnvironment.CLOUDRUN,
+            model_version=None,
+            started_at=started,
+            ended_at=max(ended or started, started) if closed else None,
+            reviews=0,
+            texts=texts,
+            status=status,
+            cost_usd=0.0 if closed else None,
+            peak_memory_mib=peak_memory_mib() if closed else None,
+            actor_hash=self.actor_hash,
+            reason=self.reason,
+        )
 
     def _fit(
         self,
